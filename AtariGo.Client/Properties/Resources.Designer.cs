@@ -59,5 +59,140 @@ namespace AtariGo.Client.Properties {
                 resourceCulture = value;
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Accept.
+        /// </summary>
+        public static string Lang_Btn_Accept {
+            get {
+                return ResourceManager.GetString("Lang_Btn_Accept", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cancel.
+        /// </summary>
+        public static string Lang_Btn_Cancel {
+            get {
+                return ResourceManager.GetString("Lang_Btn_Cancel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Select Language.
+        /// </summary>
+        public static string Lang_Modal_Title {
+            get {
+                return ResourceManager.GetString("Lang_Modal_Title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Exit.
+        /// </summary>
+        public static string Login_Btn_Exit {
+            get {
+                return ResourceManager.GetString("Login_Btn_Exit", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Play as Guest.
+        /// </summary>
+        public static string Login_Btn_Guest {
+            get {
+                return ResourceManager.GetString("Login_Btn_Guest", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Language.
+        /// </summary>
+        public static string Login_Btn_LanguageLabel {
+            get {
+                return ResourceManager.GetString("Login_Btn_LanguageLabel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Sign In.
+        /// </summary>
+        public static string Login_Btn_Submit {
+            get {
+                return ResourceManager.GetString("Login_Btn_Submit", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Email.
+        /// </summary>
+        public static string Login_Lbl_Email {
+            get {
+                return ResourceManager.GetString("Login_Lbl_Email", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Password.
+        /// </summary>
+        public static string Login_Lbl_Password {
+            get {
+                return ResourceManager.GetString("Login_Lbl_Password", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Log In.
+        /// </summary>
+        public static string Login_Lbl_Title {
+            get {
+                return ResourceManager.GetString("Login_Lbl_Title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Forgot your password?.
+        /// </summary>
+        public static string Login_Lnk_ForgotPassword {
+            get {
+                return ResourceManager.GetString("Login_Lnk_ForgotPassword", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Don&apos;t have an account? Sign up.
+        /// </summary>
+        public static string Login_Lnk_Register {
+            get {
+                return ResourceManager.GetString("Login_Lnk_Register", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Change Language.
+        /// </summary>
+        public static string Login_Tip_ChangeLanguage {
+            get {
+                return ResourceManager.GetString("Login_Tip_ChangeLanguage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to user@mail.com.
+        /// </summary>
+        public static string Login_Txt_EmailPlaceholder {
+            get {
+                return ResourceManager.GetString("Login_Txt_EmailPlaceholder", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to .........
+        /// </summary>
+        public static string Login_Txt_PasswordPlaceholder {
+            get {
+                return ResourceManager.GetString("Login_Txt_PasswordPlaceholder", resourceCulture);
+            }
+        }
     }
 }
