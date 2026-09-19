@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="AtariGo.Client/AtariGo.Client.csproj" />
+  <Project Path="AtariGo.Server/AtariGo.Server.csproj" />
+</Solution>
