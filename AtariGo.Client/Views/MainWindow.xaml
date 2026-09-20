@@ -1,0 +1,58 @@
+<Window x:Class="AtariGo.Client.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:AtariGo.Client.ViewModels"
+        xmlns:dialogVm="clr-namespace:AtariGo.Client.ViewModels.Dialogs"
+        xmlns:views="clr-namespace:AtariGo.Client.Views"
+        xmlns:dialogViews="clr-namespace:AtariGo.Client.Views.Dialogs"
+        mc:Ignorable="d"
+        Title="Atari Go"
+        Height="720"
+        Width="1040"
+        WindowStartupLocation="CenterScreen">
+
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+
+        <!-- View DataTemplates -->
+        <DataTemplate DataType="{x:Type vm:MainMenuViewModel}">
+            <views:MainMenuView/>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type vm:LobbyViewModel}">
+            <views:LobbyView/>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type vm:GameBoardViewModel}">
+            <views:GameBoardView/>
+        </DataTemplate>
+
+        <!-- Dialog DataTemplates -->
+        <DataTemplate DataType="{x:Type dialogVm:ConfirmActionDialogViewModel}">
+            <dialogViews:ConfirmActionDialogView/>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type dialogVm:ReportPlayerDialogViewModel}">
+            <dialogViews:ReportPlayerDialogView/>
+        </DataTemplate>
+    </Window.Resources>
+
+    <Grid>
+        <!-- Main Navigation View Layer -->
+        <ContentControl Content="{Binding CurrentViewModel}"
+                        HorizontalContentAlignment="Stretch"
+                        VerticalContentAlignment="Stretch"/>
+
+        <!-- Modal Dialog Overlay Layer -->
+        <Grid Background="#99000000"
+              Visibility="{Binding IsDialogVisible,
+                           Converter={StaticResource BooleanToVisibilityConverter}}"
+              Panel.ZIndex="100">
+            <ContentControl Content="{Binding CurrentDialogViewModel}"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"/>
+        </Grid>
+    </Grid>
+</Window>
