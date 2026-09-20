@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -161,5 +161,131 @@
   </data>
   <data name="Login_Txt_PasswordPlaceholder" xml:space="preserve">
     <value>........</value>
+  </data>
+  <data name="MainMenu_Lbl_Welcome" xml:space="preserve">
+    <value>HAUPTLOBBY - Willkommen </value>
+  </data>
+  <data name="MainMenu_Lbl_YourProfile" xml:space="preserve">
+    <value>Dein Profil</value>
+  </data>
+  <data name="MainMenu_Lbl_Victories" xml:space="preserve">
+    <value>Siege: </value>
+  </data>
+  <data name="MainMenu_Btn_Customize" xml:space="preserve">
+    <value>Anpassen</value>
+  </data>
+  <data name="MainMenu_Lbl_TopGlobal" xml:space="preserve">
+    <value>🏆 Globale Spitze</value>
+  </data>
+  <data name="MainMenu_Lbl_WinsHeader" xml:space="preserve">
+    <value>Siege</value>
+  </data>
+  <data name="MainMenu_Lbl_WhatToDo" xml:space="preserve">
+    <value>Was möchtest du tun?</value>
+  </data>
+  <data name="MainMenu_Btn_PlayMultiplayer" xml:space="preserve">
+    <value>Mehrspieler spielen</value>
+  </data>
+  <data name="MainMenu_Btn_CreatePrivateRoom" xml:space="preserve">
+    <value>Privaten Raum erstellen</value>
+  </data>
+  <data name="MainMenu_Btn_JoinWithCode" xml:space="preserve">
+    <value>Mit Code beitreten</value>
+  </data>
+  <data name="MainMenu_Btn_Options" xml:space="preserve">
+    <value>Optionen</value>
+  </data>
+  <data name="MainMenu_Btn_SignOut" xml:space="preserve">
+    <value>Abmelden</value>
+  </data>
+  <data name="MainMenu_Lbl_FriendsList" xml:space="preserve">
+    <value>👥 Freundesliste</value>
+  </data>
+  <data name="MainMenu_Btn_AddFriend" xml:space="preserve">
+    <value>+ Neuen Freund hinzufügen</value>
+  </data>
+  <data name="MainMenu_Txt_SearchFriendPlaceholder" xml:space="preserve">
+    <value>Freund suchen...</value>
+  </data>
+  <data name="MainMenu_Btn_Invite" xml:space="preserve">
+    <value>Einladen</value>
+  </data>
+  <data name="MainMenu_Btn_Email" xml:space="preserve">
+    <value>E-Mail ✉</value>
+  </data>
+  <data name="Lobby_Lbl_SearchingOpponent" xml:space="preserve">
+    <value>GEGNER WIRD GESUCHT</value>
+  </data>
+  <data name="Lobby_Lbl_You" xml:space="preserve">
+    <value>Du</value>
+  </data>
+  <data name="Lobby_Lbl_Searching" xml:space="preserve">
+    <value>Suchen...</value>
+  </data>
+  <data name="Lobby_Btn_Cancel" xml:space="preserve">
+    <value>Abbrechen</value>
+  </data>
+  <data name="Lobby_Btn_SimulateMatch" xml:space="preserve">
+    <value>Gefundenes Spiel simulieren</value>
+  </data>
+  <data name="GameBoard_Btn_Report" xml:space="preserve">
+    <value>Melden</value>
+  </data>
+  <data name="GameBoard_Btn_Surrender" xml:space="preserve">
+    <value>Aufgeben</value>
+  </data>
+  <data name="GameBoard_Lbl_You" xml:space="preserve">
+    <value>DU</value>
+  </data>
+  <data name="GameBoard_Lbl_Opponent" xml:space="preserve">
+    <value>Gegner</value>
+  </data>
+  <data name="GameBoard_Lbl_White" xml:space="preserve">
+    <value>Weiß</value>
+  </data>
+  <data name="GameBoard_Lbl_Black" xml:space="preserve">
+    <value>Schwarz</value>
+  </data>
+  <data name="GameBoard_Status_YourTurn" xml:space="preserve">
+    <value>Du bist dran! Klicke auf einen Schnittpunkt</value>
+  </data>
+  <data name="GameBoard_Status_OpponentTurn" xml:space="preserve">
+    <value>Gegner ist am Zug! Warten auf Spielzug...</value>
+  </data>
+  <data name="GameBoard_Lbl_ChatTitle" xml:space="preserve">
+    <value>Spiel-Chat</value>
+  </data>
+  <data name="GameBoard_Lbl_System" xml:space="preserve">
+    <value>System</value>
+  </data>
+  <data name="GameBoard_Chat_GameStarted" xml:space="preserve">
+    <value>Das Spiel hat begonnen.</value>
+  </data>
+  <data name="GameBoard_Chat_GoodLuck" xml:space="preserve">
+    <value>Viel Glück!</value>
+  </data>
+  <data name="GameBoard_Lbl_ChatDisabledGuest" xml:space="preserve">
+    <value>Chat ist für Gäste nicht verfügbar.</value>
+  </data>
+  <data name="GameBoard_Txt_ChatPlaceholder" xml:space="preserve">
+    <value>Schreibe eine Nachricht...</value>
+  </data>
+  <data name="Options_Lbl_Title" xml:space="preserve">
+    <value>Optionen</value>
+  </data>
+  <data name="Options_Lbl_BackgroundMusic" xml:space="preserve">
+    <value>Hintergrundmusik</value>
+  </data>
+  <data name="Options_Lbl_SoundEffects" xml:space="preserve">
+    <value>Soundeffekte</value>
+  </data>
+  <data name="Options_Lbl_Language" xml:space="preserve">
+    <value>Sprache:</value>
+  </data>
+  <data name="Options_Lbl_AppVersion" xml:space="preserve">
+    <value>Atari Go Mehrspieler v1.0</value>
+  </data>
+  <data name="Options_Btn_SaveAndClose" xml:space="preserve">
+    <value>Speichern und Schließen</value>
   </data>
 </root>

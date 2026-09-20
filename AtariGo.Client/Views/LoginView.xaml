@@ -98,13 +98,24 @@
                             Click="BtnSubmit_Click"
                             Margin="0,0,0,18"/>
 
-                    <TextBlock HorizontalAlignment="Center" Margin="0,0,0,8"><Hyperlink x:Name="LnkRegister" Foreground="#4A90E2"><InlineUIContainer>
-                                <TextBlock Text="{x:Static properties:Resources.Login_Lnk_Register}"/>
-                            </InlineUIContainer></Hyperlink></TextBlock>
+                    <TextBlock HorizontalAlignment="Center" Margin="0,0,0,8">
+                        <Hyperlink x:Name="LnkRegister" Foreground="#4A90E2">
+                            <InlineUIContainer>
+                                <TextBlock
+                                    Text="{x:Static properties:Resources.Login_Lnk_Register}"/>
+                            </InlineUIContainer>
+                        </Hyperlink>
+                    </TextBlock>
 
-                    <TextBlock HorizontalAlignment="Center" Margin="0,0,0,22"><Hyperlink x:Name="LnkForgotPassword" Foreground="#4A90E2"><InlineUIContainer>
-                                <TextBlock Text="{x:Static properties:Resources.Login_Lnk_ForgotPassword}"/>
-                            </InlineUIContainer></Hyperlink></TextBlock>
+                    <TextBlock HorizontalAlignment="Center" Margin="0,0,0,22">
+                        <Hyperlink x:Name="LnkForgotPassword" Foreground="#4A90E2">
+                            <InlineUIContainer>
+                                <TextBlock
+                                    Text="{x:Static
+                                        properties:Resources.Login_Lnk_ForgotPassword}"/>
+                            </InlineUIContainer>
+                        </Hyperlink>
+                    </TextBlock>
 
                     <Separator Background="#D9D9D9" Margin="0,0,0,20" Width="340"/>
 
@@ -123,7 +134,10 @@
             </Border>
         </StackPanel>
 
-        <Grid x:Name="LanguageOverlay" Background="#99000000" Visibility="Collapsed" Panel.ZIndex="10">
+        <Grid x:Name="LanguageOverlay"
+              Background="#99000000"
+              Visibility="Collapsed"
+              Panel.ZIndex="10">
             <Border Background="White" 
                     BorderBrush="#2C2A29" 
                     BorderThickness="1.5" 
@@ -142,7 +156,10 @@
                                Margin="0,0,0,15" 
                                HorizontalAlignment="Center"/>
 
-                    <ComboBox x:Name="CmbLanguages" Height="36" Margin="0,0,0,20" VerticalContentAlignment="Center">
+                    <ComboBox x:Name="CmbLanguages"
+                              Height="36"
+                              Margin="0,0,0,20"
+                              VerticalContentAlignment="Center">
                         <ComboBoxItem Content="Español (ES)" Tag="es"/>
                         <ComboBoxItem Content="English (EN)" Tag="en"/>
                         <ComboBoxItem Content="Deutsch (DE)" Tag="de"/>

@@ -16,7 +16,6 @@
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
 
-        <!-- View DataTemplates -->
         <DataTemplate DataType="{x:Type vm:MainMenuViewModel}">
             <views:MainMenuView/>
         </DataTemplate>
@@ -29,7 +28,6 @@
             <views:GameBoardView/>
         </DataTemplate>
 
-        <!-- Dialog DataTemplates -->
         <DataTemplate DataType="{x:Type dialogVm:ConfirmActionDialogViewModel}">
             <dialogViews:ConfirmActionDialogView/>
         </DataTemplate>
@@ -37,15 +35,17 @@
         <DataTemplate DataType="{x:Type dialogVm:ReportPlayerDialogViewModel}">
             <dialogViews:ReportPlayerDialogView/>
         </DataTemplate>
+
+        <DataTemplate DataType="{x:Type dialogVm:OptionsDialogViewModel}">
+            <dialogViews:OptionsDialogView/>
+        </DataTemplate>
     </Window.Resources>
 
     <Grid>
-        <!-- Main Navigation View Layer -->
         <ContentControl Content="{Binding CurrentViewModel}"
                         HorizontalContentAlignment="Stretch"
                         VerticalContentAlignment="Stretch"/>
 
-        <!-- Modal Dialog Overlay Layer -->
         <Grid Background="#99000000"
               Visibility="{Binding IsDialogVisible,
                            Converter={StaticResource BooleanToVisibilityConverter}}"

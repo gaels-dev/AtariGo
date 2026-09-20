@@ -4,6 +4,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:models="clr-namespace:AtariGo.Client.Models"
+             xmlns:properties="clr-namespace:AtariGo.Client.Properties"
              xmlns:vm="clr-namespace:AtariGo.Client.ViewModels"
              mc:Ignorable="d"
              d:DesignHeight="620" d:DesignWidth="960"
@@ -12,8 +13,9 @@
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
 
-        <!-- Style for action button in top bar -->
-        <Style x:Key="ActionButtonStyle" TargetType="Button" BasedOn="{StaticResource RoundedButtonStyle}">
+        <Style x:Key="ActionButtonStyle"
+               TargetType="Button"
+               BasedOn="{StaticResource RoundedButtonStyle}">
             <Setter Property="Height" Value="36"/>
             <Setter Property="Padding" Value="16,0"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
@@ -28,15 +30,12 @@
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="320"/>
+            <ColumnDefinition Width="300"/>
         </Grid.ColumnDefinitions>
 
-        <!-- ═══════════════════════════════ BARRA SUPERIOR ═══════════════════════════════ -->
         <Border Grid.Row="0" Grid.ColumnSpan="2"
-                Background="White"
-                BorderBrush="#DDDDDD"
-                BorderThickness="0,0,0,1"
-                Padding="20,12">
+                Background="#2C2A29"
+                Padding="16,10">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
@@ -46,7 +45,6 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- Indicador Jugador (Tú) -->
                 <Border Grid.Column="0"
                         BorderBrush="#333333"
                         BorderThickness="2"
@@ -55,21 +53,28 @@
                         Padding="14,6"
                         Margin="0,0,12,0">
                     <StackPanel Orientation="Horizontal">
-                        <Ellipse Width="16" Height="16" Margin="0,0,8,0" VerticalAlignment="Center">
+                        <Ellipse Width="16" Height="16"
+                                 Margin="0,0,8,0"
+                                 VerticalAlignment="Center">
                             <Ellipse.Style>
                                 <Style TargetType="Ellipse">
                                     <Setter Property="Fill" Value="#1A1A1A"/>
                                     <Setter Property="Stroke" Value="#333333"/>
                                     <Setter Property="StrokeThickness" Value="1.5"/>
                                     <Style.Triggers>
-                                        <DataTrigger Binding="{Binding MyColor}" Value="{x:Static models:StoneColor.White}">
+                                        <DataTrigger
+                                            Binding="{Binding MyColor}"
+                                            Value="{x:Static models:StoneColor.White}">
                                             <Setter Property="Fill" Value="White"/>
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
                             </Ellipse.Style>
                         </Ellipse>
-                        <TextBlock VerticalAlignment="Center" FontWeight="Bold" FontSize="13" Foreground="#1A1A1A">
+                        <TextBlock VerticalAlignment="Center"
+                                   FontWeight="Bold"
+                                   FontSize="13"
+                                   Foreground="#1A1A1A">
                             <Run Text="{Binding MyPlayerName, Mode=OneWay}"/>
                             <Run Text=" ("/>
                             <Run Text="{Binding MyColorLabel, Mode=OneWay}"/>
@@ -78,21 +83,24 @@
                     </StackPanel>
                 </Border>
 
-                <!-- Botón Reportar -->
                 <Button Grid.Column="1"
                         Style="{StaticResource ActionButtonStyle}"
                         Command="{Binding ReportPlayerCommand}"
-                        Background="#E53935"
+                        Background="#D9534F"
                         Foreground="White"
                         BorderThickness="0"
                         Margin="0,0,8,0">
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="🚩" Margin="0,0,6,0" VerticalAlignment="Center" FontSize="14"/>
-                        <TextBlock Text="Reportar" VerticalAlignment="Center"/>
+                        <TextBlock Text="🚩"
+                                   Margin="0,0,6,0"
+                                   VerticalAlignment="Center"
+                                   FontSize="14"/>
+                        <TextBlock
+                            Text="{x:Static properties:Resources.GameBoard_Btn_Report}"
+                            VerticalAlignment="Center"/>
                     </StackPanel>
                 </Button>
 
-                <!-- Botón Rendirse -->
                 <Button Grid.Column="2"
                         Style="{StaticResource ActionButtonStyle}"
                         Command="{Binding SurrenderCommand}"
@@ -101,10 +109,11 @@
                         BorderBrush="#CCCCCC"
                         BorderThickness="1.5"
                         Margin="0,0,12,0">
-                    <TextBlock Text="Rendirse" VerticalAlignment="Center"/>
+                    <TextBlock
+                        Text="{x:Static properties:Resources.GameBoard_Btn_Surrender}"
+                        VerticalAlignment="Center"/>
                 </Button>
 
-                <!-- Indicador Oponente (Ahora ubicado justo después de los botones de acción) -->
                 <Border Grid.Column="3"
                         BorderBrush="#333333"
                         BorderThickness="2"
@@ -112,21 +121,28 @@
                         Background="White"
                         Padding="14,6">
                     <StackPanel Orientation="Horizontal">
-                        <Ellipse Width="16" Height="16" Margin="0,0,8,0" VerticalAlignment="Center">
+                        <Ellipse Width="16" Height="16"
+                                 Margin="0,0,8,0"
+                                 VerticalAlignment="Center">
                             <Ellipse.Style>
                                 <Style TargetType="Ellipse">
                                     <Setter Property="Fill" Value="White"/>
                                     <Setter Property="Stroke" Value="#333333"/>
                                     <Setter Property="StrokeThickness" Value="1.5"/>
                                     <Style.Triggers>
-                                        <DataTrigger Binding="{Binding MyColor}" Value="{x:Static models:StoneColor.White}">
+                                        <DataTrigger
+                                            Binding="{Binding MyColor}"
+                                            Value="{x:Static models:StoneColor.White}">
                                             <Setter Property="Fill" Value="#1A1A1A"/>
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
                             </Ellipse.Style>
                         </Ellipse>
-                        <TextBlock VerticalAlignment="Center" FontWeight="Bold" FontSize="13" Foreground="#1A1A1A">
+                        <TextBlock VerticalAlignment="Center"
+                                   FontWeight="Bold"
+                                   FontSize="13"
+                                   Foreground="#1A1A1A">
                             <Run Text="{Binding OpponentName, Mode=OneWay}"/>
                             <Run Text=" ("/>
                             <Run Text="{Binding OpponentColorLabel, Mode=OneWay}"/>
@@ -137,106 +153,104 @@
             </Grid>
         </Border>
 
-        <!-- ═══════════════════════════ TABLERO Y CONTENEDOR DE MADERA ════════════════════════════ -->
         <Grid Grid.Row="1" Grid.Column="0" Margin="24">
             <Grid.RowDefinitions>
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <!-- Contenedor General Rectangular de Madera (Aquí podrás poner tu imagen/textura de fondo después) -->
-            <Border Grid.Row="0"
-                    Background="#C8860A" 
-                    BorderBrush="#7A5000"
-                    BorderThickness="4"
-                    CornerRadius="12"
-                    Padding="24"
-                    HorizontalAlignment="Center"
-                    VerticalAlignment="Center">
-                <Viewbox Stretch="Uniform" Width="440" Height="440">
-                    <!-- Tablero Interior -->
-                    <Border Background="#E6A13D"
-                            BorderBrush="#5A3A00"
-                            BorderThickness="2"
-                            CornerRadius="2"
-                            Padding="12"
-                            Width="420"
-                            Height="420">
-                        <ItemsControl ItemsSource="{Binding Cells}">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <UniformGrid Rows="9" Columns="9"/>
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate DataType="{x:Type vm:BoardCellViewModel}">
-                                    <Grid Background="Transparent">
-                                        <!-- Línea horizontal de la retícula -->
-                                        <Rectangle Height="1.5"
-                                                   Fill="#5A3A00"
-                                                   HorizontalAlignment="Stretch"
-                                                   VerticalAlignment="Center"/>
-                                        <!-- Línea vertical de la retícula -->
-                                        <Rectangle Width="1.5"
-                                                   Fill="#5A3A00"
-                                                   HorizontalAlignment="Center"
-                                                   VerticalAlignment="Stretch"/>
+            <Viewbox Grid.Row="0" Stretch="Uniform">
+                <Border Background="#E5A65D"
+                        BorderBrush="#2C2A29"
+                        BorderThickness="3"
+                        CornerRadius="4"
+                        Padding="24"
+                        Width="500"
+                        Height="500">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="15"
+                                          ShadowDepth="5"
+                                          Opacity="0.3"
+                                          Color="#2C2A29"/>
+                    </Border.Effect>
+                    <ItemsControl ItemsSource="{Binding Cells}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <UniformGrid Rows="9" Columns="9"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type vm:BoardCellViewModel}">
+                                <Grid Background="Transparent">
+                                    <Rectangle Height="2"
+                                               Fill="#2C2A29"
+                                               HorizontalAlignment="Stretch"
+                                               VerticalAlignment="Center"/>
+                                    <Rectangle Width="2"
+                                               Fill="#2C2A29"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Stretch"/>
 
-                                        <!-- Ficha -->
-                                        <Ellipse Width="38" Height="38"
-                                                 Panel.ZIndex="2"
-                                                 HorizontalAlignment="Center"
-                                                 VerticalAlignment="Center">
-                                            <Ellipse.Style>
-                                                <Style TargetType="Ellipse">
-                                                    <Setter Property="Visibility" Value="Collapsed"/>
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding Stone}" Value="{x:Static models:StoneColor.Black}">
-                                                            <Setter Property="Visibility" Value="Visible"/>
-                                                            <Setter Property="Fill" Value="#1A1A1A"/>
-                                                            <Setter Property="Stroke" Value="#000000"/>
-                                                            <Setter Property="StrokeThickness" Value="1"/>
-                                                        </DataTrigger>
-                                                        <DataTrigger Binding="{Binding Stone}" Value="{x:Static models:StoneColor.White}">
-                                                            <Setter Property="Visibility" Value="Visible"/>
-                                                            <Setter Property="Fill" Value="White"/>
-                                                            <Setter Property="Stroke" Value="#888888"/>
-                                                            <Setter Property="StrokeThickness" Value="1.5"/>
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </Ellipse.Style>
-                                        </Ellipse>
+                                    <Ellipse Width="42" Height="42"
+                                             Panel.ZIndex="2"
+                                             HorizontalAlignment="Center"
+                                             VerticalAlignment="Center">
+                                        <Ellipse.Style>
+                                            <Style TargetType="Ellipse">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger
+                                                        Binding="{Binding Stone}"
+                                                        Value="{x:Static models:StoneColor.Black}">
+                                                        <Setter Property="Visibility"
+                                                                Value="Visible"/>
+                                                        <Setter Property="Fill" Value="#1A1A1A"/>
+                                                        <Setter Property="Stroke" Value="#000000"/>
+                                                        <Setter Property="StrokeThickness"
+                                                                Value="1"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger
+                                                        Binding="{Binding Stone}"
+                                                        Value="{x:Static models:StoneColor.White}">
+                                                        <Setter Property="Visibility"
+                                                                Value="Visible"/>
+                                                        <Setter Property="Fill" Value="White"/>
+                                                        <Setter Property="Stroke" Value="#888888"/>
+                                                        <Setter Property="StrokeThickness"
+                                                                Value="1.5"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Ellipse.Style>
+                                    </Ellipse>
 
-                                        <!-- Botón invisible para capturar el clic en la intersección -->
-                                        <Button Command="{Binding CellClickCommand}"
-                                                Background="Transparent"
-                                                BorderThickness="0"
-                                                Panel.ZIndex="3"
-                                                Opacity="0"/>
-                                    </Grid>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </Border>
-                </Viewbox>
-            </Border>
+                                    <Button Command="{Binding CellClickCommand}"
+                                            Background="Transparent"
+                                            BorderThickness="0"
+                                            Panel.ZIndex="3"
+                                            Opacity="0"
+                                            Cursor="Hand"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </Border>
+            </Viewbox>
 
-            <!-- Mensaje de Turno debajo del tablero -->
             <TextBlock Grid.Row="1"
                        Text="{Binding TurnStatusMessage}"
                        HorizontalAlignment="Center"
                        Margin="0,16,0,0"
-                       FontSize="15"
-                       FontWeight="SemiBold"
-                       Foreground="#444444"/>
+                       FontSize="16"
+                       FontWeight="Bold"
+                       FontFamily="Georgia"
+                       Foreground="#2C2A29"/>
         </Grid>
 
-        <!-- ══════════════════════════ PANEL DE CHAT LATERAL ═════════════════════════════════ -->
         <Border Grid.Row="1" Grid.Column="1"
                 Background="White"
-                BorderBrush="#DDDDDD"
-                BorderThickness="1,0,0,0">
+                BorderBrush="#2C2A29"
+                BorderThickness="1.5,0,0,0">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
@@ -244,19 +258,21 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <!-- Cabecera del Chat -->
                 <Border Grid.Row="0" Background="#1A1A2E" Padding="16,12">
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="💬" FontSize="15" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                        <TextBlock Text="Chat de Partida"
-                                   Foreground="White"
-                                   FontWeight="Bold"
-                                   FontSize="14"
+                        <TextBlock Text="💬"
+                                   FontSize="15"
+                                   Margin="0,0,8,0"
                                    VerticalAlignment="Center"/>
+                        <TextBlock
+                            Text="{x:Static properties:Resources.GameBoard_Lbl_ChatTitle}"
+                            Foreground="White"
+                            FontWeight="Bold"
+                            FontSize="14"
+                            VerticalAlignment="Center"/>
                     </StackPanel>
                 </Border>
 
-                <!-- Listado de Mensajes -->
                 <ScrollViewer Grid.Row="1"
                               VerticalScrollBarVisibility="Auto"
                               Background="#FAFAFA"
@@ -268,31 +284,53 @@
                                     <ContentControl.Style>
                                         <Style TargetType="ContentControl">
                                             <Style.Triggers>
-                                                <!-- Mensaje del Sistema -->
-                                                <DataTrigger Binding="{Binding IsSystem}" Value="True">
+                                                <DataTrigger Binding="{Binding IsSystem}"
+                                                             Value="True">
                                                     <Setter Property="ContentTemplate">
                                                         <Setter.Value>
                                                             <DataTemplate>
-                                                                <Border Background="#F3F3F3" BorderBrush="#DDDDDD" BorderThickness="1" CornerRadius="6" Padding="10,6">
-                                                                    <TextBlock Foreground="#777777" FontSize="12" TextWrapping="Wrap">
-                                                                        <Run Text="{Binding Sender, Mode=OneWay}" FontWeight="SemiBold"/>
+                                                                <Border Background="#F3F3F3"
+                                                                        BorderBrush="#DDDDDD"
+                                                                        BorderThickness="1"
+                                                                        CornerRadius="6"
+                                                                        Padding="10,6">
+                                                                    <TextBlock Foreground="#777777"
+                                                                               FontSize="12"
+                                                                               TextWrapping="Wrap">
+                                                                        <Run Text="{Binding Sender,
+                                                                            Mode=OneWay}"
+                                                                             FontWeight="SemiBold"/>
                                                                         <Run Text=": "/>
-                                                                        <Run Text="{Binding Text, Mode=OneWay}"/>
+                                                                        <Run Text="{Binding Text,
+                                                                            Mode=OneWay}"/>
                                                                     </TextBlock>
                                                                 </Border>
                                                             </DataTemplate>
                                                         </Setter.Value>
                                                     </Setter>
                                                 </DataTrigger>
-                                                <!-- Mensaje del Oponente -->
-                                                <DataTrigger Binding="{Binding IsOpponent}" Value="True">
+                                                <DataTrigger Binding="{Binding IsOpponent}"
+                                                             Value="True">
                                                     <Setter Property="ContentTemplate">
                                                         <Setter.Value>
                                                             <DataTemplate>
-                                                                <Border BorderBrush="#4A90E2" Background="White" BorderThickness="1.5" CornerRadius="6" Padding="10,6">
+                                                                <Border BorderBrush="#4A90E2"
+                                                                        Background="White"
+                                                                        BorderThickness="1.5"
+                                                                        CornerRadius="6"
+                                                                        Padding="10,6">
                                                                     <StackPanel>
-                                                                        <TextBlock Text="{Binding Sender}" Foreground="#4A90E2" FontWeight="Bold" FontSize="12" Margin="0,0,0,2"/>
-                                                                        <TextBlock Text="{Binding Text}" Foreground="#333333" FontSize="12" TextWrapping="Wrap"/>
+                                                                        <TextBlock
+                                                                            Text="{Binding Sender}"
+                                                                            Foreground="#4A90E2"
+                                                                            FontWeight="Bold"
+                                                                            FontSize="12"
+                                                                            Margin="0,0,0,2"/>
+                                                                        <TextBlock
+                                                                            Text="{Binding Text}"
+                                                                            Foreground="#333333"
+                                                                            FontSize="12"
+                                                                            TextWrapping="Wrap"/>
                                                                     </StackPanel>
                                                                 </Border>
                                                             </DataTemplate>
@@ -300,14 +338,22 @@
                                                     </Setter>
                                                 </DataTrigger>
                                             </Style.Triggers>
-                                            <!-- Mensaje Propio (Por defecto) -->
                                             <Setter Property="ContentTemplate">
                                                 <Setter.Value>
                                                     <DataTemplate>
-                                                        <Border Background="#E8F0FE" CornerRadius="6" Padding="10,6">
+                                                        <Border Background="#E8F0FE"
+                                                                CornerRadius="6"
+                                                                Padding="10,6">
                                                             <StackPanel>
-                                                                <TextBlock Text="{Binding Sender}" Foreground="#2C5F9E" FontWeight="Bold" FontSize="12" Margin="0,0,0,2"/>
-                                                                <TextBlock Text="{Binding Text}" Foreground="#333333" FontSize="12" TextWrapping="Wrap"/>
+                                                                <TextBlock Text="{Binding Sender}"
+                                                                           Foreground="#2C5F9E"
+                                                                           FontWeight="Bold"
+                                                                           FontSize="12"
+                                                                           Margin="0,0,0,2"/>
+                                                                <TextBlock Text="{Binding Text}"
+                                                                           Foreground="#333333"
+                                                                           FontSize="12"
+                                                                           TextWrapping="Wrap"/>
                                                             </StackPanel>
                                                         </Border>
                                                     </DataTemplate>
@@ -321,24 +367,25 @@
                     </ItemsControl>
                 </ScrollViewer>
 
-                <!-- Pie / Entrada de Chat -->
                 <Border Grid.Row="2" Background="White"
                         BorderBrush="#DDDDDD"
                         BorderThickness="0,1,0,0"
                         Padding="12">
                     <Grid>
-                        <!-- Aviso si el chat está deshabilitado para invitados -->
-                        <TextBlock Text="El chat no está disponible para invitados."
-                                   FontSize="12"
-                                   Foreground="#999999"
-                                   FontStyle="Italic"
-                                   HorizontalAlignment="Center"
-                                   VerticalAlignment="Center">
+                        <TextBlock
+                            Text="{x:Static
+                                properties:Resources.GameBoard_Lbl_ChatDisabledGuest}"
+                            FontSize="12"
+                            Foreground="#999999"
+                            FontStyle="Italic"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center">
                             <TextBlock.Style>
                                 <Style TargetType="TextBlock">
                                     <Setter Property="Visibility" Value="Collapsed"/>
                                     <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsChatEnabled}" Value="False">
+                                        <DataTrigger Binding="{Binding IsChatEnabled}"
+                                                     Value="False">
                                             <Setter Property="Visibility" Value="Visible"/>
                                         </DataTrigger>
                                     </Style.Triggers>
@@ -346,12 +393,12 @@
                             </TextBlock.Style>
                         </TextBlock>
 
-                        <!-- Caja de Texto y Enviar -->
                         <Grid>
                             <Grid.Style>
                                 <Style TargetType="Grid">
                                     <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsChatEnabled}" Value="False">
+                                        <DataTrigger Binding="{Binding IsChatEnabled}"
+                                                     Value="False">
                                             <Setter Property="Visibility" Value="Collapsed"/>
                                         </DataTrigger>
                                     </Style.Triggers>
@@ -368,7 +415,8 @@
                                     CornerRadius="20"
                                     Padding="10,4"
                                     Margin="0,0,8,0">
-                                <TextBox Text="{Binding ChatInput, UpdateSourceTrigger=PropertyChanged}"
+                                <TextBox Text="{Binding ChatInput,
+                                         UpdateSourceTrigger=PropertyChanged}"
                                          BorderThickness="0"
                                          Background="Transparent"
                                          FontSize="13"
@@ -379,24 +427,38 @@
                                                 <Setter.Value>
                                                     <ControlTemplate TargetType="TextBox">
                                                         <Grid>
-                                                            <TextBlock Text="Escribe un mensaje..."
-                                                                       Foreground="#AAAAAA"
+                                                            <TextBlock Foreground="#AAAAAA"
                                                                        FontSize="13"
                                                                        VerticalAlignment="Center"
                                                                        Margin="4,0,0,0"
                                                                        IsHitTestVisible="False">
+                    <TextBlock.Text>
+                        <x:Static
+                            Member="properties:Resources.GameBoard_Txt_ChatPlaceholder"/>
+                    </TextBlock.Text>
                                                                 <TextBlock.Style>
                                                                     <Style TargetType="TextBlock">
-                                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                                        <Setter
+                                                                            Property="Visibility"
+                                                                            Value="Collapsed"/>
                                                                         <Style.Triggers>
-                                                                            <DataTrigger Binding="{Binding ChatInput}" Value="">
-                                                                                <Setter Property="Visibility" Value="Visible"/>
+                                                                            <DataTrigger
+                                                                                Binding="{Binding
+                                                                                ChatInput}"
+                                                                                Value="">
+                                                                                <Setter
+                                                                                    Property=
+                                                                                    "Visibility"
+                                                                                    Value=
+                                                                                    "Visible"/>
                                                                             </DataTrigger>
                                                                         </Style.Triggers>
                                                                     </Style>
                                                                 </TextBlock.Style>
                                                             </TextBlock>
-                                                            <ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="Center"/>
+                                                            <ScrollViewer
+                                                                x:Name="PART_ContentHost"
+                                                                VerticalAlignment="Center"/>
                                                         </Grid>
                                                     </ControlTemplate>
                                                 </Setter.Value>
@@ -415,7 +477,9 @@
                                     Foreground="White"
                                     BorderThickness="0"
                                     FontSize="14">
-                                <TextBlock Text="➤" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                <TextBlock Text="➤"
+                                           VerticalAlignment="Center"
+                                           HorizontalAlignment="Center"/>
                             </Button>
                         </Grid>
                     </Grid>

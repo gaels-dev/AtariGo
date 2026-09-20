@@ -7,7 +7,11 @@ namespace AtariGo.Client.ViewModels
         private bool _isSystem;
         private bool _isOpponent;
 
-        public ChatMessageViewModel(string sender, string text, bool isSystem = false, bool isOpponent = false)
+        public ChatMessageViewModel(
+            string sender,
+            string text,
+            bool isSystem = false,
+            bool isOpponent = false)
         {
             _sender = sender;
             _text = text;

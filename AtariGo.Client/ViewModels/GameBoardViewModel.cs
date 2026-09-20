@@ -37,16 +37,22 @@ namespace AtariGo.Client.ViewModels
 
             _currentTurn = StoneColor.Black;
             _myColor = StoneColor.White;
-            _myPlayerName = "TÚ";
-            _opponentName = "Oponente";
+            _myPlayerName = Properties.Resources.GameBoard_Lbl_You;
+            _opponentName = Properties.Resources.GameBoard_Lbl_Opponent;
             _chatInput = string.Empty;
 
             Cells = new ObservableCollection<BoardCellViewModel>();
             ChatMessages = new ObservableCollection<ChatMessageViewModel>();
 
             InitializeBoard();
-            ChatMessages.Add(new ChatMessageViewModel("Sistema", "La partida ha comenzado.", isSystem: true));
-            ChatMessages.Add(new ChatMessageViewModel("Oponente", "¡Buena suerte!", isOpponent: true));
+            ChatMessages.Add(new ChatMessageViewModel(
+                Properties.Resources.GameBoard_Lbl_System,
+                Properties.Resources.GameBoard_Chat_GameStarted,
+                isSystem: true));
+            ChatMessages.Add(new ChatMessageViewModel(
+                Properties.Resources.GameBoard_Lbl_Opponent,
+                Properties.Resources.GameBoard_Chat_GoodLuck,
+                isOpponent: true));
 
             SendChatMessageCommand = new RelayCommand(
                 SendChatMessage,
@@ -90,12 +96,16 @@ namespace AtariGo.Client.ViewModels
         public bool IsMyTurn => _currentTurn == _myColor;
 
         public string TurnStatusMessage => IsMyTurn
-            ? "¡Es tu turno! Haz clic en una intersección"
-            : "¡Turno del oponente! Esperando jugada...";
+            ? Properties.Resources.GameBoard_Status_YourTurn
+            : Properties.Resources.GameBoard_Status_OpponentTurn;
 
-        public string MyColorLabel => _myColor == StoneColor.White ? "Blancas" : "Negras";
+        public string MyColorLabel => _myColor == StoneColor.White
+            ? Properties.Resources.GameBoard_Lbl_White
+            : Properties.Resources.GameBoard_Lbl_Black;
 
-        public string OpponentColorLabel => _myColor == StoneColor.White ? "Negras" : "Blancas";
+        public string OpponentColorLabel => _myColor == StoneColor.White
+            ? Properties.Resources.GameBoard_Lbl_Black
+            : Properties.Resources.GameBoard_Lbl_White;
 
         public string MyPlayerName
         {

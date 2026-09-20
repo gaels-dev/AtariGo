@@ -1,6 +1,9 @@
+using System.Globalization;
+using System.Threading;
 using System.Windows.Input;
 
 using AtariGo.Client.Commands;
+using AtariGo.Client.ViewModels.Dialogs;
 
 namespace AtariGo.Client.ViewModels
 {
@@ -18,7 +21,8 @@ namespace AtariGo.Client.ViewModels
 
             NavigateToMainMenuCommand = new RelayCommand(NavigateToMainMenu);
             NavigateToLobbyCommand = new RelayCommand(NavigateToLobby);
-            NavigateToGameBoardCommand = new RelayCommand(() => NavigateToGameBoard(_isGuest, 1));
+            NavigateToGameBoardCommand = new RelayCommand(
+                () => NavigateToGameBoard(_isGuest, 1));
             CloseDialogCommand = new RelayCommand(CloseDialog);
 
             NavigateToMainMenu();
@@ -56,6 +60,8 @@ namespace AtariGo.Client.ViewModels
             set => SetProperty(ref _playerName, value);
         }
 
+        public event Action? LanguageChanged;
+
         public ICommand NavigateToMainMenuCommand { get; }
 
         public ICommand NavigateToLobbyCommand { get; }
@@ -68,6 +74,7 @@ namespace AtariGo.Client.ViewModels
         {
             CurrentViewModel = new MainMenuViewModel(
                 onNavigateToLobby: NavigateToLobby,
+                onOpenOptions: OpenOptionsDialog,
                 onExit: () => System.Windows.Application.Current.Shutdown())
             {
                 PlayerName = _playerName,
@@ -95,6 +102,19 @@ namespace AtariGo.Client.ViewModels
             CurrentViewModel = gameBoard;
         }
 
+        public void OpenOptionsDialog()
+        {
+            var dialog = new OptionsDialogViewModel();
+            dialog.DialogClosed += result =>
+            {
+                if (result == true)
+                {
+                    ApplyLanguage(dialog.SelectedCultureCode);
+                }
+            };
+            OpenDialog(dialog);
+        }
+
         public void OpenDialog(DialogViewModelBase dialog)
         {
             dialog.DialogClosed += _ => CloseDialog();
@@ -104,6 +124,19 @@ namespace AtariGo.Client.ViewModels
         public void CloseDialog()
         {
             CurrentDialogViewModel = null;
+        }
+
+        private void ApplyLanguage(string cultureCode)
+        {
+            var culture = new CultureInfo(cultureCode);
+            Properties.Resources.Culture = culture;
+            Thread.CurrentThread.CurrentCulture = culture;
+            Thread.CurrentThread.CurrentUICulture = culture;
+            CultureInfo.DefaultThreadCurrentCulture = culture;
+            CultureInfo.DefaultThreadCurrentUICulture = culture;
+
+            CloseDialog();
+            LanguageChanged?.Invoke();
         }
     }
 }
