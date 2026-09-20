@@ -1,0 +1,109 @@
+<UserControl x:Class="AtariGo.Client.Views.LobbyView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:properties="clr-namespace:AtariGo.Client.Properties"
+             mc:Ignorable="d"
+             d:DesignHeight="700" d:DesignWidth="1000"
+             Background="#EEF1F4">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0"
+                   Text="{x:Static properties:Resources.Lobby_Lbl_SearchingOpponent}"
+                   FontSize="32"
+                   FontWeight="Bold"
+                   FontFamily="Georgia"
+                   Foreground="#2C2A29"
+                   HorizontalAlignment="Center"
+                   Margin="0,50,0,0"/>
+
+        <StackPanel Grid.Row="1"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Grid Width="95" Height="95">
+                    <Ellipse Fill="#E2D9C8"
+                             Stroke="#2C2A29"
+                             StrokeThickness="1.5"/>
+                    <TextBlock Text="👤"
+                               FontSize="44"
+                               Foreground="#4A90E2"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"/>
+                </Grid>
+                <TextBlock Text="{x:Static properties:Resources.Lobby_Lbl_You}"
+                           FontWeight="Bold"
+                           FontSize="16"
+                           Foreground="#2C2A29"
+                           HorizontalAlignment="Center"
+                           Margin="0,12,0,0"/>
+            </StackPanel>
+
+            <TextBlock Text="VS"
+                       FontFamily="Georgia"
+                       FontStyle="Italic"
+                       FontWeight="Bold"
+                       FontSize="34"
+                       Foreground="#2C2A29"
+                       VerticalAlignment="Center"
+                       Margin="40,0,40,30"/>
+
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Grid Width="95" Height="95">
+                    <Ellipse Fill="White"
+                             Stroke="#2C2A29"
+                             StrokeThickness="1.5"
+                             StrokeDashArray="3 3"/>
+                    <TextBlock Text="⏳"
+                               FontSize="38"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"/>
+                </Grid>
+                <TextBlock Text="{x:Static properties:Resources.Lobby_Lbl_Searching}"
+                           FontWeight="Bold"
+                           FontSize="16"
+                           Foreground="#2C2A29"
+                           HorizontalAlignment="Center"
+                           Margin="0,12,0,0"/>
+            </StackPanel>
+        </StackPanel>
+
+        <Grid Grid.Row="2" Margin="30,0,30,30">
+            <Button Style="{StaticResource RoundedButtonStyle}"
+                    Content="{x:Static properties:Resources.Lobby_Btn_Cancel}"
+                    Command="{Binding CancelCommand}"
+                    Width="200"
+                    Height="44"
+                    Background="#E54D42"
+                    Foreground="White"
+                    FontWeight="Bold"
+                    FontSize="15"
+                    BorderBrush="#2C2A29"
+                    BorderThickness="1.5"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"/>
+
+            <Button Style="{StaticResource RoundedButtonStyle}"
+                    Content="{x:Static properties:Resources.Lobby_Btn_SimulateMatch}"
+                    Command="{Binding SimulateMatchFoundCommand}"
+                    Height="36"
+                    Padding="14,0"
+                    Background="White"
+                    Foreground="#2C2A29"
+                    FontWeight="SemiBold"
+                    FontSize="12"
+                    BorderBrush="#2C2A29"
+                    BorderThickness="1.5"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Bottom"/>
+        </Grid>
+    </Grid>
+</UserControl>

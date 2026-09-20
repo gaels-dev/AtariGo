@@ -11,6 +11,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 
+using AtariGo.Client.ViewModels;
+
 namespace AtariGo.Client.Views
 {
     /// <summary>
@@ -33,6 +35,23 @@ namespace AtariGo.Client.Views
             this.Close();
         }
 
+        private void BtnSubmit_Click(object sender, RoutedEventArgs e)
+        {
+            string username = string.IsNullOrWhiteSpace(TxtEmail.Text) ? "Player" : TxtEmail.Text;
+            var viewModel = new MainViewModel(isGuest: false, playerName: username);
+            var mainWindow = new MainWindow(viewModel);
+            mainWindow.Show();
+            this.Close();
+        }
+
+        private void BtnGuest_Click(object sender, RoutedEventArgs e)
+        {
+            var viewModel = new MainViewModel(isGuest: true, playerName: "Guest");
+            var mainWindow = new MainWindow(viewModel);
+            mainWindow.Show();
+            this.Close();
+        }
+
         private void BtnCancelLanguage_Click(object sender, RoutedEventArgs e)
         {
             LanguageOverlay.Visibility = Visibility.Collapsed;
@@ -40,7 +59,8 @@ namespace AtariGo.Client.Views
 
         private void BtnConfirmLanguage_Click(object sender, RoutedEventArgs e)
         {
-            if (CmbLanguages.SelectedItem is ComboBoxItem selectedItem && selectedItem.Tag is string cultureCode)
+            if (CmbLanguages.SelectedItem is ComboBoxItem selectedItem &&
+                selectedItem.Tag is string cultureCode)
             {
                 Thread.CurrentThread.CurrentCulture = new CultureInfo(cultureCode);
                 Thread.CurrentThread.CurrentUICulture = new CultureInfo(cultureCode);

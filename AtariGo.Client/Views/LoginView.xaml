@@ -11,14 +11,27 @@
 
     <Grid Background="#E5D8C5">
 
-        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="25,25,0,0">
+        <StackPanel Orientation="Horizontal"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Top"
+                    Margin="25,25,0,0">
             <Button x:Name="BtnChangeLanguage" 
                     ToolTip="{x:Static properties:Resources.Login_Tip_ChangeLanguage}"
-                    Background="Transparent" BorderBrush="Transparent" BorderThickness="0" Cursor="Hand" Click="BtnChangeLanguage_Click"
+                    Background="Transparent"
+                    BorderBrush="Transparent"
+                    BorderThickness="0"
+                    Cursor="Hand"
+                    Click="BtnChangeLanguage_Click"
                     Margin="0,0,15,0">
                 <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="🌐" FontSize="20" Margin="0,0,5,0" VerticalAlignment="Center"/>
-                    <TextBlock Text="{x:Static properties:Resources.Login_Btn_LanguageLabel}" FontWeight="SemiBold" VerticalAlignment="Center" Foreground="#333333"/>
+                    <TextBlock Text="🌐"
+                               FontSize="20"
+                               Margin="0,0,5,0"
+                               VerticalAlignment="Center"/>
+                    <TextBlock Text="{x:Static properties:Resources.Login_Btn_LanguageLabel}"
+                               FontWeight="SemiBold"
+                               VerticalAlignment="Center"
+                               Foreground="#333333"/>
                 </StackPanel>
             </Button>
         </StackPanel>
@@ -72,7 +85,8 @@
                                  BorderThickness="1" 
                                  Margin="0,0,0,22" Cursor=""/>
 
-                    <Button Style="{StaticResource RoundedButtonStyle}"
+                    <Button x:Name="BtnSubmit"
+                            Style="{StaticResource RoundedButtonStyle}"
                             Content="{x:Static properties:Resources.Login_Btn_Submit}" 
                             Height="42" 
                             Background="#4A90E2" 
@@ -81,19 +95,32 @@
                             FontSize="14"
                             BorderBrush="#2C2A29"
                             BorderThickness="1"
+                            Click="BtnSubmit_Click"
                             Margin="0,0,0,18"/>
 
-                    <TextBlock HorizontalAlignment="Center" Margin="0,0,0,8"><Hyperlink x:Name="LnkRegister" Foreground="#4A90E2"><InlineUIContainer>
-                                <TextBlock Text="{x:Static properties:Resources.Login_Lnk_Register}"/>
-                            </InlineUIContainer></Hyperlink></TextBlock>
+                    <TextBlock HorizontalAlignment="Center" Margin="0,0,0,8">
+                        <Hyperlink x:Name="LnkRegister" Foreground="#4A90E2">
+                            <InlineUIContainer>
+                                <TextBlock
+                                    Text="{x:Static properties:Resources.Login_Lnk_Register}"/>
+                            </InlineUIContainer>
+                        </Hyperlink>
+                    </TextBlock>
 
-                    <TextBlock HorizontalAlignment="Center" Margin="0,0,0,22"><Hyperlink x:Name="LnkForgotPassword" Foreground="#4A90E2"><InlineUIContainer>
-                                <TextBlock Text="{x:Static properties:Resources.Login_Lnk_ForgotPassword}"/>
-                            </InlineUIContainer></Hyperlink></TextBlock>
+                    <TextBlock HorizontalAlignment="Center" Margin="0,0,0,22">
+                        <Hyperlink x:Name="LnkForgotPassword" Foreground="#4A90E2">
+                            <InlineUIContainer>
+                                <TextBlock
+                                    Text="{x:Static
+                                        properties:Resources.Login_Lnk_ForgotPassword}"/>
+                            </InlineUIContainer>
+                        </Hyperlink>
+                    </TextBlock>
 
                     <Separator Background="#D9D9D9" Margin="0,0,0,20" Width="340"/>
 
-                    <Button Style="{StaticResource RoundedButtonStyle}"
+                    <Button x:Name="BtnGuest"
+                            Style="{StaticResource RoundedButtonStyle}"
                             Content="{x:Static properties:Resources.Login_Btn_Guest}" 
                             Height="42" 
                             Background="#DCDCDC" 
@@ -101,12 +128,16 @@
                             FontWeight="Bold" 
                             FontSize="14"
                             BorderBrush="#2C2A29"
-                            BorderThickness="1"/>
+                            BorderThickness="1"
+                            Click="BtnGuest_Click"/>
                 </StackPanel>
             </Border>
         </StackPanel>
 
-        <Grid x:Name="LanguageOverlay" Background="#99000000" Visibility="Collapsed" Panel.ZIndex="10">
+        <Grid x:Name="LanguageOverlay"
+              Background="#99000000"
+              Visibility="Collapsed"
+              Panel.ZIndex="10">
             <Border Background="White" 
                     BorderBrush="#2C2A29" 
                     BorderThickness="1.5" 
@@ -125,7 +156,10 @@
                                Margin="0,0,0,15" 
                                HorizontalAlignment="Center"/>
 
-                    <ComboBox x:Name="CmbLanguages" Height="36" Margin="0,0,0,20" VerticalContentAlignment="Center">
+                    <ComboBox x:Name="CmbLanguages"
+                              Height="36"
+                              Margin="0,0,0,20"
+                              VerticalContentAlignment="Center">
                         <ComboBoxItem Content="Español (ES)" Tag="es"/>
                         <ComboBoxItem Content="English (EN)" Tag="en"/>
                         <ComboBoxItem Content="Deutsch (DE)" Tag="de"/>

@@ -1,0 +1,490 @@
+<UserControl x:Class="AtariGo.Client.Views.GameBoardView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:models="clr-namespace:AtariGo.Client.Models"
+             xmlns:properties="clr-namespace:AtariGo.Client.Properties"
+             xmlns:vm="clr-namespace:AtariGo.Client.ViewModels"
+             mc:Ignorable="d"
+             d:DesignHeight="620" d:DesignWidth="960"
+             Background="#F0EBE3">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+
+        <Style x:Key="ActionButtonStyle"
+               TargetType="Button"
+               BasedOn="{StaticResource RoundedButtonStyle}">
+            <Setter Property="Height" Value="36"/>
+            <Setter Property="Padding" Value="16,0"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="13"/>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="300"/>
+        </Grid.ColumnDefinitions>
+
+        <Border Grid.Row="0" Grid.ColumnSpan="2"
+                Background="#2C2A29"
+                Padding="16,10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0"
+                        BorderBrush="#333333"
+                        BorderThickness="2"
+                        CornerRadius="20"
+                        Background="White"
+                        Padding="14,6"
+                        Margin="0,0,12,0">
+                    <StackPanel Orientation="Horizontal">
+                        <Ellipse Width="16" Height="16"
+                                 Margin="0,0,8,0"
+                                 VerticalAlignment="Center">
+                            <Ellipse.Style>
+                                <Style TargetType="Ellipse">
+                                    <Setter Property="Fill" Value="#1A1A1A"/>
+                                    <Setter Property="Stroke" Value="#333333"/>
+                                    <Setter Property="StrokeThickness" Value="1.5"/>
+                                    <Style.Triggers>
+                                        <DataTrigger
+                                            Binding="{Binding MyColor}"
+                                            Value="{x:Static models:StoneColor.White}">
+                                            <Setter Property="Fill" Value="White"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Ellipse.Style>
+                        </Ellipse>
+                        <TextBlock VerticalAlignment="Center"
+                                   FontWeight="Bold"
+                                   FontSize="13"
+                                   Foreground="#1A1A1A">
+                            <Run Text="{Binding MyPlayerName, Mode=OneWay}"/>
+                            <Run Text=" ("/>
+                            <Run Text="{Binding MyColorLabel, Mode=OneWay}"/>
+                            <Run Text=")"/>
+                        </TextBlock>
+                    </StackPanel>
+                </Border>
+
+                <Button Grid.Column="1"
+                        Style="{StaticResource ActionButtonStyle}"
+                        Command="{Binding ReportPlayerCommand}"
+                        Background="#D9534F"
+                        Foreground="White"
+                        BorderThickness="0"
+                        Margin="0,0,8,0">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="🚩"
+                                   Margin="0,0,6,0"
+                                   VerticalAlignment="Center"
+                                   FontSize="14"/>
+                        <TextBlock
+                            Text="{x:Static properties:Resources.GameBoard_Btn_Report}"
+                            VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+
+                <Button Grid.Column="2"
+                        Style="{StaticResource ActionButtonStyle}"
+                        Command="{Binding SurrenderCommand}"
+                        Background="#EAEAEA"
+                        Foreground="#333333"
+                        BorderBrush="#CCCCCC"
+                        BorderThickness="1.5"
+                        Margin="0,0,12,0">
+                    <TextBlock
+                        Text="{x:Static properties:Resources.GameBoard_Btn_Surrender}"
+                        VerticalAlignment="Center"/>
+                </Button>
+
+                <Border Grid.Column="3"
+                        BorderBrush="#333333"
+                        BorderThickness="2"
+                        CornerRadius="20"
+                        Background="White"
+                        Padding="14,6">
+                    <StackPanel Orientation="Horizontal">
+                        <Ellipse Width="16" Height="16"
+                                 Margin="0,0,8,0"
+                                 VerticalAlignment="Center">
+                            <Ellipse.Style>
+                                <Style TargetType="Ellipse">
+                                    <Setter Property="Fill" Value="White"/>
+                                    <Setter Property="Stroke" Value="#333333"/>
+                                    <Setter Property="StrokeThickness" Value="1.5"/>
+                                    <Style.Triggers>
+                                        <DataTrigger
+                                            Binding="{Binding MyColor}"
+                                            Value="{x:Static models:StoneColor.White}">
+                                            <Setter Property="Fill" Value="#1A1A1A"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Ellipse.Style>
+                        </Ellipse>
+                        <TextBlock VerticalAlignment="Center"
+                                   FontWeight="Bold"
+                                   FontSize="13"
+                                   Foreground="#1A1A1A">
+                            <Run Text="{Binding OpponentName, Mode=OneWay}"/>
+                            <Run Text=" ("/>
+                            <Run Text="{Binding OpponentColorLabel, Mode=OneWay}"/>
+                            <Run Text=")"/>
+                        </TextBlock>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="1" Grid.Column="0" Margin="24">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <Viewbox Grid.Row="0" Stretch="Uniform">
+                <Border Background="#E5A65D"
+                        BorderBrush="#2C2A29"
+                        BorderThickness="3"
+                        CornerRadius="4"
+                        Padding="24"
+                        Width="500"
+                        Height="500">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="15"
+                                          ShadowDepth="5"
+                                          Opacity="0.3"
+                                          Color="#2C2A29"/>
+                    </Border.Effect>
+                    <ItemsControl ItemsSource="{Binding Cells}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <UniformGrid Rows="9" Columns="9"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type vm:BoardCellViewModel}">
+                                <Grid Background="Transparent">
+                                    <Rectangle Height="2"
+                                               Fill="#2C2A29"
+                                               HorizontalAlignment="Stretch"
+                                               VerticalAlignment="Center"/>
+                                    <Rectangle Width="2"
+                                               Fill="#2C2A29"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Stretch"/>
+
+                                    <Ellipse Width="42" Height="42"
+                                             Panel.ZIndex="2"
+                                             HorizontalAlignment="Center"
+                                             VerticalAlignment="Center">
+                                        <Ellipse.Style>
+                                            <Style TargetType="Ellipse">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger
+                                                        Binding="{Binding Stone}"
+                                                        Value="{x:Static models:StoneColor.Black}">
+                                                        <Setter Property="Visibility"
+                                                                Value="Visible"/>
+                                                        <Setter Property="Fill" Value="#1A1A1A"/>
+                                                        <Setter Property="Stroke" Value="#000000"/>
+                                                        <Setter Property="StrokeThickness"
+                                                                Value="1"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger
+                                                        Binding="{Binding Stone}"
+                                                        Value="{x:Static models:StoneColor.White}">
+                                                        <Setter Property="Visibility"
+                                                                Value="Visible"/>
+                                                        <Setter Property="Fill" Value="White"/>
+                                                        <Setter Property="Stroke" Value="#888888"/>
+                                                        <Setter Property="StrokeThickness"
+                                                                Value="1.5"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Ellipse.Style>
+                                    </Ellipse>
+
+                                    <Button Command="{Binding CellClickCommand}"
+                                            Background="Transparent"
+                                            BorderThickness="0"
+                                            Panel.ZIndex="3"
+                                            Opacity="0"
+                                            Cursor="Hand"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </Border>
+            </Viewbox>
+
+            <TextBlock Grid.Row="1"
+                       Text="{Binding TurnStatusMessage}"
+                       HorizontalAlignment="Center"
+                       Margin="0,16,0,0"
+                       FontSize="16"
+                       FontWeight="Bold"
+                       FontFamily="Georgia"
+                       Foreground="#2C2A29"/>
+        </Grid>
+
+        <Border Grid.Row="1" Grid.Column="1"
+                Background="White"
+                BorderBrush="#2C2A29"
+                BorderThickness="1.5,0,0,0">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <Border Grid.Row="0" Background="#1A1A2E" Padding="16,12">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="💬"
+                                   FontSize="15"
+                                   Margin="0,0,8,0"
+                                   VerticalAlignment="Center"/>
+                        <TextBlock
+                            Text="{x:Static properties:Resources.GameBoard_Lbl_ChatTitle}"
+                            Foreground="White"
+                            FontWeight="Bold"
+                            FontSize="14"
+                            VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+
+                <ScrollViewer Grid.Row="1"
+                              VerticalScrollBarVisibility="Auto"
+                              Background="#FAFAFA"
+                              Padding="12">
+                    <ItemsControl ItemsSource="{Binding ChatMessages}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type vm:ChatMessageViewModel}">
+                                <ContentControl Margin="0,0,0,8">
+                                    <ContentControl.Style>
+                                        <Style TargetType="ContentControl">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsSystem}"
+                                                             Value="True">
+                                                    <Setter Property="ContentTemplate">
+                                                        <Setter.Value>
+                                                            <DataTemplate>
+                                                                <Border Background="#F3F3F3"
+                                                                        BorderBrush="#DDDDDD"
+                                                                        BorderThickness="1"
+                                                                        CornerRadius="6"
+                                                                        Padding="10,6">
+                                                                    <TextBlock Foreground="#777777"
+                                                                               FontSize="12"
+                                                                               TextWrapping="Wrap">
+                                                                        <Run Text="{Binding Sender,
+                                                                            Mode=OneWay}"
+                                                                             FontWeight="SemiBold"/>
+                                                                        <Run Text=": "/>
+                                                                        <Run Text="{Binding Text,
+                                                                            Mode=OneWay}"/>
+                                                                    </TextBlock>
+                                                                </Border>
+                                                            </DataTemplate>
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding IsOpponent}"
+                                                             Value="True">
+                                                    <Setter Property="ContentTemplate">
+                                                        <Setter.Value>
+                                                            <DataTemplate>
+                                                                <Border BorderBrush="#4A90E2"
+                                                                        Background="White"
+                                                                        BorderThickness="1.5"
+                                                                        CornerRadius="6"
+                                                                        Padding="10,6">
+                                                                    <StackPanel>
+                                                                        <TextBlock
+                                                                            Text="{Binding Sender}"
+                                                                            Foreground="#4A90E2"
+                                                                            FontWeight="Bold"
+                                                                            FontSize="12"
+                                                                            Margin="0,0,0,2"/>
+                                                                        <TextBlock
+                                                                            Text="{Binding Text}"
+                                                                            Foreground="#333333"
+                                                                            FontSize="12"
+                                                                            TextWrapping="Wrap"/>
+                                                                    </StackPanel>
+                                                                </Border>
+                                                            </DataTemplate>
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                            <Setter Property="ContentTemplate">
+                                                <Setter.Value>
+                                                    <DataTemplate>
+                                                        <Border Background="#E8F0FE"
+                                                                CornerRadius="6"
+                                                                Padding="10,6">
+                                                            <StackPanel>
+                                                                <TextBlock Text="{Binding Sender}"
+                                                                           Foreground="#2C5F9E"
+                                                                           FontWeight="Bold"
+                                                                           FontSize="12"
+                                                                           Margin="0,0,0,2"/>
+                                                                <TextBlock Text="{Binding Text}"
+                                                                           Foreground="#333333"
+                                                                           FontSize="12"
+                                                                           TextWrapping="Wrap"/>
+                                                            </StackPanel>
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </ContentControl.Style>
+                                </ContentControl>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+
+                <Border Grid.Row="2" Background="White"
+                        BorderBrush="#DDDDDD"
+                        BorderThickness="0,1,0,0"
+                        Padding="12">
+                    <Grid>
+                        <TextBlock
+                            Text="{x:Static
+                                properties:Resources.GameBoard_Lbl_ChatDisabledGuest}"
+                            FontSize="12"
+                            Foreground="#999999"
+                            FontStyle="Italic"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsChatEnabled}"
+                                                     Value="False">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+
+                        <Grid>
+                            <Grid.Style>
+                                <Style TargetType="Grid">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsChatEnabled}"
+                                                     Value="False">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Grid.Style>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <Border Grid.Column="0"
+                                    BorderBrush="#CCCCCC"
+                                    BorderThickness="1"
+                                    CornerRadius="20"
+                                    Padding="10,4"
+                                    Margin="0,0,8,0">
+                                <TextBox Text="{Binding ChatInput,
+                                         UpdateSourceTrigger=PropertyChanged}"
+                                         BorderThickness="0"
+                                         Background="Transparent"
+                                         FontSize="13"
+                                         VerticalContentAlignment="Center">
+                                    <TextBox.Style>
+                                        <Style TargetType="TextBox">
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="TextBox">
+                                                        <Grid>
+                                                            <TextBlock Foreground="#AAAAAA"
+                                                                       FontSize="13"
+                                                                       VerticalAlignment="Center"
+                                                                       Margin="4,0,0,0"
+                                                                       IsHitTestVisible="False">
+                    <TextBlock.Text>
+                        <x:Static
+                            Member="properties:Resources.GameBoard_Txt_ChatPlaceholder"/>
+                    </TextBlock.Text>
+                                                                <TextBlock.Style>
+                                                                    <Style TargetType="TextBlock">
+                                                                        <Setter
+                                                                            Property="Visibility"
+                                                                            Value="Collapsed"/>
+                                                                        <Style.Triggers>
+                                                                            <DataTrigger
+                                                                                Binding="{Binding
+                                                                                ChatInput}"
+                                                                                Value="">
+                                                                                <Setter
+                                                                                    Property=
+                                                                                    "Visibility"
+                                                                                    Value=
+                                                                                    "Visible"/>
+                                                                            </DataTrigger>
+                                                                        </Style.Triggers>
+                                                                    </Style>
+                                                                </TextBlock.Style>
+                                                            </TextBlock>
+                                                            <ScrollViewer
+                                                                x:Name="PART_ContentHost"
+                                                                VerticalAlignment="Center"/>
+                                                        </Grid>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </TextBox.Style>
+                                </TextBox>
+                            </Border>
+
+                            <Button Grid.Column="1"
+                                    Style="{StaticResource RoundedButtonStyle}"
+                                    Command="{Binding SendChatMessageCommand}"
+                                    Width="36"
+                                    Height="36"
+                                    Background="#4A90E2"
+                                    Foreground="White"
+                                    BorderThickness="0"
+                                    FontSize="14">
+                                <TextBlock Text="➤"
+                                           VerticalAlignment="Center"
+                                           HorizontalAlignment="Center"/>
+                            </Button>
+                        </Grid>
+                    </Grid>
+                </Border>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>
