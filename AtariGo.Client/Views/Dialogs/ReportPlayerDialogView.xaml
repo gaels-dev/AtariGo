@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:properties="clr-namespace:AtariGo.Client.Properties"
              mc:Ignorable="d">
 
     <Border Background="White"
@@ -12,21 +13,22 @@
             Width="420"
             Padding="25">
         <StackPanel>
-            <TextBlock Text="Report Player"
+            <TextBlock Text="{x:Static properties:Resources.ReportPlayer_Lbl_Title}"
                        FontSize="18"
                        FontWeight="Bold"
                        Foreground="#2C2A29"
                        HorizontalAlignment="Center"
                        Margin="0,0,0,10"/>
 
-            <TextBlock Text="{Binding TargetPlayerName, StringFormat='Player: {0}'}"
-                       FontSize="14"
+            <TextBlock FontSize="14"
                        FontWeight="SemiBold"
                        Foreground="#555555"
                        HorizontalAlignment="Center"
-                       Margin="0,0,0,15"/>
+                       Margin="0,0,0,15">
+                <Run Text="{x:Static properties:Resources.ReportPlayer_Lbl_PlayerFormat}"/><Run Text="{Binding TargetPlayerName, Mode=OneWay}"/>
+            </TextBlock>
 
-            <TextBlock Text="Infraction Reason"
+            <TextBlock Text="{x:Static properties:Resources.ReportPlayer_Lbl_Reason}"
                        FontWeight="SemiBold"
                        Foreground="#2C2A29"
                        Margin="0,0,0,5"/>
@@ -37,7 +39,7 @@
                       VerticalContentAlignment="Center"
                       Margin="0,0,0,15"/>
 
-            <TextBlock Text="Additional Details (Optional)"
+            <TextBlock Text="{x:Static properties:Resources.ReportPlayer_Lbl_Details}"
                        FontWeight="SemiBold"
                        Foreground="#2C2A29"
                        Margin="0,0,0,5"/>
@@ -54,7 +56,7 @@
 
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                 <Button Style="{StaticResource RoundedButtonStyle}"
-                        Content="Cancel"
+                        Content="{x:Static properties:Resources.ReportPlayer_Btn_Cancel}"
                         Command="{Binding CancelCommand}"
                         Width="110"
                         Height="36"
@@ -66,7 +68,7 @@
                         Margin="0,0,15,0"/>
 
                 <Button Style="{StaticResource RoundedButtonStyle}"
-                        Content="Submit Report"
+                        Content="{x:Static properties:Resources.ReportPlayer_Btn_Submit}"
                         Command="{Binding SubmitCommand}"
                         Width="130"
                         Height="36"

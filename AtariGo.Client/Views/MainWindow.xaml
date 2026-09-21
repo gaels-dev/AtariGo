@@ -16,12 +16,12 @@
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
 
-        <DataTemplate DataType="{x:Type vm:MainMenuViewModel}">
-            <views:MainMenuView/>
+        <DataTemplate DataType="{x:Type vm:RegisterPlayerLobbyViewModel}">
+            <views:RegisterPlayerLobbyView/>
         </DataTemplate>
 
-        <DataTemplate DataType="{x:Type vm:LobbyViewModel}">
-            <views:LobbyView/>
+        <DataTemplate DataType="{x:Type vm:SearchingOpponentViewModel}">
+            <views:SearchingOpponentView/>
         </DataTemplate>
 
         <DataTemplate DataType="{x:Type vm:GameBoardViewModel}">

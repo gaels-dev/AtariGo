@@ -1,4 +1,4 @@
-<UserControl x:Class="AtariGo.Client.Views.MainMenuView"
+<UserControl x:Class="AtariGo.Client.Views.RegisterPlayerLobbyView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -28,7 +28,7 @@
                            FontSize="14"
                            FontWeight="SemiBold"
                            Foreground="White">
-                    <Run Text="{x:Static properties:Resources.MainMenu_Lbl_Welcome}"/>
+                    <Run Text="{x:Static properties:Resources.RegisterPlayerLobby_Lbl_Welcome}"/>
                     <Run Text="{Binding PlayerName, Mode=OneWay}"/>
                 </TextBlock>
             </Grid>
@@ -66,7 +66,7 @@
                             <StackPanel VerticalAlignment="Center">
                                 <TextBlock
                                     Text="{x:Static
-                                        properties:Resources.MainMenu_Lbl_YourProfile}"
+                                        properties:Resources.RegisterPlayerLobby_Lbl_YourProfile}"
                                     FontWeight="Bold"
                                     FontSize="15"
                                     Foreground="#2C2A29"/>
@@ -74,14 +74,14 @@
                                            FontSize="13"
                                            Foreground="#2E7D32">
                                     <Run Text="{x:Static
-                                        properties:Resources.MainMenu_Lbl_Victories}"/>
+                                        properties:Resources.RegisterPlayerLobby_Lbl_Victories}"/>
                                     <Run Text="{Binding PlayerWins, Mode=OneWay}"/>
                                 </TextBlock>
                             </StackPanel>
                         </StackPanel>
                         <Button Style="{StaticResource RoundedButtonStyle}"
                                 Content="{x:Static
-                                    properties:Resources.MainMenu_Btn_Customize}"
+                                    properties:Resources.RegisterPlayerLobby_Btn_Customize}"
                                 Command="{Binding CustomizeProfileCommand}"
                                 Height="35"
                                 Background="#EAEAEA"
@@ -101,13 +101,13 @@
                     <StackPanel>
                         <Grid Margin="0,0,0,10">
                             <TextBlock
-                                Text="{x:Static properties:Resources.MainMenu_Lbl_TopGlobal}"
+                                Text="{x:Static properties:Resources.RegisterPlayerLobby_Lbl_TopGlobal}"
                                 FontWeight="Bold"
                                 FontSize="14"
                                 Foreground="#2C2A29"
                                 HorizontalAlignment="Left"/>
                             <TextBlock
-                                Text="{x:Static properties:Resources.MainMenu_Lbl_WinsHeader}"
+                                Text="{x:Static properties:Resources.RegisterPlayerLobby_Lbl_WinsHeader}"
                                 FontSize="11"
                                 Foreground="#666666"
                                 HorizontalAlignment="Right"
@@ -155,7 +155,7 @@
                     HorizontalAlignment="Center">
                 <StackPanel Width="320">
                     <TextBlock
-                        Text="{x:Static properties:Resources.MainMenu_Lbl_WhatToDo}"
+                        Text="{x:Static properties:Resources.RegisterPlayerLobby_Lbl_WhatToDo}"
                         FontSize="25"
                         FontWeight="Bold"
                         FontFamily="Georgia"
@@ -165,7 +165,7 @@
 
                     <Button Style="{StaticResource RoundedButtonStyle}"
                             Content="{x:Static
-                                properties:Resources.MainMenu_Btn_PlayMultiplayer}"
+                                properties:Resources.RegisterPlayerLobby_Btn_PlayMultiplayer}"
                             Command="{Binding PlayMultiplayerCommand}"
                             Height="45"
                             Background="#4A90E2"
@@ -185,7 +185,7 @@
                         <Button Grid.Column="0"
                                 Style="{StaticResource RoundedButtonStyle}"
                                 Content="{x:Static
-                                    properties:Resources.MainMenu_Btn_CreatePrivateRoom}"
+                                    properties:Resources.RegisterPlayerLobby_Btn_CreatePrivateRoom}"
                                 Command="{Binding CreatePrivateRoomCommand}"
                                 Height="45"
                                 Background="#4A90E2"
@@ -199,7 +199,7 @@
                         <Button Grid.Column="1"
                                 Style="{StaticResource RoundedButtonStyle}"
                                 Content="{x:Static
-                                    properties:Resources.MainMenu_Btn_JoinWithCode}"
+                                    properties:Resources.RegisterPlayerLobby_Btn_JoinWithCode}"
                                 Command="{Binding JoinWithCodeCommand}"
                                 Height="45"
                                 Background="#8C939A"
@@ -212,7 +212,7 @@
                     </Grid>
 
                     <Button Style="{StaticResource RoundedButtonStyle}"
-                            Content="{x:Static properties:Resources.MainMenu_Btn_Options}"
+                            Content="{x:Static properties:Resources.RegisterPlayerLobby_Btn_Options}"
                             Command="{Binding OptionsCommand}"
                             Height="42"
                             Background="#DCDCDC"
@@ -223,8 +223,8 @@
                             Margin="0,0,0,12"/>
 
                     <Button Style="{StaticResource RoundedButtonStyle}"
-                            Content="{x:Static properties:Resources.MainMenu_Btn_SignOut}"
-                            Command="{Binding ExitCommand}"
+                            Content="{x:Static properties:Resources.RegisterPlayerLobby_Btn_SignOut}"
+                            Command="{Binding SignOutCommand}"
                             Height="42"
                             Background="#D9534F"
                             Foreground="White"
@@ -260,7 +260,7 @@
 
                     <TextBlock Grid.Row="0"
                                Text="{x:Static
-                                   properties:Resources.MainMenu_Lbl_FriendsList}"
+                                   properties:Resources.RegisterPlayerLobby_Lbl_FriendsList}"
                                FontWeight="Bold"
                                FontSize="15"
                                Foreground="#2C2A29"
@@ -269,7 +269,7 @@
                     <Button Grid.Row="1"
                             Style="{StaticResource RoundedButtonStyle}"
                             Content="{x:Static
-                                properties:Resources.MainMenu_Btn_AddFriend}"
+                                properties:Resources.RegisterPlayerLobby_Btn_AddFriend}"
                             Command="{Binding AddFriendCommand}"
                             Height="36"
                             Background="#EAEAEA"
@@ -301,7 +301,7 @@
                                                                IsHitTestVisible="False">
                     <TextBlock.Text>
                         <x:Static
-                            Member="properties:Resources.MainMenu_Txt_SearchFriendPlaceholder"/>
+                            Member="properties:Resources.RegisterPlayerLobby_Txt_SearchFriendPlaceholder"/>
                     </TextBlock.Text>
                                                         <TextBlock.Style>
                                                             <Style TargetType="TextBlock">
@@ -356,7 +356,7 @@
                                                 HorizontalAlignment="Right">
                                         <Button Style="{StaticResource RoundedButtonStyle}"
                                                 Content="{x:Static
-                                                    properties:Resources.MainMenu_Btn_Invite}"
+                                                    properties:Resources.RegisterPlayerLobby_Btn_Invite}"
                                                 Command="{Binding InviteFriendCommand}"
                                                 Width="52" Height="26"
                                                 FontSize="11"
@@ -399,7 +399,7 @@
                                                 HorizontalAlignment="Right">
                                         <Button Style="{StaticResource RoundedButtonStyle}"
                                                 Content="{x:Static
-                                                    properties:Resources.MainMenu_Btn_Invite}"
+                                                    properties:Resources.RegisterPlayerLobby_Btn_Invite}"
                                                 Command="{Binding InviteFriendCommand}"
                                                 Width="52" Height="26"
                                                 FontSize="11"
@@ -441,10 +441,10 @@
                                                    VerticalAlignment="Center"/>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal"
-                                                HorizontalAlignment="Right">
+                                                HorizontalAlignment="Right">    
                                         <Button Style="{StaticResource RoundedButtonStyle}"
                                                 Content="{x:Static
-                                                    properties:Resources.MainMenu_Btn_Email}"
+                                                    properties:Resources.RegisterPlayerLobby_Btn_Email}"
                                                 Command="{Binding EmailFriendCommand}"
                                                 Width="58" Height="26"
                                                 FontSize="10"

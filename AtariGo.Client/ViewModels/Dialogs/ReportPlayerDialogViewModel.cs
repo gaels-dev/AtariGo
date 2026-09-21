@@ -12,15 +12,15 @@ namespace AtariGo.Client.ViewModels.Dialogs
         private string _details = string.Empty;
 
         public ReportPlayerDialogViewModel(string targetPlayerName)
-            : base("Report Player")
+            : base(Properties.Resources.ReportPlayer_Lbl_Title)
         {
             _targetPlayerName = targetPlayerName;
             Reasons = new List<string>
             {
-                "Offensive Language",
-                "Cheating or Hacking",
-                "Unsportsmanlike Conduct",
-                "Other"
+                Properties.Resources.ReportPlayer_Reason_OffensiveLanguage,
+                Properties.Resources.ReportPlayer_Reason_Cheating,
+                Properties.Resources.ReportPlayer_Reason_Unsportsmanlike,
+                Properties.Resources.ReportPlayer_Reason_Other
             };
             _selectedReason = Reasons[0];
 

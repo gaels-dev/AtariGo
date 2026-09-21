@@ -162,70 +162,71 @@
   <data name="Login_Txt_PasswordPlaceholder" xml:space="preserve">
     <value>........</value>
   </data>
-  <data name="MainMenu_Lbl_Welcome" xml:space="preserve">
+  <data name="RegisterPlayerLobby_Lbl_Welcome" xml:space="preserve">
     <value>MAIN LOBBY - Welcome </value>
   </data>
-  <data name="MainMenu_Lbl_YourProfile" xml:space="preserve">
+  <data name="RegisterPlayerLobby_Lbl_YourProfile" xml:space="preserve">
     <value>Your Profile</value>
   </data>
-  <data name="MainMenu_Lbl_Victories" xml:space="preserve">
+  <data name="RegisterPlayerLobby_Lbl_Victories" xml:space="preserve">
     <value>Wins: </value>
   </data>
-  <data name="MainMenu_Btn_Customize" xml:space="preserve">
+  <data name="RegisterPlayerLobby_Btn_Customize" xml:space="preserve">
     <value>Customize</value>
   </data>
-  <data name="MainMenu_Lbl_TopGlobal" xml:space="preserve">
+  <data name="RegisterPlayerLobby_Lbl_TopGlobal" xml:space="preserve">
     <value>🏆 Global Top</value>
   </data>
-  <data name="MainMenu_Lbl_WinsHeader" xml:space="preserve">
+  <data name="RegisterPlayerLobby_Lbl_WinsHeader" xml:space="preserve">
     <value>Wins</value>
   </data>
-  <data name="MainMenu_Lbl_WhatToDo" xml:space="preserve">
-    <value>What would you like to do?</value>
+  <data name="RegisterPlayerLobby_Lbl_WhatToDo" xml:space="preserve">
+    <value>What would you
+      like to do?</value>
   </data>
-  <data name="MainMenu_Btn_PlayMultiplayer" xml:space="preserve">
+  <data name="RegisterPlayerLobby_Btn_PlayMultiplayer" xml:space="preserve">
     <value>Play Multiplayer</value>
   </data>
-  <data name="MainMenu_Btn_CreatePrivateRoom" xml:space="preserve">
+  <data name="RegisterPlayerLobby_Btn_CreatePrivateRoom" xml:space="preserve">
     <value>Create Private Room</value>
   </data>
-  <data name="MainMenu_Btn_JoinWithCode" xml:space="preserve">
+  <data name="RegisterPlayerLobby_Btn_JoinWithCode" xml:space="preserve">
     <value>Join with Code</value>
   </data>
-  <data name="MainMenu_Btn_Options" xml:space="preserve">
+  <data name="RegisterPlayerLobby_Btn_Options" xml:space="preserve">
     <value>Options</value>
   </data>
-  <data name="MainMenu_Btn_SignOut" xml:space="preserve">
+  <data name="RegisterPlayerLobby_Btn_SignOut" xml:space="preserve">
     <value>Sign Out</value>
   </data>
-  <data name="MainMenu_Lbl_FriendsList" xml:space="preserve">
+  <data name="RegisterPlayerLobby_Lbl_FriendsList" xml:space="preserve">
     <value>👥 Friends List</value>
   </data>
-  <data name="MainMenu_Btn_AddFriend" xml:space="preserve">
+  <data name="RegisterPlayerLobby_Btn_AddFriend" xml:space="preserve">
     <value>+ Add new friend</value>
   </data>
-  <data name="MainMenu_Txt_SearchFriendPlaceholder" xml:space="preserve">
+  <data name="RegisterPlayerLobby_Txt_SearchFriendPlaceholder" xml:space="preserve">
     <value>Search friend...</value>
   </data>
-  <data name="MainMenu_Btn_Invite" xml:space="preserve">
+  <data name="RegisterPlayerLobby_Btn_Invite" xml:space="preserve">
     <value>Invite</value>
   </data>
-  <data name="MainMenu_Btn_Email" xml:space="preserve">
+  <data name="RegisterPlayerLobby_Btn_Email" xml:space="preserve">
     <value>Email ✉</value>
   </data>
-  <data name="Lobby_Lbl_SearchingOpponent" xml:space="preserve">
+  <data name="SearchingOpponent_Lbl_SearchingOpponent" xml:space="preserve">
     <value>SEARCHING FOR OPPONENT</value>
   </data>
-  <data name="Lobby_Lbl_You" xml:space="preserve">
+  <data name="SearchingOpponent_Lbl_You" xml:space="preserve">
     <value>You</value>
   </data>
-  <data name="Lobby_Lbl_Searching" xml:space="preserve">
+  <data name="SearchingOpponent_Lbl_Searching" xml:space="preserve">
     <value>Searching...</value>
   </data>
-  <data name="Lobby_Btn_Cancel" xml:space="preserve">
+  <data name="SearchingOpponent_Btn_Cancel" xml:space="preserve">
     <value>Cancel</value>
   </data>
-  <data name="Lobby_Btn_SimulateMatch" xml:space="preserve">
+  <data name="SearchingOpponent_Btn_SimulateMatch" xml:space="preserve">
     <value>Simulate match found</value>
   </data>
   <data name="GameBoard_Btn_Report" xml:space="preserve">
@@ -287,5 +288,137 @@
   </data>
   <data name="Options_Btn_SaveAndClose" xml:space="preserve">
     <value>Save and Close</value>
+  </data>
+  <data name="ReportPlayer_Lbl_Title" xml:space="preserve">
+    <value>Report Player</value>
+  </data>
+  <data name="ReportPlayer_Lbl_PlayerFormat" xml:space="preserve">
+    <value>Player: </value>
+  </data>
+  <data name="ReportPlayer_Lbl_Reason" xml:space="preserve">
+    <value>Infraction Reason</value>
+  </data>
+  <data name="ReportPlayer_Lbl_Details" xml:space="preserve">
+    <value>Additional Details (Optional)</value>
+  </data>
+  <data name="ReportPlayer_Btn_Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="ReportPlayer_Btn_Submit" xml:space="preserve">
+    <value>Submit Report</value>
+  </data>
+  <data name="ReportPlayer_Reason_OffensiveLanguage" xml:space="preserve">
+    <value>Offensive Language</value>
+  </data>
+  <data name="ReportPlayer_Reason_Cheating" xml:space="preserve">
+    <value>Cheating or Hacking</value>
+  </data>
+  <data name="ReportPlayer_Reason_Unsportsmanlike" xml:space="preserve">
+    <value>Unsportsmanlike Conduct</value>
+  </data>
+  <data name="ReportPlayer_Reason_Other" xml:space="preserve">
+    <value>Other</value>
+  </data>
+  <data name="ConfirmAction_Btn_Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="ConfirmAction_Btn_Confirm" xml:space="preserve">
+    <value>Confirm</value>
+  </data>
+  <data name="GameBoard_Surrender_Title" xml:space="preserve">
+    <value>Surrender Match</value>
+  </data>
+  <data name="GameBoard_Surrender_Message" xml:space="preserve">
+    <value>Are you sure you want to surrender this match?</value>
+  </data>
+  <data name="GameBoard_Surrender_Confirm" xml:space="preserve">
+    <value>Surrender</value>
+  </data>
+  <data name="Verification_Lbl_Title" xml:space="preserve">
+    <value>Confirmation Required</value>
+  </data>
+  <data name="Verification_Lbl_Description" xml:space="preserve">
+    <value>We have sent a 6-digit code to your email to verify your account.</value>
+  </data>
+  <data name="Verification_Btn_Confirm" xml:space="preserve">
+    <value>Confirm and Enter</value>
+  </data>
+  <data name="Verification_Btn_Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Verification_Err_EmptyCode" xml:space="preserve">
+    <value>Verification code cannot be empty.</value>
+  </data>
+  <data name="Register_Lbl_Title" xml:space="preserve">
+    <value>User Registration</value>
+  </data>
+  <data name="Register_Lbl_Username" xml:space="preserve">
+    <value>Username</value>
+  </data>
+  <data name="Register_Lbl_Email" xml:space="preserve">
+    <value>Email</value>
+  </data>
+  <data name="Register_Lbl_Password" xml:space="preserve">
+    <value>Password (Min. 8 chars, 1 Uppercase)</value>
+  </data>
+  <data name="Register_Btn_Register" xml:space="preserve">
+    <value>Sign Up</value>
+  </data>
+  <data name="Register_Btn_Back" xml:space="preserve">
+    <value>Back</value>
+  </data>
+  <data name="Register_Err_EmptyFields" xml:space="preserve">
+    <value>Username and email cannot be empty.</value>
+  </data>
+  <data name="NewPassword_Lbl_Title" xml:space="preserve">
+    <value>Change Password</value>
+  </data>
+  <data name="NewPassword_Lbl_NewPassword" xml:space="preserve">
+    <value>New password</value>
+  </data>
+  <data name="NewPassword_Lbl_ConfirmPassword" xml:space="preserve">
+    <value>Confirm password</value>
+  </data>
+  <data name="NewPassword_Btn_ConfirmChange" xml:space="preserve">
+    <value>Confirm Change</value>
+  </data>
+  <data name="NewPassword_Btn_Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="NewPassword_Err_Empty" xml:space="preserve">
+    <value>Passwords cannot be empty.</value>
+  </data>
+  <data name="NewPassword_Err_Mismatch" xml:space="preserve">
+    <value>Passwords do not match.</value>
+  </data>
+  <data name="ForgotVerification_Lbl_Title" xml:space="preserve">
+    <value>Confirmation Required</value>
+  </data>
+  <data name="ForgotVerification_Lbl_Description" xml:space="preserve">
+    <value>We have sent a 6-digit code to your email to change your password.</value>
+  </data>
+  <data name="ForgotVerification_Btn_Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="ForgotVerification_Btn_Confirm" xml:space="preserve">
+    <value>Confirm</value>
+  </data>
+  <data name="ForgotVerification_Err_EmptyCode" xml:space="preserve">
+    <value>Verification code cannot be empty.</value>
+  </data>
+  <data name="ForgotPassword_Lbl_Title" xml:space="preserve">
+    <value>Recover Password</value>
+  </data>
+  <data name="ForgotPassword_Lbl_EmailOrUsername" xml:space="preserve">
+    <value>Email or Username</value>
+  </data>
+  <data name="ForgotPassword_Btn_Accept" xml:space="preserve">
+    <value>Accept</value>
+  </data>
+  <data name="ForgotPassword_Btn_Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="ForgotPassword_Err_Empty" xml:space="preserve">
+    <value>Email or username cannot be empty.</value>
   </data>
 </root>

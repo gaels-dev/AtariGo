@@ -1,9 +1,9 @@
+using AtariGo.Client.Commands;
+using AtariGo.Client.ViewModels.Dialogs;
+using AtariGo.Client.Views;
 using System.Globalization;
 using System.Threading;
 using System.Windows.Input;
-
-using AtariGo.Client.Commands;
-using AtariGo.Client.ViewModels.Dialogs;
 
 namespace AtariGo.Client.ViewModels
 {
@@ -72,10 +72,24 @@ namespace AtariGo.Client.ViewModels
 
         public void NavigateToMainMenu()
         {
-            CurrentViewModel = new MainMenuViewModel(
+            CurrentViewModel = new RegisterPlayerLobbyViewModel(
                 onNavigateToLobby: NavigateToLobby,
                 onOpenOptions: OpenOptionsDialog,
-                onExit: () => System.Windows.Application.Current.Shutdown())
+                onExit: () => System.Windows.Application.Current.Shutdown(),
+                onSignOut: () =>
+                {
+                    var loginView = new Views.LoginView();
+                    loginView.Show();
+
+                    foreach (System.Windows.Window window in System.Windows.Application.Current.Windows)
+                    {
+                        if (window is MainWindow)
+                        {
+                            window.Close();
+                            break;
+                        }
+                    }
+                })
             {
                 PlayerName = _playerName,
                 IsGuest = _isGuest
@@ -84,7 +98,7 @@ namespace AtariGo.Client.ViewModels
 
         public void NavigateToLobby()
         {
-            CurrentViewModel = new LobbyViewModel(
+            CurrentViewModel = new SearchingOpponentViewModel(
                 onStartGame: () => NavigateToGameBoard(_isGuest, 1),
                 onCancel: NavigateToMainMenu);
         }

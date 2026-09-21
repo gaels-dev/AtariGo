@@ -61,6 +61,267 @@ namespace AtariGo.Client.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Cancel.
+        /// </summary>
+        public static string ConfirmAction_Btn_Cancel {
+            get {
+                return ResourceManager.GetString("ConfirmAction_Btn_Cancel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Confirm.
+        /// </summary>
+        public static string ConfirmAction_Btn_Confirm {
+            get {
+                return ResourceManager.GetString("ConfirmAction_Btn_Confirm", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Accept.
+        /// </summary>
+        public static string ForgotPassword_Btn_Accept {
+            get {
+                return ResourceManager.GetString("ForgotPassword_Btn_Accept", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cancel.
+        /// </summary>
+        public static string ForgotPassword_Btn_Cancel {
+            get {
+                return ResourceManager.GetString("ForgotPassword_Btn_Cancel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Email or username cannot be empty..
+        /// </summary>
+        public static string ForgotPassword_Err_Empty {
+            get {
+                return ResourceManager.GetString("ForgotPassword_Err_Empty", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Email or Username.
+        /// </summary>
+        public static string ForgotPassword_Lbl_EmailOrUsername {
+            get {
+                return ResourceManager.GetString("ForgotPassword_Lbl_EmailOrUsername", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Recover Password.
+        /// </summary>
+        public static string ForgotPassword_Lbl_Title {
+            get {
+                return ResourceManager.GetString("ForgotPassword_Lbl_Title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cancel.
+        /// </summary>
+        public static string ForgotVerification_Btn_Cancel {
+            get {
+                return ResourceManager.GetString("ForgotVerification_Btn_Cancel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Confirm.
+        /// </summary>
+        public static string ForgotVerification_Btn_Confirm {
+            get {
+                return ResourceManager.GetString("ForgotVerification_Btn_Confirm", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Verification code cannot be empty..
+        /// </summary>
+        public static string ForgotVerification_Err_EmptyCode {
+            get {
+                return ResourceManager.GetString("ForgotVerification_Err_EmptyCode", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to We have sent a 6-digit code to your email to change your password..
+        /// </summary>
+        public static string ForgotVerification_Lbl_Description {
+            get {
+                return ResourceManager.GetString("ForgotVerification_Lbl_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Confirmation Required.
+        /// </summary>
+        public static string ForgotVerification_Lbl_Title {
+            get {
+                return ResourceManager.GetString("ForgotVerification_Lbl_Title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Report.
+        /// </summary>
+        public static string GameBoard_Btn_Report {
+            get {
+                return ResourceManager.GetString("GameBoard_Btn_Report", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Surrender.
+        /// </summary>
+        public static string GameBoard_Btn_Surrender {
+            get {
+                return ResourceManager.GetString("GameBoard_Btn_Surrender", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The match has started..
+        /// </summary>
+        public static string GameBoard_Chat_GameStarted {
+            get {
+                return ResourceManager.GetString("GameBoard_Chat_GameStarted", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Good luck!.
+        /// </summary>
+        public static string GameBoard_Chat_GoodLuck {
+            get {
+                return ResourceManager.GetString("GameBoard_Chat_GoodLuck", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Black.
+        /// </summary>
+        public static string GameBoard_Lbl_Black {
+            get {
+                return ResourceManager.GetString("GameBoard_Lbl_Black", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Chat is not available for guests..
+        /// </summary>
+        public static string GameBoard_Lbl_ChatDisabledGuest {
+            get {
+                return ResourceManager.GetString("GameBoard_Lbl_ChatDisabledGuest", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Match Chat.
+        /// </summary>
+        public static string GameBoard_Lbl_ChatTitle {
+            get {
+                return ResourceManager.GetString("GameBoard_Lbl_ChatTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Opponent.
+        /// </summary>
+        public static string GameBoard_Lbl_Opponent {
+            get {
+                return ResourceManager.GetString("GameBoard_Lbl_Opponent", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to System.
+        /// </summary>
+        public static string GameBoard_Lbl_System {
+            get {
+                return ResourceManager.GetString("GameBoard_Lbl_System", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to White.
+        /// </summary>
+        public static string GameBoard_Lbl_White {
+            get {
+                return ResourceManager.GetString("GameBoard_Lbl_White", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to YOU.
+        /// </summary>
+        public static string GameBoard_Lbl_You {
+            get {
+                return ResourceManager.GetString("GameBoard_Lbl_You", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Opponent&apos;s turn! Waiting for move....
+        /// </summary>
+        public static string GameBoard_Status_OpponentTurn {
+            get {
+                return ResourceManager.GetString("GameBoard_Status_OpponentTurn", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to It&apos;s your turn! Click on an intersection.
+        /// </summary>
+        public static string GameBoard_Status_YourTurn {
+            get {
+                return ResourceManager.GetString("GameBoard_Status_YourTurn", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Surrender.
+        /// </summary>
+        public static string GameBoard_Surrender_Confirm {
+            get {
+                return ResourceManager.GetString("GameBoard_Surrender_Confirm", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Are you sure you want to surrender this match?.
+        /// </summary>
+        public static string GameBoard_Surrender_Message {
+            get {
+                return ResourceManager.GetString("GameBoard_Surrender_Message", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Surrender Match.
+        /// </summary>
+        public static string GameBoard_Surrender_Title {
+            get {
+                return ResourceManager.GetString("GameBoard_Surrender_Title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Type a message....
+        /// </summary>
+        public static string GameBoard_Txt_ChatPlaceholder {
+            get {
+                return ResourceManager.GetString("GameBoard_Txt_ChatPlaceholder", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Accept.
         /// </summary>
         public static string Lang_Btn_Accept {
@@ -84,6 +345,51 @@ namespace AtariGo.Client.Properties {
         public static string Lang_Modal_Title {
             get {
                 return ResourceManager.GetString("Lang_Modal_Title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cancel.
+        /// </summary>
+        public static string SearchingOpponent_Btn_Cancel {
+            get {
+                return ResourceManager.GetString("SearchingOpponent_Btn_Cancel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Simulate match found.
+        /// </summary>
+        public static string SearchingOpponent_Btn_SimulateMatch {
+            get {
+                return ResourceManager.GetString("SearchingOpponent_Btn_SimulateMatch", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Searching....
+        /// </summary>
+        public static string SearchingOpponent_Lbl_Searching {
+            get {
+                return ResourceManager.GetString("SearchingOpponent_Lbl_Searching", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to SEARCHING FOR OPPONENT.
+        /// </summary>
+        public static string SearchingOpponent_Lbl_SearchingOpponent {
+            get {
+                return ResourceManager.GetString("SearchingOpponent_Lbl_SearchingOpponent", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to You.
+        /// </summary>
+        public static string SearchingOpponent_Lbl_You {
+            get {
+                return ResourceManager.GetString("SearchingOpponent_Lbl_You", resourceCulture);
             }
         }
         
@@ -194,132 +500,474 @@ namespace AtariGo.Client.Properties {
                 return ResourceManager.GetString("Login_Txt_PasswordPlaceholder", resourceCulture);
             }
         }
-
-        public static string MainMenu_Lbl_Welcome =>
-            ResourceManager.GetString("MainMenu_Lbl_Welcome", resourceCulture) ?? "";
-
-        public static string MainMenu_Lbl_YourProfile =>
-            ResourceManager.GetString("MainMenu_Lbl_YourProfile", resourceCulture) ?? "";
-
-        public static string MainMenu_Lbl_Victories =>
-            ResourceManager.GetString("MainMenu_Lbl_Victories", resourceCulture) ?? "";
-
-        public static string MainMenu_Btn_Customize =>
-            ResourceManager.GetString("MainMenu_Btn_Customize", resourceCulture) ?? "";
-
-        public static string MainMenu_Lbl_TopGlobal =>
-            ResourceManager.GetString("MainMenu_Lbl_TopGlobal", resourceCulture) ?? "";
-
-        public static string MainMenu_Lbl_WinsHeader =>
-            ResourceManager.GetString("MainMenu_Lbl_WinsHeader", resourceCulture) ?? "";
-
-        public static string MainMenu_Lbl_WhatToDo =>
-            ResourceManager.GetString("MainMenu_Lbl_WhatToDo", resourceCulture) ?? "";
-
-        public static string MainMenu_Btn_PlayMultiplayer =>
-            ResourceManager.GetString("MainMenu_Btn_PlayMultiplayer", resourceCulture) ?? "";
-
-        public static string MainMenu_Btn_CreatePrivateRoom =>
-            ResourceManager.GetString("MainMenu_Btn_CreatePrivateRoom", resourceCulture) ?? "";
-
-        public static string MainMenu_Btn_JoinWithCode =>
-            ResourceManager.GetString("MainMenu_Btn_JoinWithCode", resourceCulture) ?? "";
-
-        public static string MainMenu_Btn_Options =>
-            ResourceManager.GetString("MainMenu_Btn_Options", resourceCulture) ?? "";
-
-        public static string MainMenu_Btn_SignOut =>
-            ResourceManager.GetString("MainMenu_Btn_SignOut", resourceCulture) ?? "";
-
-        public static string MainMenu_Lbl_FriendsList =>
-            ResourceManager.GetString("MainMenu_Lbl_FriendsList", resourceCulture) ?? "";
-
-        public static string MainMenu_Btn_AddFriend =>
-            ResourceManager.GetString("MainMenu_Btn_AddFriend", resourceCulture) ?? "";
-
-        public static string MainMenu_Txt_SearchFriendPlaceholder =>
-            ResourceManager.GetString("MainMenu_Txt_SearchFriendPlaceholder", resourceCulture)
-            ?? "";
-
-        public static string MainMenu_Btn_Invite =>
-            ResourceManager.GetString("MainMenu_Btn_Invite", resourceCulture) ?? "";
-
-        public static string MainMenu_Btn_Email =>
-            ResourceManager.GetString("MainMenu_Btn_Email", resourceCulture) ?? "";
-
-        public static string Lobby_Lbl_SearchingOpponent =>
-            ResourceManager.GetString("Lobby_Lbl_SearchingOpponent", resourceCulture) ?? "";
-
-        public static string Lobby_Lbl_You =>
-            ResourceManager.GetString("Lobby_Lbl_You", resourceCulture) ?? "";
-
-        public static string Lobby_Lbl_Searching =>
-            ResourceManager.GetString("Lobby_Lbl_Searching", resourceCulture) ?? "";
-
-        public static string Lobby_Btn_Cancel =>
-            ResourceManager.GetString("Lobby_Btn_Cancel", resourceCulture) ?? "";
-
-        public static string Lobby_Btn_SimulateMatch =>
-            ResourceManager.GetString("Lobby_Btn_SimulateMatch", resourceCulture) ?? "";
-
-        public static string GameBoard_Btn_Report =>
-            ResourceManager.GetString("GameBoard_Btn_Report", resourceCulture) ?? "";
-
-        public static string GameBoard_Btn_Surrender =>
-            ResourceManager.GetString("GameBoard_Btn_Surrender", resourceCulture) ?? "";
-
-        public static string GameBoard_Lbl_You =>
-            ResourceManager.GetString("GameBoard_Lbl_You", resourceCulture) ?? "";
-
-        public static string GameBoard_Lbl_Opponent =>
-            ResourceManager.GetString("GameBoard_Lbl_Opponent", resourceCulture) ?? "";
-
-        public static string GameBoard_Lbl_White =>
-            ResourceManager.GetString("GameBoard_Lbl_White", resourceCulture) ?? "";
-
-        public static string GameBoard_Lbl_Black =>
-            ResourceManager.GetString("GameBoard_Lbl_Black", resourceCulture) ?? "";
-
-        public static string GameBoard_Status_YourTurn =>
-            ResourceManager.GetString("GameBoard_Status_YourTurn", resourceCulture) ?? "";
-
-        public static string GameBoard_Status_OpponentTurn =>
-            ResourceManager.GetString("GameBoard_Status_OpponentTurn", resourceCulture) ?? "";
-
-        public static string GameBoard_Lbl_ChatTitle =>
-            ResourceManager.GetString("GameBoard_Lbl_ChatTitle", resourceCulture) ?? "";
-
-        public static string GameBoard_Lbl_System =>
-            ResourceManager.GetString("GameBoard_Lbl_System", resourceCulture) ?? "";
-
-        public static string GameBoard_Chat_GameStarted =>
-            ResourceManager.GetString("GameBoard_Chat_GameStarted", resourceCulture) ?? "";
-
-        public static string GameBoard_Chat_GoodLuck =>
-            ResourceManager.GetString("GameBoard_Chat_GoodLuck", resourceCulture) ?? "";
-
-        public static string GameBoard_Lbl_ChatDisabledGuest =>
-            ResourceManager.GetString("GameBoard_Lbl_ChatDisabledGuest", resourceCulture) ?? "";
-
-        public static string GameBoard_Txt_ChatPlaceholder =>
-            ResourceManager.GetString("GameBoard_Txt_ChatPlaceholder", resourceCulture) ?? "";
-
-        public static string Options_Lbl_Title =>
-            ResourceManager.GetString("Options_Lbl_Title", resourceCulture) ?? "";
-
-        public static string Options_Lbl_BackgroundMusic =>
-            ResourceManager.GetString("Options_Lbl_BackgroundMusic", resourceCulture) ?? "";
-
-        public static string Options_Lbl_SoundEffects =>
-            ResourceManager.GetString("Options_Lbl_SoundEffects", resourceCulture) ?? "";
-
-        public static string Options_Lbl_Language =>
-            ResourceManager.GetString("Options_Lbl_Language", resourceCulture) ?? "";
-
-        public static string Options_Lbl_AppVersion =>
-            ResourceManager.GetString("Options_Lbl_AppVersion", resourceCulture) ?? "";
-
-        public static string Options_Btn_SaveAndClose =>
-            ResourceManager.GetString("Options_Btn_SaveAndClose", resourceCulture) ?? "";
+        
+        /// <summary>
+        ///   Looks up a localized string similar to + Add new friend.
+        /// </summary>
+        public static string RegisterPlayerLobby_Btn_AddFriend {
+            get {
+                return ResourceManager.GetString("RegisterPlayerLobby_Btn_AddFriend", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Create Private Room.
+        /// </summary>
+        public static string RegisterPlayerLobby_Btn_CreatePrivateRoom {
+            get {
+                return ResourceManager.GetString("RegisterPlayerLobby_Btn_CreatePrivateRoom", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Customize.
+        /// </summary>
+        public static string RegisterPlayerLobby_Btn_Customize {
+            get {
+                return ResourceManager.GetString("RegisterPlayerLobby_Btn_Customize", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Email ?.
+        /// </summary>
+        public static string RegisterPlayerLobby_Btn_Email {
+            get {
+                return ResourceManager.GetString("RegisterPlayerLobby_Btn_Email", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Invite.
+        /// </summary>
+        public static string RegisterPlayerLobby_Btn_Invite {
+            get {
+                return ResourceManager.GetString("RegisterPlayerLobby_Btn_Invite", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Join with Code.
+        /// </summary>
+        public static string RegisterPlayerLobby_Btn_JoinWithCode {
+            get {
+                return ResourceManager.GetString("RegisterPlayerLobby_Btn_JoinWithCode", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Options.
+        /// </summary>
+        public static string RegisterPlayerLobby_Btn_Options {
+            get {
+                return ResourceManager.GetString("RegisterPlayerLobby_Btn_Options", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Play Multiplayer.
+        /// </summary>
+        public static string RegisterPlayerLobby_Btn_PlayMultiplayer {
+            get {
+                return ResourceManager.GetString("RegisterPlayerLobby_Btn_PlayMultiplayer", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Sign Out.
+        /// </summary>
+        public static string RegisterPlayerLobby_Btn_SignOut {
+            get {
+                return ResourceManager.GetString("RegisterPlayerLobby_Btn_SignOut", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to ?? Friends List.
+        /// </summary>
+        public static string RegisterPlayerLobby_Lbl_FriendsList {
+            get {
+                return ResourceManager.GetString("RegisterPlayerLobby_Lbl_FriendsList", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to ?? Global Top.
+        /// </summary>
+        public static string RegisterPlayerLobby_Lbl_TopGlobal {
+            get {
+                return ResourceManager.GetString("RegisterPlayerLobby_Lbl_TopGlobal", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Wins: .
+        /// </summary>
+        public static string RegisterPlayerLobby_Lbl_Victories {
+            get {
+                return ResourceManager.GetString("RegisterPlayerLobby_Lbl_Victories", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to MAIN LOBBY - Welcome .
+        /// </summary>
+        public static string RegisterPlayerLobby_Lbl_Welcome {
+            get {
+                return ResourceManager.GetString("RegisterPlayerLobby_Lbl_Welcome", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to What would you
+        ///      like to do?.
+        /// </summary>
+        public static string RegisterPlayerLobby_Lbl_WhatToDo {
+            get {
+                return ResourceManager.GetString("RegisterPlayerLobby_Lbl_WhatToDo", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Wins.
+        /// </summary>
+        public static string RegisterPlayerLobby_Lbl_WinsHeader {
+            get {
+                return ResourceManager.GetString("RegisterPlayerLobby_Lbl_WinsHeader", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Your Profile.
+        /// </summary>
+        public static string RegisterPlayerLobby_Lbl_YourProfile {
+            get {
+                return ResourceManager.GetString("RegisterPlayerLobby_Lbl_YourProfile", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Search friend....
+        /// </summary>
+        public static string RegisterPlayerLobby_Txt_SearchFriendPlaceholder {
+            get {
+                return ResourceManager.GetString("RegisterPlayerLobby_Txt_SearchFriendPlaceholder", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cancel.
+        /// </summary>
+        public static string NewPassword_Btn_Cancel {
+            get {
+                return ResourceManager.GetString("NewPassword_Btn_Cancel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Confirm Change.
+        /// </summary>
+        public static string NewPassword_Btn_ConfirmChange {
+            get {
+                return ResourceManager.GetString("NewPassword_Btn_ConfirmChange", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Passwords cannot be empty..
+        /// </summary>
+        public static string NewPassword_Err_Empty {
+            get {
+                return ResourceManager.GetString("NewPassword_Err_Empty", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Passwords do not match..
+        /// </summary>
+        public static string NewPassword_Err_Mismatch {
+            get {
+                return ResourceManager.GetString("NewPassword_Err_Mismatch", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Confirm password.
+        /// </summary>
+        public static string NewPassword_Lbl_ConfirmPassword {
+            get {
+                return ResourceManager.GetString("NewPassword_Lbl_ConfirmPassword", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to New password.
+        /// </summary>
+        public static string NewPassword_Lbl_NewPassword {
+            get {
+                return ResourceManager.GetString("NewPassword_Lbl_NewPassword", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Change Password.
+        /// </summary>
+        public static string NewPassword_Lbl_Title {
+            get {
+                return ResourceManager.GetString("NewPassword_Lbl_Title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Save and Close.
+        /// </summary>
+        public static string Options_Btn_SaveAndClose {
+            get {
+                return ResourceManager.GetString("Options_Btn_SaveAndClose", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Atari Go Multiplayer v1.0.
+        /// </summary>
+        public static string Options_Lbl_AppVersion {
+            get {
+                return ResourceManager.GetString("Options_Lbl_AppVersion", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Background Music.
+        /// </summary>
+        public static string Options_Lbl_BackgroundMusic {
+            get {
+                return ResourceManager.GetString("Options_Lbl_BackgroundMusic", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Language:.
+        /// </summary>
+        public static string Options_Lbl_Language {
+            get {
+                return ResourceManager.GetString("Options_Lbl_Language", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Sound Effects.
+        /// </summary>
+        public static string Options_Lbl_SoundEffects {
+            get {
+                return ResourceManager.GetString("Options_Lbl_SoundEffects", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Options.
+        /// </summary>
+        public static string Options_Lbl_Title {
+            get {
+                return ResourceManager.GetString("Options_Lbl_Title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Back.
+        /// </summary>
+        public static string Register_Btn_Back {
+            get {
+                return ResourceManager.GetString("Register_Btn_Back", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Sign Up.
+        /// </summary>
+        public static string Register_Btn_Register {
+            get {
+                return ResourceManager.GetString("Register_Btn_Register", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Username and email cannot be empty..
+        /// </summary>
+        public static string Register_Err_EmptyFields {
+            get {
+                return ResourceManager.GetString("Register_Err_EmptyFields", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Email.
+        /// </summary>
+        public static string Register_Lbl_Email {
+            get {
+                return ResourceManager.GetString("Register_Lbl_Email", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Password (Min. 8 chars, 1 Uppercase).
+        /// </summary>
+        public static string Register_Lbl_Password {
+            get {
+                return ResourceManager.GetString("Register_Lbl_Password", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to User Registration.
+        /// </summary>
+        public static string Register_Lbl_Title {
+            get {
+                return ResourceManager.GetString("Register_Lbl_Title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Username.
+        /// </summary>
+        public static string Register_Lbl_Username {
+            get {
+                return ResourceManager.GetString("Register_Lbl_Username", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cancel.
+        /// </summary>
+        public static string ReportPlayer_Btn_Cancel {
+            get {
+                return ResourceManager.GetString("ReportPlayer_Btn_Cancel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Submit Report.
+        /// </summary>
+        public static string ReportPlayer_Btn_Submit {
+            get {
+                return ResourceManager.GetString("ReportPlayer_Btn_Submit", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Additional Details (Optional).
+        /// </summary>
+        public static string ReportPlayer_Lbl_Details {
+            get {
+                return ResourceManager.GetString("ReportPlayer_Lbl_Details", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Player: .
+        /// </summary>
+        public static string ReportPlayer_Lbl_PlayerFormat {
+            get {
+                return ResourceManager.GetString("ReportPlayer_Lbl_PlayerFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Infraction Reason.
+        /// </summary>
+        public static string ReportPlayer_Lbl_Reason {
+            get {
+                return ResourceManager.GetString("ReportPlayer_Lbl_Reason", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Report Player.
+        /// </summary>
+        public static string ReportPlayer_Lbl_Title {
+            get {
+                return ResourceManager.GetString("ReportPlayer_Lbl_Title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cheating or Hacking.
+        /// </summary>
+        public static string ReportPlayer_Reason_Cheating {
+            get {
+                return ResourceManager.GetString("ReportPlayer_Reason_Cheating", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Offensive Language.
+        /// </summary>
+        public static string ReportPlayer_Reason_OffensiveLanguage {
+            get {
+                return ResourceManager.GetString("ReportPlayer_Reason_OffensiveLanguage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Other.
+        /// </summary>
+        public static string ReportPlayer_Reason_Other {
+            get {
+                return ResourceManager.GetString("ReportPlayer_Reason_Other", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unsportsmanlike Conduct.
+        /// </summary>
+        public static string ReportPlayer_Reason_Unsportsmanlike {
+            get {
+                return ResourceManager.GetString("ReportPlayer_Reason_Unsportsmanlike", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cancel.
+        /// </summary>
+        public static string Verification_Btn_Cancel {
+            get {
+                return ResourceManager.GetString("Verification_Btn_Cancel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Confirm and Enter.
+        /// </summary>
+        public static string Verification_Btn_Confirm {
+            get {
+                return ResourceManager.GetString("Verification_Btn_Confirm", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Verification code cannot be empty..
+        /// </summary>
+        public static string Verification_Err_EmptyCode {
+            get {
+                return ResourceManager.GetString("Verification_Err_EmptyCode", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to We have sent a 6-digit code to your email to verify your account..
+        /// </summary>
+        public static string Verification_Lbl_Description {
+            get {
+                return ResourceManager.GetString("Verification_Lbl_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Confirmation Required.
+        /// </summary>
+        public static string Verification_Lbl_Title {
+            get {
+                return ResourceManager.GetString("Verification_Lbl_Title", resourceCulture);
+            }
+        }
     }
 }

@@ -13,12 +13,14 @@ namespace AtariGo.Client.ViewModels.Dialogs
         public ConfirmActionDialogViewModel(
             string title,
             string message,
-            string confirmButtonText = "Confirm")
+            string confirmButtonText = "")
             : base(title)
         {
             _message = message;
-            _confirmButtonText = confirmButtonText;
-            _cancelButtonText = "Cancel";
+            _confirmButtonText = string.IsNullOrEmpty(confirmButtonText)
+                ? Properties.Resources.ConfirmAction_Btn_Confirm
+                : confirmButtonText;
+            _cancelButtonText = Properties.Resources.ConfirmAction_Btn_Cancel;
 
             ConfirmCommand = new RelayCommand(() => Close(true));
             CancelCommand = new RelayCommand(() => Close(false));

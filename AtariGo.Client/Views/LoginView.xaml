@@ -1,13 +1,38 @@
-<Window x:Class="AtariGo.Client.Views.LoginView"
+<Window
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+        xmlns:d="http://schemas.openxmlformats.org/expression/blend/2008" 
         xmlns:properties="clr-namespace:AtariGo.Client.Properties"
-        mc:Ignorable="d" 
+        xmlns:dialogsVM="clr-namespace:AtariGo.Client.ViewModels.Dialogs"
+        xmlns:dialogsView="clr-namespace:AtariGo.Client.Views.Dialogs"
+        xmlns:d1="http://schemas.microsoft.com/expression/blend/2008"
+        x:Class="AtariGo.Client.Views.LoginView"
+        mc:Ignorable="d d1" 
         Height="700" Width="1000"
         WindowStartupLocation="CenterScreen"
         Title="Atari Go - Login">
+
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+
+        <DataTemplate DataType="{x:Type dialogsVM:RegisterDialogViewModel}">
+            <dialogsView:RegisterDialogView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type dialogsVM:VerificationDialogViewModel}">
+            <dialogsView:VerificationDialogView/>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type dialogsVM:ForgotPasswordDialogViewModel}">
+            <dialogsView:ForgotPasswordDialogView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type dialogsVM:ForgotVerificationDialogViewModel}">
+            <dialogsView:ForgotVerificationDialogView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type dialogsVM:NewPasswordDialogViewModel}">
+            <dialogsView:NewPasswordDialogView/>
+        </DataTemplate>
+    </Window.Resources>
 
     <Grid Background="#E5D8C5">
 
@@ -15,198 +40,119 @@
                     HorizontalAlignment="Left"
                     VerticalAlignment="Top"
                     Margin="25,25,0,0">
-            <Button x:Name="BtnChangeLanguage" 
+            <Button Command="{Binding ChangeLanguageCommand}" 
                     ToolTip="{x:Static properties:Resources.Login_Tip_ChangeLanguage}"
                     Background="Transparent"
                     BorderBrush="Transparent"
                     BorderThickness="0"
                     Cursor="Hand"
-                    Click="BtnChangeLanguage_Click"
                     Margin="0,0,15,0">
                 <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="🌐"
-                               FontSize="20"
-                               Margin="0,0,5,0"
-                               VerticalAlignment="Center"/>
+                    <TextBlock Text="🌐" FontSize="20" Margin="0,0,5,0" VerticalAlignment="Center"/>
                     <TextBlock Text="{x:Static properties:Resources.Login_Btn_LanguageLabel}"
-                               FontWeight="SemiBold"
-                               VerticalAlignment="Center"
-                               Foreground="#333333"/>
+                               FontWeight="SemiBold" VerticalAlignment="Center" Foreground="#333333"/>
                 </StackPanel>
             </Button>
         </StackPanel>
 
         <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+            <TextBlock Text="ATARI GO" FontSize="36" FontWeight="Bold" FontFamily="Georgia" 
+                       Foreground="#2C2A29" HorizontalAlignment="Center" Margin="0,0,0,20"/>
 
-            <TextBlock Text="ATARI GO" 
-                       FontSize="36" 
-                       FontWeight="Bold" 
-                       FontFamily="Georgia" 
-                       Foreground="#2C2A29" 
-                       HorizontalAlignment="Center" 
-                       Margin="0,0,0,20"/>
-            <Border Background="White" 
-                    BorderBrush="#2C2A29" 
-                    BorderThickness="1.5" 
-                    CornerRadius="8" 
-                    Width="420" 
-                    Padding="35">
-
+            <Border Background="White" BorderBrush="#2C2A29" BorderThickness="1.5" CornerRadius="8" Width="420" Padding="35">
                 <StackPanel>
                     <TextBlock Text="{x:Static properties:Resources.Login_Lbl_Title}" 
-                               FontSize="22" 
-                               FontWeight="Bold" 
-                               FontFamily="Georgia"
-                               Foreground="#2C2A29" 
-                               HorizontalAlignment="Center" 
-                               Margin="0,0,0,25"/>
+                               FontSize="22" FontWeight="Bold" FontFamily="Georgia"
+                               Foreground="#2C2A29" HorizontalAlignment="Center" Margin="0,0,0,25"/>
 
-                    <TextBlock Text="{x:Static properties:Resources.Login_Lbl_Email}" 
-                               FontWeight="SemiBold" 
-                               Foreground="#2C2A29" 
-                               Margin="0,0,0,6"/>
-                    <TextBox x:Name="TxtEmail" 
-                             Height="38" 
-                             Padding="10,8" 
-                             VerticalContentAlignment="Center"
-                             BorderBrush="#2C2A29" 
-                             BorderThickness="1" 
-                             Margin="0,0,0,18"/>
+                    <TextBlock Text="{x:Static properties:Resources.Login_Lbl_Email}" FontWeight="SemiBold" Foreground="#2C2A29" Margin="0,0,0,6"/>
+                    <TextBox Text="{Binding Email, UpdateSourceTrigger=PropertyChanged}" 
+                             Height="38" Padding="10,8" VerticalContentAlignment="Center"
+                             BorderBrush="#2C2A29" BorderThickness="1" Margin="0,0,0,18"/>
 
-                    <TextBlock Text="{x:Static properties:Resources.Login_Lbl_Password}" 
-                               FontWeight="SemiBold" 
-                               Foreground="#2C2A29" 
-                               Margin="0,0,0,6"/>
+                    <TextBlock Text="{x:Static properties:Resources.Login_Lbl_Password}" FontWeight="SemiBold" Foreground="#2C2A29" Margin="0,0,0,6"/>
                     <PasswordBox x:Name="TxtPassword" 
-                                 Height="38" 
-                                 Padding="10,8" 
-                                 VerticalContentAlignment="Center"
-                                 BorderBrush="#2C2A29" 
-                                 BorderThickness="1" 
-                                 Margin="0,0,0,22" Cursor=""/>
+                                 Height="38" Padding="10,8" VerticalContentAlignment="Center"
+                                 BorderBrush="#2C2A29" BorderThickness="1" Margin="0,0,0,22"/>
 
-                    <Button x:Name="BtnSubmit"
-                            Style="{StaticResource RoundedButtonStyle}"
+                    <Button Style="{StaticResource RoundedButtonStyle}"
                             Content="{x:Static properties:Resources.Login_Btn_Submit}" 
-                            Height="42" 
-                            Background="#4A90E2" 
-                            Foreground="White" 
-                            FontWeight="Bold" 
-                            FontSize="14"
-                            BorderBrush="#2C2A29"
-                            BorderThickness="1"
-                            Click="BtnSubmit_Click"
+                            Height="42" Background="#4A90E2" Foreground="White" FontWeight="Bold" FontSize="14"
+                            BorderBrush="#2C2A29" BorderThickness="1"
+                            Command="{Binding SubmitCommand}"
+                            CommandParameter="{Binding ElementName=TxtPassword}"
                             Margin="0,0,0,18"/>
 
-                    <TextBlock HorizontalAlignment="Center" Margin="0,0,0,8">
-                        <Hyperlink x:Name="LnkRegister" Foreground="#4A90E2">
-                            <InlineUIContainer>
-                                <TextBlock
-                                    Text="{x:Static properties:Resources.Login_Lnk_Register}"/>
-                            </InlineUIContainer>
-                        </Hyperlink>
-                    </TextBlock>
+                    <TextBlock HorizontalAlignment="Center" Margin="0,0,0,8"><Hyperlink Command="{Binding OpenRegisterCommand}" Foreground="#4A90E2"><InlineUIContainer>
+                                <TextBlock Text="{x:Static properties:Resources.Login_Lnk_Register}"/>
+                            </InlineUIContainer></Hyperlink></TextBlock>
 
-                    <TextBlock HorizontalAlignment="Center" Margin="0,0,0,22">
-                        <Hyperlink x:Name="LnkForgotPassword" Foreground="#4A90E2">
-                            <InlineUIContainer>
-                                <TextBlock
-                                    Text="{x:Static
-                                        properties:Resources.Login_Lnk_ForgotPassword}"/>
-                            </InlineUIContainer>
-                        </Hyperlink>
-                    </TextBlock>
+                    <TextBlock HorizontalAlignment="Center" Margin="0,0,0,22"><Hyperlink Command="{Binding OpenForgotPasswordCommand}" Foreground="#4A90E2"><InlineUIContainer>
+                                <TextBlock Text="{x:Static properties:Resources.Login_Lnk_ForgotPassword}"/>
+                            </InlineUIContainer></Hyperlink></TextBlock>
 
                     <Separator Background="#D9D9D9" Margin="0,0,0,20" Width="340"/>
 
-                    <Button x:Name="BtnGuest"
-                            Style="{StaticResource RoundedButtonStyle}"
+                    <Button Style="{StaticResource RoundedButtonStyle}"
                             Content="{x:Static properties:Resources.Login_Btn_Guest}" 
-                            Height="42" 
-                            Background="#DCDCDC" 
-                            Foreground="#2C2A29" 
-                            FontWeight="Bold" 
-                            FontSize="14"
-                            BorderBrush="#2C2A29"
-                            BorderThickness="1"
-                            Click="BtnGuest_Click"/>
+                            Height="42" Background="#DCDCDC" Foreground="#2C2A29" FontWeight="Bold" FontSize="14"
+                            BorderBrush="#2C2A29" BorderThickness="1"
+                            Command="{Binding GuestCommand}"/>
                 </StackPanel>
             </Border>
         </StackPanel>
 
-        <Grid x:Name="LanguageOverlay"
-              Background="#99000000"
-              Visibility="Collapsed"
-              Panel.ZIndex="10">
-            <Border Background="White" 
-                    BorderBrush="#2C2A29" 
-                    BorderThickness="1.5" 
-                    CornerRadius="8" 
-                    Width="340" 
-                    Height="220" 
-                    VerticalAlignment="Center" 
-                    HorizontalAlignment="Center" 
-                    Padding="25">
-
+        <Grid Background="#99000000"
+              Visibility="{Binding IsLanguageOverlayVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
+              Panel.ZIndex="10" d:IsHidden="True" d1:IsHidden="True">
+            <Border Background="White" BorderBrush="#2C2A29" BorderThickness="1.5" CornerRadius="8" 
+                    Width="340" Height="220" VerticalAlignment="Center" HorizontalAlignment="Center" Padding="25">
                 <StackPanel VerticalAlignment="Center">
                     <TextBlock Text="{x:Static properties:Resources.Lang_Modal_Title}"
-                               FontSize="14" 
-                               FontWeight="Bold" 
-                               Foreground="#2C2A29" 
-                               Margin="0,0,0,15" 
-                               HorizontalAlignment="Center"/>
+                               FontSize="14" FontWeight="Bold" Foreground="#2C2A29" Margin="0,0,0,15" HorizontalAlignment="Center"/>
 
-                    <ComboBox x:Name="CmbLanguages"
-                              Height="36"
-                              Margin="0,0,0,20"
-                              VerticalContentAlignment="Center">
+                    <ComboBox Height="36" Margin="0,0,0,20" VerticalContentAlignment="Center"
+                              SelectedValue="{Binding SelectedCultureCode}"
+                              SelectedValuePath="Tag">
                         <ComboBoxItem Content="Español (ES)" Tag="es"/>
                         <ComboBoxItem Content="English (EN)" Tag="en"/>
                         <ComboBoxItem Content="Deutsch (DE)" Tag="de"/>
                     </ComboBox>
 
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                        <Button x:Name="BtnCancelLanguage" 
-                                Style="{StaticResource RoundedButtonStyle}"
+                        <Button Style="{StaticResource RoundedButtonStyle}"
                                 Content="{x:Static properties:Resources.Lang_Btn_Cancel}"
-                                Width="100" 
-                                Height="35" 
-                                Margin="0,0,10,0" 
-                                Background="#DCDCDC" 
-                                Foreground="#2C2A29" 
-                                FontWeight="Bold"
-                                BorderBrush="#2C2A29"
-                                BorderThickness="1"
-                                Click="BtnCancelLanguage_Click"/>
+                                Width="100" Height="35" Margin="0,0,10,0" 
+                                Background="#DCDCDC" Foreground="#2C2A29" FontWeight="Bold"
+                                BorderBrush="#2C2A29" BorderThickness="1"
+                                Command="{Binding CancelLanguageCommand}"/>
 
-                        <Button x:Name="BtnConfirmLanguage" 
-                                Style="{StaticResource RoundedButtonStyle}"
+                        <Button Style="{StaticResource RoundedButtonStyle}"
                                 Content="{x:Static properties:Resources.Lang_Btn_Accept}"
-                                Width="100" 
-                                Height="35" 
-                                Background="#4A90E2" 
-                                Foreground="White" 
-                                FontWeight="Bold" 
-                                BorderBrush="#2C2A29"
-                                BorderThickness="1"
-                                Click="BtnConfirmLanguage_Click"/>
+                                Width="100" Height="35" 
+                                Background="#4A90E2" Foreground="White" FontWeight="Bold" 
+                                BorderBrush="#2C2A29" BorderThickness="1"
+                                Command="{Binding ConfirmLanguageCommand}"/>
                     </StackPanel>
                 </StackPanel>
             </Border>
         </Grid>
-        <Button x:Name="BtnExit" 
-                Style="{StaticResource RoundedButtonStyle}"
-                Background="#D9534F" 
-                BorderBrush="#B52B27" 
-                BorderThickness="1"
+
+        <Grid Background="#99000000"
+              Visibility="{Binding IsDialogVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
+              Panel.ZIndex="20" d:IsHidden="True" d1:IsHidden="True">
+            <ContentControl Content="{Binding CurrentDialogViewModel}"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"/>
+        </Grid>
+
+        <Button Style="{StaticResource RoundedButtonStyle}"
+                Background="#D9534F" BorderBrush="#B52B27" BorderThickness="1"
                 Padding="15,6"
-                Click="BtnExit_Click"
-                HorizontalAlignment="Right"
-                VerticalAlignment="Top"
+                Command="{Binding ExitCommand}"
+                HorizontalAlignment="Right" VerticalAlignment="Top"
                 Margin="0,25,25,0">
-            <TextBlock Text="{x:Static properties:Resources.Login_Btn_Exit}" 
-                       Foreground="White" 
-                       FontWeight="Bold"/>
+            <TextBlock Text="{x:Static properties:Resources.Login_Btn_Exit}" Foreground="White" FontWeight="Bold"/>
         </Button>
     </Grid>
 </Window>

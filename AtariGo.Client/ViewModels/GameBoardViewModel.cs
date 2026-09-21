@@ -201,9 +201,9 @@ namespace AtariGo.Client.ViewModels
         private void PromptSurrender()
         {
             var dialog = new ConfirmActionDialogViewModel(
-                "Surrender Match",
-                "Are you sure you want to surrender this match?",
-                "Surrender");
+                Properties.Resources.GameBoard_Surrender_Title,
+                Properties.Resources.GameBoard_Surrender_Message,
+                Properties.Resources.GameBoard_Surrender_Confirm);
 
             dialog.DialogClosed += result =>
             {

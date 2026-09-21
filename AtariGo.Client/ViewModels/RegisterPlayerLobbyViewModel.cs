@@ -1,20 +1,20 @@
 using System;
 using System.Windows.Input;
-
 using AtariGo.Client.Commands;
 
 namespace AtariGo.Client.ViewModels
 {
-    public class MainMenuViewModel : ViewModelBase
+    public class RegisterPlayerLobbyViewModel : ViewModelBase
     {
         private string _playerName;
         private int _playerWins;
         private bool _isGuest;
 
-        public MainMenuViewModel(
+        public RegisterPlayerLobbyViewModel(
             Action onNavigateToLobby,
             Action onOpenOptions,
-            Action onExit)
+            Action onExit,
+            Action onSignOut)
         {
             _playerName = "Player";
             _playerWins = 54;
@@ -25,6 +25,7 @@ namespace AtariGo.Client.ViewModels
             JoinWithCodeCommand = new RelayCommand(onNavigateToLobby);
             OptionsCommand = new RelayCommand(onOpenOptions);
             ExitCommand = new RelayCommand(onExit);
+            SignOutCommand = new RelayCommand(onSignOut);
 
             CustomizeProfileCommand = new RelayCommand(() => { });
             AddFriendCommand = new RelayCommand(() => { });
@@ -60,6 +61,8 @@ namespace AtariGo.Client.ViewModels
         public ICommand OptionsCommand { get; }
 
         public ICommand ExitCommand { get; }
+
+        public ICommand SignOutCommand { get; }
 
         public ICommand CustomizeProfileCommand { get; }
 

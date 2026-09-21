@@ -1,9 +1,8 @@
 using System;
 using System.Windows.Input;
-
 using AtariGo.Client.Commands;
 
-namespace AtariGo.Client.ViewModels
+namespace AtariGo.Client.ViewModels.Dialogs
 {
     public abstract class DialogViewModelBase : ViewModelBase
     {
