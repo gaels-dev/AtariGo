@@ -1,6 +1,7 @@
 using System;
 using System.Windows.Input;
 using AtariGo.Client.Commands;
+using AtariGo.Client.Services;
 
 namespace AtariGo.Client.ViewModels.Dialogs
 {
@@ -9,16 +10,15 @@ namespace AtariGo.Client.ViewModels.Dialogs
         private string _emailOrUsername = string.Empty;
         private string _errorMessage = string.Empty;
 
-        private readonly Action _onCloseRequested;
-        private readonly Action<string> _onProceedToVerification;
+        private readonly INavigationService _navigationService;
 
-        public ForgotPasswordDialogViewModel(Action onCloseRequested, Action<string> onProceedToVerification)
+        public ForgotPasswordDialogViewModel(INavigationService navigationService)
         {
-            _onCloseRequested = onCloseRequested ?? throw new ArgumentNullException(nameof(onCloseRequested));
-            _onProceedToVerification = onProceedToVerification ?? throw new ArgumentNullException(nameof(onProceedToVerification));
+            ArgumentNullException.ThrowIfNull(navigationService);
+            _navigationService = navigationService;
 
             AcceptCommand = new RelayCommand(ProceedToVerification);
-            CancelCommand = new RelayCommand(_onCloseRequested);
+            CancelCommand = new RelayCommand(_navigationService.CloseLoginDialog);
         }
 
         public string EmailOrUsername
@@ -46,7 +46,7 @@ namespace AtariGo.Client.ViewModels.Dialogs
             }
 
             ErrorMessage = string.Empty;
-            _onProceedToVerification(_emailOrUsername);
+            _navigationService.OpenForgotVerificationDialog();
         }
     }
 }

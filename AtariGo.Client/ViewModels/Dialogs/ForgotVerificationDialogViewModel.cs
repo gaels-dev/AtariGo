@@ -1,6 +1,7 @@
 using System;
 using System.Windows.Input;
 using AtariGo.Client.Commands;
+using AtariGo.Client.Services;
 
 namespace AtariGo.Client.ViewModels.Dialogs
 {
@@ -9,16 +10,15 @@ namespace AtariGo.Client.ViewModels.Dialogs
         private string _verificationCode = string.Empty;
         private string _errorMessage = string.Empty;
 
-        private readonly Action _onBackRequested;
-        private readonly Action _onProceedToNewPassword;
+        private readonly INavigationService _navigationService;
 
-        public ForgotVerificationDialogViewModel(Action onBackRequested, Action onProceedToNewPassword)
+        public ForgotVerificationDialogViewModel(INavigationService navigationService)
         {
-            _onBackRequested = onBackRequested ?? throw new ArgumentNullException(nameof(onBackRequested));
-            _onProceedToNewPassword = onProceedToNewPassword ?? throw new ArgumentNullException(nameof(onProceedToNewPassword));
+            ArgumentNullException.ThrowIfNull(navigationService);
+            _navigationService = navigationService;
 
             ConfirmCommand = new RelayCommand(VerifyCode);
-            CancelCommand = new RelayCommand(_onBackRequested);
+            CancelCommand = new RelayCommand(_navigationService.OpenForgotPasswordDialog);
         }
 
         public string VerificationCode
@@ -46,7 +46,7 @@ namespace AtariGo.Client.ViewModels.Dialogs
             }
 
             ErrorMessage = string.Empty;
-            _onProceedToNewPassword();
+            _navigationService.OpenNewPasswordDialog();
         }
     }
 }

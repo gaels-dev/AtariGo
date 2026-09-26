@@ -1,6 +1,7 @@
 using System;
 using System.Windows.Input;
 using AtariGo.Client.Commands;
+using AtariGo.Client.Services;
 
 namespace AtariGo.Client.ViewModels
 {
@@ -11,21 +12,19 @@ namespace AtariGo.Client.ViewModels
         private bool _isGuest;
 
         public RegisterPlayerLobbyViewModel(
-            Action onNavigateToLobby,
-            Action onOpenOptions,
-            Action onExit,
-            Action onSignOut)
+            INavigationService navigationService)
         {
+            ArgumentNullException.ThrowIfNull(navigationService);
             _playerName = "Player";
             _playerWins = 54;
             _isGuest = false;
 
-            PlayMultiplayerCommand = new RelayCommand(onNavigateToLobby);
-            CreatePrivateRoomCommand = new RelayCommand(onNavigateToLobby);
-            JoinWithCodeCommand = new RelayCommand(onNavigateToLobby);
-            OptionsCommand = new RelayCommand(onOpenOptions);
-            ExitCommand = new RelayCommand(onExit);
-            SignOutCommand = new RelayCommand(onSignOut);
+            PlayMultiplayerCommand = new RelayCommand(navigationService.NavigateToLobby);
+            CreatePrivateRoomCommand = new RelayCommand(navigationService.NavigateToLobby);
+            JoinWithCodeCommand = new RelayCommand(navigationService.NavigateToLobby);
+            OptionsCommand = new RelayCommand(navigationService.OpenOptionsDialog);
+            ExitCommand = new RelayCommand(navigationService.ExitApplication);
+            SignOutCommand = new RelayCommand(navigationService.SignOut);
 
             CustomizeProfileCommand = new RelayCommand(() => { });
             AddFriendCommand = new RelayCommand(() => { });

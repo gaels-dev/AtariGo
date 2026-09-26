@@ -2,6 +2,7 @@ using System;
 using System.Windows.Input;
 
 using AtariGo.Client.Commands;
+using AtariGo.Client.Services;
 
 namespace AtariGo.Client.ViewModels
 {
@@ -11,15 +12,18 @@ namespace AtariGo.Client.ViewModels
         private string _statusMessage;
         private bool _isSearching;
 
-        public SearchingOpponentViewModel(Action onStartGame, Action onCancel)
+        public SearchingOpponentViewModel(INavigationService navigationService, bool isGuest)
         {
+            ArgumentNullException.ThrowIfNull(navigationService);
             _playerName = Properties.Resources.SearchingOpponent_Lbl_You;
             _statusMessage = Properties.Resources.SearchingOpponent_Lbl_Searching;
             _isSearching = true;
 
-            StartGameCommand = new RelayCommand(onStartGame);
-            SimulateMatchFoundCommand = new RelayCommand(onStartGame);
-            CancelCommand = new RelayCommand(onCancel);
+            StartGameCommand = new RelayCommand(
+                () => navigationService.NavigateToGameBoard(isGuest, 1));
+            SimulateMatchFoundCommand = new RelayCommand(
+                () => navigationService.NavigateToGameBoard(isGuest, 1));
+            CancelCommand = new RelayCommand(navigationService.NavigateToMainMenu);
         }
 
         public string PlayerName

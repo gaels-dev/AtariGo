@@ -80,7 +80,6 @@
                             Height="42" Background="#4A90E2" Foreground="White" FontWeight="Bold" FontSize="14"
                             BorderBrush="#2C2A29" BorderThickness="1"
                             Command="{Binding SubmitCommand}"
-                            CommandParameter="{Binding ElementName=TxtPassword}"
                             Margin="0,0,0,18"/>
 
                     <TextBlock HorizontalAlignment="Center" Margin="0,0,0,8"><Hyperlink Command="{Binding OpenRegisterCommand}" Foreground="#4A90E2"><InlineUIContainer>

@@ -4,6 +4,7 @@ using System.Windows.Input;
 
 using AtariGo.Client.Commands;
 using AtariGo.Client.Models;
+using AtariGo.Client.Services;
 using AtariGo.Client.ViewModels.Dialogs;
 
 namespace AtariGo.Client.ViewModels
@@ -12,8 +13,7 @@ namespace AtariGo.Client.ViewModels
     {
         public const int BoardSize = 9;
 
-        private readonly Action _onLeaveGame;
-        private readonly Action<DialogViewModelBase> _onOpenDialog;
+        private readonly INavigationService _navigationService;
 
         private StoneColor _currentTurn;
         private StoneColor _myColor;
@@ -26,12 +26,11 @@ namespace AtariGo.Client.ViewModels
         private string _chatInput;
 
         public GameBoardViewModel(
-            Action onLeaveGame,
-            Action<DialogViewModelBase> onOpenDialog,
+            INavigationService navigationService,
             bool isGuest = false)
         {
-            _onLeaveGame = onLeaveGame;
-            _onOpenDialog = onOpenDialog;
+            ArgumentNullException.ThrowIfNull(navigationService);
+            _navigationService = navigationService;
             _targetCaptures = 1;
             _isChatEnabled = !isGuest;
 
@@ -59,7 +58,7 @@ namespace AtariGo.Client.ViewModels
                 () => !string.IsNullOrWhiteSpace(ChatInput));
             SurrenderCommand = new RelayCommand(PromptSurrender);
             ReportPlayerCommand = new RelayCommand(PromptReportPlayer);
-            LeaveGameCommand = new RelayCommand(_onLeaveGame);
+            LeaveGameCommand = new RelayCommand(_navigationService.NavigateToMainMenu);
         }
 
         public ObservableCollection<BoardCellViewModel> Cells { get; }
@@ -209,17 +208,17 @@ namespace AtariGo.Client.ViewModels
             {
                 if (result == true)
                 {
-                    _onLeaveGame();
+                    _navigationService.NavigateToMainMenu();
                 }
             };
 
-            _onOpenDialog(dialog);
+            _navigationService.OpenDialog(dialog);
         }
 
         private void PromptReportPlayer()
         {
             var dialog = new ReportPlayerDialogViewModel(_opponentName);
-            _onOpenDialog(dialog);
+            _navigationService.OpenDialog(dialog);
         }
     }
 }

@@ -1,6 +1,7 @@
 using System;
 using System.Windows.Input;
 using AtariGo.Client.Commands;
+using AtariGo.Client.Services;
 
 namespace AtariGo.Client.ViewModels.Dialogs
 {
@@ -9,18 +10,17 @@ namespace AtariGo.Client.ViewModels.Dialogs
         private string _verificationCode = string.Empty;
         private string _errorMessage = string.Empty;
 
-        private readonly Action _onBackRequested;
-        private readonly Action<string> _onVerificationSuccess;
+        private readonly INavigationService _navigationService;
         private readonly string _username;
 
-        public VerificationDialogViewModel(string username, Action onBackRequested, Action<string> onVerificationSuccess)
+        public VerificationDialogViewModel(string username, INavigationService navigationService)
         {
             _username = username ?? throw new ArgumentNullException(nameof(username));
-            _onBackRequested = onBackRequested ?? throw new ArgumentNullException(nameof(onBackRequested));
-            _onVerificationSuccess = onVerificationSuccess ?? throw new ArgumentNullException(nameof(onVerificationSuccess));
+            ArgumentNullException.ThrowIfNull(navigationService);
+            _navigationService = navigationService;
 
             ConfirmCommand = new RelayCommand(VerifyCode);
-            CancelCommand = new RelayCommand(_onBackRequested);
+            CancelCommand = new RelayCommand(_navigationService.OpenRegisterDialog);
         }
 
         public string VerificationCode
@@ -48,7 +48,7 @@ namespace AtariGo.Client.ViewModels.Dialogs
             }
 
             ErrorMessage = string.Empty;
-            _onVerificationSuccess(_username);
+            _navigationService.NavigateToMainWindow(isGuest: false, playerName: _username);
         }
     }
 }

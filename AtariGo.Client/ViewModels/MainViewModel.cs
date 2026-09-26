@@ -1,9 +1,8 @@
-using AtariGo.Client.Commands;
-using AtariGo.Client.ViewModels.Dialogs;
-using AtariGo.Client.Views;
 using System.Globalization;
 using System.Threading;
-using System.Windows.Input;
+
+using AtariGo.Client.Services;
+using AtariGo.Client.ViewModels.Dialogs;
 
 namespace AtariGo.Client.ViewModels
 {
@@ -13,17 +12,16 @@ namespace AtariGo.Client.ViewModels
         private DialogViewModelBase? _currentDialogViewModel;
         private bool _isGuest;
         private string _playerName;
+        private readonly INavigationService _navigationService;
 
-        public MainViewModel(bool isGuest = false, string playerName = "Player")
+        public MainViewModel(
+            bool isGuest = false,
+            string playerName = "Player",
+            INavigationService? navigationService = null)
         {
             _isGuest = isGuest;
             _playerName = playerName;
-
-            NavigateToMainMenuCommand = new RelayCommand(NavigateToMainMenu);
-            NavigateToLobbyCommand = new RelayCommand(NavigateToLobby);
-            NavigateToGameBoardCommand = new RelayCommand(
-                () => NavigateToGameBoard(_isGuest, 1));
-            CloseDialogCommand = new RelayCommand(CloseDialog);
+            _navigationService = navigationService ?? new NavigationService();
 
             NavigateToMainMenu();
         }
@@ -62,34 +60,10 @@ namespace AtariGo.Client.ViewModels
 
         public event Action? LanguageChanged;
 
-        public ICommand NavigateToMainMenuCommand { get; }
-
-        public ICommand NavigateToLobbyCommand { get; }
-
-        public ICommand NavigateToGameBoardCommand { get; }
-
-        public ICommand CloseDialogCommand { get; }
-
         public void NavigateToMainMenu()
         {
             CurrentViewModel = new RegisterPlayerLobbyViewModel(
-                onNavigateToLobby: NavigateToLobby,
-                onOpenOptions: OpenOptionsDialog,
-                onExit: () => System.Windows.Application.Current.Shutdown(),
-                onSignOut: () =>
-                {
-                    var loginView = new Views.LoginView();
-                    loginView.Show();
-
-                    foreach (System.Windows.Window window in System.Windows.Application.Current.Windows)
-                    {
-                        if (window is MainWindow)
-                        {
-                            window.Close();
-                            break;
-                        }
-                    }
-                })
+                _navigationService)
             {
                 PlayerName = _playerName,
                 IsGuest = _isGuest
@@ -99,15 +73,14 @@ namespace AtariGo.Client.ViewModels
         public void NavigateToLobby()
         {
             CurrentViewModel = new SearchingOpponentViewModel(
-                onStartGame: () => NavigateToGameBoard(_isGuest, 1),
-                onCancel: NavigateToMainMenu);
+                _navigationService,
+                _isGuest);
         }
 
         public void NavigateToGameBoard(bool isGuest = false, int targetCaptures = 1)
         {
             var gameBoard = new GameBoardViewModel(
-                onLeaveGame: NavigateToMainMenu,
-                onOpenDialog: OpenDialog,
+                _navigationService,
                 isGuest: isGuest)
             {
                 TargetCaptures = targetCaptures

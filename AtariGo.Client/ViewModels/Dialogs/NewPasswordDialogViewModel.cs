@@ -1,6 +1,7 @@
 using System;
 using System.Windows.Input;
 using AtariGo.Client.Commands;
+using AtariGo.Client.Services;
 
 namespace AtariGo.Client.ViewModels.Dialogs
 {
@@ -10,16 +11,15 @@ namespace AtariGo.Client.ViewModels.Dialogs
         private string _confirmPassword = string.Empty;
         private string _errorMessage = string.Empty;
 
-        private readonly Action _onCancelRequested;
-        private readonly Action _onPasswordChangedSuccess;
+        private readonly INavigationService _navigationService;
 
-        public NewPasswordDialogViewModel(Action onCancelRequested, Action onPasswordChangedSuccess)
+        public NewPasswordDialogViewModel(INavigationService navigationService)
         {
-            _onCancelRequested = onCancelRequested ?? throw new ArgumentNullException(nameof(onCancelRequested));
-            _onPasswordChangedSuccess = onPasswordChangedSuccess ?? throw new ArgumentNullException(nameof(onPasswordChangedSuccess));
+            ArgumentNullException.ThrowIfNull(navigationService);
+            _navigationService = navigationService;
 
             ConfirmChangeCommand = new RelayCommand(ConfirmChange);
-            CancelCommand = new RelayCommand(_onCancelRequested);
+            CancelCommand = new RelayCommand(_navigationService.CloseLoginDialog);
         }
 
         public string NewPassword
@@ -46,7 +46,8 @@ namespace AtariGo.Client.ViewModels.Dialogs
 
         private void ConfirmChange()
         {
-            if (string.IsNullOrWhiteSpace(_newPassword) || string.IsNullOrWhiteSpace(_confirmPassword))
+            if (string.IsNullOrWhiteSpace(_newPassword)
+                || string.IsNullOrWhiteSpace(_confirmPassword))
             {
                 ErrorMessage = Properties.Resources.NewPassword_Err_Empty;
                 return;
@@ -59,7 +60,7 @@ namespace AtariGo.Client.ViewModels.Dialogs
             }
 
             ErrorMessage = string.Empty;
-            _onPasswordChangedSuccess();
+            _navigationService.CloseLoginDialog();
         }
     }
 }

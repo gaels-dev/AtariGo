@@ -1,38 +1,36 @@
-﻿using System;
+using System;
 using System.Globalization;
 using System.Threading;
-using System.Windows.Controls;
 using System.Windows.Input;
 using AtariGo.Client.Commands;
+using AtariGo.Client.Services;
 using AtariGo.Client.ViewModels.Dialogs;
 
 namespace AtariGo.Client.ViewModels
 {
     public class LoginViewModel : ViewModelBase
     {
+        private readonly INavigationService _navigationService;
+
         private string _email = string.Empty;
         private bool _isLanguageOverlayVisible;
         private string _selectedCultureCode = "es";
         private ViewModelBase? _currentDialogViewModel;
 
-        private readonly Action<bool, string> _onLoginSuccess;
-        private readonly Action _onExit;
-        private readonly Action _onRefreshWindow;
-
-        public LoginViewModel(Action<bool, string> onLoginSuccess, Action onExit, Action onRefreshWindow)
+        public LoginViewModel(INavigationService navigationService)
         {
-            _onLoginSuccess = onLoginSuccess ?? throw new ArgumentNullException(nameof(onLoginSuccess));
-            _onExit = onExit ?? throw new ArgumentNullException(nameof(onExit));
-            _onRefreshWindow = onRefreshWindow ?? throw new ArgumentNullException(nameof(onRefreshWindow));
+            ArgumentNullException.ThrowIfNull(navigationService);
+            _navigationService = navigationService;
 
             ChangeLanguageCommand = new RelayCommand(() => IsLanguageOverlayVisible = true);
             CancelLanguageCommand = new RelayCommand(() => IsLanguageOverlayVisible = false);
             ConfirmLanguageCommand = new RelayCommand(ConfirmLanguage);
             SubmitCommand = new RelayCommand(Submit);
             GuestCommand = new RelayCommand(GuestLogin);
-            ExitCommand = new RelayCommand(_onExit);
-            OpenRegisterCommand = new RelayCommand(OpenRegisterDialog);
-            OpenForgotPasswordCommand = new RelayCommand(OpenForgotPasswordDialog);
+            ExitCommand = new RelayCommand(_navigationService.ExitApplication);
+            OpenRegisterCommand = new RelayCommand(_navigationService.OpenRegisterDialog);
+            OpenForgotPasswordCommand = new RelayCommand(
+                _navigationService.OpenForgotPasswordDialog);
         }
 
         public string Email
@@ -65,7 +63,7 @@ namespace AtariGo.Client.ViewModels
             }
         }
 
-        public bool IsDialogVisible => _currentDialogViewModel != null;
+        public bool IsDialogVisible => _currentDialogViewModel is not null;
 
         public ICommand ChangeLanguageCommand { get; }
 
@@ -83,95 +81,64 @@ namespace AtariGo.Client.ViewModels
 
         public ICommand OpenForgotPasswordCommand { get; }
 
-        private void Submit(object? parameter)
+        public void OpenRegisterDialog()
         {
-            string password = string.Empty;
-            if (parameter is PasswordBox passwordBox)
-            {
-                password = passwordBox.Password;
-            }
+            CurrentDialogViewModel = new RegisterDialogViewModel(_navigationService);
+        }
 
-            string username = string.IsNullOrWhiteSpace(_email) ? "John Go" : _email;
-            _onLoginSuccess(false, username);
+        public void OpenVerificationDialog(string username)
+        {
+            CurrentDialogViewModel = new VerificationDialogViewModel(
+                username,
+                _navigationService);
+        }
+
+        public void OpenForgotPasswordDialog()
+        {
+            CurrentDialogViewModel = new ForgotPasswordDialogViewModel(_navigationService);
+        }
+
+        public void OpenForgotVerificationDialog()
+        {
+            CurrentDialogViewModel = new ForgotVerificationDialogViewModel(_navigationService);
+        }
+
+        public void OpenNewPasswordDialog()
+        {
+            CurrentDialogViewModel = new NewPasswordDialogViewModel(_navigationService);
+        }
+
+        public void CloseDialog()
+        {
+            CurrentDialogViewModel = null;
+        }
+
+        private void Submit()
+        {
+            string playerName = string.IsNullOrWhiteSpace(_email) ? "John Go" : _email;
+            _navigationService.NavigateToMainWindow(isGuest: false, playerName);
         }
 
         private void GuestLogin()
         {
-            _onLoginSuccess(true, "Guest");
+            _navigationService.NavigateToMainWindow(isGuest: true, "Guest");
         }
 
         private void ConfirmLanguage()
         {
-            if (!string.IsNullOrEmpty(_selectedCultureCode))
+            if (string.IsNullOrEmpty(_selectedCultureCode))
             {
-                var culture = new CultureInfo(_selectedCultureCode);
-                Thread.CurrentThread.CurrentCulture = culture;
-                Thread.CurrentThread.CurrentUICulture = culture;
-                CultureInfo.DefaultThreadCurrentCulture = culture;
-                CultureInfo.DefaultThreadCurrentUICulture = culture;
-
-                IsLanguageOverlayVisible = false;
-                _onRefreshWindow();
+                return;
             }
-        }
 
-        private void OpenRegisterDialog()
-        {
-            var registerVM = new RegisterDialogViewModel(
-                onCloseRequested: () => CurrentDialogViewModel = null,
-                onProceedToVerification: (username, email) =>
-                {
-                    OpenVerificationDialog(username);
-                });
+            var culture = new CultureInfo(_selectedCultureCode);
+            Thread.CurrentThread.CurrentCulture = culture;
+            Thread.CurrentThread.CurrentUICulture = culture;
+            CultureInfo.DefaultThreadCurrentCulture = culture;
+            CultureInfo.DefaultThreadCurrentUICulture = culture;
 
-            CurrentDialogViewModel = registerVM;
-        }
-
-        private void OpenVerificationDialog(string username)
-        {
-            var verificationVM = new VerificationDialogViewModel(
-                username: username,
-                onBackRequested: OpenRegisterDialog,
-                onVerificationSuccess: finalUser =>
-                {
-                    CurrentDialogViewModel = null;
-                    _onLoginSuccess(false, finalUser);
-                });
-
-            CurrentDialogViewModel = verificationVM;
-        }
-
-        private void OpenForgotPasswordDialog()
-        {
-            var forgotVM = new ForgotPasswordDialogViewModel(
-                onCloseRequested: () => CurrentDialogViewModel = null,
-                onProceedToVerification: emailOrUser =>
-                {
-                    OpenForgotVerificationDialog();
-                });
-
-            CurrentDialogViewModel = forgotVM;
-        }
-
-        private void OpenForgotVerificationDialog()
-        {
-            var verificationVM = new ForgotVerificationDialogViewModel(
-                onBackRequested: OpenForgotPasswordDialog,
-                onProceedToNewPassword: OpenNewPasswordDialog);
-
-            CurrentDialogViewModel = verificationVM;
-        }
-
-        private void OpenNewPasswordDialog()
-        {
-            var newPasswordVM = new NewPasswordDialogViewModel(
-                onCancelRequested: () => CurrentDialogViewModel = null,
-                onPasswordChangedSuccess: () =>
-                {
-                    CurrentDialogViewModel = null;
-                });
-
-            CurrentDialogViewModel = newPasswordVM;
+            IsLanguageOverlayVisible = false;
+            _navigationService.RefreshLoginView();
         }
     }
 }

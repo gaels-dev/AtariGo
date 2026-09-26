@@ -13,7 +13,7 @@
             CornerRadius="12"
             Padding="30">
         <StackPanel>
-            <TextBlock FontSize="24"
+            <TextBlock FontSize="22"
                        FontWeight="Bold"
                        FontFamily="Georgia"
                        Foreground="#2C2A29"
@@ -48,25 +48,27 @@
                        HorizontalAlignment="Center"
                        Margin="0,0,0,10"/>
 
-            <Button Style="{StaticResource RoundedButtonStyle}"
-                    Command="{Binding ConfirmCommand}"
-                    Height="42" Background="#2ECC71" Foreground="White"
-                    FontWeight="Bold" FontSize="14"
-                    BorderBrush="#2C2A29" BorderThickness="1" Margin="0,0,0,10">
-                <Button.Content>
-                    <x:Static Member="properties:Resources.Verification_Btn_Confirm"/>
-                </Button.Content>
-            </Button>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                <Button Style="{StaticResource RoundedButtonStyle}"
+                        Command="{Binding CancelCommand}"
+                        Width="130" Height="42" Background="#E74C3C" Foreground="White"
+                        FontWeight="Bold" FontSize="14"
+                        BorderBrush="#2C2A29" BorderThickness="1" Margin="0,0,10,0">
+                    <Button.Content>
+                        <x:Static Member="properties:Resources.Verification_Btn_Cancel"/>
+                    </Button.Content>
+                </Button>
 
-            <Button Style="{StaticResource RoundedButtonStyle}"
-                    Command="{Binding CancelCommand}"
-                    Height="42" Background="#E74C3C" Foreground="White"
-                    FontWeight="Bold" FontSize="14"
-                    BorderBrush="#2C2A29" BorderThickness="1">
-                <Button.Content>
-                    <x:Static Member="properties:Resources.Verification_Btn_Cancel"/>
-                </Button.Content>
-            </Button>
+                <Button Style="{StaticResource RoundedButtonStyle}"
+                        Command="{Binding ConfirmCommand}"
+                        Width="130" Height="42" Background="#2ECC71" Foreground="White"
+                        FontWeight="Bold" FontSize="14"
+                        BorderBrush="#2C2A29" BorderThickness="1">
+                    <Button.Content>
+                        <x:Static Member="properties:Resources.Verification_Btn_Confirm"/>
+                    </Button.Content>
+                </Button>
+            </StackPanel>
         </StackPanel>
     </Border>
 </UserControl>
