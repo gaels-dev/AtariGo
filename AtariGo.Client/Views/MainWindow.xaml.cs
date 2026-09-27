@@ -23,7 +23,10 @@ namespace AtariGo.Client.Views
             {
                 oldVm.LanguageChanged -= OnLanguageChanged;
 
-                var newVm = new MainViewModel(oldVm.IsGuest, oldVm.PlayerName);
+                var newVm = new MainViewModel(
+                    oldVm.IsGuest,
+                    oldVm.PlayerName,
+                    sessionToken: oldVm.SessionToken);
                 var newWindow = new MainWindow(newVm)
                 {
                     Left = Left,

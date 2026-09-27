@@ -139,7 +139,7 @@
     <value>Anmelden</value>
   </data>
   <data name="Login_Lbl_Email" xml:space="preserve">
-    <value>E-Mail-Adresse</value>
+    <value>Benutzername oder E-Mail</value>
   </data>
   <data name="Login_Lbl_Password" xml:space="preserve">
     <value>Passwort</value>
@@ -420,4 +420,10 @@
   <data name="ForgotPassword_Err_Empty" xml:space="preserve">
     <value>E-Mail oder Benutzername darf nicht leer sein.</value>
   </data>
+  <data name="Login_Err_Required" xml:space="preserve"><value>Gib deinen Benutzernamen oder deine E-Mail-Adresse und dein Passwort ein.</value></data>
+  <data name="Login_Err_UserNotFound" xml:space="preserve"><value>Für diesen Benutzernamen oder diese E-Mail-Adresse wurde kein Konto gefunden.</value></data>
+  <data name="Login_Err_IncorrectPassword" xml:space="preserve"><value>Das Passwort ist falsch.</value></data>
+  <data name="Login_Err_AccountRestricted" xml:space="preserve"><value>Der Kontostatus erlaubt keine Anmeldung.</value></data>
+  <data name="Login_Err_ServiceUnavailable" xml:space="preserve"><value>Die Anmeldung konnte nicht abgeschlossen werden. Prüfe die Serververbindung und versuche es erneut.</value></data>
+  <data name="Login_Msg_Success" xml:space="preserve"><value>Die Anmeldung war erfolgreich.</value></data>
 </root>

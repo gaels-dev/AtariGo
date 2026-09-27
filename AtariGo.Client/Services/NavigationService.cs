@@ -12,11 +12,14 @@ namespace AtariGo.Client.Services
     /// </summary>
     public sealed class NavigationService : INavigationService
     {
-        public void NavigateToMainWindow(bool isGuest, string playerName) =>
+        public void NavigateToMainWindow(
+            bool isGuest,
+            string playerName,
+            string? sessionToken = null) =>
             Dispatch(() =>
             {
                 var mainWindow = new MainWindow(
-                    new MainViewModel(isGuest, playerName, this));
+                    new MainViewModel(isGuest, playerName, this, sessionToken));
 
                 Application.Current.MainWindow = mainWindow;
                 mainWindow.Show();

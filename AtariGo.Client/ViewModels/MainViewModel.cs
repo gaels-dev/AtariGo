@@ -17,10 +17,12 @@ namespace AtariGo.Client.ViewModels
         public MainViewModel(
             bool isGuest = false,
             string playerName = "Player",
-            INavigationService? navigationService = null)
+            INavigationService? navigationService = null,
+            string? sessionToken = null)
         {
             _isGuest = isGuest;
             _playerName = playerName;
+            SessionToken = sessionToken;
             _navigationService = navigationService ?? new NavigationService();
 
             NavigateToMainMenu();
@@ -57,6 +59,8 @@ namespace AtariGo.Client.ViewModels
             get => _playerName;
             set => SetProperty(ref _playerName, value);
         }
+
+        public string? SessionToken { get; }
 
         public event Action? LanguageChanged;
 

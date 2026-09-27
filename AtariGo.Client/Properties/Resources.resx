@@ -139,7 +139,7 @@
     <value>Sign In</value>
   </data>
   <data name="Login_Lbl_Email" xml:space="preserve">
-    <value>Email</value>
+    <value>Username or email</value>
   </data>
   <data name="Login_Lbl_Password" xml:space="preserve">
     <value>Password</value>
@@ -421,4 +421,10 @@
   <data name="ForgotPassword_Err_Empty" xml:space="preserve">
     <value>Email or username cannot be empty.</value>
   </data>
+  <data name="Login_Err_Required" xml:space="preserve"><value>Enter your username or email and password.</value></data>
+  <data name="Login_Err_UserNotFound" xml:space="preserve"><value>No account was found for that username or email.</value></data>
+  <data name="Login_Err_IncorrectPassword" xml:space="preserve"><value>The password is incorrect.</value></data>
+  <data name="Login_Err_AccountRestricted" xml:space="preserve"><value>This account is not allowed to sign in.</value></data>
+  <data name="Login_Err_ServiceUnavailable" xml:space="preserve"><value>Sign-in could not be completed. Check the server connection and try again.</value></data>
+  <data name="Login_Msg_Success" xml:space="preserve"><value>Sign-in successful.</value></data>
 </root>

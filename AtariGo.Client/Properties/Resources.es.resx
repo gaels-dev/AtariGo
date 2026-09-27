@@ -139,7 +139,7 @@
     <value>Ingresar</value>
   </data>
   <data name="Login_Lbl_Email" xml:space="preserve">
-    <value>Correo electrónico</value>
+    <value>Nombre de usuario o correo</value>
   </data>
   <data name="Login_Lbl_Password" xml:space="preserve">
     <value>Contraseña</value>
@@ -420,4 +420,10 @@
   <data name="ForgotPassword_Err_Empty" xml:space="preserve">
     <value>El correo o nombre de usuario no puede estar vacío.</value>
   </data>
+  <data name="Login_Err_Required" xml:space="preserve"><value>Escribe tu nombre de usuario o correo y tu contraseña.</value></data>
+  <data name="Login_Err_UserNotFound" xml:space="preserve"><value>No se encontró una cuenta con ese nombre de usuario o correo.</value></data>
+  <data name="Login_Err_IncorrectPassword" xml:space="preserve"><value>La contraseña es incorrecta.</value></data>
+  <data name="Login_Err_AccountRestricted" xml:space="preserve"><value>El estado de esta cuenta no permite iniciar sesión.</value></data>
+  <data name="Login_Err_ServiceUnavailable" xml:space="preserve"><value>No se pudo completar el inicio de sesión. Verifica la conexión con el servidor e inténtalo de nuevo.</value></data>
+  <data name="Login_Msg_Success" xml:space="preserve"><value>Inicio de sesión exitoso.</value></data>
 </root>
