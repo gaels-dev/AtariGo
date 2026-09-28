@@ -180,6 +180,24 @@
   <data name="RegisterPlayerLobby_Lbl_WinsHeader" xml:space="preserve">
     <value>Wins</value>
   </data>
+  <data name="Leaderboard_Col_Rank" xml:space="preserve">
+    <value>Rank</value>
+  </data>
+  <data name="Leaderboard_Col_Player" xml:space="preserve">
+    <value>Player</value>
+  </data>
+  <data name="Leaderboard_Btn_Refresh" xml:space="preserve">
+    <value>Refresh</value>
+  </data>
+  <data name="Leaderboard_Msg_Loading" xml:space="preserve">
+    <value>Loading scores...</value>
+  </data>
+  <data name="Leaderboard_Msg_Empty" xml:space="preserve">
+    <value>No scores are available yet.</value>
+  </data>
+  <data name="Leaderboard_Msg_Error" xml:space="preserve">
+    <value>Scores could not be loaded. Try again.</value>
+  </data>
   <data name="RegisterPlayerLobby_Lbl_WhatToDo" xml:space="preserve">
     <value>What would you
       like to do?</value>

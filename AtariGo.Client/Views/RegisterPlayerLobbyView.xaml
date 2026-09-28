@@ -99,45 +99,82 @@
                         CornerRadius="8"
                         Padding="15">
                     <StackPanel>
-                        <Grid Margin="0,0,0,10">
+                        <Grid Margin="0,0,0,8">
                             <TextBlock
-                                Text="{x:Static properties:Resources.RegisterPlayerLobby_Lbl_TopGlobal}"
+                                Text="{x:Static
+                                    properties:Resources.RegisterPlayerLobby_Lbl_TopGlobal}"
                                 FontWeight="Bold"
                                 FontSize="14"
                                 Foreground="#2C2A29"
                                 HorizontalAlignment="Left"/>
-                            <TextBlock
-                                Text="{x:Static properties:Resources.RegisterPlayerLobby_Lbl_WinsHeader}"
-                                FontSize="11"
-                                Foreground="#666666"
-                                HorizontalAlignment="Right"
-                                VerticalAlignment="Bottom"/>
+                            <Button Content="{Binding RefreshLabel}"
+                                    Command="{Binding RefreshLeaderboardCommand}"
+                                    IsEnabled="{Binding IsRefreshEnabled}"
+                                    HorizontalAlignment="Right"
+                                    Padding="5,1"
+                                    FontSize="11"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    Foreground="#1976D2"/>
                         </Grid>
-                        <StackPanel>
-                            <Grid Margin="0,4">
-                                <TextBlock Text="1. MaestroGo" FontSize="13"/>
-                                <TextBlock Text="110"
-                                           FontWeight="Bold"
-                                           Foreground="#1976D2"
-                                           HorizontalAlignment="Right"/>
-                            </Grid>
-                            <Grid Margin="0,4">
-                                <TextBlock Text="2. NinjaNegro" FontSize="13"/>
-                                <TextBlock Text="85"
-                                           FontWeight="Bold"
-                                           Foreground="#1976D2"
-                                           HorizontalAlignment="Right"/>
-                            </Grid>
-                            <Grid Margin="0,4">
-                                <TextBlock Text="3. Jugador123"
-                                           FontSize="13"
-                                           FontWeight="Bold"/>
-                                <TextBlock Text="54"
-                                           FontWeight="Bold"
-                                           Foreground="#2E7D32"
-                                           HorizontalAlignment="Right"/>
-                            </Grid>
-                        </StackPanel>
+                        <Grid Margin="0,0,0,4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="32"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="55"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="{Binding RankHeader}"
+                                       FontSize="10"
+                                       FontWeight="Bold"
+                                       Foreground="#666666"/>
+                            <TextBlock Grid.Column="1"
+                                       Text="{Binding PlayerHeader}"
+                                       FontSize="10"
+                                       FontWeight="Bold"
+                                       Foreground="#666666"/>
+                            <TextBlock Grid.Column="2"
+                                       Text="{Binding WinsHeader}"
+                                       FontSize="10"
+                                       FontWeight="Bold"
+                                       Foreground="#666666"
+                                       HorizontalAlignment="Right"/>
+                        </Grid>
+                        <ScrollViewer Height="145"
+                                      VerticalScrollBarVisibility="Auto"
+                                      HorizontalScrollBarVisibility="Disabled">
+                            <ItemsControl ItemsSource="{Binding LeaderboardEntries}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="0,3">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="32"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="55"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="{Binding Position}"
+                                                       FontSize="12"
+                                                       Foreground="#666666"/>
+                                            <TextBlock Grid.Column="1"
+                                                       Text="{Binding UserName}"
+                                                       FontSize="12"
+                                                       TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock Grid.Column="2"
+                                                       Text="{Binding Wins}"
+                                                       FontSize="12"
+                                                       FontWeight="Bold"
+                                                       Foreground="#1976D2"
+                                                       HorizontalAlignment="Right"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                        <TextBlock Text="{Binding LeaderboardStatus}"
+                                   FontSize="11"
+                                   Foreground="#666666"
+                                   TextWrapping="Wrap"
+                                   Margin="0,5,0,0"
+                                   HorizontalAlignment="Center"/>
                     </StackPanel>
                 </Border>
             </StackPanel>

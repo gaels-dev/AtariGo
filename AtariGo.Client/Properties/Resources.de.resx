@@ -180,6 +180,24 @@
   <data name="RegisterPlayerLobby_Lbl_WinsHeader" xml:space="preserve">
     <value>Siege</value>
   </data>
+  <data name="Leaderboard_Col_Rank" xml:space="preserve">
+    <value>Rang</value>
+  </data>
+  <data name="Leaderboard_Col_Player" xml:space="preserve">
+    <value>Spieler</value>
+  </data>
+  <data name="Leaderboard_Btn_Refresh" xml:space="preserve">
+    <value>Aktualisieren</value>
+  </data>
+  <data name="Leaderboard_Msg_Loading" xml:space="preserve">
+    <value>Punktzahlen werden geladen...</value>
+  </data>
+  <data name="Leaderboard_Msg_Empty" xml:space="preserve">
+    <value>Noch keine Punktzahlen verfügbar.</value>
+  </data>
+  <data name="Leaderboard_Msg_Error" xml:space="preserve">
+    <value>Punktzahlen konnten nicht geladen werden. Bitte erneut versuchen.</value>
+  </data>
   <data name="RegisterPlayerLobby_Lbl_WhatToDo" xml:space="preserve">
     <value>Was möchtest du tun?</value>
   </data>
