@@ -35,7 +35,8 @@
                 </TextBlock.Text>
             </TextBlock>
 
-            <TextBox Text="{Binding VerificationCode, UpdateSourceTrigger=PropertyChanged}"
+            <TextBox x:Name="ConfirmationCodeBox"
+                     Text="{Binding VerificationCode, UpdateSourceTrigger=PropertyChanged}"
                      Height="45" FontSize="20" FontWeight="Bold"
                      TextAlignment="Center" VerticalContentAlignment="Center"
                      Background="#EFE8DD" BorderBrush="#2C2A29" BorderThickness="1"
@@ -60,7 +61,7 @@
                 </Button>
 
                 <Button Style="{StaticResource RoundedButtonStyle}"
-                        Command="{Binding ConfirmCommand}"
+                        Click="ConfirmButton_Click"
                         Width="130" Height="42" Background="#2ECC71" Foreground="White"
                         FontWeight="Bold" FontSize="14"
                         BorderBrush="#2C2A29" BorderThickness="1">

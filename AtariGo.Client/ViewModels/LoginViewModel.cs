@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using AtariGo.Client.Properties;
 using AtariGo.Client.Commands;
+using AtariGo.Client.Models;
 using AtariGo.Client.Services;
 using AtariGo.Client.ViewModels.Dialogs;
 using AtariGo.Contracts;
@@ -16,6 +17,7 @@ namespace AtariGo.Client.ViewModels
     {
         private readonly INavigationService _navigationService;
         private readonly IAuthenticationClient _authenticationClient;
+        private RegisterDialogViewModel? _registerDialogViewModel;
 
         private string _identifier = string.Empty;
         private string _loginMessage = string.Empty;
@@ -98,14 +100,58 @@ namespace AtariGo.Client.ViewModels
 
         public void OpenRegisterDialog()
         {
-            CurrentDialogViewModel = new RegisterDialogViewModel(_navigationService);
+            _registerDialogViewModel = new RegisterDialogViewModel(_navigationService);
+            CurrentDialogViewModel = _registerDialogViewModel;
         }
 
-        public void OpenVerificationDialog(string username)
+        public void OpenVerificationDialog(RegistrationDraft registrationDraft)
         {
             CurrentDialogViewModel = new VerificationDialogViewModel(
-                username,
-                _navigationService);
+                registrationDraft,
+                _navigationService,
+                _authenticationClient);
+        }
+
+        public void ReturnToRegisterDialog()
+        {
+            CurrentDialogViewModel = _registerDialogViewModel;
+        }
+
+        public void DiscardRegistration()
+        {
+            _registerDialogViewModel?.ClearSensitiveData();
+            _registerDialogViewModel = null;
+            CurrentDialogViewModel = null;
+        }
+
+        public void ShowRegistrationResult(RegistrationResult result)
+        {
+            bool succeeded = result == RegistrationResult.Success;
+            ViewModelBase? previousDialog = CurrentDialogViewModel;
+            string resourceKey = result switch
+            {
+                RegistrationResult.Success => "RegistrationResult_Msg_Success",
+                RegistrationResult.UsernameTaken =>
+                    "RegistrationResult_Msg_UsernameTaken",
+                RegistrationResult.EmailTaken => "RegistrationResult_Msg_EmailTaken",
+                _ => "RegistrationResult_Msg_Error"
+            };
+
+            CurrentDialogViewModel = new RegistrationResultDialogViewModel(
+                GetLocalizedMessage(resourceKey),
+                GetLocalizedMessage("RegistrationResult_Btn_Close"),
+                () =>
+                {
+                    if (succeeded)
+                    {
+                        _registerDialogViewModel?.ClearSensitiveData();
+                        _registerDialogViewModel = null;
+                    }
+
+                    CurrentDialogViewModel = succeeded
+                        ? null
+                        : _registerDialogViewModel ?? previousDialog;
+                });
         }
 
         public void OpenForgotPasswordDialog()
@@ -143,13 +189,15 @@ namespace AtariGo.Client.ViewModels
 
             try
             {
-                LoginResponse response = await _authenticationClient.LoginAsync(identifier, password);
+                LoginResponse response = await _authenticationClient.LoginAsync(
+                    identifier,
+                    password);
 
                 switch (response.Result)
                 {
                     case LoginResult.Success:
                         LoginMessage = GetLocalizedMessage("Login_Msg_Success");
-                        await Task.Delay(700);
+                        await Task.Delay(1000);
                         _navigationService.NavigateToMainWindow(
                             isGuest: false,
                             response.UserName,

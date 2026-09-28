@@ -7,10 +7,14 @@ namespace AtariGo.Client.Views
     public partial class LoginView : Window
     {
         public LoginView()
+            : this(new LoginViewModel(new NavigationService()))
+        {
+        }
+
+        public LoginView(LoginViewModel viewModel)
         {
             InitializeComponent();
-
-            DataContext = new LoginViewModel(new NavigationService());
+            DataContext = viewModel;
         }
 
         private void SubmitButton_Click(object sender, RoutedEventArgs e)

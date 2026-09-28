@@ -1,66 +1,145 @@
 using System;
+using System.Globalization;
+using System.Net.Mail;
 using System.Windows.Input;
 using AtariGo.Client.Commands;
+using AtariGo.Client.Models;
+using AtariGo.Client.Properties;
 using AtariGo.Client.Services;
 
-namespace AtariGo.Client.ViewModels.Dialogs
+namespace AtariGo.Client.ViewModels.Dialogs;
+
+public sealed class RegisterDialogViewModel : ViewModelBase
 {
-    public class RegisterDialogViewModel : ViewModelBase
+    private readonly INavigationService _navigationService;
+    private string _username = string.Empty;
+    private string _email = string.Empty;
+    private string _password = string.Empty;
+    private string _passwordConfirmation = string.Empty;
+    private string _errorMessage = string.Empty;
+    private RegistrationDraft? _registrationDraft;
+
+    public RegisterDialogViewModel(INavigationService navigationService)
     {
-        private string _username = string.Empty;
-        private string _email = string.Empty;
-        private string _password = string.Empty;
-        private string _errorMessage = string.Empty;
+        ArgumentNullException.ThrowIfNull(navigationService);
+        _navigationService = navigationService;
 
-        private readonly INavigationService _navigationService;
+        RegisterCommand = new RelayCommand(ProceedToVerification);
+        CancelCommand = new RelayCommand(_navigationService.DiscardRegistration);
+    }
 
-        public RegisterDialogViewModel(INavigationService navigationService)
+    public string Username
+    {
+        get => _username;
+        set => SetProperty(ref _username, value);
+    }
+
+    public string Email
+    {
+        get => _email;
+        set => SetProperty(ref _email, value);
+    }
+
+    public string Password
+    {
+        get => _password;
+        set => SetProperty(ref _password, value);
+    }
+
+    public string PasswordConfirmation
+    {
+        get => _passwordConfirmation;
+        set => SetProperty(ref _passwordConfirmation, value);
+    }
+
+    public string ErrorMessage
+    {
+        get => _errorMessage;
+        private set => SetProperty(ref _errorMessage, value);
+    }
+
+    public string ConfirmPasswordLabel =>
+        GetLocalizedMessage("Register_Lbl_ConfirmPassword");
+
+    public ICommand RegisterCommand { get; }
+
+    public ICommand CancelCommand { get; }
+
+    public void ClearSensitiveData()
+    {
+        Password = string.Empty;
+        PasswordConfirmation = string.Empty;
+        _registrationDraft?.ClearSensitiveData();
+        _registrationDraft = null;
+    }
+
+    private void ProceedToVerification()
+    {
+        string username = Username.Trim();
+        string email = Email.Trim();
+
+        if (string.IsNullOrWhiteSpace(username)
+            || string.IsNullOrWhiteSpace(email)
+            || string.IsNullOrWhiteSpace(Password)
+            || string.IsNullOrWhiteSpace(PasswordConfirmation))
         {
-            ArgumentNullException.ThrowIfNull(navigationService);
-            _navigationService = navigationService;
-
-            RegisterCommand = new RelayCommand(ProceedToVerification);
-            CancelCommand = new RelayCommand(_navigationService.CloseLoginDialog);
+            ErrorMessage = GetLocalizedMessage("Register_Err_EmptyFields");
+            return;
         }
 
-        public string Username
+        if (username.Length > 100 || email.Length > 254 || Password.Length > 255)
         {
-            get => _username;
-            set => SetProperty(ref _username, value);
+            ErrorMessage = GetLocalizedMessage("Register_Err_Generic");
+            return;
         }
 
-        public string Email
+        if (!MailAddress.TryCreate(email, out _))
         {
-            get => _email;
-            set => SetProperty(ref _email, value);
+            ErrorMessage = GetLocalizedMessage("Register_Err_InvalidEmail");
+            return;
         }
 
-        public string Password
+        if (Password.Length < 8 || !Password.ContainsUppercaseLetter())
         {
-            get => _password;
-            set => SetProperty(ref _password, value);
+            ErrorMessage = GetLocalizedMessage("Register_Err_PasswordPolicy");
+            return;
         }
 
-        public string ErrorMessage
+        if (!string.Equals(Password, PasswordConfirmation, StringComparison.Ordinal))
         {
-            get => _errorMessage;
-            set => SetProperty(ref _errorMessage, value);
+            ErrorMessage = GetLocalizedMessage("Register_Err_PasswordMismatch");
+            return;
         }
 
-        public ICommand RegisterCommand { get; }
-
-        public ICommand CancelCommand { get; }
-
-        private void ProceedToVerification()
+        ErrorMessage = string.Empty;
+        _registrationDraft = new RegistrationDraft
         {
-            if (string.IsNullOrWhiteSpace(_username) || string.IsNullOrWhiteSpace(_email))
+            UserName = username,
+            Email = email,
+            Password = Password,
+            PasswordConfirmation = PasswordConfirmation
+        };
+
+        _navigationService.OpenVerificationDialog(_registrationDraft);
+    }
+
+    private static string GetLocalizedMessage(string key) =>
+        Resources.ResourceManager.GetString(key, CultureInfo.CurrentUICulture)
+        ?? key;
+}
+
+internal static class PasswordPolicyExtensions
+{
+    public static bool ContainsUppercaseLetter(this string value)
+    {
+        foreach (char character in value)
+        {
+            if (char.IsUpper(character))
             {
-                ErrorMessage = Properties.Resources.Register_Err_EmptyFields;
-                return;
+                return true;
             }
-
-            ErrorMessage = string.Empty;
-            _navigationService.OpenVerificationDialog(_username);
         }
+
+        return false;
     }
 }

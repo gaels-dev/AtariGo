@@ -1,5 +1,6 @@
 using System.Linq;
 using System.Windows;
+using AtariGo.Client.Models;
 using AtariGo.Client.ViewModels;
 using AtariGo.Client.ViewModels.Dialogs;
 using AtariGo.Client.Views;
@@ -28,7 +29,10 @@ namespace AtariGo.Client.Services
 
         public void RefreshLoginView() => Dispatch(() =>
         {
-            var loginView = new LoginView();
+            var loginViewModel = GetLoginViewModel();
+            var loginView = loginViewModel is null
+                ? new LoginView()
+                : new LoginView(loginViewModel);
             Application.Current.MainWindow = loginView;
             loginView.Show();
             CloseLoginWindow(loginView);
@@ -69,8 +73,17 @@ namespace AtariGo.Client.Services
         public void OpenRegisterDialog() =>
             Dispatch(() => GetLoginViewModel()?.OpenRegisterDialog());
 
-        public void OpenVerificationDialog(string username) =>
-            Dispatch(() => GetLoginViewModel()?.OpenVerificationDialog(username));
+        public void OpenVerificationDialog(RegistrationDraft draft) =>
+            Dispatch(() => GetLoginViewModel()?.OpenVerificationDialog(draft));
+
+        public void ReturnToRegisterDialog() =>
+            Dispatch(() => GetLoginViewModel()?.ReturnToRegisterDialog());
+
+        public void DiscardRegistration() =>
+            Dispatch(() => GetLoginViewModel()?.DiscardRegistration());
+
+        public void ShowRegistrationResult(AtariGo.Contracts.RegistrationResult result) =>
+            Dispatch(() => GetLoginViewModel()?.ShowRegistrationResult(result));
 
         public void OpenForgotPasswordDialog() =>
             Dispatch(() => GetLoginViewModel()?.OpenForgotPasswordDialog());

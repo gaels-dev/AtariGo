@@ -51,6 +51,15 @@
                          Height="38" Padding="10,8" VerticalContentAlignment="Center"
                          BorderBrush="#2C2A29" BorderThickness="1" Margin="0,0,0,10"/>
 
+            <TextBlock FontWeight="SemiBold" Foreground="#2C2A29" Margin="0,0,0,6">
+                <TextBlock.Text>
+                    <Binding Path="ConfirmPasswordLabel"/>
+                </TextBlock.Text>
+            </TextBlock>
+            <PasswordBox x:Name="ConfirmPasswordBox"
+                         Height="38" Padding="10,8" VerticalContentAlignment="Center"
+                         BorderBrush="#2C2A29" BorderThickness="1" Margin="0,0,0,10"/>
+
             <TextBlock Text="{Binding ErrorMessage}"
                        Foreground="#E74C3C"
                        FontWeight="SemiBold"
@@ -59,7 +68,7 @@
                        Margin="0,0,0,10"/>
 
             <Button Style="{StaticResource RoundedButtonStyle}"
-                    Command="{Binding RegisterCommand}"
+                    Click="RegisterButton_Click"
                     Height="42" Background="#4A90E2" Foreground="White"
                     FontWeight="Bold" FontSize="14"
                     BorderBrush="#2C2A29" BorderThickness="1" Margin="0,0,0,10">

@@ -21,4 +21,26 @@ public sealed class GrpcAuthenticationClient : IAuthenticationClient
             new LoginRequest { Identifier = identifier, Password = password },
             cancellationToken: cancellationToken).ResponseAsync;
     }
+
+    public Task<RegisterAccountResponse> RegisterAccountAsync(
+        string userName,
+        string email,
+        string password,
+        string passwordConfirmation,
+        string confirmationText,
+        CancellationToken cancellationToken = default)
+    {
+        _client ??= new Authentication.AuthenticationClient(_channel);
+
+        return _client.RegisterAccountAsync(
+            new RegisterAccountRequest
+            {
+                UserName = userName,
+                Email = email,
+                Password = password,
+                PasswordConfirmation = passwordConfirmation,
+                ConfirmationText = confirmationText
+            },
+            cancellationToken: cancellationToken).ResponseAsync;
+    }
 }

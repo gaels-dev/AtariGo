@@ -337,10 +337,10 @@
     <value>Bestätigung erforderlich</value>
   </data>
   <data name="Verification_Lbl_Description" xml:space="preserve">
-    <value>Wir haben einen 6-stelligen Code an Ihre E-Mail gesendet, um Ihr Konto zu bestätigen.</value>
+    <value>Gib einen beliebigen Text ein. Der Code wird vorerst nicht überprüft.</value>
   </data>
   <data name="Verification_Btn_Confirm" xml:space="preserve">
-    <value>Bestätigen und eintreten</value>
+    <value>Konto bestätigen</value>
   </data>
   <data name="Verification_Btn_Cancel" xml:space="preserve">
     <value>Abbrechen</value>
@@ -367,7 +367,37 @@
     <value>Zurück</value>
   </data>
   <data name="Register_Err_EmptyFields" xml:space="preserve">
-    <value>Benutzername und E-Mail dürfen nicht leer sein.</value>
+    <value>Fülle alle Pflichtfelder aus.</value>
+  </data>
+  <data name="Register_Lbl_ConfirmPassword" xml:space="preserve">
+    <value>Passwort bestätigen</value>
+  </data>
+  <data name="Register_Err_InvalidEmail" xml:space="preserve">
+    <value>Gib eine gültige E-Mail-Adresse ein.</value>
+  </data>
+  <data name="Register_Err_PasswordPolicy" xml:space="preserve">
+    <value>Das Passwort benötigt mindestens 8 Zeichen und einen Großbuchstaben.</value>
+  </data>
+  <data name="Register_Err_PasswordMismatch" xml:space="preserve">
+    <value>Die Passwörter stimmen nicht überein.</value>
+  </data>
+  <data name="Register_Err_Generic" xml:space="preserve">
+    <value>Die Registrierung konnte nicht abgeschlossen werden. Prüfe die Angaben und versuche es erneut.</value>
+  </data>
+  <data name="RegistrationResult_Msg_Success" xml:space="preserve">
+    <value>Benutzer erfolgreich registriert.</value>
+  </data>
+  <data name="RegistrationResult_Msg_Error" xml:space="preserve">
+    <value>Bei der Registrierung ist ein Fehler aufgetreten. Bitte versuche es erneut.</value>
+  </data>
+  <data name="RegistrationResult_Btn_Close" xml:space="preserve">
+    <value>Schließen</value>
+  </data>
+  <data name="RegistrationResult_Msg_UsernameTaken" xml:space="preserve">
+    <value>Dieser Benutzername ist bereits vergeben.</value>
+  </data>
+  <data name="RegistrationResult_Msg_EmailTaken" xml:space="preserve">
+    <value>Diese E-Mail-Adresse wird bereits verwendet.</value>
   </data>
   <data name="NewPassword_Lbl_Title" xml:space="preserve">
     <value>Passwort ändern</value>

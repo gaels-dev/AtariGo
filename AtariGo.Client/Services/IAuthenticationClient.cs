@@ -10,4 +10,12 @@ public interface IAuthenticationClient
         string identifier,
         string password,
         CancellationToken cancellationToken = default);
+
+    Task<RegisterAccountResponse> RegisterAccountAsync(
+        string userName,
+        string email,
+        string password,
+        string passwordConfirmation,
+        string confirmationText,
+        CancellationToken cancellationToken = default);
 }

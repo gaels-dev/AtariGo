@@ -31,11 +31,7 @@ public partial class AtariGoDbContext : DbContext
 
     public virtual DbSet<Move> Moves { get; set; }
 
-    public virtual DbSet<PendingRegistration> PendingRegistrations { get; set; }
-
     public virtual DbSet<Profile> Profiles { get; set; }
-
-    public virtual DbSet<RegistrationCode> RegistrationCodes { get; set; }
 
     public virtual DbSet<Report> Reports { get; set; }
 
@@ -301,23 +297,6 @@ public partial class AtariGoDbContext : DbContext
                 .HasConstraintName("FK_Moves_GamePlayer");
         });
 
-        modelBuilder.Entity<PendingRegistration>(entity =>
-        {
-            entity.HasIndex(e => e.Email, "UQ_PendingRegistrations_Email").IsUnique();
-
-            entity.HasIndex(e => e.UserName, "UQ_PendingRegistrations_UserName").IsUnique();
-
-            entity.Property(e => e.CreatedAt)
-                .HasPrecision(0)
-                .HasDefaultValueSql("(sysutcdatetime())", "DF_PendingRegistrations_CreatedAt");
-            entity.Property(e => e.Email).HasMaxLength(254);
-            entity.Property(e => e.ExpiresAt).HasPrecision(0);
-            entity.Property(e => e.PasswordHash)
-                .HasMaxLength(255)
-                .IsUnicode(false);
-            entity.Property(e => e.UserName).HasMaxLength(100);
-        });
-
         modelBuilder.Entity<Profile>(entity =>
         {
             entity.HasKey(e => e.UserId);
@@ -330,25 +309,6 @@ public partial class AtariGoDbContext : DbContext
                 .HasForeignKey<Profile>(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Profiles_User");
-        });
-
-        modelBuilder.Entity<RegistrationCode>(entity =>
-        {
-            entity.HasIndex(e => new { e.PendingRegistrationId, e.CreatedAt }, "IX_RegistrationCodes_Pending_Created").IsDescending(false, true);
-
-            entity.Property(e => e.CodeHash)
-                .HasMaxLength(255)
-                .IsUnicode(false);
-            entity.Property(e => e.CreatedAt)
-                .HasPrecision(0)
-                .HasDefaultValueSql("(sysutcdatetime())", "DF_RegistrationCodes_CreatedAt");
-            entity.Property(e => e.ExpiresAt).HasPrecision(0);
-            entity.Property(e => e.UsedAt).HasPrecision(0);
-
-            entity.HasOne(d => d.PendingRegistration).WithMany(p => p.RegistrationCodes)
-                .HasForeignKey(d => d.PendingRegistrationId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_RegistrationCodes_PendingRegistration");
         });
 
         modelBuilder.Entity<Report>(entity =>

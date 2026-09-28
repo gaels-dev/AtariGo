@@ -337,10 +337,10 @@
     <value>Confirmación Requerida</value>
   </data>
   <data name="Verification_Lbl_Description" xml:space="preserve">
-    <value>Hemos enviado un código de 6 dígitos a tu correo para verificar tu cuenta.</value>
+    <value>Escribe cualquier texto para continuar. Por ahora no se valida el código.</value>
   </data>
   <data name="Verification_Btn_Confirm" xml:space="preserve">
-    <value>Confirmar y Entrar</value>
+    <value>Confirmar cuenta</value>
   </data>
   <data name="Verification_Btn_Cancel" xml:space="preserve">
     <value>Cancelar</value>
@@ -367,7 +367,37 @@
     <value>Volver</value>
   </data>
   <data name="Register_Err_EmptyFields" xml:space="preserve">
-    <value>El nombre de usuario y el correo no pueden estar vacíos.</value>
+    <value>Completa todos los campos obligatorios.</value>
+  </data>
+  <data name="Register_Lbl_ConfirmPassword" xml:space="preserve">
+    <value>Confirmar contraseña</value>
+  </data>
+  <data name="Register_Err_InvalidEmail" xml:space="preserve">
+    <value>Escribe un correo electrónico válido.</value>
+  </data>
+  <data name="Register_Err_PasswordPolicy" xml:space="preserve">
+    <value>La contraseña debe tener 8 caracteres y al menos una mayúscula.</value>
+  </data>
+  <data name="Register_Err_PasswordMismatch" xml:space="preserve">
+    <value>Las contraseñas no coinciden.</value>
+  </data>
+  <data name="Register_Err_Generic" xml:space="preserve">
+    <value>No se pudo completar el registro. Revisa los datos e inténtalo de nuevo.</value>
+  </data>
+  <data name="RegistrationResult_Msg_Success" xml:space="preserve">
+    <value>Usuario registrado correctamente.</value>
+  </data>
+  <data name="RegistrationResult_Msg_Error" xml:space="preserve">
+    <value>Ocurrió un error al registrar el usuario. Inténtalo de nuevo.</value>
+  </data>
+  <data name="RegistrationResult_Btn_Close" xml:space="preserve">
+    <value>Cerrar</value>
+  </data>
+  <data name="RegistrationResult_Msg_UsernameTaken" xml:space="preserve">
+    <value>Ese nombre de usuario ya está ocupado.</value>
+  </data>
+  <data name="RegistrationResult_Msg_EmailTaken" xml:space="preserve">
+    <value>Ese correo electrónico ya está en uso.</value>
   </data>
   <data name="NewPassword_Lbl_Title" xml:space="preserve">
     <value>Cambio de Contraseña</value>

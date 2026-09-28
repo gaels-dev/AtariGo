@@ -1,54 +1,90 @@
 using System;
+using System.Globalization;
+using System.Threading.Tasks;
 using System.Windows.Input;
 using AtariGo.Client.Commands;
+using AtariGo.Client.Models;
+using AtariGo.Client.Properties;
 using AtariGo.Client.Services;
+using AtariGo.Contracts;
+using Grpc.Core;
 
-namespace AtariGo.Client.ViewModels.Dialogs
+namespace AtariGo.Client.ViewModels.Dialogs;
+
+public sealed class VerificationDialogViewModel : ViewModelBase
 {
-    public class VerificationDialogViewModel : ViewModelBase
+    private readonly RegistrationDraft _registrationDraft;
+    private readonly INavigationService _navigationService;
+    private readonly IAuthenticationClient _authenticationClient;
+    private string _verificationCode = string.Empty;
+    private string _errorMessage = string.Empty;
+
+    public VerificationDialogViewModel(
+        RegistrationDraft registrationDraft,
+        INavigationService navigationService,
+        IAuthenticationClient authenticationClient)
     {
-        private string _verificationCode = string.Empty;
-        private string _errorMessage = string.Empty;
+        ArgumentNullException.ThrowIfNull(registrationDraft);
+        ArgumentNullException.ThrowIfNull(navigationService);
+        ArgumentNullException.ThrowIfNull(authenticationClient);
 
-        private readonly INavigationService _navigationService;
-        private readonly string _username;
+        _registrationDraft = registrationDraft;
+        _navigationService = navigationService;
+        _authenticationClient = authenticationClient;
+        ConfirmCommand = new AsyncRelayCommand(ConfirmRegistrationAsync);
+        CancelCommand = new RelayCommand(_navigationService.ReturnToRegisterDialog);
+    }
 
-        public VerificationDialogViewModel(string username, INavigationService navigationService)
+    public string VerificationCode
+    {
+        get => _verificationCode;
+        set => SetProperty(ref _verificationCode, value);
+    }
+
+    public string ErrorMessage
+    {
+        get => _errorMessage;
+        private set => SetProperty(ref _errorMessage, value);
+    }
+
+    public ICommand ConfirmCommand { get; }
+
+    public ICommand CancelCommand { get; }
+
+    private async Task ConfirmRegistrationAsync(object? parameter)
+    {
+        string confirmationText = parameter as string ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(confirmationText))
         {
-            _username = username ?? throw new ArgumentNullException(nameof(username));
-            ArgumentNullException.ThrowIfNull(navigationService);
-            _navigationService = navigationService;
-
-            ConfirmCommand = new RelayCommand(VerifyCode);
-            CancelCommand = new RelayCommand(_navigationService.OpenRegisterDialog);
+            ErrorMessage = GetLocalizedMessage("Verification_Err_EmptyCode");
+            return;
         }
 
-        public string VerificationCode
+        ErrorMessage = string.Empty;
+
+        try
         {
-            get => _verificationCode;
-            set => SetProperty(ref _verificationCode, value);
+            RegisterAccountResponse response =
+                await _authenticationClient.RegisterAccountAsync(
+                    _registrationDraft.UserName,
+                    _registrationDraft.Email,
+                    _registrationDraft.Password,
+                    _registrationDraft.PasswordConfirmation,
+                    confirmationText);
+
+            _navigationService.ShowRegistrationResult(response.Result);
         }
-
-        public string ErrorMessage
+        catch (RpcException)
         {
-            get => _errorMessage;
-            set => SetProperty(ref _errorMessage, value);
+            _navigationService.ShowRegistrationResult(RegistrationResult.Error);
         }
-
-        public ICommand ConfirmCommand { get; }
-
-        public ICommand CancelCommand { get; }
-
-        private void VerifyCode()
+        catch (Exception)
         {
-            if (string.IsNullOrWhiteSpace(_verificationCode))
-            {
-                ErrorMessage = Properties.Resources.Verification_Err_EmptyCode;
-                return;
-            }
-
-            ErrorMessage = string.Empty;
-            _navigationService.NavigateToMainWindow(isGuest: false, playerName: _username);
+            _navigationService.ShowRegistrationResult(RegistrationResult.Error);
         }
     }
+
+    private static string GetLocalizedMessage(string key) =>
+        Resources.ResourceManager.GetString(key, CultureInfo.CurrentUICulture)
+        ?? key;
 }
