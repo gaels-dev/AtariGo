@@ -288,6 +288,21 @@
   <data name="GameBoard_Txt_ChatPlaceholder" xml:space="preserve">
     <value>Escribe un mensaje...</value>
   </data>
+  <data name="JoinPrivateRoom_Lbl_Title" xml:space="preserve">
+    <value>Unirse a Sala Privada</value>
+  </data>
+  <data name="JoinPrivateRoom_Err_EmptyCode" xml:space="preserve">
+    <value>Ingresa un código de sala.</value>
+  </data>
+  <data name="JoinPrivateRoom_Btn_Join" xml:space="preserve">
+    <value>Entrar</value>
+  </data>
+  <data name="JoinPrivateRoom_Btn_Cancel" xml:space="preserve">
+    <value>Cancelar</value>
+  </data>
+  <data name="JoinPrivateRoom_Lbl_Code" xml:space="preserve">
+    <value>Código de sala (ej. XK92P)</value>
+  </data>
   <data name="Options_Lbl_Title" xml:space="preserve">
     <value>Opciones</value>
   </data>
@@ -462,16 +477,142 @@
   <data name="ForgotPassword_Btn_Accept" xml:space="preserve">
     <value>Aceptar</value>
   </data>
+  <data name="FriendSearch_Lbl_Title" xml:space="preserve">
+    <value>Buscar Amigos</value>
+  </data>
+  <data name="FriendSearch_Btn_Search" xml:space="preserve">
+    <value>Buscar</value>
+  </data>
+  <data name="FriendSearch_Btn_Back" xml:space="preserve">
+    <value>Regresar</value>
+  </data>
+  <data name="FriendSearch_Err_EmptySearch" xml:space="preserve">
+    <value>Ingresa un nombre de usuario para buscar.</value>
+  </data>
+  <data name="FriendSearch_Msg_RequestSent" xml:space="preserve">
+    <value>Solicitud de amistad enviada.</value>
+  </data>
+  <data name="FriendList_Lbl_Title" xml:space="preserve">
+    <value>Amigos</value>
+  </data>
+  <data name="FriendList_Btn_Remove" xml:space="preserve">
+    <value>Eliminar</value>
+  </data>
+  <data name="FriendList_Btn_Back" xml:space="preserve">
+    <value>Regresar</value>
+  </data>
+  <data name="FriendList_Msg_Offline" xml:space="preserve">
+    <value>Este amigo está desconectado.</value>
+  </data>
+  <data name="FriendList_Msg_InvitationSent" xml:space="preserve">
+    <value>Invitación enviada.</value>
+  </data>
+  <data name="FriendList_Msg_Removed" xml:space="preserve">
+    <value>Amigo eliminado.</value>
+  </data>
+  <data name="FriendList_Btn_Invite" xml:space="preserve">
+    <value>Invitar</value>
+  </data>
+  <data name="FriendList_Lbl_Friend" xml:space="preserve">
+    <value>Amigo</value>
+  </data>
+  <data name="FriendSearch_Btn_Add" xml:space="preserve">
+    <value>Agregar Amigo</value>
+  </data>
   <data name="ForgotPassword_Btn_Cancel" xml:space="preserve">
     <value>Cancelar</value>
   </data>
   <data name="ForgotPassword_Err_Empty" xml:space="preserve">
     <value>El correo o nombre de usuario no puede estar vacío.</value>
   </data>
-  <data name="Login_Err_Required" xml:space="preserve"><value>Escribe tu nombre de usuario o correo y tu contraseña.</value></data>
-  <data name="Login_Err_UserNotFound" xml:space="preserve"><value>No se encontró una cuenta con ese nombre de usuario o correo.</value></data>
-  <data name="Login_Err_IncorrectPassword" xml:space="preserve"><value>La contraseña es incorrecta.</value></data>
-  <data name="Login_Err_AccountRestricted" xml:space="preserve"><value>El estado de esta cuenta no permite iniciar sesión.</value></data>
-  <data name="Login_Err_ServiceUnavailable" xml:space="preserve"><value>No se pudo completar el inicio de sesión. Verifica la conexión con el servidor e inténtalo de nuevo.</value></data>
-  <data name="Login_Msg_Success" xml:space="preserve"><value>Inicio de sesión exitoso.</value></data>
+  <data name="Login_Err_Required" xml:space="preserve">
+    <value>Escribe tu nombre de usuario o correo y tu contraseña.</value>
+  </data>
+  <data name="Login_Err_UserNotFound" xml:space="preserve">
+    <value>No se encontró una cuenta con ese nombre de usuario o correo.</value>
+  </data>
+  <data name="Login_Err_IncorrectPassword" xml:space="preserve">
+    <value>La contraseña es incorrecta.</value>
+  </data>
+  <data name="Login_Err_AccountRestricted" xml:space="preserve">
+    <value>El estado de esta cuenta no permite iniciar sesión.</value>
+  </data>
+  <data name="Login_Err_ServiceUnavailable" xml:space="preserve">
+    <value>No se pudo completar el inicio de sesión. Verifica la conexión con el servidor e inténtalo de nuevo.</value>
+  </data>
+  <data name="Login_Msg_Success" xml:space="preserve">
+    <value>Inicio de sesión exitoso.</value>
+  </data>
+  <data name="ProfileCustomization_Lbl_Title" xml:space="preserve">
+    <value>Personalización</value>
+  </data>
+  <data name="ProfileCustomization_Lbl_SelectAvatar" xml:space="preserve">
+    <value>Elige tu avatar:</value>
+  </data>
+  <data name="ProfileCustomization_Lbl_Username" xml:space="preserve">
+    <value>Nombre de usuario</value>
+  </data>
+  <data name="ProfileCustomization_Lbl_Email" xml:space="preserve">
+    <value>Correo</value>
+  </data>
+  <data name="ProfileCustomization_Btn_Update" xml:space="preserve">
+    <value>Actualizar</value>
+  </data>
+  <data name="ProfileCustomization_Btn_ChangePassword" xml:space="preserve">
+    <value>Cambiar contraseña</value>
+  </data>
+  <data name="ProfileCustomization_Btn_Close" xml:space="preserve">
+    <value>Cerrar</value>
+  </data>
+  <data name="ProfileCustomization_Msg_Updated" xml:space="preserve">
+    <value>Perfil actualizado correctamente.</value>
+  </data>
+  <data name="PrivateRoom_Lbl_Title" xml:space="preserve">
+    <value>Sala Privada</value>
+  </data>
+  <data name="PrivateRoom_Lbl_InvitationCode" xml:space="preserve">
+    <value>Código de invitación</value>
+  </data>
+  <data name="PrivateRoom_Lbl_Captures" xml:space="preserve">
+    <value>piedras para capturar</value>
+  </data>
+  <data name="PrivateRoom_Btn_InviteFriends" xml:space="preserve">
+    <value>Invitar Amigos</value>
+  </data>
+  <data name="PrivateRoom_Btn_Leave" xml:space="preserve">
+    <value>Salir</value>
+  </data>
+  <data name="PrivateRoom_Lbl_YouHost" xml:space="preserve">
+    <value>Tú (Anfitrión)</value>
+  </data>
+  <data name="PrivateRoom_Lbl_Host" xml:space="preserve">
+    <value>Anfitrión</value>
+  </data>
+  <data name="PrivateRoom_Lbl_ActiveRules" xml:space="preserve">
+    <value>Reglas activas</value>
+  </data>
+  <data name="PrivateRoom_Btn_SimulateOpponent" xml:space="preserve">
+    <value>Simular Oponente</value>
+  </data>
+  <data name="PrivateRoom_Btn_Disband" xml:space="preserve">
+    <value>Deshacer Sala</value>
+  </data>
+  <data name="PrivateRoom_Lbl_YouGuest" xml:space="preserve">
+    <value>Tú (Invitado)</value>
+  </data>
+  <data name="CreatePrivateRoom_Btn_Cancel" xml:space="preserve">
+    <value>Cancelar</value>
+  </data>
+  <data name="CreatePrivateRoom_Btn_Create" xml:space="preserve">
+    <value>Crear Sala</value>
+  </data>
+  <data name="CreatePrivateRoom_Lbl_CaptureGoal" xml:space="preserve">
+    <value>Piedras para ganar:</value>
+  </data>
+  <data name="CreatePrivateRoom_Lbl_Title" xml:space="preserve">
+    <value>Crear Sala Privada</value>
+  </data>
+  <data name="FriendSearch_Lbl_Search" xml:space="preserve">
+    <value>Nombre de usuario</value>
+  </data>
 </root>

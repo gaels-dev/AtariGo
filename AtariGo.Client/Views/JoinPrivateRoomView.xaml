@@ -1,0 +1,103 @@
+<UserControl x:Class="AtariGo.Client.Views.JoinPrivateRoomView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:properties="clr-namespace:AtariGo.Client.Properties"
+             mc:Ignorable="d"
+             d:DesignHeight="700"
+             d:DesignWidth="1000"
+             Background="#E5D8C5">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0"
+                Background="#2C2A29"
+                Padding="25,15">
+            <TextBlock Text="ATARI GO"
+                       FontSize="20"
+                       FontWeight="Bold"
+                       FontFamily="Georgia"
+                       Foreground="White"/>
+        </Border>
+
+        <Border Grid.Row="1"
+                Width="440"
+                Padding="30"
+                Background="White"
+                BorderBrush="#2C2A29"
+                BorderThickness="1.5"
+                CornerRadius="8"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center">
+
+            <StackPanel>
+                <TextBlock
+                    Text="{x:Static properties:Resources.JoinPrivateRoom_Lbl_Title}"
+                    FontSize="27"
+                    FontWeight="Bold"
+                    FontFamily="Georgia"
+                    Foreground="#2C2A29"
+                    HorizontalAlignment="Center"
+                    Margin="0,0,0,25"/>
+
+                <TextBlock
+                    Text="{x:Static properties:Resources.JoinPrivateRoom_Lbl_Code}"
+                    FontSize="14"
+                    FontWeight="Bold"
+                    Foreground="#2C2A29"
+                    Margin="0,0,0,8"/>
+
+                <TextBox Text="{Binding RoomCode,
+                                        UpdateSourceTrigger=PropertyChanged}"
+                         Height="42"
+                         Padding="8"
+                         FontSize="18"
+                         MaxLength="10"
+                         CharacterCasing="Upper"
+                         HorizontalContentAlignment="Center"
+                         Margin="0,0,0,10"/>
+
+                <TextBlock Text="{Binding ErrorMessage}"
+                           Foreground="#D9534F"
+                           FontWeight="SemiBold"
+                           TextAlignment="Center"
+                           TextWrapping="Wrap"
+                           MinHeight="20"
+                           Margin="0,0,0,15"/>
+
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="12"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Button
+                        Grid.Column="0"
+                        Content="{x:Static properties:Resources.JoinPrivateRoom_Btn_Cancel}"
+                        Command="{Binding CancelCommand}"
+                        Height="42"
+                        Background="#D9534F"
+                        Foreground="White"
+                        FontWeight="Bold"
+                        BorderBrush="#B52B27"/>
+
+                    <Button
+                        Grid.Column="2"
+                        Content="{x:Static properties:Resources.JoinPrivateRoom_Btn_Join}"
+                        Command="{Binding JoinCommand}"
+                        Height="42"
+                        Background="#4A90E2"
+                        Foreground="White"
+                        FontWeight="Bold"
+                        BorderBrush="#2C2A29"/>
+                </Grid>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

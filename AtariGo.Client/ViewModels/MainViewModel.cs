@@ -1,3 +1,4 @@
+using System;
 using System.Globalization;
 using System.Threading;
 
@@ -8,11 +9,11 @@ namespace AtariGo.Client.ViewModels
 {
     public class MainViewModel : ViewModelBase
     {
+        private readonly INavigationService _navigationService;
         private ViewModelBase _currentViewModel = null!;
         private DialogViewModelBase? _currentDialogViewModel;
         private bool _isGuest;
         private string _playerName;
-        private readonly INavigationService _navigationService;
 
         public MainViewModel(
             bool isGuest = false,
@@ -23,20 +24,30 @@ namespace AtariGo.Client.ViewModels
             _isGuest = isGuest;
             _playerName = playerName;
             SessionToken = sessionToken;
-            _navigationService = navigationService ?? new NavigationService();
+            _navigationService =
+                navigationService ?? new NavigationService();
 
             NavigateToMainMenu();
         }
 
         public ViewModelBase CurrentViewModel
         {
-            get => _currentViewModel;
-            set => SetProperty(ref _currentViewModel, value);
+            get
+            {
+                return _currentViewModel;
+            }
+            set
+            {
+                SetProperty(ref _currentViewModel, value);
+            }
         }
 
         public DialogViewModelBase? CurrentDialogViewModel
         {
-            get => _currentDialogViewModel;
+            get
+            {
+                return _currentDialogViewModel;
+            }
             private set
             {
                 if (SetProperty(ref _currentDialogViewModel, value))
@@ -46,18 +57,36 @@ namespace AtariGo.Client.ViewModels
             }
         }
 
-        public bool IsDialogVisible => _currentDialogViewModel != null;
+        public bool IsDialogVisible
+        {
+            get
+            {
+                return _currentDialogViewModel != null;
+            }
+        }
 
         public bool IsGuest
         {
-            get => _isGuest;
-            set => SetProperty(ref _isGuest, value);
+            get
+            {
+                return _isGuest;
+            }
+            set
+            {
+                SetProperty(ref _isGuest, value);
+            }
         }
 
         public string PlayerName
         {
-            get => _playerName;
-            set => SetProperty(ref _playerName, value);
+            get
+            {
+                return _playerName;
+            }
+            set
+            {
+                SetProperty(ref _playerName, value);
+            }
         }
 
         public string? SessionToken { get; }
@@ -81,21 +110,26 @@ namespace AtariGo.Client.ViewModels
                 _isGuest);
         }
 
-        public void NavigateToGameBoard(bool isGuest = false, int targetCaptures = 1)
+        public void NavigateToGameBoard(
+            bool isGuest = false,
+            int targetCaptures = 1)
         {
-            var gameBoard = new GameBoardViewModel(
-                _navigationService,
-                isGuest: isGuest)
-            {
-                TargetCaptures = targetCaptures
-            };
+            GameBoardViewModel gameBoard =
+                new GameBoardViewModel(
+                    _navigationService,
+                    isGuest: isGuest)
+                {
+                    TargetCaptures = targetCaptures
+                };
 
             CurrentViewModel = gameBoard;
         }
 
         public void OpenOptionsDialog()
         {
-            var dialog = new OptionsDialogViewModel();
+            OptionsDialogViewModel dialog =
+                new OptionsDialogViewModel();
+
             dialog.DialogClosed += result =>
             {
                 if (result == true)
@@ -103,6 +137,7 @@ namespace AtariGo.Client.ViewModels
                     ApplyLanguage(dialog.SelectedCultureCode);
                 }
             };
+
             OpenDialog(dialog);
         }
 
@@ -119,7 +154,8 @@ namespace AtariGo.Client.ViewModels
 
         private void ApplyLanguage(string cultureCode)
         {
-            var culture = new CultureInfo(cultureCode);
+            CultureInfo culture = new CultureInfo(cultureCode);
+
             Properties.Resources.Culture = culture;
             Thread.CurrentThread.CurrentCulture = culture;
             Thread.CurrentThread.CurrentUICulture = culture;

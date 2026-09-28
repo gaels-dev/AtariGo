@@ -23,6 +23,21 @@ namespace AtariGo.Client.Services
 
         void NavigateToGameBoard(bool isGuest = false, int targetCaptures = 1);
 
+        void NavigateToProfileCustomization();
+
+        void NavigateToCreatePrivateRoom();
+
+        void NavigateToJoinPrivateRoom();
+
+        void NavigateToPrivateRoomLobby(
+            PrivateRoomNavigationContext navigationContext);
+
+        void NavigateToFriendSearch();
+
+        void NavigateToFriendList(
+            string roomCode,
+            int targetCaptures);
+
         void OpenOptionsDialog();
 
         void OpenDialog(DialogViewModelBase dialog);

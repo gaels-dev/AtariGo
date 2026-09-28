@@ -13,46 +13,70 @@
         Width="1040"
         WindowStartupLocation="CenterScreen">
 
-    <Window.Resources>
-        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+	<Window.Resources>
+		<BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
 
-        <DataTemplate DataType="{x:Type vm:RegisterPlayerLobbyViewModel}">
-            <views:RegisterPlayerLobbyView/>
-        </DataTemplate>
+		<DataTemplate DataType="{x:Type vm:RegisterPlayerLobbyViewModel}">
+			<views:RegisterPlayerLobbyView/>
+		</DataTemplate>
 
-        <DataTemplate DataType="{x:Type vm:SearchingOpponentViewModel}">
-            <views:SearchingOpponentView/>
-        </DataTemplate>
+		<DataTemplate DataType="{x:Type vm:SearchingOpponentViewModel}">
+			<views:SearchingOpponentView/>
+		</DataTemplate>
 
-        <DataTemplate DataType="{x:Type vm:GameBoardViewModel}">
-            <views:GameBoardView/>
-        </DataTemplate>
+		<DataTemplate DataType="{x:Type vm:GameBoardViewModel}">
+			<views:GameBoardView/>
+		</DataTemplate>
 
-        <DataTemplate DataType="{x:Type dialogVm:ConfirmActionDialogViewModel}">
-            <dialogViews:ConfirmActionDialogView/>
-        </DataTemplate>
+		<DataTemplate DataType="{x:Type vm:ProfileCustomizationViewModel}">
+			<views:ProfileCustomizationView/>
+		</DataTemplate>
 
-        <DataTemplate DataType="{x:Type dialogVm:ReportPlayerDialogViewModel}">
-            <dialogViews:ReportPlayerDialogView/>
-        </DataTemplate>
+		<DataTemplate DataType="{x:Type vm:CreatePrivateRoomViewModel}">
+			<views:CreatePrivateRoomView/>
+		</DataTemplate>
 
-        <DataTemplate DataType="{x:Type dialogVm:OptionsDialogViewModel}">
-            <dialogViews:OptionsDialogView/>
-        </DataTemplate>
-    </Window.Resources>
+		<DataTemplate DataType="{x:Type vm:JoinPrivateRoomViewModel}">
+			<views:JoinPrivateRoomView/>
+		</DataTemplate>
 
-    <Grid>
-        <ContentControl Content="{Binding CurrentViewModel}"
+		<DataTemplate DataType="{x:Type vm:PrivateRoomLobbyViewModel}">
+			<views:PrivateRoomLobbyView/>
+		</DataTemplate>
+
+		<DataTemplate DataType="{x:Type vm:FriendSearchViewModel}">
+			<views:FriendSearchView/>
+		</DataTemplate>
+
+		<DataTemplate DataType="{x:Type vm:FriendListViewModel}">
+			<views:FriendListView/>
+		</DataTemplate>
+
+		<DataTemplate DataType="{x:Type dialogVm:ConfirmActionDialogViewModel}">
+			<dialogViews:ConfirmActionDialogView/>
+		</DataTemplate>
+
+		<DataTemplate DataType="{x:Type dialogVm:ReportPlayerDialogViewModel}">
+			<dialogViews:ReportPlayerDialogView/>
+		</DataTemplate>
+
+		<DataTemplate DataType="{x:Type dialogVm:OptionsDialogViewModel}">
+			<dialogViews:OptionsDialogView/>
+		</DataTemplate>
+	</Window.Resources>
+
+	<Grid>
+		<ContentControl Content="{Binding CurrentViewModel}"
                         HorizontalContentAlignment="Stretch"
                         VerticalContentAlignment="Stretch"/>
 
-        <Grid Background="#99000000"
+		<Grid Background="#99000000"
               Visibility="{Binding IsDialogVisible,
                            Converter={StaticResource BooleanToVisibilityConverter}}"
               Panel.ZIndex="100">
-            <ContentControl Content="{Binding CurrentDialogViewModel}"
+			<ContentControl Content="{Binding CurrentDialogViewModel}"
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center"/>
-        </Grid>
-    </Grid>
+		</Grid>
+	</Grid>
 </Window>
