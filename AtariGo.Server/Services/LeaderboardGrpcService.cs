@@ -1,5 +1,5 @@
 using AtariGo.Contracts;
-using AtariGo.Server.Models;
+using AtariGo.Server.Data;
 using Grpc.Core;
 using Microsoft.EntityFrameworkCore;
 

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace AtariGo.Server.Models;
+namespace AtariGo.Server.Data.Entities;
 
 public partial class Session
 {

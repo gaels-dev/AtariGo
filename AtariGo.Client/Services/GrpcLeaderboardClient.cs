@@ -7,7 +7,7 @@ namespace AtariGo.Client.Services;
 
 public sealed class GrpcLeaderboardClient : ILeaderboardClient
 {
-    private readonly GrpcChannel _channel = GrpcChannel.ForAddress("http://localhost:5026");
+    private readonly GrpcChannel _channel = GrpcChannel.ForAddress("https://localhost:7061");
     private Leaderboard.LeaderboardClient? _client;
 
     public Task<GetTopPlayersResponse> GetTopPlayersAsync(

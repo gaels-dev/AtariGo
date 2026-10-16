@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using AtariGo.Server.Data.Entities;
 using Microsoft.EntityFrameworkCore;
 
-namespace AtariGo.Server.Models;
+namespace AtariGo.Server.Data;
 
 public partial class AtariGoDbContext : DbContext
 {

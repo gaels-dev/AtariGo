@@ -1,162 +1,84 @@
-using System.Security.Cryptography;
-using System.Text;
-using System.Net.Mail;
-using AtariGo.Server.Models;
 using AtariGo.Contracts;
+using AtariGo.Server.Application.Authentication;
 using Grpc.Core;
-using Microsoft.EntityFrameworkCore;
 
 namespace AtariGo.Server.Services;
 
 public sealed class AuthenticationGrpcService(
-    AtariGoDbContext dbContext,
-    ILogger<AuthenticationGrpcService> logger)
+    IAuthenticationService authenticationService)
     : Authentication.AuthenticationBase
 {
-    private static readonly TimeSpan SessionLifetime = TimeSpan.FromHours(8);
-
     public override async Task<LoginResponse> Login(
         LoginRequest request,
         ServerCallContext context)
     {
-        string identifier = request.Identifier.Trim();
+        LoginOutcome outcome = await authenticationService.LoginAsync(
+            request.Identifier,
+            request.Password,
+            context.CancellationToken);
 
-        var user = await dbContext.Users
-            .AsNoTracking()
-            .Include(candidate => candidate.Credential)
-            .SingleOrDefaultAsync(
-                candidate => candidate.UserName == identifier || candidate.Email == identifier,
-                context.CancellationToken);
-
-        if (user?.Credential is null)
-        {
-            return new LoginResponse { Result = LoginResult.UserNotFound };
-        }
-
-        if (!string.Equals(
-                user.Credential.PasswordHash,
-                request.Password,
-                StringComparison.Ordinal))
-        {
-            return new LoginResponse { Result = LoginResult.IncorrectPassword };
-        }
-
-        DateTime now = DateTime.Now;
-        if (!string.Equals(user.State, "Active", StringComparison.OrdinalIgnoreCase)
-            || user.Credential.LockedUntil > now)
-        {
-            return new LoginResponse { Result = LoginResult.AccountRestricted };
-        }
-
-        string sessionToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
-        string sessionTokenHash = Convert.ToHexString(
-            SHA256.HashData(Encoding.UTF8.GetBytes(sessionToken)));
-
-        dbContext.Sessions.Add(new Session
-        {
-            UserId = user.UserId,
-            SessionTokenHash = sessionTokenHash,
-            StartedAt = now,
-            LastActivityAt = now,
-            ExpiresAt = now.Add(SessionLifetime),
-            State = "Active"
-        });
-
-        await dbContext.SaveChangesAsync(context.CancellationToken);
-
-        return new LoginResponse
-        {
-            Result = LoginResult.Success,
-            UserId = user.UserId,
-            UserName = user.UserName,
-            SessionToken = sessionToken
-        };
+        return CreateLoginResponse(outcome);
     }
 
     public override async Task<RegisterAccountResponse> RegisterAccount(
         RegisterAccountRequest request,
         ServerCallContext context)
     {
-        string userName = request.UserName.Trim();
-        string email = request.Email.Trim();
+        var command = new RegisterAccountCommand(
+            request.UserName,
+            request.Email,
+            request.Password,
+            request.PasswordConfirmation,
+            request.ConfirmationText);
 
-        if (string.IsNullOrWhiteSpace(userName)
-            || userName.Length > 100
-            || string.IsNullOrWhiteSpace(email)
-            || email.Length > 254
-            || !MailAddress.TryCreate(email, out _)
-            || string.IsNullOrWhiteSpace(request.Password)
-            || request.Password.Length < 8
-            || !request.Password.Any(char.IsUpper)
-            || request.Password.Length > 255)
-        {
-            return new RegisterAccountResponse { Result = RegistrationResult.Error };
-        }
-
-        if (!string.Equals(
-                request.Password,
-                request.PasswordConfirmation,
-                StringComparison.Ordinal)
-            || string.IsNullOrWhiteSpace(request.ConfirmationText))
-        {
-            return new RegisterAccountResponse { Result = RegistrationResult.Error };
-        }
-
-        bool userNameExists = await dbContext.Users.AnyAsync(
-            user => user.UserName == userName,
+        RegistrationStatus status = await authenticationService.RegisterAccountAsync(
+            command,
             context.CancellationToken);
-        if (userNameExists)
-        {
-            return new RegisterAccountResponse
-            {
-                Result = RegistrationResult.UsernameTaken
-            };
-        }
 
-        bool emailExists = await dbContext.Users.AnyAsync(
-            user => user.Email == email,
-            context.CancellationToken);
-        if (emailExists)
+        return new RegisterAccountResponse
         {
-            return new RegisterAccountResponse { Result = RegistrationResult.EmailTaken };
-        }
+            Result = MapRegistrationStatus(status)
+        };
+    }
 
-        var playerRole = await dbContext.Roles.SingleOrDefaultAsync(
-            role => role.Name == "Player",
-            context.CancellationToken);
-        if (playerRole is null)
+    private static LoginResponse CreateLoginResponse(LoginOutcome outcome)
+    {
+        var response = new LoginResponse
         {
-            return new RegisterAccountResponse { Result = RegistrationResult.Error };
-        }
-
-        DateTime now = DateTime.Now;
-        var user = new User
-        {
-            UserName = userName,
-            Email = email,
-            State = "Active",
-            RegistrationDate = now,
-            RoleId = playerRole.RoleId,
-            Credential = new Credential
-            {
-                PasswordHash = request.Password,
-                FailedAttempts = 0
-            },
-            Profile = new Profile()
+            Result = MapLoginStatus(outcome.Status)
         };
 
-        try
+        if (outcome.Status == LoginStatus.Success)
         {
-            dbContext.Users.Add(user);
-            await dbContext.SaveChangesAsync(context.CancellationToken);
+            response.UserId = outcome.UserId;
+            response.UserName = outcome.UserName;
+            response.SessionToken = outcome.SessionToken;
+        }
 
-            return new RegisterAccountResponse { Result = RegistrationResult.Success };
-        }
-        catch (DbUpdateException exception)
+        return response;
+    }
+
+    private static AtariGo.Contracts.LoginResult MapLoginStatus(LoginStatus status)
+    {
+        return status switch
         {
-            logger.LogWarning(exception, "Could not register account.");
-            dbContext.ChangeTracker.Clear();
-            return new RegisterAccountResponse { Result = RegistrationResult.Error };
-        }
+            LoginStatus.Success => AtariGo.Contracts.LoginResult.Success,
+            LoginStatus.UserNotFound => AtariGo.Contracts.LoginResult.UserNotFound,
+            LoginStatus.IncorrectPassword => AtariGo.Contracts.LoginResult.IncorrectPassword,
+            LoginStatus.AccountRestricted => AtariGo.Contracts.LoginResult.AccountRestricted,
+            _ => AtariGo.Contracts.LoginResult.Unspecified
+        };
+    }
+
+    private static AtariGo.Contracts.RegistrationResult MapRegistrationStatus(
+        RegistrationStatus status)
+    {
+        return status switch
+        {
+            RegistrationStatus.Success => AtariGo.Contracts.RegistrationResult.Success,
+            RegistrationStatus.UsernameTaken => AtariGo.Contracts.RegistrationResult.UsernameTaken,
+            RegistrationStatus.EmailTaken => AtariGo.Contracts.RegistrationResult.EmailTaken,
+            _ => AtariGo.Contracts.RegistrationResult.Error
+        };
     }
 }

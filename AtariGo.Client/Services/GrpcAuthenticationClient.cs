@@ -7,7 +7,7 @@ namespace AtariGo.Client.Services;
 
 public sealed class GrpcAuthenticationClient : IAuthenticationClient
 {
-    private readonly GrpcChannel _channel = GrpcChannel.ForAddress("http://localhost:5026");
+    private readonly GrpcChannel _channel = GrpcChannel.ForAddress("https://localhost:7061");
     private Authentication.AuthenticationClient? _client;
 
     public Task<LoginResponse> LoginAsync(
