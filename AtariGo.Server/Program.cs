@@ -16,7 +16,6 @@ builder.Services.AddGrpc();
 
 var app = builder.Build();
 
-app.MapGrpcService<GreeterService>();
 app.MapGrpcService<AuthenticationGrpcService>();
 app.MapGrpcService<LeaderboardGrpcService>();
 app.MapGet("/", () =>

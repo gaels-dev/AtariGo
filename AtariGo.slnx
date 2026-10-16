@@ -1,4 +1,5 @@
 <Solution>
   <Project Path="AtariGo.Client/AtariGo.Client.csproj" />
+  <Project Path="AtariGo.Contracts/AtariGo.Contracts.csproj" Id="a0a42fd3-31ba-41aa-ab6f-f9ac6aa884a1" />
   <Project Path="AtariGo.Server/AtariGo.Server.csproj" />
 </Solution>

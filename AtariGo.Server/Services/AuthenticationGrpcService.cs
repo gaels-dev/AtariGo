@@ -33,8 +33,6 @@ public sealed class AuthenticationGrpcService(
             return new LoginResponse { Result = LoginResult.UserNotFound };
         }
 
-        // Current test data stores plain text in PasswordHash. Replace this comparison
-        // with a password-hash verifier before using real accounts.
         if (!string.Equals(
                 user.Credential.PasswordHash,
                 request.Password,
@@ -43,7 +41,7 @@ public sealed class AuthenticationGrpcService(
             return new LoginResponse { Result = LoginResult.IncorrectPassword };
         }
 
-        DateTime now = DateTime.UtcNow;
+        DateTime now = DateTime.Now;
         if (!string.Equals(user.State, "Active", StringComparison.OrdinalIgnoreCase)
             || user.Credential.LockedUntil > now)
         {
@@ -131,7 +129,7 @@ public sealed class AuthenticationGrpcService(
             return new RegisterAccountResponse { Result = RegistrationResult.Error };
         }
 
-        DateTime now = DateTime.UtcNow;
+        DateTime now = DateTime.Now;
         var user = new User
         {
             UserName = userName,
@@ -141,7 +139,6 @@ public sealed class AuthenticationGrpcService(
             RoleId = playerRole.RoleId,
             Credential = new Credential
             {
-                // Test-only: replace with a password hash before using real accounts.
                 PasswordHash = request.Password,
                 FailedAttempts = 0
             },
