@@ -15,22 +15,22 @@ public sealed class VerificationDialogViewModel : ViewModelBase
 {
     private readonly RegistrationDraft _registrationDraft;
     private readonly INavigationService _navigationService;
-    private readonly IAuthenticationClient _authenticationClient;
+    private readonly IRegistrationClient _registrationClient;
     private string _verificationCode = string.Empty;
     private string _errorMessage = string.Empty;
 
     public VerificationDialogViewModel(
         RegistrationDraft registrationDraft,
         INavigationService navigationService,
-        IAuthenticationClient authenticationClient)
+        IRegistrationClient registrationClient)
     {
         ArgumentNullException.ThrowIfNull(registrationDraft);
         ArgumentNullException.ThrowIfNull(navigationService);
-        ArgumentNullException.ThrowIfNull(authenticationClient);
+        ArgumentNullException.ThrowIfNull(registrationClient);
 
         _registrationDraft = registrationDraft;
         _navigationService = navigationService;
-        _authenticationClient = authenticationClient;
+        _registrationClient = registrationClient;
         ConfirmCommand = new AsyncRelayCommand(ConfirmRegistrationAsync);
         CancelCommand = new RelayCommand(_navigationService.ReturnToRegisterDialog);
     }
@@ -65,11 +65,8 @@ public sealed class VerificationDialogViewModel : ViewModelBase
         try
         {
             RegisterAccountResponse response =
-                await _authenticationClient.RegisterAccountAsync(
-                    _registrationDraft.UserName,
-                    _registrationDraft.Email,
-                    _registrationDraft.Password,
-                    _registrationDraft.PasswordConfirmation,
+                await _registrationClient.RegisterAccountAsync(
+                    _registrationDraft,
                     confirmationText);
 
             _navigationService.ShowRegistrationResult(response.Result);

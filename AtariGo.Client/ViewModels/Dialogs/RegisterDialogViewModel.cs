@@ -11,6 +11,11 @@ namespace AtariGo.Client.ViewModels.Dialogs;
 
 public sealed class RegisterDialogViewModel : ViewModelBase
 {
+    private const int MaximumUsernameLength = 100;
+    private const int MaximumEmailLength = 254;
+    private const int MinimumPasswordLength = 8;
+    private const int MaximumPasswordLength = 255;
+
     private readonly INavigationService _navigationService;
     private string _username = string.Empty;
     private string _email = string.Empty;
@@ -87,7 +92,9 @@ public sealed class RegisterDialogViewModel : ViewModelBase
             return;
         }
 
-        if (username.Length > 100 || email.Length > 254 || Password.Length > 255)
+        if (username.Length > MaximumUsernameLength
+            || email.Length > MaximumEmailLength
+            || Password.Length > MaximumPasswordLength)
         {
             ErrorMessage = GetLocalizedMessage("Register_Err_Generic");
             return;
@@ -99,7 +106,8 @@ public sealed class RegisterDialogViewModel : ViewModelBase
             return;
         }
 
-        if (Password.Length < 8 || !Password.ContainsUppercaseLetter())
+        if (Password.Length < MinimumPasswordLength
+            || !Password.ContainsUppercaseLetter())
         {
             ErrorMessage = GetLocalizedMessage("Register_Err_PasswordPolicy");
             return;

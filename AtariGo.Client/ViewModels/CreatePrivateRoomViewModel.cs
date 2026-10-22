@@ -10,9 +10,6 @@ namespace AtariGo.Client.ViewModels
 {
     public class CreatePrivateRoomViewModel : ViewModelBase
     {
-        private const int ClassicCaptureGoal = 1;
-        private const int IntermediateCaptureGoal = 2;
-        private const int ExtendedCaptureGoal = 3;
         private const string PrototypeRoomCode = "A7X9";
 
         private readonly INavigationService _navigationService;
@@ -24,13 +21,13 @@ namespace AtariGo.Client.ViewModels
             ArgumentNullException.ThrowIfNull(navigationService);
 
             _navigationService = navigationService;
-            _selectedCaptureGoal = ClassicCaptureGoal;
+            _selectedCaptureGoal = GameRules.DefaultCaptureGoal;
 
             CaptureGoals = new List<int>
             {
-                ClassicCaptureGoal,
-                IntermediateCaptureGoal,
-                ExtendedCaptureGoal
+                GameRules.DefaultCaptureGoal,
+                GameRules.IntermediateCaptureGoal,
+                GameRules.ExtendedCaptureGoal
             };
 
             CreateRoomCommand = new RelayCommand(CreateRoom);

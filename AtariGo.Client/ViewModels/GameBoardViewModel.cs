@@ -11,8 +11,6 @@ namespace AtariGo.Client.ViewModels
 {
     public class GameBoardViewModel : ViewModelBase
     {
-        public const int BoardSize = 9;
-
         private readonly INavigationService _navigationService;
 
         private StoneColor _currentTurn;
@@ -31,7 +29,7 @@ namespace AtariGo.Client.ViewModels
         {
             ArgumentNullException.ThrowIfNull(navigationService);
             _navigationService = navigationService;
-            _targetCaptures = 1;
+            _targetCaptures = GameRules.DefaultCaptureGoal;
             _isChatEnabled = !isGuest;
 
             _currentTurn = StoneColor.Black;
@@ -159,9 +157,9 @@ namespace AtariGo.Client.ViewModels
         private void InitializeBoard()
         {
             Cells.Clear();
-            for (int row = 0; row < BoardSize; row++)
+            for (int row = 0; row < GameRules.BoardSize; row++)
             {
-                for (int col = 0; col < BoardSize; col++)
+                for (int col = 0; col < GameRules.BoardSize; col++)
                 {
                     Cells.Add(new BoardCellViewModel(row, col, HandleCellClicked));
                 }

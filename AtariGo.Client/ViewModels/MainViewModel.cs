@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Threading;
 
 using AtariGo.Client.Services;
+using AtariGo.Client.Models;
 using AtariGo.Client.ViewModels.Dialogs;
 
 namespace AtariGo.Client.ViewModels
@@ -112,7 +113,7 @@ namespace AtariGo.Client.ViewModels
 
         public void NavigateToGameBoard(
             bool isGuest = false,
-            int targetCaptures = 1)
+            int targetCaptures = GameRules.DefaultCaptureGoal)
         {
             GameBoardViewModel gameBoard =
                 new GameBoardViewModel(

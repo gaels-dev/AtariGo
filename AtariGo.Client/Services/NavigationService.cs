@@ -58,7 +58,7 @@ namespace AtariGo.Client.Services
 
         public void NavigateToGameBoard(
             bool isGuest = false,
-            int targetCaptures = 1) =>
+            int targetCaptures = GameRules.DefaultCaptureGoal) =>
             Dispatch(() =>
                 GetMainViewModel()?.NavigateToGameBoard(
                     isGuest,

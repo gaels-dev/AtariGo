@@ -20,27 +20,6 @@ public sealed class AuthenticationGrpcService(
         return CreateLoginResponse(outcome);
     }
 
-    public override async Task<RegisterAccountResponse> RegisterAccount(
-        RegisterAccountRequest request,
-        ServerCallContext context)
-    {
-        var command = new RegisterAccountCommand(
-            request.UserName,
-            request.Email,
-            request.Password,
-            request.PasswordConfirmation,
-            request.ConfirmationText);
-
-        RegistrationStatus status = await authenticationService.RegisterAccountAsync(
-            command,
-            context.CancellationToken);
-
-        return new RegisterAccountResponse
-        {
-            Result = MapRegistrationStatus(status)
-        };
-    }
-
     private static LoginResponse CreateLoginResponse(LoginOutcome outcome)
     {
         var response = new LoginResponse
@@ -70,15 +49,4 @@ public sealed class AuthenticationGrpcService(
         };
     }
 
-    private static AtariGo.Contracts.RegistrationResult MapRegistrationStatus(
-        RegistrationStatus status)
-    {
-        return status switch
-        {
-            RegistrationStatus.Success => AtariGo.Contracts.RegistrationResult.Success,
-            RegistrationStatus.UsernameTaken => AtariGo.Contracts.RegistrationResult.UsernameTaken,
-            RegistrationStatus.EmailTaken => AtariGo.Contracts.RegistrationResult.EmailTaken,
-            _ => AtariGo.Contracts.RegistrationResult.Error
-        };
-    }
 }

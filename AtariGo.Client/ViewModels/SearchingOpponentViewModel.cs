@@ -2,6 +2,7 @@ using System;
 using System.Windows.Input;
 
 using AtariGo.Client.Commands;
+using AtariGo.Client.Models;
 using AtariGo.Client.Services;
 
 namespace AtariGo.Client.ViewModels
@@ -20,9 +21,13 @@ namespace AtariGo.Client.ViewModels
             _isSearching = true;
 
             StartGameCommand = new RelayCommand(
-                () => navigationService.NavigateToGameBoard(isGuest, 1));
+                () => navigationService.NavigateToGameBoard(
+                    isGuest,
+                    GameRules.DefaultCaptureGoal));
             SimulateMatchFoundCommand = new RelayCommand(
-                () => navigationService.NavigateToGameBoard(isGuest, 1));
+                () => navigationService.NavigateToGameBoard(
+                    isGuest,
+                    GameRules.DefaultCaptureGoal));
             CancelCommand = new RelayCommand(navigationService.NavigateToMainMenu);
         }
 

@@ -1,5 +1,3 @@
-using System.Threading;
-using System.Threading.Tasks;
 using AtariGo.Contracts;
 using Grpc.Net.Client;
 
@@ -7,7 +5,8 @@ namespace AtariGo.Client.Services;
 
 public sealed class GrpcAuthenticationClient : IAuthenticationClient
 {
-    private readonly GrpcChannel _channel = GrpcChannel.ForAddress("https://localhost:7061");
+    private readonly GrpcChannel _channel = GrpcChannel.ForAddress(
+        GrpcClientSettings.ServerAddress);
     private Authentication.AuthenticationClient? _client;
 
     public Task<LoginResponse> LoginAsync(
@@ -22,25 +21,4 @@ public sealed class GrpcAuthenticationClient : IAuthenticationClient
             cancellationToken: cancellationToken).ResponseAsync;
     }
 
-    public Task<RegisterAccountResponse> RegisterAccountAsync(
-        string userName,
-        string email,
-        string password,
-        string passwordConfirmation,
-        string confirmationText,
-        CancellationToken cancellationToken = default)
-    {
-        _client ??= new Authentication.AuthenticationClient(_channel);
-
-        return _client.RegisterAccountAsync(
-            new RegisterAccountRequest
-            {
-                UserName = userName,
-                Email = email,
-                Password = password,
-                PasswordConfirmation = passwordConfirmation,
-                ConfirmationText = confirmationText
-            },
-            cancellationToken: cancellationToken).ResponseAsync;
-    }
 }

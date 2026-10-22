@@ -15,8 +15,12 @@ namespace AtariGo.Client.ViewModels
 {
     public class LoginViewModel : ViewModelBase
     {
+        private static readonly TimeSpan LoginSuccessMessageDelay =
+            TimeSpan.FromSeconds(1);
+
         private readonly INavigationService _navigationService;
         private readonly IAuthenticationClient _authenticationClient;
+        private readonly IRegistrationClient _registrationClient;
         private RegisterDialogViewModel? _registerDialogViewModel;
 
         private string _identifier = string.Empty;
@@ -27,11 +31,13 @@ namespace AtariGo.Client.ViewModels
 
         public LoginViewModel(
             INavigationService navigationService,
-            IAuthenticationClient? authenticationClient = null)
+            IAuthenticationClient? authenticationClient = null,
+            IRegistrationClient? registrationClient = null)
         {
             ArgumentNullException.ThrowIfNull(navigationService);
             _navigationService = navigationService;
             _authenticationClient = authenticationClient ?? new GrpcAuthenticationClient();
+            _registrationClient = registrationClient ?? new GrpcRegistrationClient();
 
             ChangeLanguageCommand = new RelayCommand(() => IsLanguageOverlayVisible = true);
             CancelLanguageCommand = new RelayCommand(() => IsLanguageOverlayVisible = false);
@@ -109,7 +115,7 @@ namespace AtariGo.Client.ViewModels
             CurrentDialogViewModel = new VerificationDialogViewModel(
                 registrationDraft,
                 _navigationService,
-                _authenticationClient);
+                _registrationClient);
         }
 
         public void ReturnToRegisterDialog()
@@ -197,7 +203,7 @@ namespace AtariGo.Client.ViewModels
                 {
                     case LoginResult.Success:
                         LoginMessage = GetLocalizedMessage("Login_Msg_Success");
-                        await Task.Delay(1000);
+                        await Task.Delay(LoginSuccessMessageDelay);
                         _navigationService.NavigateToMainWindow(
                             isGuest: false,
                             response.UserName,

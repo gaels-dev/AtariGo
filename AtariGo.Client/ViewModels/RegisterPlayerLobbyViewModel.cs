@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 
 using AtariGo.Client.Commands;
+using AtariGo.Client.Models;
 using AtariGo.Client.Properties;
 using AtariGo.Client.Services;
 using AtariGo.Contracts;
@@ -15,7 +16,6 @@ namespace AtariGo.Client.ViewModels
 {
     public class RegisterPlayerLobbyViewModel : ViewModelBase
     {
-        private const int DefaultCaptureGoal = 1;
         private const int DefaultPlayerWins = 54;
         private const int LeaderboardLimit = 10;
         private const string DefaultPlayerName = "Player";
@@ -67,14 +67,14 @@ namespace AtariGo.Client.ViewModels
             InviteFriendCommand = new RelayCommand(
                 () => navigationService.NavigateToFriendList(
                     string.Empty,
-                    DefaultCaptureGoal));
+                    GameRules.DefaultCaptureGoal));
 
             EmailFriendCommand = new RelayCommand(() => { });
 
             RemoveFriendCommand = new RelayCommand(
                 () => navigationService.NavigateToFriendList(
                     string.Empty,
-                    DefaultCaptureGoal));
+                    GameRules.DefaultCaptureGoal));
 
             RefreshLeaderboardCommand = new AsyncRelayCommand(
                 _ => LoadLeaderboardAsync());

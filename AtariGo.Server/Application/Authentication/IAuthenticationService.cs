@@ -6,8 +6,4 @@ public interface IAuthenticationService
         string identifier,
         string password,
         CancellationToken cancellationToken);
-
-    Task<RegistrationStatus> RegisterAccountAsync(
-        RegisterAccountCommand command,
-        CancellationToken cancellationToken);
 }

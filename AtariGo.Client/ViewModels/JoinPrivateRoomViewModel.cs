@@ -9,8 +9,6 @@ namespace AtariGo.Client.ViewModels
 {
     public class JoinPrivateRoomViewModel : ViewModelBase
     {
-        private const int DefaultCaptureGoal = 1;
-
         private readonly INavigationService _navigationService;
         private string _roomCode;
         private string _errorMessage;
@@ -74,7 +72,7 @@ namespace AtariGo.Client.ViewModels
                 {
                     IsHost = false,
                     RoomCode = RoomCode.Trim(),
-                    TargetCaptures = DefaultCaptureGoal
+                    TargetCaptures = GameRules.DefaultCaptureGoal
                 };
 
             _navigationService.NavigateToPrivateRoomLobby(
