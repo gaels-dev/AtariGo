@@ -5,17 +5,39 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AtariGo.Server.Application.Authentication;
 
-public sealed class RegistrationService(
-    AtariGoDbContext dbContext,
-    IPasswordHasher<User> passwordHasher,
-    IRegistrationValidator registrationValidator,
-    ILogger<RegistrationService> logger) : IRegistrationService
+public sealed class RegistrationService : IRegistrationService
 {
+    private readonly AtariGoDbContext _dbContext;
+    private readonly IPasswordHasher<User> _passwordHasher;
+    private readonly IRegistrationValidator _registrationValidator;
+    private readonly ILogger<RegistrationService> _logger;
+    private readonly TimeProvider _timeProvider;
+
+    public RegistrationService(
+        AtariGoDbContext dbContext,
+        IPasswordHasher<User> passwordHasher,
+        IRegistrationValidator registrationValidator,
+        ILogger<RegistrationService> logger,
+        TimeProvider timeProvider)
+    {
+        ArgumentNullException.ThrowIfNull(dbContext);
+        ArgumentNullException.ThrowIfNull(passwordHasher);
+        ArgumentNullException.ThrowIfNull(registrationValidator);
+        ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(timeProvider);
+
+        _dbContext = dbContext;
+        _passwordHasher = passwordHasher;
+        _registrationValidator = registrationValidator;
+        _logger = logger;
+        _timeProvider = timeProvider;
+    }
+
     public async Task<RegistrationStatus> RegisterAccountAsync(
         RegisterAccountCommand command,
         CancellationToken cancellationToken)
     {
-        if (!registrationValidator.IsValid(command))
+        if (!_registrationValidator.IsValid(command))
         {
             return RegistrationStatus.Error;
         }
@@ -47,7 +69,7 @@ public sealed class RegistrationService(
         string email,
         CancellationToken cancellationToken)
     {
-        bool userNameExists = await dbContext.Users.AnyAsync(
+        bool userNameExists = await _dbContext.Users.AnyAsync(
             user => user.UserName == userName,
             cancellationToken);
         if (userNameExists)
@@ -55,7 +77,7 @@ public sealed class RegistrationService(
             return RegistrationStatus.UsernameTaken;
         }
 
-        bool emailExists = await dbContext.Users.AnyAsync(
+        bool emailExists = await _dbContext.Users.AnyAsync(
             user => user.Email == email,
             cancellationToken);
         return emailExists ? RegistrationStatus.EmailTaken : null;
@@ -63,8 +85,8 @@ public sealed class RegistrationService(
 
     private Task<Role?> FindPlayerRoleAsync(CancellationToken cancellationToken)
     {
-        return dbContext.Roles.SingleOrDefaultAsync(
-            role => role.Name == "Player",
+        return _dbContext.Roles.SingleOrDefaultAsync(
+            role => role.Name == DatabaseValues.RoleNames.Player,
             cancellationToken);
     }
 
@@ -72,18 +94,20 @@ public sealed class RegistrationService(
         RegisterAccountCommand command,
         Role playerRole)
     {
-        DateTime now = DateTime.Now;
+        DateTime now = _timeProvider.GetUtcNow().UtcDateTime;
         var user = new User
         {
             UserName = command.UserName.Trim(),
             Email = command.Email.Trim(),
-            State = "Active",
+            State = DatabaseValues.AccountStates.Active,
             RegistrationDate = now,
             RoleId = playerRole.RoleId,
             Credential = new Credential { FailedAttempts = 0 },
             Profile = new Profile()
         };
-        user.Credential!.PasswordHash = passwordHasher.HashPassword(user, command.Password);
+        user.Credential!.PasswordHash = _passwordHasher.HashPassword(
+            user,
+            command.Password);
         return user;
     }
 
@@ -93,14 +117,14 @@ public sealed class RegistrationService(
     {
         try
         {
-            dbContext.Users.Add(user);
-            await dbContext.SaveChangesAsync(cancellationToken);
+            _dbContext.Users.Add(user);
+            await _dbContext.SaveChangesAsync(cancellationToken);
             return RegistrationStatus.Success;
         }
         catch (DbUpdateException exception)
         {
-            logger.LogWarning(exception, "Could not register account.");
-            dbContext.ChangeTracker.Clear();
+            _logger.LogWarning(exception, "Could not register account.");
+            _dbContext.ChangeTracker.Clear();
             return RegistrationStatus.Error;
         }
     }

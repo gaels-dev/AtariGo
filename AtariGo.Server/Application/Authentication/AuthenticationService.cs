@@ -6,14 +6,32 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AtariGo.Server.Application.Authentication;
 
-public sealed class AuthenticationService(
-    AtariGoDbContext dbContext,
-    IPasswordHasher<User> passwordHasher,
-    ISessionTokenProvider sessionTokenProvider) : IAuthenticationService
+public sealed class AuthenticationService : IAuthenticationService
 {
     private static readonly TimeSpan SessionLifetime = TimeSpan.FromHours(1);
+    private readonly AtariGoDbContext _dbContext;
+    private readonly IPasswordHasher<User> _passwordHasher;
+    private readonly ISessionTokenProvider _sessionTokenProvider;
+    private readonly TimeProvider _timeProvider;
 
-    public async Task<LoginOutcome> LoginAsync(
+    public AuthenticationService(
+        AtariGoDbContext dbContext,
+        IPasswordHasher<User> passwordHasher,
+        ISessionTokenProvider sessionTokenProvider,
+        TimeProvider timeProvider)
+    {
+        ArgumentNullException.ThrowIfNull(dbContext);
+        ArgumentNullException.ThrowIfNull(passwordHasher);
+        ArgumentNullException.ThrowIfNull(sessionTokenProvider);
+        ArgumentNullException.ThrowIfNull(timeProvider);
+
+        _dbContext = dbContext;
+        _passwordHasher = passwordHasher;
+        _sessionTokenProvider = sessionTokenProvider;
+        _timeProvider = timeProvider;
+    }
+
+    public async Task<LoginOperationResult> LoginAsync(
         string identifier,
         string password,
         CancellationToken cancellationToken)
@@ -22,23 +40,23 @@ public sealed class AuthenticationService(
 
         if (user?.Credential is null)
         {
-            return new LoginOutcome(LoginStatus.UserNotFound);
+            return new LoginOperationResult(LoginStatus.UserNotFound);
         }
 
         if (!VerifyPassword(user, password))
         {
-            return new LoginOutcome(LoginStatus.IncorrectPassword);
+            return new LoginOperationResult(LoginStatus.IncorrectPassword);
         }
 
-        DateTime now = DateTime.Now;
+        DateTime now = _timeProvider.GetUtcNow().UtcDateTime;
         if (!CanAccessAccount(user, now))
         {
-            return new LoginOutcome(LoginStatus.AccountRestricted);
+            return new LoginOperationResult(LoginStatus.AccountRestricted);
         }
 
         IssuedSessionToken token = await CreateSessionAsync(user, now, cancellationToken);
 
-        return new LoginOutcome(
+        return new LoginOperationResult(
             LoginStatus.Success,
             user.UserId,
             user.UserName,
@@ -51,7 +69,7 @@ public sealed class AuthenticationService(
     {
         string normalizedIdentifier = identifier.Trim();
 
-        return dbContext.Users
+        return _dbContext.Users
             .Include(candidate => candidate.Credential)
             .SingleOrDefaultAsync(
                 candidate => candidate.UserName == normalizedIdentifier
@@ -59,6 +77,7 @@ public sealed class AuthenticationService(
                 cancellationToken);
     }
 
+    /// <summary>Verifies a password and upgrades a legacy value after a successful match.</summary>
     private bool VerifyPassword(User user, string password)
     {
         Credential credential = user.Credential!;
@@ -73,7 +92,7 @@ public sealed class AuthenticationService(
 
         if (result == PasswordVerificationResult.SuccessRehashNeeded || isLegacyPassword)
         {
-            credential.PasswordHash = passwordHasher.HashPassword(user, password);
+            credential.PasswordHash = _passwordHasher.HashPassword(user, password);
         }
 
         return true;
@@ -85,7 +104,7 @@ public sealed class AuthenticationService(
     {
         try
         {
-            return passwordHasher.VerifyHashedPassword(
+            return _passwordHasher.VerifyHashedPassword(
                 user,
                 user.Credential!.PasswordHash,
                 password);
@@ -98,9 +117,14 @@ public sealed class AuthenticationService(
 
     private static bool CanAccessAccount(User user, DateTime now)
     {
-        return string.Equals(user.State, "Active", StringComparison.OrdinalIgnoreCase)
-            && (user.Credential!.LockedUntil is null
-                || user.Credential.LockedUntil <= now);
+        bool isActive = string.Equals(
+            user.State,
+            DatabaseValues.AccountStates.Active,
+            StringComparison.OrdinalIgnoreCase);
+        bool isUnlocked = user.Credential!.LockedUntil is null
+            || user.Credential.LockedUntil <= now;
+
+        return isActive && isUnlocked;
     }
 
     private async Task<IssuedSessionToken> CreateSessionAsync(
@@ -108,19 +132,18 @@ public sealed class AuthenticationService(
         DateTime now,
         CancellationToken cancellationToken)
     {
-        IssuedSessionToken token = sessionTokenProvider.Create();
-        dbContext.Sessions.Add(new Session
+        IssuedSessionToken token = _sessionTokenProvider.Create();
+        _dbContext.Sessions.Add(new Session
         {
             UserId = user.UserId,
             SessionTokenHash = token.Hash,
             StartedAt = now,
             LastActivityAt = now,
             ExpiresAt = now.Add(SessionLifetime),
-            State = "Active"
+            State = DatabaseValues.SessionStates.Active
         });
 
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await _dbContext.SaveChangesAsync(cancellationToken);
         return token;
     }
-
 }

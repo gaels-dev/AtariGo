@@ -42,7 +42,9 @@ namespace AtariGo.Client.ViewModels
             ChangeLanguageCommand = new RelayCommand(() => IsLanguageOverlayVisible = true);
             CancelLanguageCommand = new RelayCommand(() => IsLanguageOverlayVisible = false);
             ConfirmLanguageCommand = new RelayCommand(ConfirmLanguage);
-            SubmitCommand = new AsyncRelayCommand(SubmitAsync);
+            SubmitCommand = new AsyncRelayCommand(
+                SubmitAsync,
+                HandleSubmitFailure);
             GuestCommand = new RelayCommand(GuestLogin);
             ExitCommand = new RelayCommand(_navigationService.ExitApplication);
             OpenRegisterCommand = new RelayCommand(_navigationService.OpenRegisterDialog);
@@ -231,6 +233,11 @@ namespace AtariGo.Client.ViewModels
             {
                 LoginMessage = GetLocalizedMessage("Login_Err_ServiceUnavailable");
             }
+        }
+
+        private void HandleSubmitFailure(Exception _)
+        {
+            LoginMessage = GetLocalizedMessage("Login_Err_ServiceUnavailable");
         }
 
         private static string GetLocalizedMessage(string key) =>

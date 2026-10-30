@@ -1,18 +1,34 @@
 using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Windows.Input;
 
 namespace AtariGo.Client.Commands;
 
-public sealed class AsyncRelayCommand(Func<object?, Task> execute)
-    : ICommand
+public sealed class AsyncRelayCommand : ICommand
 {
+    private readonly Func<object?, Task> _execute;
+    private readonly Action<Exception> _onError;
     private bool _isExecuting;
+
+    public AsyncRelayCommand(
+        Func<object?, Task> execute,
+        Action<Exception> onError)
+    {
+        ArgumentNullException.ThrowIfNull(execute);
+        ArgumentNullException.ThrowIfNull(onError);
+
+        _execute = execute;
+        _onError = onError;
+    }
 
     public event EventHandler? CanExecuteChanged;
 
     public bool CanExecute(object? parameter) => !_isExecuting;
 
+    /// <summary>
+    /// Runs the task at the ICommand void boundary and handles command failures.
+    /// </summary>
     public async void Execute(object? parameter)
     {
         if (!CanExecute(parameter))
@@ -25,7 +41,25 @@ public sealed class AsyncRelayCommand(Func<object?, Task> execute)
 
         try
         {
-            await execute(parameter);
+            await _execute(parameter);
+        }
+        catch (Exception exception)
+        {
+            Trace.TraceError(
+                "Async command failed. Exception type: {0}.",
+                exception.GetType().Name);
+
+            try
+            {
+                _onError(exception);
+            }
+            catch (Exception handlerException)
+            {
+                Trace.TraceError(
+                    "Async command failure handler failed. Exception types: {0}, {1}.",
+                    exception.GetType().Name,
+                    handlerException.GetType().Name);
+            }
         }
         finally
         {

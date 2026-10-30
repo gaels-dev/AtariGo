@@ -1,45 +1,34 @@
 using AtariGo.Contracts;
-using AtariGo.Server.Data;
+using AtariGo.Server.Application.Leaderboard;
 using Grpc.Core;
-using Microsoft.EntityFrameworkCore;
 
 namespace AtariGo.Server.Services;
 
-public sealed class LeaderboardGrpcService(AtariGoDbContext dbContext)
-    : Leaderboard.LeaderboardBase
+public sealed class LeaderboardGrpcService : Leaderboard.LeaderboardBase
 {
-    private const int MaximumEntries = 10;
+    private readonly ILeaderboardService _leaderboardService;
+
+    public LeaderboardGrpcService(ILeaderboardService leaderboardService)
+    {
+        ArgumentNullException.ThrowIfNull(leaderboardService);
+        _leaderboardService = leaderboardService;
+    }
 
     public override async Task<GetTopPlayersResponse> GetTopPlayers(
         GetTopPlayersRequest request,
         ServerCallContext context)
     {
-        int limit = request.Limit <= 0
-            ? MaximumEntries
-            : Math.Min(request.Limit, MaximumEntries);
+        IReadOnlyList<PlayerLeaderboardEntry> players =
+            await _leaderboardService.GetTopPlayersAsync(
+                request.Limit,
+                context.CancellationToken);
 
-        var players = await dbContext.GamePlayers
-            .AsNoTracking()
-            .Where(player =>
-                player.UserId != null
-                && player.Result == "Won"
-                && player.Game.State == "Completed"
-                && player.User!.State == "Active")
-            .GroupBy(player => new
-            {
-                player.UserId,
-                player.User!.UserName
-            })
-            .Select(group => new
-            {
-                group.Key.UserName,
-                Wins = group.Count()
-            })
-            .OrderByDescending(player => player.Wins)
-            .ThenBy(player => player.UserName)
-            .Take(limit)
-            .ToListAsync(context.CancellationToken);
+        return CreateResponse(players);
+    }
 
+    private static GetTopPlayersResponse CreateResponse(
+        IReadOnlyList<PlayerLeaderboardEntry> players)
+    {
         var response = new GetTopPlayersResponse();
         for (int index = 0; index < players.Count; index++)
         {

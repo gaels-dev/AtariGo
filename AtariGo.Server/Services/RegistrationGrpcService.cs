@@ -6,10 +6,16 @@ using Grpc.Core;
 
 namespace AtariGo.Server.Services;
 
-public sealed class RegistrationGrpcService(
-    IRegistrationService registrationService)
-    : Registration.RegistrationBase
+public sealed class RegistrationGrpcService : Registration.RegistrationBase
 {
+    private readonly IRegistrationService _registrationService;
+
+    public RegistrationGrpcService(IRegistrationService registrationService)
+    {
+        ArgumentNullException.ThrowIfNull(registrationService);
+        _registrationService = registrationService;
+    }
+
     public override async Task<RegisterAccountResponse> RegisterAccount(
         RegisterAccountRequest request,
         ServerCallContext context)
@@ -23,7 +29,7 @@ public sealed class RegistrationGrpcService(
             ConfirmationText = request.ConfirmationText
         };
 
-        RegistrationStatus status = await registrationService.RegisterAccountAsync(
+        RegistrationStatus status = await _registrationService.RegisterAccountAsync(
             command,
             context.CancellationToken);
 

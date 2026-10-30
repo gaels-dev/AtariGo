@@ -69,15 +69,14 @@ namespace AtariGo.Client.ViewModels
                     string.Empty,
                     GameRules.DefaultCaptureGoal));
 
-            EmailFriendCommand = new RelayCommand(() => { });
-
             RemoveFriendCommand = new RelayCommand(
                 () => navigationService.NavigateToFriendList(
                     string.Empty,
                     GameRules.DefaultCaptureGoal));
 
             RefreshLeaderboardCommand = new AsyncRelayCommand(
-                _ => LoadLeaderboardAsync());
+                _ => LoadLeaderboardAsync(),
+                HandleLeaderboardFailure);
 
             LeaderboardStatus = GetLocalizedMessage(
                 "Leaderboard_Msg_Loading");
@@ -191,8 +190,6 @@ namespace AtariGo.Client.ViewModels
 
         public ICommand InviteFriendCommand { get; }
 
-        public ICommand EmailFriendCommand { get; }
-
         public ICommand RemoveFriendCommand { get; }
 
         public ICommand RefreshLeaderboardCommand { get; }
@@ -241,6 +238,12 @@ namespace AtariGo.Client.ViewModels
             {
                 IsLeaderboardLoading = false;
             }
+        }
+
+        private void HandleLeaderboardFailure(Exception _)
+        {
+            LeaderboardStatus = GetLocalizedMessage(
+                "Leaderboard_Msg_Error");
         }
 
         private static string GetLocalizedMessage(

@@ -4,34 +4,40 @@ using Grpc.Core;
 
 namespace AtariGo.Server.Services;
 
-public sealed class AuthenticationGrpcService(
-    IAuthenticationService authenticationService)
-    : Authentication.AuthenticationBase
+public sealed class AuthenticationGrpcService : Authentication.AuthenticationBase
 {
+    private readonly IAuthenticationService _authenticationService;
+
+    public AuthenticationGrpcService(IAuthenticationService authenticationService)
+    {
+        ArgumentNullException.ThrowIfNull(authenticationService);
+        _authenticationService = authenticationService;
+    }
+
     public override async Task<LoginResponse> Login(
         LoginRequest request,
         ServerCallContext context)
     {
-        LoginOutcome outcome = await authenticationService.LoginAsync(
+        LoginOperationResult result = await _authenticationService.LoginAsync(
             request.Identifier,
             request.Password,
             context.CancellationToken);
 
-        return CreateLoginResponse(outcome);
+        return CreateLoginResponse(result);
     }
 
-    private static LoginResponse CreateLoginResponse(LoginOutcome outcome)
+    private static LoginResponse CreateLoginResponse(LoginOperationResult result)
     {
         var response = new LoginResponse
         {
-            Result = MapLoginStatus(outcome.Status)
+            Result = MapLoginStatus(result.Status)
         };
 
-        if (outcome.Status == LoginStatus.Success)
+        if (result.Status == LoginStatus.Success)
         {
-            response.UserId = outcome.UserId;
-            response.UserName = outcome.UserName;
-            response.SessionToken = outcome.SessionToken;
+            response.UserId = result.UserId;
+            response.UserName = result.UserName;
+            response.SessionToken = result.SessionToken;
         }
 
         return response;

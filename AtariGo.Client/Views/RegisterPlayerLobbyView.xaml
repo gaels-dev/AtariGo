@@ -482,7 +482,7 @@
                                         <Button Style="{StaticResource RoundedButtonStyle}"
                                                 Content="{x:Static
                                                     properties:Resources.RegisterPlayerLobby_Btn_Email}"
-                                                Command="{Binding EmailFriendCommand}"
+                                                IsEnabled="False"
                                                 Width="58" Height="26"
                                                 FontSize="10"
                                                 FontWeight="SemiBold"

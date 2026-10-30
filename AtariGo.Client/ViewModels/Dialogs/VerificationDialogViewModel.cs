@@ -31,7 +31,9 @@ public sealed class VerificationDialogViewModel : ViewModelBase
         _registrationDraft = registrationDraft;
         _navigationService = navigationService;
         _registrationClient = registrationClient;
-        ConfirmCommand = new AsyncRelayCommand(ConfirmRegistrationAsync);
+        ConfirmCommand = new AsyncRelayCommand(
+            ConfirmRegistrationAsync,
+            HandleConfirmationFailure);
         CancelCommand = new RelayCommand(_navigationService.ReturnToRegisterDialog);
     }
 
@@ -79,6 +81,11 @@ public sealed class VerificationDialogViewModel : ViewModelBase
         {
             _navigationService.ShowRegistrationResult(RegistrationResult.Error);
         }
+    }
+
+    private void HandleConfirmationFailure(Exception _)
+    {
+        _navigationService.ShowRegistrationResult(RegistrationResult.Error);
     }
 
     private static string GetLocalizedMessage(string key) =>

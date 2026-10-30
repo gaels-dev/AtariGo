@@ -1,6 +1,7 @@
 using AtariGo.Server.Data;
 using AtariGo.Server.Data.Entities;
 using AtariGo.Server.Application.Authentication;
+using AtariGo.Server.Application.Leaderboard;
 using AtariGo.Server.Security;
 using AtariGo.Server.Services;
 using Microsoft.AspNetCore.Identity;
@@ -15,9 +16,11 @@ var connectionString = builder.Configuration
 
 builder.Services.AddDbContext<AtariGoDbContext>(options =>
     options.UseSqlServer(connectionString));
+builder.Services.AddSingleton(TimeProvider.System);
 
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 builder.Services.AddScoped<IRegistrationService, RegistrationService>();
+builder.Services.AddScoped<ILeaderboardService, LeaderboardService>();
 builder.Services.AddSingleton<IRegistrationValidator, RegistrationValidator>();
 builder.Services.AddSingleton<ISessionTokenProvider, SessionTokenProvider>();
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
