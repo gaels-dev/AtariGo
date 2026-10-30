@@ -11,9 +11,16 @@ public sealed class SessionTokenProvider : ISessionTokenProvider
     {
         string token = Convert.ToBase64String(
             RandomNumberGenerator.GetBytes(TokenByteLength));
-        string tokenHash = Convert.ToHexString(
-            SHA256.HashData(Encoding.UTF8.GetBytes(token)));
+        string tokenHash = Hash(token);
 
         return new IssuedSessionToken(token, tokenHash);
+    }
+
+    public string Hash(string token)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(token);
+
+        return Convert.ToHexString(
+            SHA256.HashData(Encoding.UTF8.GetBytes(token)));
     }
 }

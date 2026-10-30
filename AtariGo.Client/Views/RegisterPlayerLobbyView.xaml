@@ -370,140 +370,125 @@
                         </TextBox>
                     </Border>
 
-                    <ScrollViewer Grid.Row="3" VerticalScrollBarVisibility="Auto">
-                        <StackPanel>
-                            <Border BorderBrush="#2C2A29"
-                                    BorderThickness="1.5"
-                                    CornerRadius="6"
-                                    Padding="10,8"
-                                    Margin="0,0,0,8">
-                                <Grid>
-                                    <StackPanel Orientation="Horizontal"
-                                                VerticalAlignment="Center">
-                                        <Ellipse Width="10" Height="10"
-                                                 Fill="#2E7D32"
-                                                 Margin="0,0,8,0"
-                                                 VerticalAlignment="Center"/>
-                                        <TextBlock Text="Alex99"
-                                                   FontWeight="SemiBold"
-                                                   FontSize="13"
-                                                   VerticalAlignment="Center"/>
-                                    </StackPanel>
-                                    <StackPanel Orientation="Horizontal"
-                                                HorizontalAlignment="Right">
-                                        <Button Style="{StaticResource RoundedButtonStyle}"
-                                                Content="{x:Static
-                                                    properties:Resources.RegisterPlayerLobby_Btn_Invite}"
-                                                Command="{Binding InviteFriendCommand}"
-                                                Width="52" Height="26"
-                                                FontSize="11"
-                                                FontWeight="SemiBold"
-                                                Margin="0,0,6,0"
-                                                Background="#4A90E2"
-                                                Foreground="White"
-                                                BorderThickness="0"/>
-                                        <Button Style="{StaticResource RoundedButtonStyle}"
-                                                Content="X"
-                                                Command="{Binding RemoveFriendCommand}"
-                                                Width="26" Height="26"
-                                                FontSize="11"
-                                                FontWeight="Bold"
-                                                Background="#D9534F"
-                                                Foreground="White"
-                                                BorderThickness="0"/>
-                                    </StackPanel>
-                                </Grid>
-                            </Border>
-
-                            <Border BorderBrush="#2C2A29"
-                                    BorderThickness="1.5"
-                                    CornerRadius="6"
-                                    Padding="10,8"
-                                    Margin="0,0,0,8">
-                                <Grid>
-                                    <StackPanel Orientation="Horizontal"
-                                                VerticalAlignment="Center">
-                                        <Ellipse Width="10" Height="10"
-                                                 Fill="#2E7D32"
-                                                 Margin="0,0,8,0"
-                                                 VerticalAlignment="Center"/>
-                                        <TextBlock Text="SaraGo"
-                                                   FontWeight="SemiBold"
-                                                   FontSize="13"
-                                                   VerticalAlignment="Center"/>
-                                    </StackPanel>
-                                    <StackPanel Orientation="Horizontal"
-                                                HorizontalAlignment="Right">
-                                        <Button Style="{StaticResource RoundedButtonStyle}"
-                                                Content="{x:Static
-                                                    properties:Resources.RegisterPlayerLobby_Btn_Invite}"
-                                                Command="{Binding InviteFriendCommand}"
-                                                Width="52" Height="26"
-                                                FontSize="11"
-                                                FontWeight="SemiBold"
-                                                Margin="0,0,6,0"
-                                                Background="#4A90E2"
-                                                Foreground="White"
-                                                BorderThickness="0"/>
-                                        <Button Style="{StaticResource RoundedButtonStyle}"
-                                                Content="X"
-                                                Command="{Binding RemoveFriendCommand}"
-                                                Width="26" Height="26"
-                                                FontSize="11"
-                                                FontWeight="Bold"
-                                                Background="#D9534F"
-                                                Foreground="White"
-                                                BorderThickness="0"/>
-                                    </StackPanel>
-                                </Grid>
-                            </Border>
-
-                            <Border BorderBrush="#2C2A29"
-                                    BorderThickness="1.5"
-                                    CornerRadius="6"
-                                    Padding="10,8"
-                                    Margin="0,0,0,8">
-                                <Grid>
-                                    <StackPanel Orientation="Horizontal"
-                                                VerticalAlignment="Center">
-                                        <Ellipse Width="10" Height="10"
-                                                 Stroke="#888888"
-                                                 StrokeThickness="1.5"
-                                                 Fill="Transparent"
-                                                 Margin="0,0,8,0"
-                                                 VerticalAlignment="Center"/>
-                                        <TextBlock Text="JorgePro"
-                                                   FontWeight="SemiBold"
-                                                   FontSize="13"
-                                                   VerticalAlignment="Center"/>
-                                    </StackPanel>
-                                    <StackPanel Orientation="Horizontal"
-                                                HorizontalAlignment="Right">    
-                                        <Button Style="{StaticResource RoundedButtonStyle}"
-                                                Content="{x:Static
-                                                    properties:Resources.RegisterPlayerLobby_Btn_Email}"
-                                                IsEnabled="False"
-                                                Width="58" Height="26"
-                                                FontSize="10"
-                                                FontWeight="SemiBold"
-                                                Margin="0,0,6,0"
-                                                Background="#EAEAEA"
-                                                Foreground="#333333"
-                                                BorderThickness="0"/>
-                                        <Button Style="{StaticResource RoundedButtonStyle}"
-                                                Content="X"
-                                                Command="{Binding RemoveFriendCommand}"
-                                                Width="26" Height="26"
-                                                FontSize="11"
-                                                FontWeight="Bold"
-                                                Background="#D9534F"
-                                                Foreground="White"
-                                                BorderThickness="0"/>
-                                    </StackPanel>
-                                </Grid>
-                            </Border>
-                        </StackPanel>
-                    </ScrollViewer>
+                    <StackPanel Grid.Row="3">
+                        <TextBlock Text="{Binding PresenceStatus}"
+                                   Foreground="#666666"
+                                   FontSize="11"
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,6"/>
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <ItemsControl ItemsSource="{Binding Friends}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border BorderBrush="#2C2A29"
+                                                BorderThickness="1.5"
+                                                CornerRadius="6"
+                                                Padding="10,8"
+                                                Margin="0,0,0,8">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Ellipse Width="10"
+                                                             Height="10"
+                                                             Margin="0,0,8,0"
+                                                             VerticalAlignment="Center">
+                                                        <Ellipse.Style>
+                                                            <Style TargetType="Ellipse">
+                                                                <Setter Property="Fill"
+                                                                        Value="#888888"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding IsOnline}"
+                                                                                 Value="True">
+                                                                        <Setter Property="Fill"
+                                                                                Value="#2E7D32"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </Ellipse.Style>
+                                                    </Ellipse>
+                                                    <TextBlock Text="{Binding Username}"
+                                                               FontWeight="SemiBold"
+                                                               FontSize="13"
+                                                               VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="1"
+                                                            Orientation="Horizontal">
+                                                    <Button Content="{x:Static properties:Resources.RegisterPlayerLobby_Btn_Invite}"
+                                                            Command="{Binding DataContext.InviteFriendCommand,
+                                                                RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                            CommandParameter="{Binding}"
+                                                            IsEnabled="{Binding IsOnline}"
+                                                            Width="58"
+                                                            Height="26"
+                                                            FontSize="11"
+                                                            FontWeight="SemiBold"
+                                                            Margin="0,0,6,0"
+                                                            Background="#4A90E2"
+                                                            Foreground="White"
+                                                            BorderThickness="0">
+                                                        <Button.Style>
+                                                            <Style TargetType="Button"
+                                                                   BasedOn="{StaticResource RoundedButtonStyle}">
+                                                                <Setter Property="Visibility"
+                                                                        Value="Visible"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding IsOnline}"
+                                                                                 Value="False">
+                                                                        <Setter Property="Visibility"
+                                                                                Value="Collapsed"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </Button.Style>
+                                                    </Button>
+                                                    <Button Content="{x:Static properties:Resources.RegisterPlayerLobby_Btn_Email}"
+                                                            IsEnabled="False"
+                                                            Width="58"
+                                                            Height="26"
+                                                            FontSize="10"
+                                                            FontWeight="SemiBold"
+                                                            Margin="0,0,6,0"
+                                                            Background="#EAEAEA"
+                                                            Foreground="#333333"
+                                                            BorderThickness="0">
+                                                        <Button.Style>
+                                                            <Style TargetType="Button"
+                                                                   BasedOn="{StaticResource RoundedButtonStyle}">
+                                                                <Setter Property="Visibility"
+                                                                        Value="Collapsed"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding IsOnline}"
+                                                                                 Value="False">
+                                                                        <Setter Property="Visibility"
+                                                                                Value="Visible"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </Button.Style>
+                                                    </Button>
+                                                    <Button Style="{StaticResource RoundedButtonStyle}"
+                                                            Content="X"
+                                                            Command="{Binding DataContext.RemoveFriendCommand,
+                                                                RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                            CommandParameter="{Binding}"
+                                                            Width="26"
+                                                            Height="26"
+                                                            FontSize="11"
+                                                            FontWeight="Bold"
+                                                            Background="#D9534F"
+                                                            Foreground="White"
+                                                            BorderThickness="0"/>
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </StackPanel>
                 </Grid>
             </Border>
         </Grid>

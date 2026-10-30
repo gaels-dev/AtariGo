@@ -20,6 +20,10 @@
 			<views:RegisterPlayerLobbyView/>
 		</DataTemplate>
 
+		<DataTemplate DataType="{x:Type vm:GuestLobbyViewModel}">
+			<views:GuestLobbyView/>
+		</DataTemplate>
+
 		<DataTemplate DataType="{x:Type vm:SearchingOpponentViewModel}">
 			<views:SearchingOpponentView/>
 		</DataTemplate>

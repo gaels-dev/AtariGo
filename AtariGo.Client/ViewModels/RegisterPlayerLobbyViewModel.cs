@@ -27,10 +27,13 @@ namespace AtariGo.Client.ViewModels
         private bool _isGuest;
         private bool _isLeaderboardLoading;
         private string _leaderboardStatus = string.Empty;
+        private string _presenceStatus = string.Empty;
 
         public RegisterPlayerLobbyViewModel(
             INavigationService navigationService,
-            ILeaderboardClient? leaderboardClient = null)
+            ILeaderboardClient? leaderboardClient = null,
+            ObservableCollection<FriendItemViewModel>? friends = null,
+            Func<Task>? signOutAsync = null)
         {
             ArgumentNullException.ThrowIfNull(navigationService);
 
@@ -39,6 +42,7 @@ namespace AtariGo.Client.ViewModels
             _playerName = DefaultPlayerName;
             _playerWins = DefaultPlayerWins;
             _isGuest = false;
+            Friends = friends ?? new ObservableCollection<FriendItemViewModel>();
 
             PlayMultiplayerCommand = new RelayCommand(
                 navigationService.NavigateToLobby);
@@ -55,8 +59,11 @@ namespace AtariGo.Client.ViewModels
             ExitCommand = new RelayCommand(
                 navigationService.ExitApplication);
 
-            SignOutCommand = new RelayCommand(
-                navigationService.SignOut);
+            SignOutCommand = signOutAsync is null
+                ? new RelayCommand(navigationService.SignOut)
+                : new AsyncRelayCommand(
+                    _ => signOutAsync(),
+                    HandleSessionFailure);
 
             CustomizeProfileCommand = new RelayCommand(
                 navigationService.NavigateToProfileCustomization);
@@ -87,6 +94,14 @@ namespace AtariGo.Client.ViewModels
         public ObservableCollection<LeaderboardEntry>
             LeaderboardEntries
         { get; } = new();
+
+        public ObservableCollection<FriendItemViewModel> Friends { get; }
+
+        public string PresenceStatus
+        {
+            get => _presenceStatus;
+            set => SetProperty(ref _presenceStatus, value);
+        }
 
         public string RankHeader =>
             GetLocalizedMessage("Leaderboard_Col_Rank");
@@ -244,6 +259,12 @@ namespace AtariGo.Client.ViewModels
         {
             LeaderboardStatus = GetLocalizedMessage(
                 "Leaderboard_Msg_Error");
+        }
+
+        private void HandleSessionFailure(Exception _)
+        {
+            PresenceStatus = GetLocalizedMessage(
+                "Session_Msg_LogoutFailed");
         }
 
         private static string GetLocalizedMessage(

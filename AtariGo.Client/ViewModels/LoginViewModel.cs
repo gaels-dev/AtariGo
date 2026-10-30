@@ -22,6 +22,8 @@ namespace AtariGo.Client.ViewModels
         private readonly IAuthenticationClient _authenticationClient;
         private readonly IRegistrationClient _registrationClient;
         private RegisterDialogViewModel? _registerDialogViewModel;
+        private GuestRegistrationDialogViewModel?
+            _guestRegistrationDialogViewModel;
 
         private string _identifier = string.Empty;
         private string _loginMessage = string.Empty;
@@ -246,7 +248,11 @@ namespace AtariGo.Client.ViewModels
 
         private void GuestLogin()
         {
-            _navigationService.NavigateToMainWindow(isGuest: true, "Guest");
+            _guestRegistrationDialogViewModel =
+                new GuestRegistrationDialogViewModel(
+                    _navigationService);
+            CurrentDialogViewModel =
+                _guestRegistrationDialogViewModel;
         }
 
         private void ConfirmLanguage()

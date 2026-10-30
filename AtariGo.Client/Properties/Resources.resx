@@ -616,4 +616,37 @@
   <data name="FriendSearch_Lbl_Search" xml:space="preserve">
     <value>Username</value>
   </data>
+  <data name="Presence_Msg_Empty" xml:space="preserve">
+    <value>You have not added any friends yet.</value>
+  </data>
+  <data name="Presence_Msg_Unavailable" xml:space="preserve">
+    <value>Could not refresh connection status.</value>
+  </data>
+  <data name="Session_Msg_LogoutFailed" xml:space="preserve">
+    <value>The session could not be closed on the server. Check your connection and try again.</value>
+  </data>
+  <data name="GuestRegistration_Title" xml:space="preserve">
+    <value>Guest Registration</value>
+  </data>
+  <data name="GuestRegistration_Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="GuestRegistration_NamePlaceholder" xml:space="preserve">
+    <value>Example: AtariMaster</value>
+  </data>
+  <data name="GuestRegistration_Enter" xml:space="preserve">
+    <value>Enter</value>
+  </data>
+  <data name="GuestRegistration_Back" xml:space="preserve">
+    <value>Back</value>
+  </data>
+  <data name="GuestRegistration_Required" xml:space="preserve">
+    <value>Enter a name to continue.</value>
+  </data>
+  <data name="GuestRegistration_NameTooLong" xml:space="preserve">
+    <value>The name cannot exceed 100 characters.</value>
+  </data>
+  <data name="GuestLobby_Title" xml:space="preserve">
+    <value>What would you like to do?</value>
+  </data>
 </root>

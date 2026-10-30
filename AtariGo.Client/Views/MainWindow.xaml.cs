@@ -15,6 +15,7 @@ namespace AtariGo.Client.Views
             InitializeComponent();
             DataContext = viewModel;
             viewModel.LanguageChanged += OnLanguageChanged;
+            Closed += (_, _) => viewModel.StopPresenceMonitor();
         }
 
         private void OnLanguageChanged()
@@ -22,6 +23,7 @@ namespace AtariGo.Client.Views
             if (DataContext is MainViewModel oldVm)
             {
                 oldVm.LanguageChanged -= OnLanguageChanged;
+                oldVm.StopPresenceMonitor();
 
                 var newVm = new MainViewModel(
                     oldVm.IsGuest,

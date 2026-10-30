@@ -25,7 +25,8 @@ namespace AtariGo.Client.ViewModels
 
         public GameBoardViewModel(
             INavigationService navigationService,
-            bool isGuest = false)
+            bool isGuest = false,
+            string? playerName = null)
         {
             ArgumentNullException.ThrowIfNull(navigationService);
             _navigationService = navigationService;
@@ -34,7 +35,10 @@ namespace AtariGo.Client.ViewModels
 
             _currentTurn = StoneColor.Black;
             _myColor = StoneColor.White;
-            _myPlayerName = Properties.Resources.GameBoard_Lbl_You;
+            _myPlayerName = isGuest
+                && !string.IsNullOrWhiteSpace(playerName)
+                    ? playerName
+                    : Properties.Resources.GameBoard_Lbl_You;
             _opponentName = Properties.Resources.GameBoard_Lbl_Opponent;
             _chatInput = string.Empty;
 

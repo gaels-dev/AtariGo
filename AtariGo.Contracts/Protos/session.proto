@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+option csharp_namespace = "AtariGo.Contracts";
+
+package atarigo.session.v1;
+
+service Session {
+  rpc Heartbeat (HeartbeatRequest) returns (HeartbeatResponse);
+  rpc Logout (LogoutRequest) returns (LogoutResponse);
+}
+
+message HeartbeatRequest {
+}
+
+message HeartbeatResponse {
+  repeated FriendPresence friends = 1;
+}
+
+message FriendPresence {
+  int32 user_id = 1;
+  string user_name = 2;
+  bool is_online = 3;
+}
+
+message LogoutRequest {
+}
+
+message LogoutResponse {
+}

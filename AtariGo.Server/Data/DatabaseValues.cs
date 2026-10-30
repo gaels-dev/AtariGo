@@ -11,6 +11,8 @@ public static class DatabaseValues
     public static class SessionStates
     {
         public const string Active = "Active";
+        public const string Revoked = "Revoked";
+        public const string Expired = "Expired";
     }
 
     public static class GameStates

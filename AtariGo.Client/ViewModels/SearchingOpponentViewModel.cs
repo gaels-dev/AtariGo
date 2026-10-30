@@ -13,10 +13,15 @@ namespace AtariGo.Client.ViewModels
         private string _statusMessage;
         private bool _isSearching;
 
-        public SearchingOpponentViewModel(INavigationService navigationService, bool isGuest)
+        public SearchingOpponentViewModel(
+            INavigationService navigationService,
+            bool isGuest,
+            string playerName)
         {
             ArgumentNullException.ThrowIfNull(navigationService);
-            _playerName = Properties.Resources.SearchingOpponent_Lbl_You;
+            _playerName = isGuest
+                ? playerName
+                : Properties.Resources.SearchingOpponent_Lbl_You;
             _statusMessage = Properties.Resources.SearchingOpponent_Lbl_Searching;
             _isSearching = true;
 
