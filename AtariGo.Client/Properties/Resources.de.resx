@@ -648,4 +648,28 @@
   <data name="GuestLobby_Title" xml:space="preserve">
     <value>Was möchtest du tun?</value>
   </data>
+  <data name="Connection_Title_ConfigurationError" xml:space="preserve">
+    <value>Verbindungseinstellungen des Servers</value>
+  </data>
+  <data name="Connection_Err_InvalidAddress" xml:space="preserve">
+    <value>Die Serveradresse ist ungültig. Setze ATARI_GO_GRPC_SERVER_ADDRESS auf eine HTTPS-Adresse wie https://servername:7061, ohne Anmeldedaten, Pfade oder Parameter. Verwende den tatsächlichen Namen oder die IP-Adresse des Servers statt 0.0.0.0 und starte die Anwendung neu.</value>
+  </data>
+  <data name="Connection_Err_Cancelled" xml:space="preserve">
+    <value>Die Anfrage wurde vor dem Empfang einer Antwort abgebrochen.</value>
+  </data>
+  <data name="Connection_Err_RequestFailed" xml:space="preserve">
+    <value>Die Anfrage konnte nicht abgeschlossen werden. Versuche es erneut und informiere bei weiteren Fehlern den Serverbetreiber.</value>
+  </data>
+  <data name="Connection_Err_SessionExpired" xml:space="preserve">
+    <value>Deine Sitzung ist nicht mehr gültig. Melde dich erneut an.</value>
+  </data>
+  <data name="Connection_Err_Timeout" xml:space="preserve">
+    <value>Der Server hat nicht innerhalb von 10 Sekunden geantwortet. Prüfe deine Verbindung und versuche es erneut.</value>
+  </data>
+  <data name="Connection_Err_Unavailable" xml:space="preserve">
+    <value>Die Verbindung zum Server ist fehlgeschlagen. Prüfe das Netzwerk, die Serveradresse und das Vertrauen des Zertifikats.</value>
+  </data>
+  <data name="Registration_Err_Unconfirmed" xml:space="preserve">
+    <value>Wir konnten nicht bestätigen, ob dein Konto erstellt wurde. Versuche dich anzumelden, bevor du die Registrierung erneut sendest. Das Schließen dieses Dialogs macht eine bereits verarbeitete Registrierung nicht rückgängig.</value>
+  </data>
 </root>

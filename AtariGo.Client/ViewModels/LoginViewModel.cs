@@ -1,26 +1,32 @@
 using System;
+using System.Diagnostics;
 using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
-using AtariGo.Client.Properties;
+
+using Grpc.Core;
+
 using AtariGo.Client.Commands;
 using AtariGo.Client.Models;
+using AtariGo.Client.Properties;
 using AtariGo.Client.Services;
 using AtariGo.Client.ViewModels.Dialogs;
 using AtariGo.Contracts;
-using Grpc.Core;
 
 namespace AtariGo.Client.ViewModels
 {
-    public class LoginViewModel : ViewModelBase
+    public class LoginViewModel : ViewModelBase, IDisposable
     {
-        private static readonly TimeSpan LoginSuccessMessageDelay =
+        private static readonly TimeSpan s_loginSuccessMessageDelay =
             TimeSpan.FromSeconds(1);
 
         private readonly INavigationService _navigationService;
         private readonly IAuthenticationClient _authenticationClient;
         private readonly IRegistrationClient _registrationClient;
+        private readonly CancellationTokenSource _lifetimeCancellation =
+            new CancellationTokenSource();
+        private bool _isDisposed;
         private RegisterDialogViewModel? _registerDialogViewModel;
         private GuestRegistrationDialogViewModel?
             _guestRegistrationDialogViewModel;
@@ -83,8 +89,10 @@ namespace AtariGo.Client.ViewModels
             get => _currentDialogViewModel;
             private set
             {
+                ViewModelBase? previousDialog = _currentDialogViewModel;
                 if (SetProperty(ref _currentDialogViewModel, value))
                 {
+                    (previousDialog as IDisposable)?.Dispose();
                     OnPropertyChanged(nameof(IsDialogVisible));
                 }
             }
@@ -107,6 +115,24 @@ namespace AtariGo.Client.ViewModels
         public ICommand OpenRegisterCommand { get; }
 
         public ICommand OpenForgotPasswordCommand { get; }
+
+        public void Dispose()
+        {
+            if (_isDisposed)
+            {
+                return;
+            }
+
+            _isDisposed = true;
+            _lifetimeCancellation.Cancel();
+            (CurrentDialogViewModel as IDisposable)?.Dispose();
+            _lifetimeCancellation.Dispose();
+        }
+
+        public void ShowSessionExpiredMessage()
+        {
+            LoginMessage = GetLocalizedMessage("Connection_Err_SessionExpired");
+        }
 
         public void OpenRegisterDialog()
         {
@@ -186,6 +212,11 @@ namespace AtariGo.Client.ViewModels
 
         private async Task SubmitAsync(object? parameter)
         {
+            if (_isDisposed)
+            {
+                return;
+            }
+
             string password = parameter as string ?? string.Empty;
             string identifier = Identifier.Trim();
 
@@ -196,50 +227,59 @@ namespace AtariGo.Client.ViewModels
             }
 
             LoginMessage = string.Empty;
+            CancellationToken cancellationToken = _lifetimeCancellation.Token;
 
             try
             {
                 LoginResponse response = await _authenticationClient.LoginAsync(
                     identifier,
-                    password);
-
-                switch (response.Result)
-                {
-                    case LoginResult.Success:
-                        LoginMessage = GetLocalizedMessage("Login_Msg_Success");
-                        await Task.Delay(LoginSuccessMessageDelay);
-                        _navigationService.NavigateToMainWindow(
-                            isGuest: false,
-                            response.UserName,
-                            response.SessionToken);
-                        break;
-                    case LoginResult.UserNotFound:
-                        LoginMessage = GetLocalizedMessage("Login_Err_UserNotFound");
-                        break;
-                    case LoginResult.IncorrectPassword:
-                        LoginMessage = GetLocalizedMessage("Login_Err_IncorrectPassword");
-                        break;
-                    case LoginResult.AccountRestricted:
-                        LoginMessage = GetLocalizedMessage("Login_Err_AccountRestricted");
-                        break;
-                    default:
-                        LoginMessage = GetLocalizedMessage("Login_Err_ServiceUnavailable");
-                        break;
-                }
+                    password,
+                    cancellationToken);
+                cancellationToken.ThrowIfCancellationRequested();
+                await ApplyLoginResponseAsync(response, cancellationToken);
             }
-            catch (RpcException)
+            catch (Exception exception)
+                when (GrpcCallPolicy.IsRequestedCancellation(exception, cancellationToken))
             {
-                LoginMessage = GetLocalizedMessage("Login_Err_ServiceUnavailable");
+                Trace.TraceInformation("Login cancelled because its window was closed.");
             }
-            catch (Exception)
+            catch (RpcException exception)
             {
-                LoginMessage = GetLocalizedMessage("Login_Err_ServiceUnavailable");
+                LoginMessage = GrpcFailureMessages.GetMessage(exception);
             }
         }
 
-        private void HandleSubmitFailure(Exception _)
+        private async Task ApplyLoginResponseAsync(
+            LoginResponse response,
+            CancellationToken cancellationToken)
         {
-            LoginMessage = GetLocalizedMessage("Login_Err_ServiceUnavailable");
+            string resourceKey = response.Result switch
+            {
+                LoginResult.Success => "Login_Msg_Success",
+                LoginResult.UserNotFound => "Login_Err_UserNotFound",
+                LoginResult.IncorrectPassword => "Login_Err_IncorrectPassword",
+                LoginResult.AccountRestricted => "Login_Err_AccountRestricted",
+                _ => "Connection_Err_RequestFailed"
+            };
+            LoginMessage = GetLocalizedMessage(resourceKey);
+
+            if (response.Result == LoginResult.Success)
+            {
+                await Task.Delay(s_loginSuccessMessageDelay, cancellationToken);
+                cancellationToken.ThrowIfCancellationRequested();
+                _navigationService.NavigateToMainWindow(
+                    isGuest: false,
+                    response.UserName,
+                    response.SessionToken);
+            }
+        }
+
+        private void HandleSubmitFailure(Exception exception)
+        {
+            if (!_isDisposed)
+            {
+                LoginMessage = GrpcFailureMessages.GetMessage(exception);
+            }
         }
 
         private static string GetLocalizedMessage(string key) =>

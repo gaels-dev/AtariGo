@@ -1,23 +1,33 @@
-using AtariGo.Server.Data;
-using AtariGo.Server.Data.Entities;
+using System;
+using System.Linq;
+
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+
 using AtariGo.Server.Application.Authentication;
 using AtariGo.Server.Application.Leaderboard;
 using AtariGo.Server.Application.Sessions;
+using AtariGo.Server.Configuration;
+using AtariGo.Server.Data;
+using AtariGo.Server.Data.Entities;
 using AtariGo.Server.Security;
 using AtariGo.Server.Services;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 
-var builder = WebApplication.CreateBuilder(args);
+string[] hostArguments = args
+    .Where(argument => argument != DatabaseReadinessCommand.CommandLineSwitch)
+    .ToArray();
+WebApplicationBuilder builder = WebApplication.CreateBuilder(hostArguments);
 
-var connectionString = builder.Configuration
-    .GetConnectionString("AtariGoConnection")
-    ?? throw new InvalidOperationException(
-        "No se encontró la conexión AtariGoConnection.");
+string? connectionString = builder.Configuration.GetConnectionString(
+    DatabaseConnectionSettings.ConnectionName);
 
 builder.Services.AddDbContext<AtariGoDbContext>(options =>
     options.UseSqlServer(connectionString));
 builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddScoped<DatabaseReadinessCheck>();
 
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 builder.Services.AddScoped<IRegistrationService, RegistrationService>();
@@ -29,7 +39,13 @@ builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 
 builder.Services.AddGrpc();
 
-var app = builder.Build();
+await using WebApplication app = builder.Build();
+
+if (!DatabaseConnectionSettings.Validate(app.Configuration, app.Logger))
+{
+    Environment.ExitCode = DatabaseReadinessCommand.FailureExitCode;
+    return;
+}
 
 app.MapGrpcService<AuthenticationGrpcService>();
 app.MapGrpcService<RegistrationGrpcService>();
@@ -38,4 +54,11 @@ app.MapGrpcService<SessionGrpcService>();
 app.MapGet("/", () =>
     "Communication with gRPC endpoints must be made through a gRPC client.");
 
-app.Run();
+if (args.Contains(DatabaseReadinessCommand.CommandLineSwitch, StringComparer.Ordinal))
+{
+    Environment.ExitCode = await DatabaseReadinessCommand.RunAsync(app.Services, app.Logger);
+}
+else
+{
+    await app.RunAsync();
+}

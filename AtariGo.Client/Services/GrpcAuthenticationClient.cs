@@ -1,24 +1,36 @@
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+
+using Grpc.Core;
+
 using AtariGo.Contracts;
-using Grpc.Net.Client;
 
-namespace AtariGo.Client.Services;
-
-public sealed class GrpcAuthenticationClient : IAuthenticationClient
+namespace AtariGo.Client.Services
 {
-    private readonly GrpcChannel _channel = GrpcChannel.ForAddress(
-        GrpcClientSettings.ServerAddress);
-    private Authentication.AuthenticationClient? _client;
-
-    public Task<LoginResponse> LoginAsync(
-        string identifier,
-        string password,
-        CancellationToken cancellationToken = default)
+    public sealed class GrpcAuthenticationClient : IAuthenticationClient
     {
-        _client ??= new Authentication.AuthenticationClient(_channel);
+        private readonly Authentication.AuthenticationClient _client;
 
-        return _client.LoginAsync(
-            new LoginRequest { Identifier = identifier, Password = password },
-            cancellationToken: cancellationToken).ResponseAsync;
+        public GrpcAuthenticationClient()
+            : this(GrpcClientConnection.Shared.CallInvoker)
+        {
+        }
+
+        public GrpcAuthenticationClient(CallInvoker callInvoker)
+        {
+            ArgumentNullException.ThrowIfNull(callInvoker);
+            _client = new Authentication.AuthenticationClient(callInvoker);
+        }
+
+        public Task<LoginResponse> LoginAsync(
+            string identifier,
+            string password,
+            CancellationToken cancellationToken = default)
+        {
+            return _client.LoginAsync(
+                new LoginRequest { Identifier = identifier, Password = password },
+                GrpcCallPolicy.CreateOptions(cancellationToken)).ResponseAsync;
+        }
     }
-
 }

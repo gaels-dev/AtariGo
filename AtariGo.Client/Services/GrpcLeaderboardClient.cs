@@ -1,24 +1,35 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
+
+using Grpc.Core;
+
 using AtariGo.Contracts;
-using Grpc.Net.Client;
 
-namespace AtariGo.Client.Services;
-
-public sealed class GrpcLeaderboardClient : ILeaderboardClient
+namespace AtariGo.Client.Services
 {
-    private readonly GrpcChannel _channel = GrpcChannel.ForAddress(
-        GrpcClientSettings.ServerAddress);
-    private Leaderboard.LeaderboardClient? _client;
-
-    public Task<GetTopPlayersResponse> GetTopPlayersAsync(
-        int limit,
-        CancellationToken cancellationToken = default)
+    public sealed class GrpcLeaderboardClient : ILeaderboardClient
     {
-        _client ??= new Leaderboard.LeaderboardClient(_channel);
+        private readonly Leaderboard.LeaderboardClient _client;
 
-        return _client.GetTopPlayersAsync(
-            new GetTopPlayersRequest { Limit = limit },
-            cancellationToken: cancellationToken).ResponseAsync;
+        public GrpcLeaderboardClient()
+            : this(GrpcClientConnection.Shared.CallInvoker)
+        {
+        }
+
+        public GrpcLeaderboardClient(CallInvoker callInvoker)
+        {
+            ArgumentNullException.ThrowIfNull(callInvoker);
+            _client = new Leaderboard.LeaderboardClient(callInvoker);
+        }
+
+        public Task<GetTopPlayersResponse> GetTopPlayersAsync(
+            int limit,
+            CancellationToken cancellationToken = default)
+        {
+            return _client.GetTopPlayersAsync(
+                new GetTopPlayersRequest { Limit = limit },
+                GrpcCallPolicy.CreateOptions(cancellationToken)).ResponseAsync;
+        }
     }
 }

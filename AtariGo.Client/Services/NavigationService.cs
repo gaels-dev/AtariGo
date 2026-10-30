@@ -24,10 +24,13 @@ namespace AtariGo.Client.Services
             {
                 MainWindow mainWindow = new MainWindow(
                     new MainViewModel(
-                        isGuest,
-                        playerName,
-                        this,
-                        sessionToken));
+                        new ClientSessionContext
+                        {
+                            IsGuest = isGuest,
+                            PlayerName = playerName,
+                            SessionToken = sessionToken
+                        },
+                        this));
 
                 Application.Current.MainWindow = mainWindow;
                 mainWindow.Show();
@@ -178,22 +181,9 @@ namespace AtariGo.Client.Services
             Dispatch(() =>
                 Application.Current.Shutdown());
 
-        public void SignOut() =>
-            Dispatch(() =>
-            {
-                LoginView loginView = new LoginView();
+        public void SignOut() => ShowLoginAfterSignOut(false);
 
-                Application.Current.MainWindow = loginView;
-                loginView.Show();
-
-                foreach (Window window in Application.Current.Windows
-                             .OfType<Window>()
-                             .Where(window => window is MainWindow)
-                             .ToList())
-                {
-                    window.Close();
-                }
-            });
+        public void SignOutAfterSessionExpired() => ShowLoginAfterSignOut(true);
 
         public void OpenRegisterDialog() =>
             Dispatch(() =>
@@ -234,6 +224,26 @@ namespace AtariGo.Client.Services
         public void CloseLoginDialog() =>
             Dispatch(() =>
                 GetLoginViewModel()?.CloseDialog());
+
+        private void ShowLoginAfterSignOut(bool sessionExpired) =>
+            Dispatch(() =>
+            {
+                LoginView loginView = new LoginView();
+                if (sessionExpired && loginView.DataContext is LoginViewModel loginViewModel)
+                {
+                    loginViewModel.ShowSessionExpiredMessage();
+                }
+
+                Application.Current.MainWindow = loginView;
+                loginView.Show();
+                foreach (Window window in Application.Current.Windows
+                             .OfType<Window>()
+                             .Where(window => window is MainWindow)
+                             .ToList())
+                {
+                    window.Close();
+                }
+            });
 
         private static MainViewModel? GetMainViewModel() =>
             Application.Current?.Windows

@@ -50,6 +50,8 @@ namespace AtariGo.Client.Services
 
         void SignOut();
 
+        void SignOutAfterSessionExpired();
+
         void OpenRegisterDialog();
 
         void OpenVerificationDialog(RegistrationDraft draft);

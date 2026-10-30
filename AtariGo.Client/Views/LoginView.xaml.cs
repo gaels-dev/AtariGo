@@ -1,4 +1,6 @@
+using System;
 using System.Windows;
+
 using AtariGo.Client.Services;
 using AtariGo.Client.ViewModels;
 
@@ -15,6 +17,24 @@ namespace AtariGo.Client.Views
         {
             InitializeComponent();
             DataContext = viewModel;
+            Closed += OnClosed;
+        }
+
+        private void OnClosed(object? sender, EventArgs e)
+        {
+            if (DataContext is not LoginViewModel viewModel)
+            {
+                return;
+            }
+
+            // A language refresh transfers the same view model to a replacement window.
+            bool isTransferred = Application.Current.MainWindow is LoginView replacement
+                && !ReferenceEquals(replacement, this)
+                && ReferenceEquals(replacement.DataContext, viewModel);
+            if (!isTransferred)
+            {
+                viewModel.Dispose();
+            }
         }
 
         private void SubmitButton_Click(object sender, RoutedEventArgs e)

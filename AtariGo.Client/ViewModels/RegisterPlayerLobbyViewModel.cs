@@ -1,6 +1,8 @@
 using System;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Globalization;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 
@@ -10,17 +12,17 @@ using AtariGo.Client.Properties;
 using AtariGo.Client.Services;
 using AtariGo.Contracts;
 
-using Grpc.Core;
-
 namespace AtariGo.Client.ViewModels
 {
-    public class RegisterPlayerLobbyViewModel : ViewModelBase
+    public class RegisterPlayerLobbyViewModel : ViewModelBase, IDisposable
     {
         private const int DefaultPlayerWins = 54;
         private const int LeaderboardLimit = 10;
         private const string DefaultPlayerName = "Player";
 
         private readonly ILeaderboardClient _leaderboardClient;
+        private readonly CancellationTokenSource _lifetimeCancellation =
+            new CancellationTokenSource();
 
         private string _playerName;
         private int _playerWins;
@@ -32,8 +34,7 @@ namespace AtariGo.Client.ViewModels
         public RegisterPlayerLobbyViewModel(
             INavigationService navigationService,
             ILeaderboardClient? leaderboardClient = null,
-            ObservableCollection<FriendItemViewModel>? friends = null,
-            Func<Task>? signOutAsync = null)
+            RegisteredLobbyContext? context = null)
         {
             ArgumentNullException.ThrowIfNull(navigationService);
 
@@ -42,48 +43,9 @@ namespace AtariGo.Client.ViewModels
             _playerName = DefaultPlayerName;
             _playerWins = DefaultPlayerWins;
             _isGuest = false;
-            Friends = friends ?? new ObservableCollection<FriendItemViewModel>();
-
-            PlayMultiplayerCommand = new RelayCommand(
-                navigationService.NavigateToLobby);
-
-            CreatePrivateRoomCommand = new RelayCommand(
-                navigationService.NavigateToCreatePrivateRoom);
-
-            JoinWithCodeCommand = new RelayCommand(
-                navigationService.NavigateToJoinPrivateRoom);
-
-            OptionsCommand = new RelayCommand(
-                navigationService.OpenOptionsDialog);
-
-            ExitCommand = new RelayCommand(
-                navigationService.ExitApplication);
-
-            SignOutCommand = signOutAsync is null
-                ? new RelayCommand(navigationService.SignOut)
-                : new AsyncRelayCommand(
-                    _ => signOutAsync(),
-                    HandleSessionFailure);
-
-            CustomizeProfileCommand = new RelayCommand(
-                navigationService.NavigateToProfileCustomization);
-
-            AddFriendCommand = new RelayCommand(
-                navigationService.NavigateToFriendSearch);
-
-            InviteFriendCommand = new RelayCommand(
-                () => navigationService.NavigateToFriendList(
-                    string.Empty,
-                    GameRules.DefaultCaptureGoal));
-
-            RemoveFriendCommand = new RelayCommand(
-                () => navigationService.NavigateToFriendList(
-                    string.Empty,
-                    GameRules.DefaultCaptureGoal));
-
-            RefreshLeaderboardCommand = new AsyncRelayCommand(
-                _ => LoadLeaderboardAsync(),
-                HandleLeaderboardFailure);
+            Friends = context?.Friends ?? new ObservableCollection<FriendItemViewModel>();
+            InitializePlayCommands(navigationService);
+            InitializeAccountCommands(navigationService, context?.SignOutAsync);
 
             LeaderboardStatus = GetLocalizedMessage(
                 "Leaderboard_Msg_Loading");
@@ -135,7 +97,7 @@ namespace AtariGo.Client.ViewModels
         }
 
         public bool IsRefreshEnabled =>
-            !IsLeaderboardLoading;
+            !IsLeaderboardLoading && !_lifetimeCancellation.IsCancellationRequested;
 
         public string LeaderboardStatus
         {
@@ -187,31 +149,70 @@ namespace AtariGo.Client.ViewModels
             }
         }
 
-        public ICommand PlayMultiplayerCommand { get; }
+        public ICommand PlayMultiplayerCommand { get; private set; } = null!;
 
-        public ICommand CreatePrivateRoomCommand { get; }
+        public ICommand CreatePrivateRoomCommand { get; private set; } = null!;
 
-        public ICommand JoinWithCodeCommand { get; }
+        public ICommand JoinWithCodeCommand { get; private set; } = null!;
 
-        public ICommand OptionsCommand { get; }
+        public ICommand OptionsCommand { get; private set; } = null!;
 
-        public ICommand ExitCommand { get; }
+        public ICommand ExitCommand { get; private set; } = null!;
 
-        public ICommand SignOutCommand { get; }
+        public ICommand SignOutCommand { get; private set; } = null!;
 
-        public ICommand CustomizeProfileCommand { get; }
+        public ICommand CustomizeProfileCommand { get; private set; } = null!;
 
-        public ICommand AddFriendCommand { get; }
+        public ICommand AddFriendCommand { get; private set; } = null!;
 
-        public ICommand InviteFriendCommand { get; }
+        public ICommand InviteFriendCommand { get; private set; } = null!;
 
-        public ICommand RemoveFriendCommand { get; }
+        public ICommand RemoveFriendCommand { get; private set; } = null!;
 
-        public ICommand RefreshLeaderboardCommand { get; }
+        public ICommand RefreshLeaderboardCommand { get; private set; } = null!;
+
+        public void Dispose()
+        {
+            if (!_lifetimeCancellation.IsCancellationRequested)
+            {
+                _lifetimeCancellation.Cancel();
+                _lifetimeCancellation.Dispose();
+            }
+        }
+
+        private void InitializePlayCommands(INavigationService navigationService)
+        {
+            PlayMultiplayerCommand = new RelayCommand(navigationService.NavigateToLobby);
+            CreatePrivateRoomCommand = new RelayCommand(
+                navigationService.NavigateToCreatePrivateRoom);
+            JoinWithCodeCommand = new RelayCommand(navigationService.NavigateToJoinPrivateRoom);
+            InviteFriendCommand = new RelayCommand(() => navigationService.NavigateToFriendList(
+                string.Empty,
+                GameRules.DefaultCaptureGoal));
+            RemoveFriendCommand = new RelayCommand(() => navigationService.NavigateToFriendList(
+                string.Empty,
+                GameRules.DefaultCaptureGoal));
+        }
+
+        private void InitializeAccountCommands(
+            INavigationService navigationService,
+            Func<Task>? signOutAsync)
+        {
+            OptionsCommand = new RelayCommand(navigationService.OpenOptionsDialog);
+            ExitCommand = new RelayCommand(navigationService.ExitApplication);
+            SignOutCommand = signOutAsync is null
+                ? new RelayCommand(navigationService.SignOut)
+                : new AsyncRelayCommand(_ => signOutAsync(), HandleSessionFailure);
+            CustomizeProfileCommand = new RelayCommand(
+                navigationService.NavigateToProfileCustomization);
+            AddFriendCommand = new RelayCommand(navigationService.NavigateToFriendSearch);
+            RefreshLeaderboardCommand = new AsyncRelayCommand(
+                _ => LoadLeaderboardAsync(), HandleLeaderboardFailure);
+        }
 
         private async Task LoadLeaderboardAsync()
         {
-            if (IsLeaderboardLoading)
+            if (IsLeaderboardLoading || _lifetimeCancellation.IsCancellationRequested)
             {
                 return;
             }
@@ -219,35 +220,27 @@ namespace AtariGo.Client.ViewModels
             IsLeaderboardLoading = true;
             LeaderboardStatus = GetLocalizedMessage(
                 "Leaderboard_Msg_Loading");
+            CancellationToken cancellationToken = _lifetimeCancellation.Token;
 
             try
             {
                 GetTopPlayersResponse response =
                     await _leaderboardClient.GetTopPlayersAsync(
-                        LeaderboardLimit);
+                        LeaderboardLimit,
+                        cancellationToken);
+                cancellationToken.ThrowIfCancellationRequested();
 
+                ApplyLeaderboardResponse(response);
+            }
+            catch (Exception exception)
+                when (GrpcCallPolicy.IsRequestedCancellation(exception, cancellationToken))
+            {
+                Trace.TraceInformation("Leaderboard refresh cancelled because its view was left.");
+            }
+            catch (Exception exception)
+            {
                 LeaderboardEntries.Clear();
-
-                foreach (LeaderboardEntry entry in response.Entries)
-                {
-                    LeaderboardEntries.Add(entry);
-                }
-
-                LeaderboardStatus =
-                    LeaderboardEntries.Count == 0
-                        ? GetLocalizedMessage(
-                            "Leaderboard_Msg_Empty")
-                        : string.Empty;
-            }
-            catch (RpcException)
-            {
-                LeaderboardStatus = GetLocalizedMessage(
-                    "Leaderboard_Msg_Error");
-            }
-            catch (Exception)
-            {
-                LeaderboardStatus = GetLocalizedMessage(
-                    "Leaderboard_Msg_Error");
+                LeaderboardStatus = GrpcFailureMessages.GetMessage(exception);
             }
             finally
             {
@@ -255,16 +248,27 @@ namespace AtariGo.Client.ViewModels
             }
         }
 
-        private void HandleLeaderboardFailure(Exception _)
+        private void ApplyLeaderboardResponse(GetTopPlayersResponse response)
         {
-            LeaderboardStatus = GetLocalizedMessage(
-                "Leaderboard_Msg_Error");
+            LeaderboardEntries.Clear();
+            foreach (LeaderboardEntry entry in response.Entries)
+            {
+                LeaderboardEntries.Add(entry);
+            }
+
+            LeaderboardStatus = LeaderboardEntries.Count == 0
+                ? GetLocalizedMessage("Leaderboard_Msg_Empty")
+                : string.Empty;
         }
 
-        private void HandleSessionFailure(Exception _)
+        private void HandleLeaderboardFailure(Exception exception)
         {
-            PresenceStatus = GetLocalizedMessage(
-                "Session_Msg_LogoutFailed");
+            LeaderboardStatus = GrpcFailureMessages.GetMessage(exception);
+        }
+
+        private void HandleSessionFailure(Exception exception)
+        {
+            PresenceStatus = GrpcFailureMessages.GetMessage(exception);
         }
 
         private static string GetLocalizedMessage(

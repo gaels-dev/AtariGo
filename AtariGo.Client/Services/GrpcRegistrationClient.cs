@@ -2,35 +2,45 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Grpc.Core;
+
 using AtariGo.Client.Models;
 using AtariGo.Contracts;
-using Grpc.Net.Client;
 
-namespace AtariGo.Client.Services;
-
-public sealed class GrpcRegistrationClient : IRegistrationClient
+namespace AtariGo.Client.Services
 {
-    private readonly GrpcChannel _channel = GrpcChannel.ForAddress(
-        GrpcClientSettings.ServerAddress);
-    private Registration.RegistrationClient? _client;
-
-    public Task<RegisterAccountResponse> RegisterAccountAsync(
-        RegistrationDraft registrationDraft,
-        string confirmationText,
-        CancellationToken cancellationToken = default)
+    public sealed class GrpcRegistrationClient : IRegistrationClient
     {
-        ArgumentNullException.ThrowIfNull(registrationDraft);
-        _client ??= new Registration.RegistrationClient(_channel);
+        private readonly Registration.RegistrationClient _client;
 
-        return _client.RegisterAccountAsync(
-            new RegisterAccountRequest
-            {
-                UserName = registrationDraft.UserName,
-                Email = registrationDraft.Email,
-                Password = registrationDraft.Password,
-                PasswordConfirmation = registrationDraft.PasswordConfirmation,
-                ConfirmationText = confirmationText
-            },
-            cancellationToken: cancellationToken).ResponseAsync;
+        public GrpcRegistrationClient()
+            : this(GrpcClientConnection.Shared.CallInvoker)
+        {
+        }
+
+        public GrpcRegistrationClient(CallInvoker callInvoker)
+        {
+            ArgumentNullException.ThrowIfNull(callInvoker);
+            _client = new Registration.RegistrationClient(callInvoker);
+        }
+
+        public Task<RegisterAccountResponse> RegisterAccountAsync(
+            RegistrationDraft registrationDraft,
+            string confirmationText,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(registrationDraft);
+
+            return _client.RegisterAccountAsync(
+                new RegisterAccountRequest
+                {
+                    UserName = registrationDraft.UserName,
+                    Email = registrationDraft.Email,
+                    Password = registrationDraft.Password,
+                    PasswordConfirmation = registrationDraft.PasswordConfirmation,
+                    ConfirmationText = confirmationText
+                },
+                GrpcCallPolicy.CreateOptions(cancellationToken)).ResponseAsync;
+        }
     }
 }

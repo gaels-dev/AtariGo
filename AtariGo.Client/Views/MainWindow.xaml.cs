@@ -1,5 +1,6 @@
 using System.Windows;
 
+using AtariGo.Client.Models;
 using AtariGo.Client.ViewModels;
 
 namespace AtariGo.Client.Views
@@ -15,7 +16,7 @@ namespace AtariGo.Client.Views
             InitializeComponent();
             DataContext = viewModel;
             viewModel.LanguageChanged += OnLanguageChanged;
-            Closed += (_, _) => viewModel.StopPresenceMonitor();
+            Closed += (_, _) => viewModel.Dispose();
         }
 
         private void OnLanguageChanged()
@@ -23,12 +24,15 @@ namespace AtariGo.Client.Views
             if (DataContext is MainViewModel oldVm)
             {
                 oldVm.LanguageChanged -= OnLanguageChanged;
-                oldVm.StopPresenceMonitor();
+                oldVm.Dispose();
 
                 var newVm = new MainViewModel(
-                    oldVm.IsGuest,
-                    oldVm.PlayerName,
-                    sessionToken: oldVm.SessionToken);
+                    new ClientSessionContext
+                    {
+                        IsGuest = oldVm.IsGuest,
+                        PlayerName = oldVm.PlayerName,
+                        SessionToken = oldVm.SessionToken
+                    });
                 var newWindow = new MainWindow(newVm)
                 {
                     Left = Left,

@@ -1,47 +1,58 @@
-using AtariGo.Contracts;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+
 using Grpc.Core;
-using Grpc.Net.Client;
 
-namespace AtariGo.Client.Services;
+using AtariGo.Contracts;
 
-public sealed class GrpcSessionClient : ISessionClient
+namespace AtariGo.Client.Services
 {
-    private readonly string _sessionToken;
-    private readonly GrpcChannel _channel;
-    private readonly Session.SessionClient _client;
-
-    public GrpcSessionClient(string sessionToken)
+    public sealed class GrpcSessionClient : ISessionClient
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(sessionToken);
+        private readonly string _sessionToken;
+        private readonly Session.SessionClient _client;
 
-        _sessionToken = sessionToken;
-        _channel = GrpcChannel.ForAddress(GrpcClientSettings.ServerAddress);
-        _client = new Session.SessionClient(_channel);
-    }
-
-    public Task<HeartbeatResponse> HeartbeatAsync(
-        CancellationToken cancellationToken = default)
-    {
-        return _client.HeartbeatAsync(
-            new HeartbeatRequest(),
-            headers: CreateAuthorizationHeaders(),
-            cancellationToken: cancellationToken).ResponseAsync;
-    }
-
-    public async Task LogoutAsync(
-        CancellationToken cancellationToken = default)
-    {
-        await _client.LogoutAsync(
-            new LogoutRequest(),
-            headers: CreateAuthorizationHeaders(),
-            cancellationToken: cancellationToken).ResponseAsync;
-    }
-
-    private Metadata CreateAuthorizationHeaders()
-    {
-        return new Metadata
+        public GrpcSessionClient(string sessionToken)
+            : this(sessionToken, GrpcClientConnection.Shared.CallInvoker)
         {
-            { "authorization", $"Bearer {_sessionToken}" }
-        };
+        }
+
+        public GrpcSessionClient(string sessionToken, CallInvoker callInvoker)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(sessionToken);
+            ArgumentNullException.ThrowIfNull(callInvoker);
+
+            _sessionToken = sessionToken;
+            _client = new Session.SessionClient(callInvoker);
+        }
+
+        public Task<HeartbeatResponse> HeartbeatAsync(
+            CancellationToken cancellationToken = default)
+        {
+            return _client.HeartbeatAsync(
+                new HeartbeatRequest(),
+                GrpcCallPolicy.CreateOptions(
+                    cancellationToken,
+                    CreateAuthorizationHeaders())).ResponseAsync;
+        }
+
+        public async Task LogoutAsync(
+            CancellationToken cancellationToken = default)
+        {
+            await _client.LogoutAsync(
+                new LogoutRequest(),
+                GrpcCallPolicy.CreateOptions(
+                    cancellationToken,
+                    CreateAuthorizationHeaders())).ResponseAsync;
+        }
+
+        private Metadata CreateAuthorizationHeaders()
+        {
+            return new Metadata
+            {
+                { "authorization", $"Bearer {_sessionToken}" }
+            };
+        }
     }
 }

@@ -1,94 +1,134 @@
 using System;
+using System.Diagnostics;
 using System.Globalization;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
+
+using Grpc.Core;
+
 using AtariGo.Client.Commands;
 using AtariGo.Client.Models;
 using AtariGo.Client.Properties;
 using AtariGo.Client.Services;
 using AtariGo.Contracts;
-using Grpc.Core;
 
-namespace AtariGo.Client.ViewModels.Dialogs;
-
-public sealed class VerificationDialogViewModel : ViewModelBase
+namespace AtariGo.Client.ViewModels.Dialogs
 {
-    private readonly RegistrationDraft _registrationDraft;
-    private readonly INavigationService _navigationService;
-    private readonly IRegistrationClient _registrationClient;
-    private string _verificationCode = string.Empty;
-    private string _errorMessage = string.Empty;
-
-    public VerificationDialogViewModel(
-        RegistrationDraft registrationDraft,
-        INavigationService navigationService,
-        IRegistrationClient registrationClient)
+    public sealed class VerificationDialogViewModel : ViewModelBase, IDisposable
     {
-        ArgumentNullException.ThrowIfNull(registrationDraft);
-        ArgumentNullException.ThrowIfNull(navigationService);
-        ArgumentNullException.ThrowIfNull(registrationClient);
+        private readonly RegistrationDraft _registrationDraft;
+        private readonly INavigationService _navigationService;
+        private readonly IRegistrationClient _registrationClient;
+        private readonly CancellationTokenSource _lifetimeCancellation =
+            new CancellationTokenSource();
+        private bool _isDisposed;
+        private string _verificationCode = string.Empty;
+        private string _errorMessage = string.Empty;
 
-        _registrationDraft = registrationDraft;
-        _navigationService = navigationService;
-        _registrationClient = registrationClient;
-        ConfirmCommand = new AsyncRelayCommand(
-            ConfirmRegistrationAsync,
-            HandleConfirmationFailure);
-        CancelCommand = new RelayCommand(_navigationService.ReturnToRegisterDialog);
-    }
-
-    public string VerificationCode
-    {
-        get => _verificationCode;
-        set => SetProperty(ref _verificationCode, value);
-    }
-
-    public string ErrorMessage
-    {
-        get => _errorMessage;
-        private set => SetProperty(ref _errorMessage, value);
-    }
-
-    public ICommand ConfirmCommand { get; }
-
-    public ICommand CancelCommand { get; }
-
-    private async Task ConfirmRegistrationAsync(object? parameter)
-    {
-        string confirmationText = parameter as string ?? string.Empty;
-        if (string.IsNullOrWhiteSpace(confirmationText))
+        public VerificationDialogViewModel(
+            RegistrationDraft registrationDraft,
+            INavigationService navigationService,
+            IRegistrationClient registrationClient)
         {
-            ErrorMessage = GetLocalizedMessage("Verification_Err_EmptyCode");
-            return;
+            ArgumentNullException.ThrowIfNull(registrationDraft);
+            ArgumentNullException.ThrowIfNull(navigationService);
+            ArgumentNullException.ThrowIfNull(registrationClient);
+
+            _registrationDraft = registrationDraft;
+            _navigationService = navigationService;
+            _registrationClient = registrationClient;
+            ConfirmCommand = new AsyncRelayCommand(
+                ConfirmRegistrationAsync,
+                HandleConfirmationFailure);
+            CancelCommand = new RelayCommand(CancelRegistration);
         }
 
-        ErrorMessage = string.Empty;
-
-        try
+        public string VerificationCode
         {
-            RegisterAccountResponse response =
-                await _registrationClient.RegisterAccountAsync(
-                    _registrationDraft,
-                    confirmationText);
-
-            _navigationService.ShowRegistrationResult(response.Result);
+            get => _verificationCode;
+            set => SetProperty(ref _verificationCode, value);
         }
-        catch (RpcException)
+
+        public string ErrorMessage
         {
-            _navigationService.ShowRegistrationResult(RegistrationResult.Error);
+            get => _errorMessage;
+            private set => SetProperty(ref _errorMessage, value);
         }
-        catch (Exception)
+
+        public ICommand ConfirmCommand { get; }
+
+        public ICommand CancelCommand { get; }
+
+        public void Dispose()
         {
-            _navigationService.ShowRegistrationResult(RegistrationResult.Error);
+            if (_isDisposed)
+            {
+                return;
+            }
+
+            _isDisposed = true;
+            _lifetimeCancellation.Cancel();
+            _lifetimeCancellation.Dispose();
+        }
+
+        private void CancelRegistration()
+        {
+            Dispose();
+            _navigationService.ReturnToRegisterDialog();
+        }
+
+        private async Task ConfirmRegistrationAsync(object? parameter)
+        {
+            if (_isDisposed)
+            {
+                return;
+            }
+
+            string confirmationText = parameter as string ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(confirmationText))
+            {
+                ErrorMessage = GetLocalizedMessage("Verification_Err_EmptyCode");
+                return;
+            }
+
+            ErrorMessage = string.Empty;
+            CancellationToken cancellationToken = _lifetimeCancellation.Token;
+            try
+            {
+                RegisterAccountResponse response =
+                    await _registrationClient.RegisterAccountAsync(
+                        _registrationDraft,
+                        confirmationText,
+                        cancellationToken);
+                cancellationToken.ThrowIfCancellationRequested();
+                _navigationService.ShowRegistrationResult(response.Result);
+            }
+            catch (Exception exception)
+                when (GrpcCallPolicy.IsRequestedCancellation(exception, cancellationToken))
+            {
+                Trace.TraceInformation(
+                    "Registration wait cancelled because its dialog was closed.");
+            }
+            catch (RpcException exception)
+            {
+                ErrorMessage = GrpcFailureMessages.GetRegistrationMessage(exception);
+            }
+        }
+
+        private void HandleConfirmationFailure(Exception exception)
+        {
+            if (!_isDisposed)
+            {
+                ErrorMessage = GrpcFailureMessages.GetMessage(exception);
+            }
+        }
+
+        private static string GetLocalizedMessage(string resourceKey)
+        {
+            return Resources.ResourceManager.GetString(
+                resourceKey,
+                CultureInfo.CurrentUICulture) ?? resourceKey;
         }
     }
-
-    private void HandleConfirmationFailure(Exception _)
-    {
-        _navigationService.ShowRegistrationResult(RegistrationResult.Error);
-    }
-
-    private static string GetLocalizedMessage(string key) =>
-        Resources.ResourceManager.GetString(key, CultureInfo.CurrentUICulture)
-        ?? key;
 }
