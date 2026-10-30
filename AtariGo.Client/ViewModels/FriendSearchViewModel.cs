@@ -1,36 +1,51 @@
 using System;
 using System.Collections.ObjectModel;
+using System.Globalization;
+using System.Threading.Tasks;
 using System.Windows.Input;
 
 using AtariGo.Client.Commands;
+using AtariGo.Client.Properties;
 using AtariGo.Client.Services;
+using AtariGo.Contracts;
+using Grpc.Core;
 
 namespace AtariGo.Client.ViewModels
 {
     public class FriendSearchViewModel : ViewModelBase
     {
-        private const string ExamplePlayerOne = "KitsunePlayer";
-        private const string ExamplePlayerTwo = "GoMaster";
-        private const string ExamplePlayerThree = "AtariNinja";
+        private const int MinimumSearchLength = 2;
+        private const int MaximumSearchLength = 15;
 
         private readonly INavigationService _navigationService;
+        private readonly IFriendClient? _friendClient;
         private string _searchText;
         private string _statusMessage;
 
         public FriendSearchViewModel(
-            INavigationService navigationService)
+            INavigationService navigationService,
+            string? sessionToken,
+            IFriendClient? friendClient = null)
         {
             ArgumentNullException.ThrowIfNull(navigationService);
 
             _navigationService = navigationService;
+            _friendClient = friendClient
+                ?? (string.IsNullOrWhiteSpace(sessionToken)
+                    ? null
+                    : new GrpcFriendClient(sessionToken));
             _searchText = string.Empty;
             _statusMessage = string.Empty;
 
             SearchResults =
                 new ObservableCollection<FriendSearchResultViewModel>();
 
-            SearchCommand = new RelayCommand(SearchPlayers);
-            AddFriendCommand = new RelayCommand(AddFriend);
+            SearchCommand = new AsyncRelayCommand(
+                _ => SearchPlayersAsync(),
+                HandleServiceFailure);
+            AddFriendCommand = new AsyncRelayCommand(
+                AddFriendAsync,
+                HandleServiceFailure);
             BackCommand = new RelayCommand(
                 _navigationService.NavigateToMainMenu);
         }
@@ -69,41 +84,111 @@ namespace AtariGo.Client.ViewModels
 
         public ICommand BackCommand { get; }
 
-        private void SearchPlayers()
+        private async Task SearchPlayersAsync()
         {
             SearchResults.Clear();
 
-            if (string.IsNullOrWhiteSpace(SearchText))
+            string query = SearchText.Trim();
+            if (query.Length < MinimumSearchLength)
             {
-                StatusMessage =
-                    Properties.Resources.FriendSearch_Err_EmptySearch;
-
+                StatusMessage = GetLocalizedMessage(
+                    "FriendSearch_Err_MinLength");
                 return;
             }
 
-            SearchResults.Add(
-                new FriendSearchResultViewModel(ExamplePlayerOne));
+            if (query.Length > MaximumSearchLength)
+            {
+                StatusMessage = GetLocalizedMessage(
+                    "FriendSearch_Err_InvalidLength");
+                return;
+            }
 
-            SearchResults.Add(
-                new FriendSearchResultViewModel(ExamplePlayerTwo));
+            if (_friendClient is null)
+            {
+                HandleServiceFailure(
+                    new InvalidOperationException(
+                        "The authenticated friend service is unavailable."));
+                return;
+            }
 
-            SearchResults.Add(
-                new FriendSearchResultViewModel(ExamplePlayerThree));
+            StatusMessage = GetLocalizedMessage(
+                "FriendSearch_Msg_Searching");
+            SearchUsersResponse response =
+                await _friendClient.SearchUsersAsync(query);
 
-            StatusMessage = string.Empty;
+            foreach (FriendAccount account in response.Users)
+            {
+                SearchResults.Add(
+                    new FriendSearchResultViewModel(
+                        account.UserId,
+                        account.UserName));
+            }
+
+            StatusMessage = SearchResults.Count == 0
+                ? GetLocalizedMessage("FriendSearch_Msg_NoResults")
+                : string.Empty;
         }
 
-        private void AddFriend(object? parameter)
+        private async Task AddFriendAsync(object? parameter)
         {
             if (parameter is not FriendSearchResultViewModel player)
             {
                 return;
             }
 
-            player.IsRequestSent = true;
+            if (_friendClient is null)
+            {
+                HandleServiceFailure(
+                    new InvalidOperationException(
+                        "The authenticated friend service is unavailable."));
+                return;
+            }
 
-            StatusMessage =
-                Properties.Resources.FriendSearch_Msg_RequestSent;
+            SendFriendRequestResponse response =
+                await _friendClient.SendFriendRequestAsync(player.UserId);
+
+            StatusMessage = response.Status switch
+            {
+                FriendRequestStatus.Sent =>
+                    GetLocalizedMessage("FriendSearch_Msg_RequestSent"),
+                FriendRequestStatus.AlreadyFriends =>
+                    GetLocalizedMessage("FriendSearch_Msg_AlreadyFriends"),
+                FriendRequestStatus.AlreadyPending =>
+                    GetLocalizedMessage("FriendSearch_Msg_AlreadyPending"),
+                FriendRequestStatus.UserNotFound =>
+                    GetLocalizedMessage("FriendSearch_Msg_UserNotFound"),
+                FriendRequestStatus.CannotRequestSelf =>
+                    GetLocalizedMessage("FriendSearch_Err_CannotRequestSelf"),
+                _ => GetLocalizedMessage("FriendSearch_Err_Service")
+            };
+
+            if (response.Status == FriendRequestStatus.Sent
+                || response.Status
+                    == FriendRequestStatus.AlreadyPending)
+            {
+                player.MarkRequestPending();
+            }
+            else if (response.Status
+                == FriendRequestStatus.AlreadyFriends)
+            {
+                player.MarkAlreadyFriend();
+            }
+        }
+
+        private void HandleServiceFailure(Exception exception)
+        {
+            StatusMessage = exception is RpcException rpcException
+                && rpcException.StatusCode == StatusCode.Unauthenticated
+                    ? GetLocalizedMessage("FriendSearch_Err_SessionExpired")
+                    : GetLocalizedMessage("FriendSearch_Err_Service");
+        }
+
+        private static string GetLocalizedMessage(string key)
+        {
+            return Resources.ResourceManager.GetString(
+                key,
+                CultureInfo.CurrentUICulture)
+                ?? key;
         }
     }
 }

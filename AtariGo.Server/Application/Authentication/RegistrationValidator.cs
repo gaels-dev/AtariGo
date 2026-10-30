@@ -4,14 +4,17 @@ namespace AtariGo.Server.Application.Authentication;
 
 public sealed class RegistrationValidator : IRegistrationValidator
 {
-    private const int MaximumUserNameLength = 100;
+    private const int MaximumUserNameLength = 15;
     private const int MaximumEmailLength = 254;
     private const int MinimumPasswordLength = 8;
     private const int MaximumPasswordLength = 255;
+    private const string ReservedGuestName = "Guest";
+    private const string ReservedGuestPrefix = "Guest-";
 
     public bool IsValid(RegisterAccountCommand command)
     {
         return IsValidUserName(command.UserName)
+            && !IsReservedGuestName(command.UserName)
             && IsValidEmail(command.Email)
             && IsValidPassword(command.Password)
             && PasswordsMatch(command.Password, command.PasswordConfirmation)
@@ -22,6 +25,19 @@ public sealed class RegistrationValidator : IRegistrationValidator
     {
         return !string.IsNullOrWhiteSpace(userName)
             && userName.Trim().Length <= MaximumUserNameLength;
+    }
+
+    private static bool IsReservedGuestName(string userName)
+    {
+        string normalizedUserName = userName.Trim();
+
+        return string.Equals(
+                normalizedUserName,
+                ReservedGuestName,
+                StringComparison.OrdinalIgnoreCase)
+            || normalizedUserName.StartsWith(
+                ReservedGuestPrefix,
+                StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool IsValidEmail(string email)

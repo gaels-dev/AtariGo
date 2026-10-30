@@ -292,6 +292,7 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
@@ -317,13 +318,29 @@
                             BorderThickness="1"
                             Margin="0,0,0,12"/>
 
-                    <Border Grid.Row="2"
+                    <Button Grid.Row="2"
+                            Style="{StaticResource RoundedButtonStyle}"
+                            Content="{Binding ManageFriendRequestsLabel}"
+                            Command="{Binding ManageFriendRequestsCommand}"
+                            Height="36"
+                            Background="#4A90E2"
+                            Foreground="White"
+                            FontWeight="Bold"
+                            FontSize="12"
+                            BorderBrush="#2C2A29"
+                            BorderThickness="1"
+                            Margin="0,0,0,12"/>
+
+                    <Border Grid.Row="3"
                             BorderBrush="#2C2A29"
                             BorderThickness="1.5"
                             CornerRadius="6"
                             Padding="10,6"
                             Margin="0,0,0,12">
-                        <TextBox BorderThickness="0"
+                        <TextBox Text="{Binding FriendSearchText,
+                                        UpdateSourceTrigger=PropertyChanged}"
+                                 MaxLength="15"
+                                 BorderThickness="0"
                                  Background="Transparent"
                                  FontSize="12">
                             <TextBox.Style>
@@ -370,14 +387,33 @@
                         </TextBox>
                     </Border>
 
-                    <StackPanel Grid.Row="3">
+                    <StackPanel Grid.Row="4">
                         <TextBlock Text="{Binding PresenceStatus}"
                                    Foreground="#666666"
                                    FontSize="11"
                                    TextWrapping="Wrap"
                                    Margin="0,0,0,6"/>
+                        <TextBlock Text="{Binding FriendSearchStatus}"
+                                   Foreground="#666666"
+                                   FontSize="11"
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,6">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility"
+                                            Value="Visible"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding FriendSearchStatus}"
+                                                     Value="">
+                                            <Setter Property="Visibility"
+                                                    Value="Collapsed"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
                         <ScrollViewer VerticalScrollBarVisibility="Auto">
-                            <ItemsControl ItemsSource="{Binding Friends}">
+                            <ItemsControl ItemsSource="{Binding FilteredFriends}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
                                         <Border BorderBrush="#2C2A29"

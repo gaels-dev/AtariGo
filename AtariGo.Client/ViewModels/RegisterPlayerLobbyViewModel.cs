@@ -1,10 +1,12 @@
 using System;
+using System.ComponentModel;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using System.Windows.Data;
 
 using AtariGo.Client.Commands;
 using AtariGo.Client.Models;
@@ -30,6 +32,7 @@ namespace AtariGo.Client.ViewModels
         private bool _isLeaderboardLoading;
         private string _leaderboardStatus = string.Empty;
         private string _presenceStatus = string.Empty;
+        private string _friendSearchText = string.Empty;
 
         public RegisterPlayerLobbyViewModel(
             INavigationService navigationService,
@@ -44,6 +47,11 @@ namespace AtariGo.Client.ViewModels
             _playerWins = DefaultPlayerWins;
             _isGuest = false;
             Friends = context?.Friends ?? new ObservableCollection<FriendItemViewModel>();
+            FilteredFriends = CollectionViewSource.GetDefaultView(Friends);
+            FilteredFriends.Filter = IsFriendVisible;
+            Friends.CollectionChanged += (_, _) =>
+                OnPropertyChanged(nameof(FriendSearchStatus));
+
             InitializePlayCommands(navigationService);
             InitializeAccountCommands(navigationService, context?.SignOutAsync);
 
@@ -58,6 +66,28 @@ namespace AtariGo.Client.ViewModels
         { get; } = new();
 
         public ObservableCollection<FriendItemViewModel> Friends { get; }
+
+        public ICollectionView FilteredFriends { get; }
+
+        public string FriendSearchText
+        {
+            get => _friendSearchText;
+            set
+            {
+                if (SetProperty(ref _friendSearchText, value))
+                {
+                    FilteredFriends.Refresh();
+                    OnPropertyChanged(nameof(FriendSearchStatus));
+                }
+            }
+        }
+
+        public string FriendSearchStatus =>
+            !string.IsNullOrWhiteSpace(FriendSearchText)
+                && FilteredFriends.IsEmpty
+                    ? GetLocalizedMessage(
+                        "FriendList_Msg_NoMatches")
+                    : string.Empty;
 
         public string PresenceStatus
         {
@@ -167,6 +197,12 @@ namespace AtariGo.Client.ViewModels
 
         public ICommand InviteFriendCommand { get; private set; } = null!;
 
+        public ICommand ManageFriendRequestsCommand { get; private set; } = null!;
+
+        public string ManageFriendRequestsLabel => GetLocalizedMessage(
+            "FriendRequests_Btn_Manage");
+
+
         public ICommand RemoveFriendCommand { get; private set; } = null!;
 
         public ICommand RefreshLeaderboardCommand { get; private set; } = null!;
@@ -206,8 +242,24 @@ namespace AtariGo.Client.ViewModels
             CustomizeProfileCommand = new RelayCommand(
                 navigationService.NavigateToProfileCustomization);
             AddFriendCommand = new RelayCommand(navigationService.NavigateToFriendSearch);
+            ManageFriendRequestsCommand = new RelayCommand(
+                navigationService.NavigateToFriendRequests);
             RefreshLeaderboardCommand = new AsyncRelayCommand(
                 _ => LoadLeaderboardAsync(), HandleLeaderboardFailure);
+        }
+
+        private bool IsFriendVisible(object item)
+        {
+            if (item is not FriendItemViewModel friend)
+            {
+                return false;
+            }
+
+            string query = FriendSearchText.Trim();
+            return string.IsNullOrEmpty(query)
+                || friend.Username.Contains(
+                    query,
+                    StringComparison.OrdinalIgnoreCase);
         }
 
         private async Task LoadLeaderboardAsync()

@@ -8,6 +8,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 using AtariGo.Server.Application.Authentication;
+using AtariGo.Server.Application.Friends;
 using AtariGo.Server.Application.Leaderboard;
 using AtariGo.Server.Application.Sessions;
 using AtariGo.Server.Configuration;
@@ -30,6 +31,7 @@ builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<DatabaseReadinessCheck>();
 
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
+builder.Services.AddScoped<IFriendService, FriendService>();
 builder.Services.AddScoped<IRegistrationService, RegistrationService>();
 builder.Services.AddScoped<ILeaderboardService, LeaderboardService>();
 builder.Services.AddScoped<ISessionService, SessionService>();
@@ -48,6 +50,7 @@ if (!DatabaseConnectionSettings.Validate(app.Configuration, app.Logger))
 }
 
 app.MapGrpcService<AuthenticationGrpcService>();
+app.MapGrpcService<FriendDirectoryGrpcService>();
 app.MapGrpcService<RegistrationGrpcService>();
 app.MapGrpcService<LeaderboardGrpcService>();
 app.MapGrpcService<SessionGrpcService>();

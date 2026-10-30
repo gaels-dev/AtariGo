@@ -52,6 +52,10 @@
 			<views:FriendSearchView/>
 		</DataTemplate>
 
+		<DataTemplate DataType="{x:Type vm:FriendRequestsViewModel}">
+			<views:FriendRequestsView/>
+		</DataTemplate>
+
 		<DataTemplate DataType="{x:Type vm:FriendListViewModel}">
 			<views:FriendListView/>
 		</DataTemplate>

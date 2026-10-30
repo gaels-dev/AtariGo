@@ -449,6 +449,12 @@ public partial class AtariGoDbContext : DbContext
 
         modelBuilder.Entity<User>(entity =>
         {
+            entity.ToTable("Users", table => table.HasCheckConstraint(
+                "CK_Users_UserName_NotGuest",
+                "LOWER(LTRIM(RTRIM([UserName]))) <> N'guest' "
+                    + "AND LEFT(LOWER(LTRIM(RTRIM([UserName]))), 6) "
+                    + "<> N'guest-'"));
+
             entity.HasIndex(e => e.RoleId, "IX_Users_RoleId");
 
             entity.HasIndex(e => e.Email, "UQ_Users_Email").IsUnique();
@@ -464,7 +470,7 @@ public partial class AtariGoDbContext : DbContext
                 .HasMaxLength(20)
                 .IsUnicode(false)
                 .HasDefaultValue("Active", "DF_Users_State");
-            entity.Property(e => e.UserName).HasMaxLength(100);
+            entity.Property(e => e.UserName).HasMaxLength(15);
 
             entity.HasOne(d => d.Role).WithMany(p => p.Users)
                 .HasForeignKey(d => d.RoleId)

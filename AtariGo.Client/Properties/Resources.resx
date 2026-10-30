@@ -418,6 +418,9 @@
   <data name="Register_Err_Generic" xml:space="preserve">
     <value>We could not complete registration. Review the information and try again.</value>
   </data>
+  <data name="Register_Err_ReservedUsername" xml:space="preserve">
+    <value>The name “Guest” and names beginning with “Guest-” are reserved for guests.</value>
+  </data>
   <data name="RegistrationResult_Msg_Success" xml:space="preserve">
     <value>User registered successfully.</value>
   </data>
@@ -493,6 +496,75 @@
   <data name="FriendSearch_Msg_RequestSent" xml:space="preserve">
     <value>Friend request sent.</value>
   </data>
+  <data name="FriendRequests_Btn_Manage" xml:space="preserve">
+    <value>Pending requests</value>
+  </data>
+  <data name="FriendRequests_Lbl_Title" xml:space="preserve">
+    <value>Friend requests</value>
+  </data>
+  <data name="FriendRequests_Btn_Refresh" xml:space="preserve">
+    <value>Refresh</value>
+  </data>
+  <data name="FriendRequests_Btn_Accept" xml:space="preserve">
+    <value>Accept</value>
+  </data>
+  <data name="FriendRequests_Btn_Reject" xml:space="preserve">
+    <value>Reject</value>
+  </data>
+  <data name="FriendRequests_Msg_Loading" xml:space="preserve">
+    <value>Loading requests...</value>
+  </data>
+  <data name="FriendRequests_Msg_Empty" xml:space="preserve">
+    <value>You have no pending requests.</value>
+  </data>
+  <data name="FriendRequests_Msg_Accepted" xml:space="preserve">
+    <value>Request accepted. The user was added to your friends list.</value>
+  </data>
+  <data name="FriendRequests_Msg_Rejected" xml:space="preserve">
+    <value>Request rejected.</value>
+  </data>
+  <data name="FriendRequests_Msg_AlreadyFriends" xml:space="preserve">
+    <value>That user is already on your friends list.</value>
+  </data>
+  <data name="FriendRequests_Msg_Stale" xml:space="preserve">
+    <value>The request is no longer pending.</value>
+  </data>
+  <data name="FriendRequests_Err_Service" xml:space="preserve">
+    <value>Requests could not be processed. Please try again.</value>
+  </data>
+  <data name="FriendRequests_Err_SessionExpired" xml:space="preserve">
+    <value>Your session expired. Sign in again.</value>
+  </data>
+  <data name="FriendSearch_Err_MinLength" xml:space="preserve">
+    <value>Enter at least 2 characters to search.</value>
+  </data>
+  <data name="FriendSearch_Err_InvalidLength" xml:space="preserve">
+    <value>The search cannot exceed 15 characters.</value>
+  </data>
+  <data name="FriendSearch_Msg_Searching" xml:space="preserve">
+    <value>Searching users...</value>
+  </data>
+  <data name="FriendSearch_Msg_NoResults" xml:space="preserve">
+    <value>No available users were found.</value>
+  </data>
+  <data name="FriendSearch_Err_Service" xml:space="preserve">
+    <value>The search could not be completed. Please try again.</value>
+  </data>
+  <data name="FriendSearch_Err_SessionExpired" xml:space="preserve">
+    <value>Your session expired. Sign in again.</value>
+  </data>
+  <data name="FriendSearch_Msg_AlreadyFriends" xml:space="preserve">
+    <value>That user is already on your friends list.</value>
+  </data>
+  <data name="FriendSearch_Msg_AlreadyPending" xml:space="preserve">
+    <value>A pending request already exists between you.</value>
+  </data>
+  <data name="FriendSearch_Msg_UserNotFound" xml:space="preserve">
+    <value>That user is no longer available.</value>
+  </data>
+  <data name="FriendSearch_Err_CannotRequestSelf" xml:space="preserve">
+    <value>You cannot send a friend request to yourself.</value>
+  </data>
   <data name="FriendList_Lbl_Title" xml:space="preserve">
     <value>Friends</value>
   </data>
@@ -517,8 +589,17 @@
   <data name="FriendList_Lbl_Friend" xml:space="preserve">
     <value>Friend</value>
   </data>
+  <data name="FriendList_Msg_NoMatches" xml:space="preserve">
+    <value>No friends match your search.</value>
+  </data>
   <data name="FriendSearch_Btn_Add" xml:space="preserve">
     <value>Add Friend</value>
+  </data>
+  <data name="FriendSearch_Btn_Pending" xml:space="preserve">
+    <value>Pending</value>
+  </data>
+  <data name="FriendSearch_Btn_AlreadyFriends" xml:space="preserve">
+    <value>Friend</value>
   </data>
   <data name="ForgotPassword_Btn_Cancel" xml:space="preserve">
     <value>Cancel</value>
@@ -644,7 +725,7 @@
     <value>Enter a name to continue.</value>
   </data>
   <data name="GuestRegistration_NameTooLong" xml:space="preserve">
-    <value>The name cannot exceed 100 characters.</value>
+    <value>The name cannot exceed 15 characters.</value>
   </data>
   <data name="GuestLobby_Title" xml:space="preserve">
     <value>What would you like to do?</value>

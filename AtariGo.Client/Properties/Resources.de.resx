@@ -417,6 +417,9 @@
   <data name="Register_Err_Generic" xml:space="preserve">
     <value>Die Registrierung konnte nicht abgeschlossen werden. Prüfe die Angaben und versuche es erneut.</value>
   </data>
+  <data name="Register_Err_ReservedUsername" xml:space="preserve">
+    <value>Der Name „Guest“ und Namen mit dem Präfix „Guest-“ sind Gästen vorbehalten.</value>
+  </data>
   <data name="RegistrationResult_Msg_Success" xml:space="preserve">
     <value>Benutzer erfolgreich registriert.</value>
   </data>
@@ -492,6 +495,75 @@
   <data name="FriendSearch_Msg_RequestSent" xml:space="preserve">
     <value>Freundschaftsanfrage gesendet.</value>
   </data>
+  <data name="FriendRequests_Btn_Manage" xml:space="preserve">
+    <value>Offene Anfragen</value>
+  </data>
+  <data name="FriendRequests_Lbl_Title" xml:space="preserve">
+    <value>Freundschaftsanfragen</value>
+  </data>
+  <data name="FriendRequests_Btn_Refresh" xml:space="preserve">
+    <value>Aktualisieren</value>
+  </data>
+  <data name="FriendRequests_Btn_Accept" xml:space="preserve">
+    <value>Annehmen</value>
+  </data>
+  <data name="FriendRequests_Btn_Reject" xml:space="preserve">
+    <value>Ablehnen</value>
+  </data>
+  <data name="FriendRequests_Msg_Loading" xml:space="preserve">
+    <value>Anfragen werden geladen...</value>
+  </data>
+  <data name="FriendRequests_Msg_Empty" xml:space="preserve">
+    <value>Du hast keine offenen Anfragen.</value>
+  </data>
+  <data name="FriendRequests_Msg_Accepted" xml:space="preserve">
+    <value>Anfrage angenommen. Der Benutzer wurde zu deiner Freundesliste hinzugefügt.</value>
+  </data>
+  <data name="FriendRequests_Msg_Rejected" xml:space="preserve">
+    <value>Anfrage abgelehnt.</value>
+  </data>
+  <data name="FriendRequests_Msg_AlreadyFriends" xml:space="preserve">
+    <value>Dieser Benutzer ist bereits in deiner Freundesliste.</value>
+  </data>
+  <data name="FriendRequests_Msg_Stale" xml:space="preserve">
+    <value>Die Anfrage ist nicht mehr offen.</value>
+  </data>
+  <data name="FriendRequests_Err_Service" xml:space="preserve">
+    <value>Anfragen konnten nicht verarbeitet werden. Bitte versuche es erneut.</value>
+  </data>
+  <data name="FriendRequests_Err_SessionExpired" xml:space="preserve">
+    <value>Deine Sitzung ist abgelaufen. Bitte melde dich erneut an.</value>
+  </data>
+  <data name="FriendSearch_Err_MinLength" xml:space="preserve">
+    <value>Gib mindestens 2 Zeichen für die Suche ein.</value>
+  </data>
+  <data name="FriendSearch_Err_InvalidLength" xml:space="preserve">
+    <value>Die Suche darf höchstens 15 Zeichen enthalten.</value>
+  </data>
+  <data name="FriendSearch_Msg_Searching" xml:space="preserve">
+    <value>Benutzer werden gesucht...</value>
+  </data>
+  <data name="FriendSearch_Msg_NoResults" xml:space="preserve">
+    <value>Es wurden keine verfügbaren Benutzer gefunden.</value>
+  </data>
+  <data name="FriendSearch_Err_Service" xml:space="preserve">
+    <value>Die Suche konnte nicht abgeschlossen werden. Bitte versuche es erneut.</value>
+  </data>
+  <data name="FriendSearch_Err_SessionExpired" xml:space="preserve">
+    <value>Deine Sitzung ist abgelaufen. Bitte melde dich erneut an.</value>
+  </data>
+  <data name="FriendSearch_Msg_AlreadyFriends" xml:space="preserve">
+    <value>Dieser Benutzer ist bereits in deiner Freundesliste.</value>
+  </data>
+  <data name="FriendSearch_Msg_AlreadyPending" xml:space="preserve">
+    <value>Zwischen euch besteht bereits eine offene Anfrage.</value>
+  </data>
+  <data name="FriendSearch_Msg_UserNotFound" xml:space="preserve">
+    <value>Dieser Benutzer ist nicht mehr verfügbar.</value>
+  </data>
+  <data name="FriendSearch_Err_CannotRequestSelf" xml:space="preserve">
+    <value>Du kannst dir selbst keine Freundschaftsanfrage senden.</value>
+  </data>
   <data name="FriendList_Lbl_Title" xml:space="preserve">
     <value>Freunde</value>
   </data>
@@ -516,8 +588,17 @@
   <data name="FriendList_Lbl_Friend" xml:space="preserve">
     <value>Freund</value>
   </data>
+  <data name="FriendList_Msg_NoMatches" xml:space="preserve">
+    <value>Keine Freunde entsprechen der Suche.</value>
+  </data>
   <data name="FriendSearch_Btn_Add" xml:space="preserve">
     <value>Freund hinzufügen</value>
+  </data>
+  <data name="FriendSearch_Btn_Pending" xml:space="preserve">
+    <value>Ausstehend</value>
+  </data>
+  <data name="FriendSearch_Btn_AlreadyFriends" xml:space="preserve">
+    <value>Freund</value>
   </data>
   <data name="ForgotPassword_Btn_Cancel" xml:space="preserve">
     <value>Abbrechen</value>
@@ -643,7 +724,7 @@
     <value>Gib einen Namen ein, um fortzufahren.</value>
   </data>
   <data name="GuestRegistration_NameTooLong" xml:space="preserve">
-    <value>Der Name darf höchstens 100 Zeichen lang sein.</value>
+    <value>Der Name darf höchstens 15 Zeichen lang sein.</value>
   </data>
   <data name="GuestLobby_Title" xml:space="preserve">
     <value>Was möchtest du tun?</value>

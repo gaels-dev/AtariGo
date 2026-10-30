@@ -9,7 +9,8 @@ namespace AtariGo.Client.ViewModels.Dialogs;
 
 public sealed class GuestRegistrationDialogViewModel : ViewModelBase
 {
-    private const int MaximumGuestNameLength = 100;
+    private const int MaximumGuestNameLength = 15;
+    private const string GuestNamePrefix = "Guest-";
 
     private readonly INavigationService _navigationService;
     private string _guestName = string.Empty;
@@ -76,7 +77,7 @@ public sealed class GuestRegistrationDialogViewModel : ViewModelBase
 
         _navigationService.NavigateToMainWindow(
             isGuest: true,
-            normalizedName);
+            $"{GuestNamePrefix}{normalizedName}");
     }
 
     private static string GetLocalizedMessage(string key)

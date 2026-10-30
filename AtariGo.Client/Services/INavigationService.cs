@@ -36,6 +36,8 @@ namespace AtariGo.Client.Services
 
         void NavigateToFriendSearch();
 
+        void NavigateToFriendRequests();
+
         void NavigateToFriendList(
             string roomCode,
             int targetCaptures);

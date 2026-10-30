@@ -143,7 +143,26 @@ namespace AtariGo.Client.Services
                 }
 
                 mainViewModel.CurrentViewModel =
-                    new FriendSearchViewModel(this);
+                    new FriendSearchViewModel(
+                        this,
+                        mainViewModel.SessionToken);
+            });
+
+        public void NavigateToFriendRequests() =>
+            Dispatch(() =>
+            {
+                MainViewModel? mainViewModel = GetMainViewModel();
+
+                if (mainViewModel is null)
+                {
+                    return;
+                }
+
+                mainViewModel.CurrentViewModel =
+                    new FriendRequestsViewModel(
+                        this,
+                        mainViewModel.SessionToken,
+                        mainViewModel.Friends);
             });
 
         public void NavigateToFriendList(

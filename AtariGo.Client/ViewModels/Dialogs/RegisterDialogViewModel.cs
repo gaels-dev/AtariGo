@@ -11,7 +11,9 @@ namespace AtariGo.Client.ViewModels.Dialogs;
 
 public sealed class RegisterDialogViewModel : ViewModelBase
 {
-    private const int MaximumUsernameLength = 100;
+    private const int MaximumUsernameLength = 15;
+    private const string ReservedGuestName = "Guest";
+    private const string ReservedGuestPrefix = "Guest-";
     private const int MaximumEmailLength = 254;
     private const int MinimumPasswordLength = 8;
     private const int MaximumPasswordLength = 255;
@@ -100,6 +102,13 @@ public sealed class RegisterDialogViewModel : ViewModelBase
             return;
         }
 
+        if (IsReservedGuestName(username))
+        {
+            ErrorMessage = GetLocalizedMessage(
+                "Register_Err_ReservedUsername");
+            return;
+        }
+
         if (!MailAddress.TryCreate(email, out _))
         {
             ErrorMessage = GetLocalizedMessage("Register_Err_InvalidEmail");
@@ -129,6 +138,17 @@ public sealed class RegisterDialogViewModel : ViewModelBase
         };
 
         _navigationService.OpenVerificationDialog(_registrationDraft);
+    }
+
+    private static bool IsReservedGuestName(string username)
+    {
+        return string.Equals(
+                username,
+                ReservedGuestName,
+                StringComparison.OrdinalIgnoreCase)
+            || username.StartsWith(
+                ReservedGuestPrefix,
+                StringComparison.OrdinalIgnoreCase);
     }
 
     private static string GetLocalizedMessage(string key) =>

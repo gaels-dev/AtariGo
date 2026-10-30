@@ -18,7 +18,7 @@ namespace AtariGo.Client.ViewModels
     public class MainViewModel : ViewModelBase, IDisposable
     {
         private static readonly TimeSpan s_presenceHeartbeatInterval =
-            TimeSpan.FromSeconds(30);
+            TimeSpan.FromSeconds(15);
         private readonly INavigationService _navigationService;
         private readonly ISessionClient? _sessionClient;
         private readonly CancellationTokenSource _lifetimeCancellation =

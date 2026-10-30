@@ -11,6 +11,7 @@
     <Protobuf Include="Protos\registration.proto" GrpcServices="Both" />
     <Protobuf Include="Protos\leaderboard.proto" GrpcServices="Both" />
     <Protobuf Include="Protos\session.proto" GrpcServices="Both" />
+    <Protobuf Include="Protos\friends.proto" GrpcServices="Both" />
   </ItemGroup>
 
   <ItemGroup>

@@ -10,7 +10,7 @@ public sealed class SessionService : ISessionService
     private static readonly TimeSpan SessionIdleLifetime =
         TimeSpan.FromHours(1);
     private static readonly TimeSpan PresenceWindow =
-        TimeSpan.FromSeconds(90);
+        TimeSpan.FromSeconds(60);
 
     private readonly AtariGoDbContext _dbContext;
     private readonly ISessionTokenProvider _tokenProvider;

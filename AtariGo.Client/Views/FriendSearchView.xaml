@@ -8,6 +8,10 @@
              d:DesignHeight="700"
              d:DesignWidth="1000"
              Background="#E5D8C5">
+    <UserControl.InputBindings>
+        <KeyBinding Key="Enter"
+                    Command="{Binding SearchCommand}"/>
+    </UserControl.InputBindings>
 
     <Grid>
         <Grid.RowDefinitions>
@@ -57,20 +61,32 @@
                         <ColumnDefinition Width="110"/>
                     </Grid.ColumnDefinitions>
 
-                    <TextBox Grid.Column="0"
-                             Text="{Binding SearchText,
-                                 UpdateSourceTrigger=PropertyChanged}"
-                             Height="40"
-                             Padding="8"/>
+                    <Border Grid.Column="0"
+                            BorderBrush="#2C2A29"
+                            BorderThickness="1.5"
+                            CornerRadius="8"
+                            Padding="8,2">
+                        <TextBox Text="{Binding SearchText,
+                                     UpdateSourceTrigger=PropertyChanged}"
+                                 MaxLength="15"
+                                 Height="36"
+                                 Padding="2,6"
+                                 BorderThickness="0"
+                                 Background="Transparent"
+                                 VerticalContentAlignment="Center"/>
+                    </Border>
 
                     <Button
                         Grid.Column="2"
+                        Style="{StaticResource RoundedButtonStyle}"
                         Content="{x:Static properties:Resources.FriendSearch_Btn_Search}"
                         Command="{Binding SearchCommand}"
                         Height="40"
                         Background="#4A90E2"
                         Foreground="White"
-                        FontWeight="Bold"/>
+                        FontWeight="Bold"
+                        BorderBrush="#2C2A29"
+                        BorderThickness="1.5"/>
                 </Grid>
 
                 <TextBlock Text="{Binding StatusMessage}"
@@ -80,42 +96,79 @@
                            MinHeight="20"
                            Margin="0,0,0,10"/>
 
-                <ListBox ItemsSource="{Binding SearchResults}"
-                         Height="230"
-                         Margin="0,0,0,15">
-                    <ListBox.ItemTemplate>
-                        <DataTemplate>
-                            <Grid Margin="5">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="120"/>
-                                </Grid.ColumnDefinitions>
+                <Border Height="230"
+                        Margin="0,0,0,15"
+                        Padding="5"
+                        BorderBrush="#2C2A29"
+                        BorderThickness="1.5"
+                        CornerRadius="8"
+                        Background="#F7F7F7">
+                    <ListBox ItemsSource="{Binding SearchResults}"
+                             Background="Transparent"
+                             BorderThickness="0"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                             ScrollViewer.VerticalScrollBarVisibility="Auto">
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem">
+                                <Setter Property="HorizontalContentAlignment"
+                                        Value="Stretch"/>
+                                <Setter Property="Padding" Value="0"/>
+                                <Setter Property="BorderThickness" Value="0"/>
+                            </Style>
+                        </ListBox.ItemContainerStyle>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Border BorderBrush="#D0C8BC"
+                                        BorderThickness="1"
+                                        CornerRadius="7"
+                                        Background="White"
+                                        Padding="9,7"
+                                        Margin="2,3">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="120"/>
+                                        </Grid.ColumnDefinitions>
 
-                                <TextBlock
-                                    Text="{Binding Username}"
-                                    VerticalAlignment="Center"
-                                    FontWeight="SemiBold"/>
+                                        <TextBlock Text="{Binding Username}"
+                                                   VerticalAlignment="Center"
+                                                   FontWeight="SemiBold"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   ToolTip="{Binding Username}"
+                                                   Margin="0,0,8,0"/>
 
-                                <Button
-                                    Grid.Column="1"
-                                    Content="{x:Static properties:Resources.FriendSearch_Btn_Add}"
-                                    Command="{Binding DataContext.AddFriendCommand,
-                                        RelativeSource={
-                                            RelativeSource AncestorType=ListBox}}"
-                                    CommandParameter="{Binding}"
-                                    Height="32"/>
-                            </Grid>
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
+                                        <Button Grid.Column="1"
+                                                Style="{StaticResource RoundedButtonStyle}"
+                                                Content="{Binding ActionLabel}"
+                                                Command="{Binding DataContext.AddFriendCommand,
+                                                    RelativeSource={
+                                                        RelativeSource AncestorType=ListBox}}"
+                                                CommandParameter="{Binding}"
+                                                IsEnabled="{Binding CanSendRequest}"
+                                                Height="32"
+                                                Padding="6,0"
+                                                Background="#4A90E2"
+                                                Foreground="White"
+                                                FontWeight="Bold"
+                                                BorderBrush="#2C2A29"
+                                                BorderThickness="1"/>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Border>
 
                 <Button
+                    Style="{StaticResource RoundedButtonStyle}"
                     Content="{x:Static properties:Resources.FriendSearch_Btn_Back}"
                     Command="{Binding BackCommand}"
                     Height="42"
                     Background="#D9534F"
                     Foreground="White"
-                    FontWeight="Bold"/>
+                    FontWeight="Bold"
+                    BorderBrush="#2C2A29"
+                    BorderThickness="1.5"/>
             </StackPanel>
         </Border>
     </Grid>
