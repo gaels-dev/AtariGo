@@ -61,7 +61,7 @@
                 </Button>
 
                 <Button Style="{StaticResource RoundedButtonStyle}"
-                        Click="ConfirmButton_Click"
+                        Click="OnConfirmButtonClick"
                         Width="130" Height="42" Background="#2ECC71" Foreground="White"
                         FontWeight="Bold" FontSize="14"
                         BorderBrush="#2C2A29" BorderThickness="1">

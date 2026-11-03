@@ -10,6 +10,7 @@ using AtariGo.Server.Configuration;
 namespace AtariGo.Server.Tests.Configuration
 {
     [TestClass]
+    [TestCategory("Unit")]
     public sealed class DatabaseConnectionSettingsTests
     {
         private const string ConnectionKey = "ConnectionStrings:AtariGoConnection";

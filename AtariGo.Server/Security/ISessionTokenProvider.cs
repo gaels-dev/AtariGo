@@ -6,5 +6,3 @@ public interface ISessionTokenProvider
 
     string Hash(string token);
 }
-
-public sealed record IssuedSessionToken(string Value, string Hash);

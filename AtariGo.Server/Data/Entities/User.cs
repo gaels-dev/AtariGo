@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace AtariGo.Server.Data.Entities;
@@ -19,21 +19,26 @@ public partial class User
 
     public int RoleId { get; set; }
 
-    public virtual ICollection<AuthenticationCode> AuthenticationCodes { get; set; } = new List<AuthenticationCode>();
+    public virtual ICollection<AuthenticationCode> AuthenticationCodes { get; set; }
+        = new List<AuthenticationCode>();
 
     public virtual Credential? Credential { get; set; }
 
-    public virtual ICollection<FriendRequest> FriendRequestRecipients { get; set; } = new List<FriendRequest>();
+    public virtual ICollection<FriendRequest> FriendRequestRecipients { get; set; }
+        = new List<FriendRequest>();
 
-    public virtual ICollection<FriendRequest> FriendRequestRequesters { get; set; } = new List<FriendRequest>();
+    public virtual ICollection<FriendRequest> FriendRequestRequesters { get; set; }
+        = new List<FriendRequest>();
 
-    public virtual ICollection<Friendship> FriendshipFriendUsers { get; set; } = new List<Friendship>();
+    public virtual ICollection<Friendship> FriendshipFriendUsers { get; set; }
+        = new List<Friendship>();
 
     public virtual ICollection<Friendship> FriendshipUsers { get; set; } = new List<Friendship>();
 
     public virtual ICollection<GamePlayer> GamePlayers { get; set; } = new List<GamePlayer>();
 
-    public virtual ICollection<Invitation> InvitationRecipients { get; set; } = new List<Invitation>();
+    public virtual ICollection<Invitation> InvitationRecipients { get; set; }
+        = new List<Invitation>();
 
     public virtual ICollection<Invitation> InvitationSenders { get; set; } = new List<Invitation>();
 
@@ -49,7 +54,8 @@ public partial class User
 
     public virtual ICollection<Room> Rooms { get; set; } = new List<Room>();
 
-    public virtual ICollection<Sanction> SanctionAdministrators { get; set; } = new List<Sanction>();
+    public virtual ICollection<Sanction> SanctionAdministrators { get; set; }
+        = new List<Sanction>();
 
     public virtual ICollection<Sanction> SanctionUsers { get; set; } = new List<Sanction>();
 

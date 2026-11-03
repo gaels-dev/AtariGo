@@ -1,22 +1,27 @@
 using System;
 using System.Collections.ObjectModel;
 using System.Globalization;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
+
+using Grpc.Core;
 
 using AtariGo.Client.Commands;
 using AtariGo.Client.Properties;
 using AtariGo.Client.Services;
 using AtariGo.Contracts;
-using Grpc.Core;
 
 namespace AtariGo.Client.ViewModels
 {
-    public class FriendSearchViewModel : ViewModelBase
+    public class FriendSearchViewModel : ViewModelBase, IDisposable
     {
         private const int MinimumSearchLength = 2;
         private const int MaximumSearchLength = 15;
 
+        private readonly CancellationTokenSource _lifetimeCancellation = new();
+        private readonly CancellationToken _lifetimeToken;
+        private bool _isDisposed;
         private readonly INavigationService _navigationService;
         private readonly IFriendClient? _friendClient;
         private string _searchText;
@@ -29,6 +34,7 @@ namespace AtariGo.Client.ViewModels
         {
             ArgumentNullException.ThrowIfNull(navigationService);
 
+            _lifetimeToken = _lifetimeCancellation.Token;
             _navigationService = navigationService;
             _friendClient = friendClient
                 ?? (string.IsNullOrWhiteSpace(sessionToken)
@@ -42,10 +48,12 @@ namespace AtariGo.Client.ViewModels
 
             SearchCommand = new AsyncRelayCommand(
                 _ => SearchPlayersAsync(),
-                HandleServiceFailure);
+                HandleServiceFailure,
+                _lifetimeToken);
             AddFriendCommand = new AsyncRelayCommand(
                 AddFriendAsync,
-                HandleServiceFailure);
+                HandleServiceFailure,
+                _lifetimeToken);
             BackCommand = new RelayCommand(
                 _navigationService.NavigateToMainMenu);
         }
@@ -84,8 +92,25 @@ namespace AtariGo.Client.ViewModels
 
         public ICommand BackCommand { get; }
 
+        public void Dispose()
+        {
+            if (_isDisposed)
+            {
+                return;
+            }
+
+            _isDisposed = true;
+            _lifetimeCancellation.Cancel();
+            _lifetimeCancellation.Dispose();
+        }
+
         private async Task SearchPlayersAsync()
         {
+            if (_isDisposed)
+            {
+                return;
+            }
+
             SearchResults.Clear();
 
             string query = SearchText.Trim();
@@ -114,7 +139,9 @@ namespace AtariGo.Client.ViewModels
             StatusMessage = GetLocalizedMessage(
                 "FriendSearch_Msg_Searching");
             SearchUsersResponse response =
-                await _friendClient.SearchUsersAsync(query);
+                await _friendClient.SearchUsersAsync(query, _lifetimeToken);
+
+            _lifetimeToken.ThrowIfCancellationRequested();
 
             foreach (FriendAccount account in response.Users)
             {
@@ -131,7 +158,7 @@ namespace AtariGo.Client.ViewModels
 
         private async Task AddFriendAsync(object? parameter)
         {
-            if (parameter is not FriendSearchResultViewModel player)
+            if (_isDisposed || parameter is not FriendSearchResultViewModel player)
             {
                 return;
             }
@@ -145,7 +172,9 @@ namespace AtariGo.Client.ViewModels
             }
 
             SendFriendRequestResponse response =
-                await _friendClient.SendFriendRequestAsync(player.UserId);
+                await _friendClient.SendFriendRequestAsync(player.UserId, _lifetimeToken);
+
+            _lifetimeToken.ThrowIfCancellationRequested();
 
             StatusMessage = response.Status switch
             {
@@ -177,6 +206,14 @@ namespace AtariGo.Client.ViewModels
 
         private void HandleServiceFailure(Exception exception)
         {
+            if (_isDisposed || GrpcCallPolicy.IsRequestedCancellation(
+                    exception, _lifetimeToken))
+            {
+                return;
+            }
+
+            _ = GrpcFailureMessages.GetMessage(exception);
+
             StatusMessage = exception is RpcException rpcException
                 && rpcException.StatusCode == StatusCode.Unauthenticated
                     ? GetLocalizedMessage("FriendSearch_Err_SessionExpired")

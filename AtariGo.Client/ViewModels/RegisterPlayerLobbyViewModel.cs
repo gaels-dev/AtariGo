@@ -1,12 +1,12 @@
 using System;
-using System.ComponentModel;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows.Input;
 using System.Windows.Data;
+using System.Windows.Input;
 
 using AtariGo.Client.Commands;
 using AtariGo.Client.Models;

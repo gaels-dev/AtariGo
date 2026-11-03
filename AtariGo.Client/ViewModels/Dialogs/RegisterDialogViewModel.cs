@@ -2,6 +2,7 @@ using System;
 using System.Globalization;
 using System.Net.Mail;
 using System.Windows.Input;
+
 using AtariGo.Client.Commands;
 using AtariGo.Client.Models;
 using AtariGo.Client.Properties;
@@ -11,7 +12,7 @@ namespace AtariGo.Client.ViewModels.Dialogs;
 
 public sealed class RegisterDialogViewModel : ViewModelBase
 {
-    private const int MaximumUsernameLength = 15;
+    private const int MaximumUserNameLength = 15;
     private const string ReservedGuestName = "Guest";
     private const string ReservedGuestPrefix = "Guest-";
     private const int MaximumEmailLength = 254;
@@ -19,7 +20,7 @@ public sealed class RegisterDialogViewModel : ViewModelBase
     private const int MaximumPasswordLength = 255;
 
     private readonly INavigationService _navigationService;
-    private string _username = string.Empty;
+    private string _userName = string.Empty;
     private string _email = string.Empty;
     private string _password = string.Empty;
     private string _passwordConfirmation = string.Empty;
@@ -35,10 +36,10 @@ public sealed class RegisterDialogViewModel : ViewModelBase
         CancelCommand = new RelayCommand(_navigationService.DiscardRegistration);
     }
 
-    public string Username
+    public string UserName
     {
-        get => _username;
-        set => SetProperty(ref _username, value);
+        get => _userName;
+        set => SetProperty(ref _userName, value);
     }
 
     public string Email
@@ -82,56 +83,22 @@ public sealed class RegisterDialogViewModel : ViewModelBase
 
     private void ProceedToVerification()
     {
-        string username = Username.Trim();
+        string userName = UserName.Trim();
         string email = Email.Trim();
 
-        if (string.IsNullOrWhiteSpace(username)
-            || string.IsNullOrWhiteSpace(email)
-            || string.IsNullOrWhiteSpace(Password)
-            || string.IsNullOrWhiteSpace(PasswordConfirmation))
+        string? validationError = GetFieldValidationError(userName, email)
+            ?? GetIdentityValidationError(userName, email)
+            ?? GetPasswordValidationError();
+        if (validationError is not null)
         {
-            ErrorMessage = GetLocalizedMessage("Register_Err_EmptyFields");
-            return;
-        }
-
-        if (username.Length > MaximumUsernameLength
-            || email.Length > MaximumEmailLength
-            || Password.Length > MaximumPasswordLength)
-        {
-            ErrorMessage = GetLocalizedMessage("Register_Err_Generic");
-            return;
-        }
-
-        if (IsReservedGuestName(username))
-        {
-            ErrorMessage = GetLocalizedMessage(
-                "Register_Err_ReservedUsername");
-            return;
-        }
-
-        if (!MailAddress.TryCreate(email, out _))
-        {
-            ErrorMessage = GetLocalizedMessage("Register_Err_InvalidEmail");
-            return;
-        }
-
-        if (Password.Length < MinimumPasswordLength
-            || !Password.ContainsUppercaseLetter())
-        {
-            ErrorMessage = GetLocalizedMessage("Register_Err_PasswordPolicy");
-            return;
-        }
-
-        if (!string.Equals(Password, PasswordConfirmation, StringComparison.Ordinal))
-        {
-            ErrorMessage = GetLocalizedMessage("Register_Err_PasswordMismatch");
+            ErrorMessage = GetLocalizedMessage(validationError);
             return;
         }
 
         ErrorMessage = string.Empty;
         _registrationDraft = new RegistrationDraft
         {
-            UserName = username,
+            UserName = userName,
             Email = email,
             Password = Password,
             PasswordConfirmation = PasswordConfirmation
@@ -140,13 +107,49 @@ public sealed class RegisterDialogViewModel : ViewModelBase
         _navigationService.OpenVerificationDialog(_registrationDraft);
     }
 
-    private static bool IsReservedGuestName(string username)
+    private string? GetFieldValidationError(string userName, string email)
+    {
+        if (string.IsNullOrWhiteSpace(userName) || string.IsNullOrWhiteSpace(email)
+            || string.IsNullOrWhiteSpace(Password)
+            || string.IsNullOrWhiteSpace(PasswordConfirmation))
+        {
+            return "Register_Err_EmptyFields";
+        }
+
+        bool exceedsLimit = userName.Length > MaximumUserNameLength
+            || email.Length > MaximumEmailLength || Password.Length > MaximumPasswordLength;
+        return exceedsLimit ? "Register_Err_Generic" : null;
+    }
+
+    private static string? GetIdentityValidationError(string userName, string email)
+    {
+        if (IsReservedGuestName(userName))
+        {
+            return "Register_Err_ReservedUsername";
+        }
+
+        return MailAddress.TryCreate(email, out _) ? null : "Register_Err_InvalidEmail";
+    }
+
+    private string? GetPasswordValidationError()
+    {
+        if (Password.Length < MinimumPasswordLength || !Password.ContainsUppercaseLetter())
+        {
+            return "Register_Err_PasswordPolicy";
+        }
+
+        bool passwordsMatch = string.Equals(
+            Password, PasswordConfirmation, StringComparison.Ordinal);
+        return passwordsMatch ? null : "Register_Err_PasswordMismatch";
+    }
+
+    private static bool IsReservedGuestName(string userName)
     {
         return string.Equals(
-                username,
+                userName,
                 ReservedGuestName,
                 StringComparison.OrdinalIgnoreCase)
-            || username.StartsWith(
+            || userName.StartsWith(
                 ReservedGuestPrefix,
                 StringComparison.OrdinalIgnoreCase);
     }
@@ -154,20 +157,4 @@ public sealed class RegisterDialogViewModel : ViewModelBase
     private static string GetLocalizedMessage(string key) =>
         Resources.ResourceManager.GetString(key, CultureInfo.CurrentUICulture)
         ?? key;
-}
-
-internal static class PasswordPolicyExtensions
-{
-    public static bool ContainsUppercaseLetter(this string value)
-    {
-        foreach (char character in value)
-        {
-            if (char.IsUpper(character))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
 }

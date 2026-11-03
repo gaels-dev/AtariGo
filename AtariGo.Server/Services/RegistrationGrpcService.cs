@@ -1,8 +1,9 @@
 using System.Threading.Tasks;
 
+using Grpc.Core;
+
 using AtariGo.Contracts;
 using AtariGo.Server.Application.Authentication;
-using Grpc.Core;
 
 namespace AtariGo.Server.Services;
 
@@ -14,6 +15,18 @@ public sealed class RegistrationGrpcService : Registration.RegistrationBase
     {
         ArgumentNullException.ThrowIfNull(registrationService);
         _registrationService = registrationService;
+    }
+
+    private static AtariGo.Contracts.RegistrationResult MapRegistrationStatus(
+        RegistrationStatus status)
+    {
+        return status switch
+        {
+            RegistrationStatus.Success => AtariGo.Contracts.RegistrationResult.Success,
+            RegistrationStatus.UsernameTaken => AtariGo.Contracts.RegistrationResult.UsernameTaken,
+            RegistrationStatus.EmailTaken => AtariGo.Contracts.RegistrationResult.EmailTaken,
+            _ => AtariGo.Contracts.RegistrationResult.Error
+        };
     }
 
     public override async Task<RegisterAccountResponse> RegisterAccount(
@@ -36,18 +49,6 @@ public sealed class RegistrationGrpcService : Registration.RegistrationBase
         return new RegisterAccountResponse
         {
             Result = MapRegistrationStatus(status)
-        };
-    }
-
-    private static AtariGo.Contracts.RegistrationResult MapRegistrationStatus(
-        RegistrationStatus status)
-    {
-        return status switch
-        {
-            RegistrationStatus.Success => AtariGo.Contracts.RegistrationResult.Success,
-            RegistrationStatus.UsernameTaken => AtariGo.Contracts.RegistrationResult.UsernameTaken,
-            RegistrationStatus.EmailTaken => AtariGo.Contracts.RegistrationResult.EmailTaken,
-            _ => AtariGo.Contracts.RegistrationResult.Error
         };
     }
 }

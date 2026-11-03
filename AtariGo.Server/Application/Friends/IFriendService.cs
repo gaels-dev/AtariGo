@@ -18,8 +18,6 @@ public interface IFriendService
             CancellationToken cancellationToken);
 
     Task<FriendRequestResponseResult?> RespondToFriendRequestAsync(
-        string sessionToken,
-        long requestId,
-        bool accept,
+        RespondToFriendRequestCommand command,
         CancellationToken cancellationToken);
 }

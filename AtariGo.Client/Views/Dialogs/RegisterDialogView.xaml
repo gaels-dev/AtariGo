@@ -29,7 +29,7 @@
                     <x:Static Member="properties:Resources.Register_Lbl_Username"/>
                 </TextBlock.Text>
             </TextBlock>
-            <TextBox Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}"
+            <TextBox Text="{Binding UserName, UpdateSourceTrigger=PropertyChanged}"
                      MaxLength="15"
                      Height="38" Padding="10,8" VerticalContentAlignment="Center"
                      BorderBrush="#2C2A29" BorderThickness="1" Margin="0,0,0,14"/>
@@ -48,7 +48,7 @@
                     <x:Static Member="properties:Resources.Register_Lbl_Password"/>
                 </TextBlock.Text>
             </TextBlock>
-            <PasswordBox x:Name="RegPasswordBox"
+            <PasswordBox x:Name="PasswordBox"
                          Height="38" Padding="10,8" VerticalContentAlignment="Center"
                          BorderBrush="#2C2A29" BorderThickness="1" Margin="0,0,0,10"/>
 
@@ -69,7 +69,7 @@
                        Margin="0,0,0,10"/>
 
             <Button Style="{StaticResource RoundedButtonStyle}"
-                    Click="RegisterButton_Click"
+                    Click="OnRegisterButtonClick"
                     Height="42" Background="#4A90E2" Foreground="White"
                     FontWeight="Bold" FontSize="14"
                     BorderBrush="#2C2A29" BorderThickness="1" Margin="0,0,0,10">

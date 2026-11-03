@@ -37,14 +37,14 @@ namespace AtariGo.Client.Views
             }
         }
 
-        private void SubmitButton_Click(object sender, RoutedEventArgs e)
+        private void OnSubmitButtonClick(object sender, RoutedEventArgs e)
         {
             if (DataContext is not LoginViewModel viewModel)
             {
                 return;
             }
 
-            object password = TxtPassword.Password;
+            object password = PasswordBox.Password;
             if (viewModel.SubmitCommand.CanExecute(password))
             {
                 viewModel.SubmitCommand.Execute(password);

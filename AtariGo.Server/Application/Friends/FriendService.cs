@@ -1,10 +1,11 @@
 using System.Data;
 
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
+
 using AtariGo.Server.Data;
 using AtariGo.Server.Data.Entities;
 using AtariGo.Server.Security;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
 
 namespace AtariGo.Server.Application.Friends;
 
@@ -117,16 +118,15 @@ public sealed class FriendService : IFriendService
             cancellationToken);
     }
 
-    public async Task<FriendRequestResponseResult?>
-        RespondToFriendRequestAsync(
-            string sessionToken,
-            long requestId,
-            bool accept,
-            CancellationToken cancellationToken)
+    public async Task<FriendRequestResponseResult?> RespondToFriendRequestAsync(
+        RespondToFriendRequestCommand command,
+        CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(command);
+
         DateTime now = _timeProvider.GetUtcNow().UtcDateTime;
         int? recipientId = await FindActiveUserIdAsync(
-            sessionToken,
+            command.SessionToken,
             now,
             cancellationToken);
 
@@ -135,12 +135,14 @@ public sealed class FriendService : IFriendService
             return null;
         }
 
-        return await ApplyFriendRequestResponseAsync(
-            recipientId.Value,
-            requestId,
-            accept,
-            now,
-            cancellationToken);
+        var decision = new FriendRequestDecision
+        {
+            RecipientUserId = recipientId.Value,
+            RequestId = command.RequestId,
+            Accept = command.Accept,
+            RecordedAt = now
+        };
+        return await ApplyFriendRequestResponseAsync(decision, cancellationToken);
     }
 
     private static string NormalizeQuery(string query)
@@ -150,7 +152,8 @@ public sealed class FriendService : IFriendService
             || normalizedQuery.Length > MaximumSearchLength)
         {
             throw new ArgumentException(
-                $"The search query must contain between {MinimumSearchLength} and {MaximumSearchLength} characters.",
+                $"The search query must contain between {MinimumSearchLength} "
+                    + $"and {MaximumSearchLength} characters.",
                 nameof(query));
         }
 
@@ -226,24 +229,15 @@ public sealed class FriendService : IFriendService
             .ToListAsync(cancellationToken);
     }
 
-    private async Task<FriendRequestResponseResult>
-        ApplyFriendRequestResponseAsync(
-            int recipientId,
-            long requestId,
-            bool accept,
-            DateTime now,
-            CancellationToken cancellationToken)
+    private async Task<FriendRequestResponseResult> ApplyFriendRequestResponseAsync(
+        FriendRequestDecision decision,
+        CancellationToken cancellationToken)
     {
-        await using var transaction = await _dbContext.Database
-            .BeginTransactionAsync(
-                IsolationLevel.Serializable,
-                cancellationToken);
+        await using IDbContextTransaction transaction = await _dbContext.Database
+            .BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
 
-        FriendRequest? request = await FindRequestAsync(
-            requestId,
-            cancellationToken);
-
-        if (request is null || request.RecipientId != recipientId)
+        FriendRequest? request = await FindRequestAsync(decision.RequestId, cancellationToken);
+        if (request is null || request.RecipientId != decision.RecipientUserId)
         {
             return FriendRequestResponseResult.NotFound;
         }
@@ -253,13 +247,12 @@ public sealed class FriendService : IFriendService
             return FriendRequestResponseResult.AlreadyProcessed;
         }
 
-        return await SaveFriendRequestResponseAsync(
+        FriendRequestResponseResult result = await SaveFriendRequestResponseAsync(
             request,
-            recipientId,
-            accept,
-            now,
-            transaction,
+            decision,
             cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        return result;
     }
 
     private Task<FriendRequest?> FindRequestAsync(
@@ -272,36 +265,28 @@ public sealed class FriendService : IFriendService
                 cancellationToken);
     }
 
-    private async Task<FriendRequestResponseResult>
-        SaveFriendRequestResponseAsync(
-            FriendRequest request,
-            int recipientId,
-            bool accept,
-            DateTime now,
-            IDbContextTransaction transaction,
-            CancellationToken cancellationToken)
+    private async Task<FriendRequestResponseResult> SaveFriendRequestResponseAsync(
+        FriendRequest request,
+        FriendRequestDecision decision,
+        CancellationToken cancellationToken)
     {
-        if (accept && await AreFriendsAsync(
-                request.RequesterId,
-                recipientId,
-                cancellationToken))
+        bool alreadyFriends = decision.Accept && await AreFriendsAsync(
+            request.RequesterId,
+            decision.RecipientUserId,
+            cancellationToken);
+        if (decision.Accept && !alreadyFriends)
         {
-            _dbContext.FriendRequests.Remove(request);
-            await _dbContext.SaveChangesAsync(cancellationToken);
-            await transaction.CommitAsync(cancellationToken);
-            return FriendRequestResponseResult.AlreadyFriends;
-        }
-
-        if (accept)
-        {
-            AddFriendship(request.RequesterId, recipientId, now);
+            AddFriendship(request.RequesterId, decision.RecipientUserId, decision.RecordedAt);
         }
 
         _dbContext.FriendRequests.Remove(request);
         await _dbContext.SaveChangesAsync(cancellationToken);
-        await transaction.CommitAsync(cancellationToken);
+        if (alreadyFriends)
+        {
+            return FriendRequestResponseResult.AlreadyFriends;
+        }
 
-        return accept
+        return decision.Accept
             ? FriendRequestResponseResult.Accepted
             : FriendRequestResponseResult.Rejected;
     }
@@ -386,4 +371,3 @@ public sealed class FriendService : IFriendService
             cancellationToken);
     }
 }
-

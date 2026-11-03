@@ -2,6 +2,7 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 
 using AtariGo.Client.Commands;
+using AtariGo.Contracts;
 
 namespace AtariGo.Client.ViewModels;
 
@@ -12,18 +13,17 @@ public sealed class IncomingFriendRequestViewModel : ViewModelBase
     private bool _isResponding;
 
     public IncomingFriendRequestViewModel(
-        long requestId,
-        int requesterUserId,
-        string requesterUserName,
+        IncomingFriendRequest request,
         Func<long, bool, Task> respondAsync,
         Action<Exception> onError)
     {
+        ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(respondAsync);
         ArgumentNullException.ThrowIfNull(onError);
 
-        RequestId = requestId;
-        RequesterUserId = requesterUserId;
-        RequesterUserName = requesterUserName;
+        RequestId = request.RequestId;
+        RequesterUserId = request.RequesterUserId;
+        RequesterUserName = request.RequesterUserName;
         _respondAsync = respondAsync;
         _onError = onError;
 

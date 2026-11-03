@@ -1,6 +1,7 @@
+using Grpc.Core;
+
 using AtariGo.Contracts;
 using AtariGo.Server.Application.Leaderboard;
-using Grpc.Core;
 
 namespace AtariGo.Server.Services;
 
@@ -12,18 +13,6 @@ public sealed class LeaderboardGrpcService : Leaderboard.LeaderboardBase
     {
         ArgumentNullException.ThrowIfNull(leaderboardService);
         _leaderboardService = leaderboardService;
-    }
-
-    public override async Task<GetTopPlayersResponse> GetTopPlayers(
-        GetTopPlayersRequest request,
-        ServerCallContext context)
-    {
-        IReadOnlyList<PlayerLeaderboardEntry> players =
-            await _leaderboardService.GetTopPlayersAsync(
-                request.Limit,
-                context.CancellationToken);
-
-        return CreateResponse(players);
     }
 
     private static GetTopPlayersResponse CreateResponse(
@@ -41,5 +30,17 @@ public sealed class LeaderboardGrpcService : Leaderboard.LeaderboardBase
         }
 
         return response;
+    }
+
+    public override async Task<GetTopPlayersResponse> GetTopPlayers(
+        GetTopPlayersRequest request,
+        ServerCallContext context)
+    {
+        IReadOnlyList<PlayerLeaderboardEntry> players =
+            await _leaderboardService.GetTopPlayersAsync(
+                request.Limit,
+                context.CancellationToken);
+
+        return CreateResponse(players);
     }
 }

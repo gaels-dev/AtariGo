@@ -1,14 +1,15 @@
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+
 using AtariGo.Server.Data;
 using AtariGo.Server.Data.Entities;
 using AtariGo.Server.Security;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 
 namespace AtariGo.Server.Application.Authentication;
 
 public sealed class AuthenticationService : IAuthenticationService
 {
-    private static readonly TimeSpan SessionLifetime = TimeSpan.FromHours(1);
+    private static readonly TimeSpan s_sessionLifetime = TimeSpan.FromHours(1);
     private readonly AtariGoDbContext _dbContext;
     private readonly IPasswordHasher<User> _passwordHasher;
     private readonly ISessionTokenProvider _sessionTokenProvider;
@@ -56,11 +57,12 @@ public sealed class AuthenticationService : IAuthenticationService
 
         IssuedSessionToken token = await CreateSessionAsync(user, now, cancellationToken);
 
-        return new LoginOperationResult(
-            LoginStatus.Success,
-            user.UserId,
-            user.UserName,
-            token.Value);
+        return new LoginOperationResult(LoginStatus.Success)
+        {
+            UserId = user.UserId,
+            UserName = user.UserName,
+            SessionToken = token.Value
+        };
     }
 
     private Task<User?> FindUserByIdentifierAsync(
@@ -139,7 +141,7 @@ public sealed class AuthenticationService : IAuthenticationService
             SessionTokenHash = token.Hash,
             StartedAt = now,
             LastActivityAt = now,
-            ExpiresAt = now.Add(SessionLifetime),
+            ExpiresAt = now.Add(s_sessionLifetime),
             State = DatabaseValues.SessionStates.Active
         });
 

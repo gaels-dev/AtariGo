@@ -1,5 +1,6 @@
-using AtariGo.Server.Data;
 using Microsoft.EntityFrameworkCore;
+
+using AtariGo.Server.Data;
 
 namespace AtariGo.Server.Application.Leaderboard;
 

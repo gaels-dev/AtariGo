@@ -11,6 +11,7 @@ namespace AtariGo.Client
     {
         private const int InvalidConfigurationExitCode = 1;
 
+        private ClientDiagnostics? _diagnostics;
         private GrpcClientConnection? _grpcConnection;
 
         private static string GetLocalizedMessage(string resourceKey)
@@ -22,6 +23,7 @@ namespace AtariGo.Client
 
         protected override void OnStartup(StartupEventArgs e)
         {
+            _diagnostics = ClientDiagnostics.TryStart();
             try
             {
                 _grpcConnection = GrpcClientConnection.Shared;
@@ -48,6 +50,7 @@ namespace AtariGo.Client
             }
             finally
             {
+                _diagnostics?.Dispose();
                 base.OnExit(e);
             }
         }

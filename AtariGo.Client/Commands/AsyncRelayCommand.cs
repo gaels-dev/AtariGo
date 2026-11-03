@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 
@@ -9,17 +10,20 @@ public sealed class AsyncRelayCommand : ICommand
 {
     private readonly Func<object?, Task> _execute;
     private readonly Action<Exception> _onError;
+    private readonly CancellationToken _cancellationToken;
     private bool _isExecuting;
 
     public AsyncRelayCommand(
         Func<object?, Task> execute,
-        Action<Exception> onError)
+        Action<Exception> onError,
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(execute);
         ArgumentNullException.ThrowIfNull(onError);
 
         _execute = execute;
         _onError = onError;
+        _cancellationToken = cancellationToken;
     }
 
     public event EventHandler? CanExecuteChanged;
@@ -42,6 +46,10 @@ public sealed class AsyncRelayCommand : ICommand
         try
         {
             await _execute(parameter);
+        }
+        catch (Exception) when (_cancellationToken.IsCancellationRequested)
+        {
+            Trace.TraceInformation("Async command cancelled by its owner.");
         }
         catch (Exception exception)
         {

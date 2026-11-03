@@ -1,5 +1,5 @@
-using AtariGo.Client.ViewModels.Dialogs;
 using AtariGo.Client.Models;
+using AtariGo.Client.ViewModels.Dialogs;
 using AtariGo.Contracts;
 
 namespace AtariGo.Client.Services

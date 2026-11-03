@@ -1,3 +1,5 @@
+using AtariGo.Client.Models;
+
 namespace AtariGo.Client.ViewModels
 {
     public class ChatMessageViewModel : ViewModelBase
@@ -10,13 +12,12 @@ namespace AtariGo.Client.ViewModels
         public ChatMessageViewModel(
             string sender,
             string text,
-            bool isSystem = false,
-            bool isOpponent = false)
+            ChatMessageKind kind = ChatMessageKind.Player)
         {
             _sender = sender;
             _text = text;
-            _isSystem = isSystem;
-            _isOpponent = isOpponent;
+            _isSystem = kind == ChatMessageKind.System;
+            _isOpponent = kind == ChatMessageKind.Opponent;
         }
 
         public string Sender

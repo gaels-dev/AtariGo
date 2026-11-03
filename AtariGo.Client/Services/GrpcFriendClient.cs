@@ -1,22 +1,31 @@
-using AtariGo.Contracts;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+
 using Grpc.Core;
-using Grpc.Net.Client;
+
+using AtariGo.Contracts;
 
 namespace AtariGo.Client.Services;
 
 public sealed class GrpcFriendClient : IFriendClient
 {
     private readonly string _sessionToken;
-    private readonly GrpcChannel _channel;
     private readonly FriendDirectory.FriendDirectoryClient _client;
 
     public GrpcFriendClient(string sessionToken)
+        : this(sessionToken, GrpcClientConnection.Shared.CallInvoker)
+    {
+    }
+
+    public GrpcFriendClient(string sessionToken, CallInvoker callInvoker)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(sessionToken);
 
+        ArgumentNullException.ThrowIfNull(callInvoker);
+
         _sessionToken = sessionToken;
-        _channel = GrpcChannel.ForAddress(GrpcClientSettings.ServerAddress);
-        _client = new FriendDirectory.FriendDirectoryClient(_channel);
+        _client = new FriendDirectory.FriendDirectoryClient(callInvoker);
     }
 
     public Task<SearchUsersResponse> SearchUsersAsync(
@@ -25,8 +34,9 @@ public sealed class GrpcFriendClient : IFriendClient
     {
         return _client.SearchUsersAsync(
             new SearchUsersRequest { Query = query },
-            headers: CreateAuthorizationHeaders(),
-            cancellationToken: cancellationToken).ResponseAsync;
+            GrpcCallPolicy.CreateOptions(
+                cancellationToken,
+                CreateAuthorizationHeaders())).ResponseAsync;
     }
 
     public Task<SendFriendRequestResponse> SendFriendRequestAsync(
@@ -38,8 +48,9 @@ public sealed class GrpcFriendClient : IFriendClient
             {
                 RecipientUserId = recipientUserId
             },
-            headers: CreateAuthorizationHeaders(),
-            cancellationToken: cancellationToken).ResponseAsync;
+            GrpcCallPolicy.CreateOptions(
+                cancellationToken,
+                CreateAuthorizationHeaders())).ResponseAsync;
     }
 
     public Task<GetIncomingFriendRequestsResponse>
@@ -48,8 +59,9 @@ public sealed class GrpcFriendClient : IFriendClient
     {
         return _client.GetIncomingFriendRequestsAsync(
             new GetIncomingFriendRequestsRequest(),
-            headers: CreateAuthorizationHeaders(),
-            cancellationToken: cancellationToken).ResponseAsync;
+            GrpcCallPolicy.CreateOptions(
+                cancellationToken,
+                CreateAuthorizationHeaders())).ResponseAsync;
     }
 
     public Task<RespondToFriendRequestResponse>
@@ -64,8 +76,9 @@ public sealed class GrpcFriendClient : IFriendClient
                 RequestId = requestId,
                 Accept = accept
             },
-            headers: CreateAuthorizationHeaders(),
-            cancellationToken: cancellationToken).ResponseAsync;
+            GrpcCallPolicy.CreateOptions(
+                cancellationToken,
+                CreateAuthorizationHeaders())).ResponseAsync;
     }
 
     private Metadata CreateAuthorizationHeaders()

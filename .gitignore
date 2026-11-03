@@ -47,3 +47,9 @@ appsettings.*.local.json
 .env
 .env.*
 !.env.example
+
+# Local working reports and chat notes
+/AUDITORIA_CODIGO.md
+/CAMBIOS_ESTANDAR.md
+/PROPUESTAS_ESTANDAR.md
+/docs/local/

@@ -12,14 +12,14 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="CheckBox">
-                        <Border x:Name="chkBorder"
+                        <Border x:Name="CheckBorder"
                                 Width="24"
                                 Height="24"
                                 CornerRadius="5"
                                 Background="White"
                                 BorderBrush="#2C2A29"
                                 BorderThickness="1.5">
-                            <TextBlock x:Name="chkMark"
+                            <TextBlock x:Name="CheckMark"
                                        Text="✓"
                                        Foreground="White"
                                        FontWeight="Bold"
@@ -30,13 +30,13 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="chkBorder"
+                                <Setter TargetName="CheckBorder"
                                         Property="Background"
                                         Value="#357ABD"/>
-                                <Setter TargetName="chkBorder"
+                                <Setter TargetName="CheckBorder"
                                         Property="BorderBrush"
                                         Value="#2C2A29"/>
-                                <Setter TargetName="chkMark"
+                                <Setter TargetName="CheckMark"
                                         Property="Visibility"
                                         Value="Visible"/>
                             </Trigger>

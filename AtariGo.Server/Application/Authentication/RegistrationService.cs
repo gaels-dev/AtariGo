@@ -1,7 +1,8 @@
-using AtariGo.Server.Data;
-using AtariGo.Server.Data.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+
+using AtariGo.Server.Data;
+using AtariGo.Server.Data.Entities;
 
 namespace AtariGo.Server.Application.Authentication;
 

@@ -1,19 +1,26 @@
+using System;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Globalization;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
+
+using Grpc.Core;
 
 using AtariGo.Client.Commands;
 using AtariGo.Client.Models;
 using AtariGo.Client.Properties;
 using AtariGo.Client.Services;
 using AtariGo.Contracts;
-using Grpc.Core;
 
 namespace AtariGo.Client.ViewModels;
 
-public sealed class FriendRequestsViewModel : ViewModelBase
+public sealed class FriendRequestsViewModel : ViewModelBase, IDisposable
 {
+    private readonly CancellationTokenSource _lifetimeCancellation = new();
+    private readonly CancellationToken _lifetimeToken;
+    private bool _isDisposed;
     private readonly INavigationService _navigationService;
     private readonly IFriendClient? _friendClient;
     private readonly ObservableCollection<FriendItemViewModel> _friends;
@@ -22,28 +29,30 @@ public sealed class FriendRequestsViewModel : ViewModelBase
 
     public FriendRequestsViewModel(
         INavigationService navigationService,
-        string? sessionToken,
-        ObservableCollection<FriendItemViewModel> friends,
+        FriendRequestsContext context,
         IFriendClient? friendClient = null)
     {
         ArgumentNullException.ThrowIfNull(navigationService);
-        ArgumentNullException.ThrowIfNull(friends);
+        ArgumentNullException.ThrowIfNull(context);
+        ArgumentNullException.ThrowIfNull(context.Friends);
 
+        _lifetimeToken = _lifetimeCancellation.Token;
         _navigationService = navigationService;
-        _friends = friends;
+        _friends = context.Friends;
         _friendClient = friendClient
-            ?? (string.IsNullOrWhiteSpace(sessionToken)
+            ?? (string.IsNullOrWhiteSpace(context.SessionToken)
                 ? null
-                : new GrpcFriendClient(sessionToken));
+                : new GrpcFriendClient(context.SessionToken));
 
         Requests = new ObservableCollection<IncomingFriendRequestViewModel>();
         RefreshCommand = new AsyncRelayCommand(
             _ => LoadRequestsAsync(),
-            HandleServiceFailure);
+            HandleServiceFailure,
+            _lifetimeToken);
         BackCommand = new RelayCommand(
             _navigationService.NavigateToMainMenu);
 
-        _ = LoadRequestsAsync();
+        Initialization = LoadRequestsAsync();
     }
 
     public ObservableCollection<IncomingFriendRequestViewModel> Requests
@@ -76,12 +85,31 @@ public sealed class FriendRequestsViewModel : ViewModelBase
     public string BackLabel => GetLocalizedMessage(
         "FriendSearch_Btn_Back");
 
+    public Task Initialization { get; }
+
     public ICommand RefreshCommand { get; }
 
     public ICommand BackCommand { get; }
 
+    public void Dispose()
+    {
+        if (_isDisposed)
+        {
+            return;
+        }
+
+        _isDisposed = true;
+        _lifetimeCancellation.Cancel();
+        _lifetimeCancellation.Dispose();
+    }
+
     private async Task LoadRequestsAsync()
     {
+        if (_isDisposed)
+        {
+            return;
+        }
+
         if (IsLoading)
         {
             return;
@@ -101,7 +129,9 @@ public sealed class FriendRequestsViewModel : ViewModelBase
         try
         {
             GetIncomingFriendRequestsResponse response =
-                await _friendClient.GetIncomingFriendRequestsAsync();
+                await _friendClient.GetIncomingFriendRequestsAsync(_lifetimeToken);
+
+            _lifetimeToken.ThrowIfCancellationRequested();
 
             Requests.Clear();
             foreach (IncomingFriendRequest request in response.Requests)
@@ -119,7 +149,10 @@ public sealed class FriendRequestsViewModel : ViewModelBase
         }
         finally
         {
-            IsLoading = false;
+            if (!_isDisposed)
+            {
+                IsLoading = false;
+            }
         }
     }
 
@@ -127,9 +160,7 @@ public sealed class FriendRequestsViewModel : ViewModelBase
         IncomingFriendRequest request)
     {
         return new IncomingFriendRequestViewModel(
-            request.RequestId,
-            request.RequesterUserId,
-            request.RequesterUserName,
+            request,
             RespondToRequestAsync,
             HandleServiceFailure);
     }
@@ -138,6 +169,11 @@ public sealed class FriendRequestsViewModel : ViewModelBase
         long requestId,
         bool accept)
     {
+        if (_isDisposed)
+        {
+            return;
+        }
+
         if (_friendClient is null)
         {
             HandleServiceFailure(new InvalidOperationException(
@@ -145,12 +181,22 @@ public sealed class FriendRequestsViewModel : ViewModelBase
             return;
         }
 
-        RespondToFriendRequestResponse response =
-            await _friendClient.RespondToFriendRequestAsync(
-                requestId,
-                accept);
+        try
+        {
+            RespondToFriendRequestResponse response =
+                await _friendClient.RespondToFriendRequestAsync(
+                    requestId,
+                    accept,
+                    _lifetimeToken);
 
-        ProcessResponse(response, requestId);
+            _lifetimeToken.ThrowIfCancellationRequested();
+            ProcessResponse(response, requestId);
+        }
+        catch (Exception exception) when (GrpcCallPolicy.IsRequestedCancellation(
+            exception, _lifetimeToken))
+        {
+            Trace.TraceInformation("Friend request response cancelled by its owner.");
+        }
     }
 
     private void ProcessResponse(
@@ -219,6 +265,14 @@ public sealed class FriendRequestsViewModel : ViewModelBase
 
     private void HandleServiceFailure(Exception exception)
     {
+        if (_isDisposed || GrpcCallPolicy.IsRequestedCancellation(
+                exception, _lifetimeToken))
+        {
+            return;
+        }
+
+        _ = GrpcFailureMessages.GetMessage(exception);
+
         StatusMessage = exception is RpcException rpcException
             && rpcException.StatusCode == StatusCode.Unauthenticated
                 ? GetLocalizedMessage(

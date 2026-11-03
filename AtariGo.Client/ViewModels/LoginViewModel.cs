@@ -176,18 +176,7 @@ namespace AtariGo.Client.ViewModels
             CurrentDialogViewModel = new RegistrationResultDialogViewModel(
                 GetLocalizedMessage(resourceKey),
                 GetLocalizedMessage("RegistrationResult_Btn_Close"),
-                () =>
-                {
-                    if (succeeded)
-                    {
-                        _registerDialogViewModel?.ClearSensitiveData();
-                        _registerDialogViewModel = null;
-                    }
-
-                    CurrentDialogViewModel = succeeded
-                        ? null
-                        : _registerDialogViewModel ?? previousDialog;
-                });
+                () => CloseRegistrationResult(succeeded, previousDialog));
         }
 
         public void OpenForgotPasswordDialog()
@@ -208,6 +197,19 @@ namespace AtariGo.Client.ViewModels
         public void CloseDialog()
         {
             CurrentDialogViewModel = null;
+        }
+
+        private void CloseRegistrationResult(bool succeeded, ViewModelBase? previousDialog)
+        {
+            if (succeeded)
+            {
+                _registerDialogViewModel?.ClearSensitiveData();
+                _registerDialogViewModel = null;
+            }
+
+            CurrentDialogViewModel = succeeded
+                ? null
+                : _registerDialogViewModel ?? previousDialog;
         }
 
         private async Task SubmitAsync(object? parameter)

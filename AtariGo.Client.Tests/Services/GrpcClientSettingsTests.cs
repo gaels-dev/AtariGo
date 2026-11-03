@@ -7,6 +7,7 @@ using AtariGo.Client.Services;
 namespace AtariGo.Client.Tests.Services
 {
     [TestClass]
+    [TestCategory("Unit")]
     public sealed class GrpcClientSettingsTests
     {
         [TestMethod]

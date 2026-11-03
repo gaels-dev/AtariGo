@@ -1,5 +1,6 @@
 using System;
 using System.Windows.Input;
+
 using AtariGo.Client.Commands;
 
 namespace AtariGo.Client.ViewModels.Dialogs;

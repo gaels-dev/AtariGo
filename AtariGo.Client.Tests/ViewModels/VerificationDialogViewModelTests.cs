@@ -4,8 +4,9 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Grpc.Core;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+
+using Grpc.Core;
 
 using AtariGo.Client.Models;
 using AtariGo.Client.Properties;
@@ -17,6 +18,7 @@ using AtariGo.Contracts;
 namespace AtariGo.Client.Tests.ViewModels
 {
     [TestClass]
+    [TestCategory("Unit")]
     public sealed class VerificationDialogViewModelTests
     {
         private const int ExpectedRegistrationCalls = 1;

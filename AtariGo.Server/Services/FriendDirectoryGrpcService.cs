@@ -1,6 +1,7 @@
+using Grpc.Core;
+
 using AtariGo.Contracts;
 using AtariGo.Server.Application.Friends;
-using Grpc.Core;
 
 namespace AtariGo.Server.Services;
 
@@ -15,6 +16,89 @@ public sealed class FriendDirectoryGrpcService : FriendDirectory.FriendDirectory
     {
         ArgumentNullException.ThrowIfNull(friendService);
         _friendService = friendService;
+    }
+
+    private static string GetSessionToken(ServerCallContext context)
+    {
+        string? authorization = context.RequestHeaders.GetValue(
+            AuthorizationHeader);
+
+        if (authorization is null
+            || !authorization.StartsWith(
+                BearerPrefix,
+                StringComparison.OrdinalIgnoreCase))
+        {
+            throw CreateUnauthenticatedException();
+        }
+
+        string token = authorization[BearerPrefix.Length..].Trim();
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            throw CreateUnauthenticatedException();
+        }
+
+        return token;
+    }
+
+    private static SearchUsersResponse CreateSearchResponse(
+        IReadOnlyList<FriendAccountEntry> users)
+    {
+        var response = new SearchUsersResponse();
+        foreach (FriendAccountEntry user in users)
+        {
+            response.Users.Add(new FriendAccount
+            {
+                UserId = user.UserId,
+                UserName = user.UserName
+            });
+        }
+
+        return response;
+    }
+
+    private static FriendRequestStatus MapStatus(
+        FriendRequestResult result)
+    {
+        return result switch
+        {
+            FriendRequestResult.Sent =>
+                FriendRequestStatus.Sent,
+            FriendRequestResult.AlreadyFriends =>
+                FriendRequestStatus.AlreadyFriends,
+            FriendRequestResult.AlreadyPending =>
+                FriendRequestStatus.AlreadyPending,
+            FriendRequestResult.UserNotFound =>
+                FriendRequestStatus.UserNotFound,
+            FriendRequestResult.CannotRequestSelf =>
+                FriendRequestStatus.CannotRequestSelf,
+            _ => FriendRequestStatus.Unspecified
+        };
+    }
+
+    private static FriendRequestResponseStatus MapResponseStatus(
+        FriendRequestResponseResult result)
+    {
+        return result switch
+        {
+            FriendRequestResponseResult.Accepted =>
+                FriendRequestResponseStatus.Accepted,
+            FriendRequestResponseResult.Rejected =>
+                FriendRequestResponseStatus.Rejected,
+            FriendRequestResponseResult.AlreadyFriends =>
+                FriendRequestResponseStatus.AlreadyFriends,
+            FriendRequestResponseResult.NotFound =>
+                FriendRequestResponseStatus.NotFound,
+            FriendRequestResponseResult.AlreadyProcessed =>
+                FriendRequestResponseStatus.AlreadyProcessed,
+            _ => FriendRequestResponseStatus.Unspecified
+        };
+    }
+
+    private static RpcException CreateUnauthenticatedException()
+    {
+        return new RpcException(new Status(
+            StatusCode.Unauthenticated,
+            "La sesión no es válida o ha vencido."));
     }
 
     public override async Task<SearchUsersResponse> SearchUsers(
@@ -108,9 +192,8 @@ public sealed class FriendDirectoryGrpcService : FriendDirectory.FriendDirectory
 
         FriendRequestResponseResult? result =
             await _friendService.RespondToFriendRequestAsync(
-                GetSessionToken(context),
-                request.RequestId,
-                request.Accept,
+                new RespondToFriendRequestCommand(
+                    GetSessionToken(context), request.RequestId, request.Accept),
                 context.CancellationToken);
 
         if (result is null)
@@ -122,88 +205,5 @@ public sealed class FriendDirectoryGrpcService : FriendDirectory.FriendDirectory
         {
             Status = MapResponseStatus(result.Value)
         };
-    }
-
-    private static string GetSessionToken(ServerCallContext context)
-    {
-        string? authorization = context.RequestHeaders.GetValue(
-            AuthorizationHeader);
-
-        if (authorization is null
-            || !authorization.StartsWith(
-                BearerPrefix,
-                StringComparison.OrdinalIgnoreCase))
-        {
-            throw CreateUnauthenticatedException();
-        }
-
-        string token = authorization[BearerPrefix.Length..].Trim();
-        if (string.IsNullOrWhiteSpace(token))
-        {
-            throw CreateUnauthenticatedException();
-        }
-
-        return token;
-    }
-
-    private static SearchUsersResponse CreateSearchResponse(
-        IReadOnlyList<FriendAccountEntry> users)
-    {
-        var response = new SearchUsersResponse();
-        foreach (FriendAccountEntry user in users)
-        {
-            response.Users.Add(new FriendAccount
-            {
-                UserId = user.UserId,
-                UserName = user.UserName
-            });
-        }
-
-        return response;
-    }
-
-    private static FriendRequestStatus MapStatus(
-        FriendRequestResult result)
-    {
-        return result switch
-        {
-            FriendRequestResult.Sent =>
-                FriendRequestStatus.Sent,
-            FriendRequestResult.AlreadyFriends =>
-                FriendRequestStatus.AlreadyFriends,
-            FriendRequestResult.AlreadyPending =>
-                FriendRequestStatus.AlreadyPending,
-            FriendRequestResult.UserNotFound =>
-                FriendRequestStatus.UserNotFound,
-            FriendRequestResult.CannotRequestSelf =>
-                FriendRequestStatus.CannotRequestSelf,
-            _ => FriendRequestStatus.Unspecified
-        };
-    }
-
-    private static FriendRequestResponseStatus MapResponseStatus(
-        FriendRequestResponseResult result)
-    {
-        return result switch
-        {
-            FriendRequestResponseResult.Accepted =>
-                FriendRequestResponseStatus.Accepted,
-            FriendRequestResponseResult.Rejected =>
-                FriendRequestResponseStatus.Rejected,
-            FriendRequestResponseResult.AlreadyFriends =>
-                FriendRequestResponseStatus.AlreadyFriends,
-            FriendRequestResponseResult.NotFound =>
-                FriendRequestResponseStatus.NotFound,
-            FriendRequestResponseResult.AlreadyProcessed =>
-                FriendRequestResponseStatus.AlreadyProcessed,
-            _ => FriendRequestResponseStatus.Unspecified
-        };
-    }
-
-    private static RpcException CreateUnauthenticatedException()
-    {
-        return new RpcException(new Status(
-            StatusCode.Unauthenticated,
-            "La sesión no es válida o ha vencido."));
     }
 }

@@ -3,9 +3,10 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+
 using Grpc.Core;
 using Grpc.Core.Interceptors;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using AtariGo.Client.Models;
 using AtariGo.Client.Services;
@@ -13,6 +14,7 @@ using AtariGo.Client.Services;
 namespace AtariGo.Client.Tests.Services
 {
     [TestClass]
+    [TestCategory("Unit")]
     public sealed class GrpcCallPolicyTests
     {
         private const int LeaderboardLimit = 10;

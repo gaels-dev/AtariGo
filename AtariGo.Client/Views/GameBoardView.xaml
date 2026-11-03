@@ -11,7 +11,7 @@
              Background="#F0EBE3">
 
     <UserControl.Resources>
-        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
 
         <Style x:Key="ActionButtonStyle"
                TargetType="Button"

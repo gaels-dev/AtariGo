@@ -1,9 +1,8 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
-using AtariGo.Client.ViewModels.Dialogs;
 using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
@@ -11,6 +10,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+
+using AtariGo.Client.ViewModels.Dialogs;
 
 namespace AtariGo.Client.Views.Dialogs
 {
@@ -26,14 +27,14 @@ namespace AtariGo.Client.Views.Dialogs
             Loaded += (_, _) => RestorePasswordFields();
         }
 
-        private void RegisterButton_Click(object sender, System.Windows.RoutedEventArgs e)
+        private void OnRegisterButtonClick(object sender, System.Windows.RoutedEventArgs e)
         {
             if (DataContext is not RegisterDialogViewModel viewModel)
             {
                 return;
             }
 
-            viewModel.Password = RegPasswordBox.Password;
+            viewModel.Password = PasswordBox.Password;
             viewModel.PasswordConfirmation = ConfirmPasswordBox.Password;
 
             if (viewModel.RegisterCommand.CanExecute(null))
@@ -53,7 +54,7 @@ namespace AtariGo.Client.Views.Dialogs
         {
             if (DataContext is RegisterDialogViewModel viewModel)
             {
-                RegPasswordBox.Password = viewModel.Password;
+                PasswordBox.Password = viewModel.Password;
                 ConfirmPasswordBox.Password = viewModel.PasswordConfirmation;
             }
         }

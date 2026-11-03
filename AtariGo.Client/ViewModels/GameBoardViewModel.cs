@@ -49,11 +49,11 @@ namespace AtariGo.Client.ViewModels
             ChatMessages.Add(new ChatMessageViewModel(
                 Properties.Resources.GameBoard_Lbl_System,
                 Properties.Resources.GameBoard_Chat_GameStarted,
-                isSystem: true));
+                kind: ChatMessageKind.System));
             ChatMessages.Add(new ChatMessageViewModel(
                 Properties.Resources.GameBoard_Lbl_Opponent,
                 Properties.Resources.GameBoard_Chat_GoodLuck,
-                isOpponent: true));
+                kind: ChatMessageKind.Opponent));
 
             SendChatMessageCommand = new RelayCommand(
                 SendChatMessage,
@@ -172,7 +172,7 @@ namespace AtariGo.Client.ViewModels
 
         private void HandleCellClicked(BoardCellViewModel cell)
         {
-            if (cell.Stone != StoneColor.None )//|| !IsMyTurn)
+            if (cell.Stone != StoneColor.None)//|| !IsMyTurn)
             {
                 return;
             }

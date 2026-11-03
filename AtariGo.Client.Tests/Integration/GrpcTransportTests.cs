@@ -4,8 +4,9 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Grpc.Core;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+
+using Grpc.Core;
 
 using AtariGo.Client.Services;
 using AtariGo.Contracts;
