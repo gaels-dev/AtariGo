@@ -5,15 +5,32 @@ option csharp_namespace = "AtariGo.Contracts";
 package atarigo.session.v1;
 
 service Session {
-  rpc Heartbeat (HeartbeatRequest) returns (HeartbeatResponse);
+  rpc Connect (stream SessionClientEvent) returns (stream SessionServerEvent);
   rpc Logout (LogoutRequest) returns (LogoutResponse);
 }
 
-message HeartbeatRequest {
+message SessionClientEvent {
+  oneof event {
+    ClientConnected client_connected = 1;
+  }
 }
 
-message HeartbeatResponse {
+message ClientConnected {
+}
+
+message SessionServerEvent {
+  oneof event {
+    FriendPresenceSnapshot friend_presence_snapshot = 1;
+    FriendPresenceChanged friend_presence_changed = 2;
+  }
+}
+
+message FriendPresenceSnapshot {
   repeated FriendPresence friends = 1;
+}
+
+message FriendPresenceChanged {
+  FriendPresence friend = 1;
 }
 
 message FriendPresence {

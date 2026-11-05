@@ -3,6 +3,7 @@ using System.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 
+using AtariGo.Server.Application.Sessions;
 using AtariGo.Server.Data;
 using AtariGo.Server.Data.Entities;
 using AtariGo.Server.Security;
@@ -19,19 +20,23 @@ public sealed class FriendService : IFriendService
 
     private readonly AtariGoDbContext _dbContext;
     private readonly ISessionTokenProvider _tokenProvider;
+    private readonly ISessionConnectionRegistry _connectionRegistry;
     private readonly TimeProvider _timeProvider;
 
     public FriendService(
         AtariGoDbContext dbContext,
         ISessionTokenProvider tokenProvider,
+        ISessionConnectionRegistry connectionRegistry,
         TimeProvider timeProvider)
     {
         ArgumentNullException.ThrowIfNull(dbContext);
         ArgumentNullException.ThrowIfNull(tokenProvider);
+        ArgumentNullException.ThrowIfNull(connectionRegistry);
         ArgumentNullException.ThrowIfNull(timeProvider);
 
         _dbContext = dbContext;
         _tokenProvider = tokenProvider;
+        _connectionRegistry = connectionRegistry;
         _timeProvider = timeProvider;
     }
 
@@ -172,15 +177,27 @@ public sealed class FriendService : IFriendService
 
         string tokenHash = _tokenProvider.Hash(sessionToken);
 
-        return await _dbContext.Sessions
+        var session = await _dbContext.Sessions
             .AsNoTracking()
             .Where(session =>
                 session.SessionTokenHash == tokenHash
                 && session.State == DatabaseValues.SessionStates.Active
-                && session.ExpiresAt > now
                 && session.User.State == DatabaseValues.AccountStates.Active)
-            .Select(session => (int?)session.UserId)
+            .Select(session => new
+            {
+                session.SessionId,
+                session.UserId,
+                session.ExpiresAt
+            })
             .SingleOrDefaultAsync(cancellationToken);
+        if (session is null)
+        {
+            return null;
+        }
+
+        bool isWithinIdleLifetime = session.ExpiresAt > now
+            || _connectionRegistry.IsSessionConnected(session.SessionId);
+        return isWithinIdleLifetime ? session.UserId : null;
     }
 
     private Task<List<FriendAccountEntry>> FindMatchingUsersAsync(
@@ -252,6 +269,15 @@ public sealed class FriendService : IFriendService
             decision,
             cancellationToken);
         await transaction.CommitAsync(cancellationToken);
+        if (result == FriendRequestResponseResult.Accepted)
+        {
+            _connectionRegistry.AddFriendship(
+                request.RequesterId,
+                request.Requester.UserName,
+                request.RecipientId,
+                request.Recipient.UserName);
+        }
+
         return result;
     }
 
@@ -260,6 +286,8 @@ public sealed class FriendService : IFriendService
         CancellationToken cancellationToken)
     {
         return _dbContext.FriendRequests
+            .Include(request => request.Requester)
+            .Include(request => request.Recipient)
             .SingleOrDefaultAsync(
                 request => request.FriendRequestId == requestId,
                 cancellationToken);

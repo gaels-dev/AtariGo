@@ -2,6 +2,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Globalization;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -17,16 +18,14 @@ namespace AtariGo.Client.ViewModels
 {
     public class MainViewModel : ViewModelBase, IDisposable
     {
-        private static readonly TimeSpan s_presenceHeartbeatInterval =
-            TimeSpan.FromSeconds(15);
         private readonly INavigationService _navigationService;
         private readonly ISessionClient? _sessionClient;
         private readonly CancellationTokenSource _lifetimeCancellation =
             new CancellationTokenSource();
         private ViewModelBase _currentViewModel = null!;
         private DialogViewModelBase? _currentDialogViewModel;
-        private CancellationTokenSource? _presenceCancellation;
-        private Task? _presenceTask;
+        private CancellationTokenSource? _realtimeCancellation;
+        private Task? _realtimeTask;
         private bool _isGuest;
         private string _playerName;
         private string _presenceStatusResourceKey = string.Empty;
@@ -50,7 +49,7 @@ namespace AtariGo.Client.ViewModels
             }
 
             NavigateToMainMenu();
-            StartPresenceMonitor();
+            StartRealtimeConnection();
         }
 
         public ViewModelBase CurrentViewModel
@@ -132,7 +131,7 @@ namespace AtariGo.Client.ViewModels
 
             _isDisposed = true;
             _lifetimeCancellation.Cancel();
-            StopPresenceMonitor();
+            StopRealtimeConnection();
             (CurrentViewModel as IDisposable)?.Dispose();
             _lifetimeCancellation.Dispose();
         }
@@ -161,9 +160,9 @@ namespace AtariGo.Client.ViewModels
             SetPresenceStatus(_presenceStatusResourceKey);
         }
 
-        public void StopPresenceMonitor()
+        public void StopRealtimeConnection()
         {
-            _presenceCancellation?.Cancel();
+            _realtimeCancellation?.Cancel();
         }
 
         public void NavigateToLobby()
@@ -217,49 +216,47 @@ namespace AtariGo.Client.ViewModels
             CurrentDialogViewModel = null;
         }
 
-        private void StartPresenceMonitor()
+        private void StartRealtimeConnection()
         {
-            if (_isDisposed || _sessionClient is null || _presenceTask is { IsCompleted: false })
+            if (_isDisposed
+                || _sessionClient is null
+                || _realtimeTask is { IsCompleted: false })
             {
                 return;
             }
 
             var cancellation = new CancellationTokenSource();
-            _presenceCancellation = cancellation;
-            _presenceTask = RunPresenceMonitorAsync(cancellation);
+            _realtimeCancellation = cancellation;
+            _realtimeTask = RunRealtimeConnectionAsync(cancellation);
         }
 
-        private async Task RunPresenceMonitorAsync(
+        private async Task RunRealtimeConnectionAsync(
             CancellationTokenSource cancellation)
         {
-            var monitor = new SessionPresenceMonitor(_sessionClient!, s_presenceHeartbeatInterval);
-            monitor.PresenceReceived += response =>
-                DispatchPresenceUpdate(() => ApplyFriendPresence(response));
-            monitor.RequestFailed += exception =>
-                DispatchPresenceUpdate(() => HandlePresenceFailure(exception));
-            monitor.SessionExpired += () => DispatchPresenceUpdate(HandleExpiredSession);
+            var callbacks = new SessionRealtimeCallbacks(
+                serverEvent => DispatchRealtimeUpdate(
+                    () => ApplySessionEvent(serverEvent)),
+                exception => DispatchRealtimeUpdate(
+                    () => HandleRealtimeFailure(exception)),
+                () => DispatchRealtimeUpdate(HandleExpiredSession));
 
             try
             {
-                await monitor.RunAsync(cancellation.Token);
-            }
-            catch (Exception exception)
-            {
-                Trace.TraceError("Presence monitoring stopped. Exception type: {0}.",
-                    exception.GetType().Name);
-                DispatchPresenceUpdate(() => HandlePresenceFailure(exception));
+                await _sessionClient!.RunRealtimeAsync(
+                    callbacks,
+                    cancellation.Token);
             }
             finally
             {
-                if (ReferenceEquals(_presenceCancellation, cancellation))
+                if (ReferenceEquals(_realtimeCancellation, cancellation))
                 {
-                    _presenceCancellation = null;
+                    _realtimeCancellation = null;
                 }
                 cancellation.Dispose();
             }
         }
 
-        private void DispatchPresenceUpdate(Action update)
+        private void DispatchRealtimeUpdate(Action update)
         {
             Application? application = Application.Current;
             if (application is null || application.Dispatcher.HasShutdownStarted)
@@ -269,27 +266,42 @@ namespace AtariGo.Client.ViewModels
 
             application.Dispatcher.Invoke(() =>
             {
-                if (_presenceCancellation is { IsCancellationRequested: false })
+                if (_realtimeCancellation is { IsCancellationRequested: false })
                 {
                     update();
                 }
             });
         }
 
-        private void HandlePresenceFailure(Exception exception)
+        private void HandleRealtimeFailure(RpcException exception)
         {
-            Friends.Clear();
-            string resourceKey = exception is RpcException rpcException
-                ? GrpcFailureMessages.GetResourceKey(rpcException.StatusCode)
-                : "Connection_Err_RequestFailed";
-            SetPresenceStatus(resourceKey);
+            Trace.TraceWarning(
+                "Real-time connection failed. RPC status: {0}.",
+                exception.StatusCode);
+            SetPresenceStatus(
+                GrpcFailureMessages.GetResourceKey(exception.StatusCode));
         }
 
-        private void ApplyFriendPresence(HeartbeatResponse response)
+        private void ApplySessionEvent(SessionServerEvent serverEvent)
+        {
+            switch (serverEvent.EventCase)
+            {
+                case SessionServerEvent.EventOneofCase.FriendPresenceSnapshot:
+                    ApplyFriendPresenceSnapshot(
+                        serverEvent.FriendPresenceSnapshot);
+                    break;
+                case SessionServerEvent.EventOneofCase.FriendPresenceChanged:
+                    ApplyFriendPresenceChange(
+                        serverEvent.FriendPresenceChanged.Friend);
+                    break;
+            }
+        }
+
+        private void ApplyFriendPresenceSnapshot(
+            FriendPresenceSnapshot snapshot)
         {
             Friends.Clear();
-            foreach (AtariGo.Contracts.FriendPresence friend
-                     in response.Friends)
+            foreach (FriendPresence friend in snapshot.Friends)
             {
                 Friends.Add(new FriendItemViewModel(
                     friend.UserId,
@@ -301,6 +313,19 @@ namespace AtariGo.Client.ViewModels
                 Friends.Count == 0
                     ? "Presence_Msg_Empty"
                     : string.Empty);
+        }
+
+        private void ApplyFriendPresenceChange(FriendPresence friendPresence)
+        {
+            FriendItemViewModel? friend = Friends.FirstOrDefault(
+                candidate => candidate.UserId == friendPresence.UserId);
+            if (friend is null)
+            {
+                return;
+            }
+
+            friend.IsOnline = friendPresence.IsOnline;
+            SetPresenceStatus(string.Empty);
         }
 
         private void SetPresenceStatus(string resourceKey)
@@ -319,7 +344,7 @@ namespace AtariGo.Client.ViewModels
 
         private void HandleExpiredSession()
         {
-            StopPresenceMonitor();
+            StopRealtimeConnection();
             _navigationService.SignOutAfterSessionExpired();
         }
 
@@ -337,15 +362,15 @@ namespace AtariGo.Client.ViewModels
             }
 
             CancellationToken cancellationToken = _lifetimeCancellation.Token;
-            await StopPresenceMonitorAsync();
+            await StopRealtimeConnectionAsync();
             try
             {
                 await _sessionClient.LogoutAsync(cancellationToken);
                 cancellationToken.ThrowIfCancellationRequested();
                 _navigationService.SignOut();
             }
-            catch (Exception exception)
-                when (GrpcCallPolicy.IsRequestedCancellation(exception, cancellationToken))
+            catch (OperationCanceledException)
+                when (cancellationToken.IsCancellationRequested)
             {
                 Trace.TraceInformation("Logout wait cancelled because its window was closed.");
             }
@@ -357,26 +382,31 @@ namespace AtariGo.Client.ViewModels
                     _navigationService.SignOut();
                 }
             }
-            catch (Exception exception)
+            catch (RpcException exception)
             {
-                Trace.TraceError(
-                    "Session logout failed: {0}",
-                    exception.GetType().Name);
-                HandlePresenceFailure(exception);
-                StartPresenceMonitor();
+                HandleLogoutFailure(exception);
+                StartRealtimeConnection();
             }
         }
 
-        private async Task StopPresenceMonitorAsync()
+        private void HandleLogoutFailure(RpcException exception)
         {
-            Task? monitorTask = _presenceTask;
-            StopPresenceMonitor();
-            if (monitorTask is not null)
+            Trace.TraceError(
+                "Session logout failed. RPC status: {0}.",
+                exception.StatusCode);
+            HandleRealtimeFailure(exception);
+        }
+
+        private async Task StopRealtimeConnectionAsync()
+        {
+            Task? realtimeTask = _realtimeTask;
+            StopRealtimeConnection();
+            if (realtimeTask is not null)
             {
-                await monitorTask;
+                await realtimeTask;
             }
 
-            _presenceTask = null;
+            _realtimeTask = null;
         }
 
         private void ApplyLanguage(string cultureCode)

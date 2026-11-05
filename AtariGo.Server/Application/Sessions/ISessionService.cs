@@ -2,8 +2,12 @@ namespace AtariGo.Server.Application.Sessions;
 
 public interface ISessionService
 {
-    Task<IReadOnlyList<FriendPresenceEntry>?> HeartbeatAsync(
+    Task<SessionConnectionInfo?> OpenConnectionAsync(
         string sessionToken,
+        CancellationToken cancellationToken);
+
+    Task CloseConnectionAsync(
+        long sessionId,
         CancellationToken cancellationToken);
 
     Task LogoutAsync(

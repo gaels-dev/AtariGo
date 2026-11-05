@@ -1,11 +1,14 @@
+using Grpc.Core;
+
 using AtariGo.Contracts;
 
 namespace AtariGo.Client.Services;
 
 public interface ISessionClient
 {
-    Task<HeartbeatResponse> HeartbeatAsync(
-        CancellationToken cancellationToken = default);
+    Task RunRealtimeAsync(
+        SessionRealtimeCallbacks callbacks,
+        CancellationToken cancellationToken);
 
     Task LogoutAsync(
         CancellationToken cancellationToken = default);

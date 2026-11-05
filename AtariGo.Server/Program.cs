@@ -35,6 +35,7 @@ builder.Services.AddScoped<IFriendService, FriendService>();
 builder.Services.AddScoped<IRegistrationService, RegistrationService>();
 builder.Services.AddScoped<ILeaderboardService, LeaderboardService>();
 builder.Services.AddScoped<ISessionService, SessionService>();
+builder.Services.AddSingleton<ISessionConnectionRegistry, SessionConnectionRegistry>();
 builder.Services.AddSingleton<IRegistrationValidator, RegistrationValidator>();
 builder.Services.AddSingleton<ISessionTokenProvider, SessionTokenProvider>();
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
