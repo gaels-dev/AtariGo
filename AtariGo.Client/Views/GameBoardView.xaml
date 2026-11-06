@@ -286,7 +286,8 @@
                     <ItemsControl ItemsSource="{Binding ChatMessages}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate DataType="{x:Type vm:ChatMessageViewModel}">
-                                <ContentControl Margin="0,0,0,8">
+                                <ContentControl Content="{Binding}"
+                                                Margin="0,0,0,8">
                                     <ContentControl.Style>
                                         <Style TargetType="ContentControl">
                                             <Style.Triggers>
@@ -320,15 +321,13 @@
                                                     <Setter Property="ContentTemplate">
                                                         <Setter.Value>
                                                             <DataTemplate>
-                                                                <Border BorderBrush="#4A90E2"
-                                                                        Background="White"
-                                                                        BorderThickness="1.5"
+                                                                <Border Background="#E8F0FE"
                                                                         CornerRadius="6"
                                                                         Padding="10,6">
                                                                     <StackPanel>
                                                                         <TextBlock
                                                                             Text="{Binding Sender}"
-                                                                            Foreground="#4A90E2"
+                                                                            Foreground="#2C5F9E"
                                                                             FontWeight="Bold"
                                                                             FontSize="12"
                                                                             Margin="0,0,0,2"/>
@@ -347,7 +346,9 @@
                                             <Setter Property="ContentTemplate">
                                                 <Setter.Value>
                                                     <DataTemplate>
-                                                        <Border Background="#E8F0FE"
+                                                        <Border BorderBrush="#4A90E2"
+                                                                Background="White"
+                                                                BorderThickness="1.5"
                                                                 CornerRadius="6"
                                                                 Padding="10,6">
                                                             <StackPanel>
@@ -378,7 +379,31 @@
                         BorderThickness="0,1,0,0"
                         Padding="12">
                     <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Grid.Row="0"
+                                   Text="{Binding ChatStatusMessage}"
+                                   FontSize="12"
+                                   Foreground="#C0392B"
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,6">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding ChatStatusMessage}"
+                                                     Value="">
+                                            <Setter Property="Visibility"
+                                                    Value="Collapsed"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
                         <TextBlock
+                            Grid.Row="1"
                             Text="{Binding ChatUnavailableMessage}"
                             FontSize="12"
                             Foreground="#999999"
@@ -398,7 +423,7 @@
                             </TextBlock.Style>
                         </TextBlock>
 
-                        <Grid>
+                        <Grid Grid.Row="1">
                             <Grid.Style>
                                 <Style TargetType="Grid">
                                     <Style.Triggers>
@@ -414,24 +439,23 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
 
-                            <TextBlock Grid.Column="4"
-                           Text="{Binding GameIdentifier}"
-                           Foreground="White"
-                           VerticalAlignment="Center"
-                           HorizontalAlignment="Right"/>
-
-                <Border Grid.Column="0"
+                            <Border Grid.Column="0"
                                     BorderBrush="#CCCCCC"
                                     BorderThickness="1"
                                     CornerRadius="20"
                                     Padding="10,4"
                                     Margin="0,0,8,0">
-                                <TextBox Text="{Binding ChatInput,
-                                         UpdateSourceTrigger=PropertyChanged}"
+                                    <TextBox Text="{Binding ChatInput,
+                                          UpdateSourceTrigger=PropertyChanged}"
+                                         MaxLength="{Binding MaximumChatMessageLength}"
                                          BorderThickness="0"
                                          Background="Transparent"
                                          FontSize="13"
                                          VerticalContentAlignment="Center">
+                                    <TextBox.InputBindings>
+                                        <KeyBinding Key="Enter"
+                                                    Command="{Binding SendChatMessageCommand}"/>
+                                    </TextBox.InputBindings>
                                     <TextBox.Style>
                                         <Style TargetType="TextBox">
                                             <Setter Property="Template">
@@ -443,33 +467,26 @@
                                                                        VerticalAlignment="Center"
                                                                        Margin="4,0,0,0"
                                                                        IsHitTestVisible="False">
-                    <TextBlock.Text>
-                        <x:Static
-                            Member="properties:Resources.GameBoard_Txt_ChatPlaceholder"/>
-                    </TextBlock.Text>
+                                                                <TextBlock.Text>
+                                                                    <x:Static
+                                                                        Member="properties:Resources.GameBoard_Txt_ChatPlaceholder"/>
+                                                                </TextBlock.Text>
                                                                 <TextBlock.Style>
                                                                     <Style TargetType="TextBlock">
-                                                                        <Setter
-                                                                            Property="Visibility"
-                                                                            Value="Collapsed"/>
+                                                                        <Setter Property="Visibility"
+                                                                                Value="Collapsed"/>
                                                                         <Style.Triggers>
-                                                                            <DataTrigger
-                                                                                Binding="{Binding
-                                                                                ChatInput}"
-                                                                                Value="">
-                                                                                <Setter
-                                                                                    Property=
-                                                                                    "Visibility"
-                                                                                    Value=
-                                                                                    "Visible"/>
+                                                                            <DataTrigger Binding="{Binding ChatInput}"
+                                                                                         Value="">
+                                                                                <Setter Property="Visibility"
+                                                                                        Value="Visible"/>
                                                                             </DataTrigger>
                                                                         </Style.Triggers>
                                                                     </Style>
                                                                 </TextBlock.Style>
                                                             </TextBlock>
-                                                            <ScrollViewer
-                                                                x:Name="PART_ContentHost"
-                                                                VerticalAlignment="Center"/>
+                                                            <ScrollViewer x:Name="PART_ContentHost"
+                                                                          VerticalAlignment="Center"/>
                                                         </Grid>
                                                     </ControlTemplate>
                                                 </Setter.Value>

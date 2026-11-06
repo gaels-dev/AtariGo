@@ -303,6 +303,15 @@
   <data name="GameBoard_Lbl_ChatUnavailable" xml:space="preserve">
     <value>El chat de partida aún no está disponible.</value>
   </data>
+  <data name="GameBoard_Chat_Err_Empty" xml:space="preserve">
+    <value>Escribe un mensaje antes de enviarlo.</value>
+  </data>
+  <data name="GameBoard_Chat_Err_TooLong" xml:space="preserve">
+    <value>El mensaje supera la longitud permitida.</value>
+  </data>
+  <data name="GameBoard_Chat_Err_SendFailed" xml:space="preserve">
+    <value>No se pudo enviar el mensaje. Revisa tu conexión e inténtalo de nuevo.</value>
+  </data>
   <data name="GameBoard_Lbl_ChatTitle" xml:space="preserve">
     <value>Chat de Partida</value>
   </data>

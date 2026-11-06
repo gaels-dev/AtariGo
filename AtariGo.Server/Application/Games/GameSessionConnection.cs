@@ -7,19 +7,19 @@ public sealed class GameSessionConnection
     internal GameSessionConnection(
         long gameId,
         string playerKey,
-        Channel<GameSessionSnapshot> snapshots)
+        Channel<GameSessionDelivery> events)
     {
         GameId = gameId;
         PlayerKey = playerKey;
-        Snapshots = snapshots.Reader;
-        SnapshotWriter = snapshots.Writer;
+        Events = events.Reader;
+        EventWriter = events.Writer;
     }
 
     public long GameId { get; }
 
     public string PlayerKey { get; }
 
-    public ChannelReader<GameSessionSnapshot> Snapshots { get; }
+    public ChannelReader<GameSessionDelivery> Events { get; }
 
-    internal ChannelWriter<GameSessionSnapshot> SnapshotWriter { get; }
+    internal ChannelWriter<GameSessionDelivery> EventWriter { get; }
 }

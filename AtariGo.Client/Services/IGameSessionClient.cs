@@ -1,5 +1,5 @@
-using System.Collections.Generic;
 using System.Threading;
+using System.Threading.Tasks;
 
 using AtariGo.Contracts;
 
@@ -7,7 +7,7 @@ namespace AtariGo.Client.Services;
 
 public interface IGameSessionClient
 {
-    IAsyncEnumerable<GameSessionServerEvent> ConnectAsync(
+    Task<IGameSessionStream> ConnectAsync(
         long gameId,
         CancellationToken cancellationToken);
 }

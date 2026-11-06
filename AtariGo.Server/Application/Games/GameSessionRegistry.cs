@@ -1,5 +1,7 @@
-using System.Collections.Generic;
+using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Channels;
 
 namespace AtariGo.Server.Application.Games;
@@ -7,6 +9,13 @@ namespace AtariGo.Server.Application.Games;
 public sealed class GameSessionRegistry : IGameSessionRegistry
 {
     private readonly ConcurrentDictionary<long, GameSessionState> _sessions = new();
+    private readonly TimeProvider _timeProvider;
+
+    public GameSessionRegistry(TimeProvider timeProvider)
+    {
+        ArgumentNullException.ThrowIfNull(timeProvider);
+        _timeProvider = timeProvider;
+    }
 
     public GameSessionConnection Connect(GameSessionDefinition definition)
     {
@@ -68,6 +77,103 @@ public sealed class GameSessionRegistry : IGameSessionRegistry
         }
     }
 
+    public ChatMessageSubmissionResult PublishChatMessage(
+        GameSessionConnection connection,
+        string text)
+    {
+        ArgumentNullException.ThrowIfNull(connection);
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return PublishChatRejection(
+                connection,
+                ChatMessageRejectionReason.Empty,
+                ChatMessageSubmissionResult.Empty);
+        }
+
+        string normalizedText = text.Trim();
+        if (normalizedText.Length > GameSessionRules.MaximumChatMessageLength)
+        {
+            return PublishChatRejection(
+                connection,
+                ChatMessageRejectionReason.TooLong,
+                ChatMessageSubmissionResult.TooLong);
+        }
+
+        if (!_sessions.TryGetValue(connection.GameId, out GameSessionState? state))
+        {
+            return ChatMessageSubmissionResult.NotConnected;
+        }
+
+        lock (state.SyncRoot)
+        {
+            if (!IsCurrentConnection(state, connection))
+            {
+                return ChatMessageSubmissionResult.NotConnected;
+            }
+
+            GameSessionChatMessage chatMessage = state.CreateChatMessage(
+                connection.PlayerKey,
+                normalizedText,
+                _timeProvider.GetUtcNow().ToUnixTimeMilliseconds());
+            state.AddChatMessage(chatMessage);
+            PublishChatMessage(state, chatMessage);
+            return ChatMessageSubmissionResult.Accepted;
+        }
+    }
+
+    private ChatMessageSubmissionResult PublishChatRejection(
+        GameSessionConnection connection,
+        ChatMessageRejectionReason reason,
+        ChatMessageSubmissionResult result)
+    {
+        if (!_sessions.TryGetValue(connection.GameId, out GameSessionState? state))
+        {
+            return ChatMessageSubmissionResult.NotConnected;
+        }
+
+        lock (state.SyncRoot)
+        {
+            if (!IsCurrentConnection(state, connection))
+            {
+                return ChatMessageSubmissionResult.NotConnected;
+            }
+
+            GameSessionDelivery delivery = new GameSessionDelivery
+            {
+                RecipientPlayerKey = connection.PlayerKey,
+                RejectionReason = reason
+            };
+            state.Publish(connection, delivery);
+            return result;
+        }
+    }
+
+    private static void PublishChatMessage(
+        GameSessionState state,
+        GameSessionChatMessage chatMessage)
+    {
+        foreach (KeyValuePair<string, GameSessionConnection> entry
+            in state.Connections)
+        {
+            GameSessionDelivery delivery = new GameSessionDelivery
+            {
+                RecipientPlayerKey = entry.Key,
+                ChatMessage = chatMessage
+            };
+            state.Publish(entry.Value, delivery);
+        }
+    }
+
+    private static bool IsCurrentConnection(
+        GameSessionState state,
+        GameSessionConnection connection)
+    {
+        return state.Connections.TryGetValue(
+                connection.PlayerKey,
+                out GameSessionConnection? currentConnection)
+            && ReferenceEquals(currentConnection, connection);
+    }
+
     private static GameSessionState CreateState(
         long _,
         GameSessionDefinition definition)
@@ -87,7 +193,12 @@ public sealed class GameSessionRegistry : IGameSessionRegistry
             in state.Connections)
         {
             GameSessionSnapshot snapshot = state.CreateSnapshot(entry.Key);
-            state.Publish(entry.Value, snapshot);
+            GameSessionDelivery delivery = new GameSessionDelivery
+            {
+                RecipientPlayerKey = entry.Key,
+                Snapshot = snapshot
+            };
+            state.Publish(entry.Value, delivery);
         }
     }
 }
@@ -128,13 +239,13 @@ internal sealed class GameSessionState
 
     public GameSessionConnection CreateConnection(string playerKey)
     {
-        Channel<GameSessionSnapshot> snapshots = Channel.CreateUnbounded<GameSessionSnapshot>(
+        Channel<GameSessionDelivery> events = Channel.CreateUnbounded<GameSessionDelivery>(
             new UnboundedChannelOptions
             {
                 SingleReader = true,
                 SingleWriter = false
             });
-        return new GameSessionConnection(Definition.GameId, playerKey, snapshots);
+        return new GameSessionConnection(Definition.GameId, playerKey, events);
     }
 
     public void ReplaceConnection(GameSessionConnection connection)
@@ -185,19 +296,50 @@ internal sealed class GameSessionState
             Opponent = opponent,
             OpponentConnected = opponentConnected,
             OpponentDisconnected = opponentDisconnected,
+            MaximumChatMessageLength = GameSessionRules.MaximumChatMessageLength,
+            ChatHistory = ChatHistory.ToArray(),
             Cells = CreateEmptyBoard()
         };
     }
 
+    public List<GameSessionChatMessage> ChatHistory { get; } =
+        new List<GameSessionChatMessage>();
+
+    public GameSessionChatMessage CreateChatMessage(
+        string senderPlayerKey,
+        string text,
+        long sentAtUnixMilliseconds)
+    {
+        GameSessionParticipant sender = FindParticipant(senderPlayerKey)
+            ?? throw new InvalidOperationException(
+                "The sender does not belong to the game session.");
+        return new GameSessionChatMessage
+        {
+            SenderPlayerKey = senderPlayerKey,
+            SenderName = sender.DisplayName,
+            Text = text,
+            SentAtUnixMilliseconds = sentAtUnixMilliseconds
+        };
+    }
+
+    public void AddChatMessage(GameSessionChatMessage chatMessage)
+    {
+        ChatHistory.Add(chatMessage);
+        if (ChatHistory.Count > GameSessionRules.MaximumChatHistoryCount)
+        {
+            ChatHistory.RemoveAt(0);
+        }
+    }
+
     public void Publish(
         GameSessionConnection connection,
-        GameSessionSnapshot snapshot)
+        GameSessionDelivery delivery)
     {
         if (Connections.TryGetValue(connection.PlayerKey,
             out GameSessionConnection? currentConnection)
             && ReferenceEquals(connection, currentConnection))
         {
-            connection.SnapshotWriter.TryWrite(snapshot);
+            connection.EventWriter.TryWrite(delivery);
         }
     }
 
@@ -218,6 +360,6 @@ internal sealed class GameSessionState
 
     private static void Complete(GameSessionConnection connection)
     {
-        connection.SnapshotWriter.TryComplete();
+        connection.EventWriter.TryComplete();
     }
 }

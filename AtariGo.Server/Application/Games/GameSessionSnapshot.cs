@@ -23,8 +23,11 @@ public sealed record GameSessionSnapshot
 
     public bool OpponentDisconnected { get; init; }
 
+    public int MaximumChatMessageLength { get; init; }
+
+    public IReadOnlyList<GameSessionChatMessage> ChatHistory { get; init; } =
+        Array.Empty<GameSessionChatMessage>();
+
     public IReadOnlyList<GameSessionBoardCell> Cells { get; init; } =
         Array.Empty<GameSessionBoardCell>();
 }
-
-public sealed record GameSessionBoardCell(int Row, int Column, string Stone);

@@ -9,6 +9,8 @@ using AtariGo.Server.Application.Matchmaking;
 using AtariGo.Server.Application.Sessions;
 using SessionSnapshotModel = AtariGo.Server.Application.Games.GameSessionSnapshot;
 using ProtoSessionSnapshot = AtariGo.Contracts.GameSessionSnapshot;
+using ProtoChatRejectionReason = AtariGo.Contracts.ChatMessageRejectionReason;
+using DomainChatRejectionReason = AtariGo.Server.Application.Games.ChatMessageRejectionReason;
 
 namespace AtariGo.Server.Services;
 
@@ -59,7 +61,11 @@ public sealed class GameSessionGrpcService : GameSession.GameSessionBase
                 playerRequest,
                 context.CancellationToken);
             connection = _gameSessionRegistry.Connect(definition);
-            await SendSnapshotsAsync(connection, responseStream, context.CancellationToken);
+            GameSessionStreamContext streamContext = new GameSessionStreamContext(
+                requestStream,
+                responseStream,
+                context.CancellationToken);
+            await RunDuplexStreamAsync(streamContext, connection);
         }
         catch (OperationCanceledException)
             when (context.CancellationToken.IsCancellationRequested)
@@ -195,20 +201,146 @@ public sealed class GameSessionGrpcService : GameSession.GameSessionBase
         return definition;
     }
 
-    private static async Task SendSnapshotsAsync(
+    private async Task RunDuplexStreamAsync(
+        GameSessionStreamContext streamContext,
+        GameSessionConnection connection)
+    {
+        using CancellationTokenSource streamCancellation =
+            CancellationTokenSource.CreateLinkedTokenSource(
+                streamContext.CancellationToken);
+        Task receiveTask = ReceiveChatMessagesAsync(
+            streamContext.RequestStream,
+            connection,
+            streamCancellation.Token);
+        Task sendTask = SendSessionEventsAsync(
+            connection,
+            streamContext.ResponseStream,
+            streamCancellation.Token);
+        Task completedTask = await Task.WhenAny(receiveTask, sendTask);
+        streamCancellation.Cancel();
+        Task remainingTask = ReferenceEquals(completedTask, receiveTask)
+            ? sendTask
+            : receiveTask;
+        try
+        {
+            await completedTask;
+        }
+        catch (OperationCanceledException)
+            when (streamCancellation.IsCancellationRequested)
+        {
+        }
+        catch (RpcException exception)
+            when (streamCancellation.IsCancellationRequested
+                && exception.StatusCode == StatusCode.Cancelled)
+        {
+        }
+        catch (IOException)
+            when (streamCancellation.IsCancellationRequested)
+        {
+        }
+        finally
+        {
+            await ObserveCancelledTaskAsync(
+                remainingTask,
+                streamCancellation.Token);
+        }
+    }
+
+    private async Task ReceiveChatMessagesAsync(
+        IAsyncStreamReader<GameSessionClientEvent> requestStream,
+        GameSessionConnection connection,
+        CancellationToken cancellationToken)
+    {
+        while (await requestStream.MoveNext(cancellationToken))
+        {
+            GameSessionClientEvent clientEvent = requestStream.Current;
+            if (clientEvent.EventCase
+                == GameSessionClientEvent.EventOneofCase.SendChatMessage)
+            {
+                _gameSessionRegistry.PublishChatMessage(
+                    connection,
+                    clientEvent.SendChatMessage.Text);
+                continue;
+            }
+
+            throw new RpcException(new Status(
+                StatusCode.InvalidArgument,
+                "Only chat messages are accepted after joining the game."));
+        }
+    }
+
+    private static async Task SendSessionEventsAsync(
         GameSessionConnection connection,
         IServerStreamWriter<GameSessionServerEvent> responseStream,
         CancellationToken cancellationToken)
     {
-        await foreach (SessionSnapshotModel snapshot in
-            connection.Snapshots.ReadAllAsync(cancellationToken))
+        await foreach (GameSessionDelivery delivery in
+            connection.Events.ReadAllAsync(cancellationToken))
         {
-            GameSessionServerEvent serverEvent = MapSnapshot(snapshot);
+            GameSessionServerEvent serverEvent = MapDelivery(delivery);
             await responseStream.WriteAsync(serverEvent, cancellationToken);
         }
     }
 
-    private static GameSessionServerEvent MapSnapshot(
+    private static async Task ObserveCancelledTaskAsync(
+        Task task,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await task;
+        }
+        catch (OperationCanceledException)
+            when (cancellationToken.IsCancellationRequested)
+        {
+        }
+        catch (RpcException exception)
+            when (cancellationToken.IsCancellationRequested
+                && exception.StatusCode == StatusCode.Cancelled)
+        {
+        }
+        catch (IOException)
+            when (cancellationToken.IsCancellationRequested)
+        {
+        }
+    }
+
+    private static GameSessionServerEvent MapDelivery(GameSessionDelivery delivery)
+    {
+        if (delivery.Snapshot is not null)
+        {
+            return new GameSessionServerEvent
+            {
+                Snapshot = MapSnapshot(delivery.Snapshot)
+            };
+        }
+
+        if (delivery.ChatMessage is not null)
+        {
+            return new GameSessionServerEvent
+            {
+                ChatMessage = MapChatMessage(
+                    delivery.ChatMessage,
+                    delivery.RecipientPlayerKey)
+            };
+        }
+
+        if (delivery.RejectionReason is DomainChatRejectionReason rejectionReason)
+        {
+            return new GameSessionServerEvent
+            {
+                ChatMessageRejected = new ChatMessageRejected
+                {
+                    Reason = MapRejectionReason(rejectionReason)
+                }
+            };
+        }
+
+        throw new InvalidOperationException(
+            "The game session delivery does not contain an event.");
+    }
+
+    private static ProtoSessionSnapshot MapSnapshot(
         SessionSnapshotModel snapshot)
     {
         ProtoSessionSnapshot responseSnapshot = new ProtoSessionSnapshot
@@ -223,14 +355,46 @@ public sealed class GameSessionGrpcService : GameSession.GameSessionBase
             OpponentName = snapshot.Opponent.DisplayName,
             OpponentStoneColor = snapshot.Opponent.StoneColor,
             OpponentConnected = snapshot.OpponentConnected,
-            OpponentDisconnected = snapshot.OpponentDisconnected
+            OpponentDisconnected = snapshot.OpponentDisconnected,
+            MaximumChatMessageLength = snapshot.MaximumChatMessageLength
         };
         foreach (GameSessionBoardCell cell in snapshot.Cells)
         {
             responseSnapshot.Cells.Add(MapCell(cell));
         }
 
-        return new GameSessionServerEvent { Snapshot = responseSnapshot };
+        foreach (GameSessionChatMessage chatMessage in snapshot.ChatHistory)
+        {
+            responseSnapshot.ChatHistory.Add(MapChatMessage(
+                chatMessage,
+                snapshot.Player.PlayerKey));
+        }
+
+        return responseSnapshot;
+    }
+
+    private static GameChatMessage MapChatMessage(
+        GameSessionChatMessage chatMessage,
+        string recipientPlayerKey)
+    {
+        return new GameChatMessage
+        {
+            SenderName = chatMessage.SenderName,
+            Text = chatMessage.Text,
+            SentAtUnixMilliseconds = chatMessage.SentAtUnixMilliseconds,
+            IsSender = chatMessage.SenderPlayerKey == recipientPlayerKey
+        };
+    }
+
+    private static ProtoChatRejectionReason MapRejectionReason(
+        DomainChatRejectionReason reason)
+    {
+        if (reason == DomainChatRejectionReason.Empty)
+        {
+            return ProtoChatRejectionReason.Empty;
+        }
+
+        return ProtoChatRejectionReason.TooLong;
     }
 
     private static GameBoardCell MapCell(GameSessionBoardCell cell)

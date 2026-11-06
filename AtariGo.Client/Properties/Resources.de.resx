@@ -303,6 +303,15 @@
   <data name="GameBoard_Lbl_ChatUnavailable" xml:space="preserve">
     <value>Der Spielchat ist noch nicht verfügbar.</value>
   </data>
+  <data name="GameBoard_Chat_Err_Empty" xml:space="preserve">
+    <value>Gib vor dem Senden eine Nachricht ein.</value>
+  </data>
+  <data name="GameBoard_Chat_Err_TooLong" xml:space="preserve">
+    <value>Die Nachricht überschreitet die zulässige Länge.</value>
+  </data>
+  <data name="GameBoard_Chat_Err_SendFailed" xml:space="preserve">
+    <value>Nachricht konnte nicht gesendet werden. Prüfe die Verbindung und versuche es erneut.</value>
+  </data>
   <data name="GameBoard_Lbl_ChatTitle" xml:space="preserve">
     <value>Spiel-Chat</value>
   </data>

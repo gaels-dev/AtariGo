@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -24,7 +25,10 @@ namespace AtariGo.Client.ViewModels
         private const string WhiteStoneColorName = "White";
         private readonly INavigationService _navigationService;
         private readonly IGameSessionClient? _gameSessionClient;
+        private readonly CancellationTokenSource _lifetimeCancellation =
+            new CancellationTokenSource();
         private CancellationTokenSource? _sessionCancellation;
+        private IGameSessionStream? _gameSessionStream;
         private Task? _sessionTask;
 
         private StoneColor _currentTurn;
@@ -37,6 +41,8 @@ namespace AtariGo.Client.ViewModels
         private bool _isChatEnabled;
         private string _chatInput;
         private string _sessionStatusMessage;
+        private string _chatStatusMessage;
+        private int _maximumChatMessageLength;
         private bool _isDisposed;
 
         public GameBoardViewModel(
@@ -59,15 +65,18 @@ namespace AtariGo.Client.ViewModels
             _opponentName = Properties.Resources.GameBoard_Lbl_Opponent;
             _chatInput = string.Empty;
             _sessionStatusMessage = string.Empty;
+            _chatStatusMessage = string.Empty;
+            _maximumChatMessageLength = 0;
 
             Cells = new ObservableCollection<BoardCellViewModel>();
             ChatMessages = new ObservableCollection<ChatMessageViewModel>();
 
             InitializeBoard();
 
-            SendChatMessageCommand = new RelayCommand(
-                SendChatMessage,
-                () => !string.IsNullOrWhiteSpace(ChatInput));
+            SendChatMessageCommand = new AsyncRelayCommand(
+                _ => SendChatMessageAsync(),
+                HandleChatSendFailure,
+                _lifetimeCancellation.Token);
             SurrenderCommand = new RelayCommand(PromptSurrender);
             ReportPlayerCommand = new RelayCommand(PromptReportPlayer);
             LeaveGameCommand = new RelayCommand(_navigationService.NavigateToMainMenu);
@@ -176,6 +185,18 @@ namespace AtariGo.Client.ViewModels
         public string ChatUnavailableMessage => GetLocalizedMessage(
             "GameBoard_Lbl_ChatUnavailable");
 
+        public string ChatStatusMessage
+        {
+            get => _chatStatusMessage;
+            private set => SetProperty(ref _chatStatusMessage, value);
+        }
+
+        public int MaximumChatMessageLength
+        {
+            get => _maximumChatMessageLength;
+            private set => SetProperty(ref _maximumChatMessageLength, value);
+        }
+
         public string ChatInput
         {
             get => _chatInput;
@@ -252,7 +273,9 @@ namespace AtariGo.Client.ViewModels
             }
 
             _isDisposed = true;
+            _lifetimeCancellation.Cancel();
             _sessionCancellation?.Cancel();
+            _lifetimeCancellation.Dispose();
         }
 
         private void InitializeBoard()
@@ -285,15 +308,28 @@ namespace AtariGo.Client.ViewModels
             CurrentTurn = CurrentTurn == StoneColor.Black ? StoneColor.White : StoneColor.Black;
         }
 
-        private void SendChatMessage()
+        private async Task SendChatMessageAsync()
         {
-            if (!_isChatEnabled || string.IsNullOrWhiteSpace(ChatInput))
+            if (!IsChatEnabled
+                || _gameSessionStream is null
+                || string.IsNullOrWhiteSpace(ChatInput))
             {
                 return;
             }
 
-            ChatMessages.Add(new ChatMessageViewModel(_myPlayerName, ChatInput));
+            string message = ChatInput.Trim();
+            if (message.Length > MaximumChatMessageLength)
+            {
+                ChatStatusMessage = GetLocalizedMessage(
+                    "GameBoard_Chat_Err_TooLong");
+                return;
+            }
+
+            await _gameSessionStream.SendChatMessageAsync(
+                message,
+                _lifetimeCancellation.Token);
             ChatInput = string.Empty;
+            ChatStatusMessage = string.Empty;
         }
 
         private void PromptSurrender()
@@ -329,7 +365,9 @@ namespace AtariGo.Client.ViewModels
                 return;
             }
 
-            CancellationTokenSource cancellation = new CancellationTokenSource();
+            CancellationTokenSource cancellation =
+                CancellationTokenSource.CreateLinkedTokenSource(
+                    _lifetimeCancellation.Token);
             _sessionCancellation = cancellation;
             SessionStatusMessage = GetLocalizedMessage(
                 "GameBoard_Status_Connecting");
@@ -342,20 +380,22 @@ namespace AtariGo.Client.ViewModels
         {
             try
             {
+                await using IGameSessionStream stream =
+                    await _gameSessionClient!.ConnectAsync(
+                        gameId,
+                        cancellation.Token);
+                _gameSessionStream = stream;
                 await foreach (GameSessionServerEvent serverEvent in
-                    _gameSessionClient!.ConnectAsync(gameId, cancellation.Token))
+                    stream.ReadEventsAsync(cancellation.Token))
                 {
-                    if (serverEvent.EventCase
-                        == GameSessionServerEvent.EventOneofCase.Snapshot)
-                    {
-                        ApplyGameSnapshot(serverEvent.Snapshot);
-                    }
+                    ApplyGameServerEvent(serverEvent);
                 }
 
                 if (!cancellation.IsCancellationRequested)
                 {
                     SessionStatusMessage = GetLocalizedMessage(
                         "GameBoard_Status_ConnectionFailed");
+                    IsChatEnabled = false;
                 }
             }
             catch (OperationCanceledException)
@@ -374,15 +414,49 @@ namespace AtariGo.Client.ViewModels
                     "Game session connection failed with status {0}.",
                     exception.StatusCode);
                 SessionStatusMessage = GrpcFailureMessages.GetMessage(exception);
+                IsChatEnabled = false;
+            }
+            catch (IOException exception)
+            {
+                Trace.TraceWarning(
+                    "Game session transport failed: {0}.",
+                    exception.GetType().Name);
+                SessionStatusMessage = GetLocalizedMessage(
+                    "GameBoard_Status_ConnectionFailed");
+                IsChatEnabled = false;
             }
             finally
             {
+                _gameSessionStream = null;
                 if (ReferenceEquals(_sessionCancellation, cancellation))
                 {
                     _sessionCancellation = null;
                 }
 
                 cancellation.Dispose();
+            }
+        }
+
+        private void ApplyGameServerEvent(GameSessionServerEvent serverEvent)
+        {
+            if (serverEvent.EventCase
+                == GameSessionServerEvent.EventOneofCase.Snapshot)
+            {
+                ApplyGameSnapshot(serverEvent.Snapshot);
+                return;
+            }
+
+            if (serverEvent.EventCase
+                == GameSessionServerEvent.EventOneofCase.ChatMessage)
+            {
+                AddChatMessage(serverEvent.ChatMessage);
+                return;
+            }
+
+            if (serverEvent.EventCase
+                == GameSessionServerEvent.EventOneofCase.ChatMessageRejected)
+            {
+                ShowChatRejection(serverEvent.ChatMessageRejected.Reason);
             }
         }
 
@@ -397,9 +471,62 @@ namespace AtariGo.Client.ViewModels
 
             ApplyPlayerInformation(snapshot);
             ApplyBoardCells(snapshot);
+            MaximumChatMessageLength = snapshot.MaximumChatMessageLength;
+            LoadChatHistory(snapshot);
+            IsChatEnabled = true;
 
             SessionStatusMessage = GetLocalizedMessage(
                 GetConnectionStatusResourceKey(snapshot));
+        }
+
+        private void LoadChatHistory(GameSessionSnapshot snapshot)
+        {
+            ChatMessages.Clear();
+            foreach (GameChatMessage chatMessage in snapshot.ChatHistory)
+            {
+                AddChatMessage(chatMessage);
+            }
+        }
+
+        private void AddChatMessage(GameChatMessage chatMessage)
+        {
+            if (string.IsNullOrWhiteSpace(chatMessage.SenderName)
+                || string.IsNullOrWhiteSpace(chatMessage.Text)
+                || chatMessage.Text.Length > MaximumChatMessageLength)
+            {
+                return;
+            }
+
+            ChatMessageKind messageKind = chatMessage.IsSender
+                ? ChatMessageKind.Player
+                : ChatMessageKind.Opponent;
+            ChatMessages.Add(new ChatMessageViewModel(
+                chatMessage.SenderName,
+                chatMessage.Text,
+                messageKind));
+            ChatStatusMessage = string.Empty;
+        }
+
+        private void ShowChatRejection(ChatMessageRejectionReason reason)
+        {
+            string resourceKey = reason == ChatMessageRejectionReason.Empty
+                ? "GameBoard_Chat_Err_Empty"
+                : "GameBoard_Chat_Err_TooLong";
+            ChatStatusMessage = GetLocalizedMessage(resourceKey);
+        }
+
+        private void HandleChatSendFailure(Exception exception)
+        {
+            Trace.TraceWarning(
+                "Game chat send failed. Exception type: {0}.",
+                exception.GetType().Name);
+            ChatStatusMessage = GetLocalizedMessage(
+                "GameBoard_Chat_Err_SendFailed");
+            if (exception is RpcException rpcException)
+            {
+                SessionStatusMessage = GrpcFailureMessages.GetMessage(rpcException);
+                IsChatEnabled = false;
+            }
         }
 
         private static string GetConnectionStatusResourceKey(
@@ -421,7 +548,8 @@ namespace AtariGo.Client.ViewModels
                 || snapshot.BoardSize != GameRules.BoardSize
                 || snapshot.Cells.Count != Cells.Count
                 || !IsValidStoneColor(snapshot.PlayerStoneColor)
-                || !IsValidStoneColor(snapshot.OpponentStoneColor))
+                || !IsValidStoneColor(snapshot.OpponentStoneColor)
+                || snapshot.MaximumChatMessageLength <= 0)
             {
                 return false;
             }

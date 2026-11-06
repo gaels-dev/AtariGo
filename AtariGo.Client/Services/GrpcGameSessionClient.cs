@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -43,24 +41,32 @@ public sealed class GrpcGameSessionClient : IGameSessionClient
         _client = new GameSession.GameSessionClient(callInvoker);
     }
 
-    public async IAsyncEnumerable<GameSessionServerEvent> ConnectAsync(
+    public async Task<IGameSessionStream> ConnectAsync(
         long gameId,
-        [EnumeratorCancellation] CancellationToken cancellationToken)
+        CancellationToken cancellationToken)
     {
         Metadata headers = CreateHeaders();
         CallOptions options = new CallOptions(
             headers: headers,
             cancellationToken: cancellationToken);
-        using AsyncDuplexStreamingCall<GameSessionClientEvent, GameSessionServerEvent> call =
+        AsyncDuplexStreamingCall<GameSessionClientEvent, GameSessionServerEvent> call =
             _client.Connect(options);
-        await call.RequestStream.WriteAsync(new GameSessionClientEvent
+        bool isConnected = false;
+        try
         {
-            JoinGame = new JoinGame { GameId = gameId }
-        });
-
-        while (await call.ResponseStream.MoveNext(cancellationToken))
+            await call.RequestStream.WriteAsync(new GameSessionClientEvent
+            {
+                JoinGame = new JoinGame { GameId = gameId }
+            });
+            isConnected = true;
+            return new GrpcGameSessionStream(call);
+        }
+        finally
         {
-            yield return call.ResponseStream.Current;
+            if (!isConnected)
+            {
+                call.Dispose();
+            }
         }
     }
 
