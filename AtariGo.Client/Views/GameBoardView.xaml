@@ -244,7 +244,7 @@
             </Viewbox>
 
             <TextBlock Grid.Row="1"
-                       Text="{Binding TurnStatusMessage}"
+                       Text="{Binding BoardStatusMessage}"
                        HorizontalAlignment="Center"
                        Margin="0,16,0,0"
                        FontSize="16"
@@ -379,8 +379,7 @@
                         Padding="12">
                     <Grid>
                         <TextBlock
-                            Text="{x:Static
-                                properties:Resources.GameBoard_Lbl_ChatDisabledGuest}"
+                            Text="{Binding ChatUnavailableMessage}"
                             FontSize="12"
                             Foreground="#999999"
                             FontStyle="Italic"

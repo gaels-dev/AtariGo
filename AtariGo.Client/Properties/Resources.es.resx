@@ -282,6 +282,27 @@
   <data name="GameBoard_Status_OpponentTurn" xml:space="preserve">
     <value>¡Turno del oponente! Esperando jugada...</value>
   </data>
+  <data name="GameBoard_Status_Connecting" xml:space="preserve">
+    <value>Conectando con la sesión de partida...</value>
+  </data>
+  <data name="GameBoard_Status_WaitingOpponent" xml:space="preserve">
+    <value>Esperando a que se conecte el oponente...</value>
+  </data>
+  <data name="GameBoard_Status_BothConnected" xml:space="preserve">
+    <value>Ambos jugadores están conectados.</value>
+  </data>
+  <data name="GameBoard_Status_OpponentDisconnected" xml:space="preserve">
+    <value>El oponente se desconectó. Esperando que vuelva a conectarse...</value>
+  </data>
+  <data name="GameBoard_Status_ConnectionFailed" xml:space="preserve">
+    <value>No se pudo conectar con la sesión de partida.</value>
+  </data>
+  <data name="GameBoard_Status_InvalidSnapshot" xml:space="preserve">
+    <value>El servidor devolvió un estado de partida no válido.</value>
+  </data>
+  <data name="GameBoard_Lbl_ChatUnavailable" xml:space="preserve">
+    <value>El chat de partida aún no está disponible.</value>
+  </data>
   <data name="GameBoard_Lbl_ChatTitle" xml:space="preserve">
     <value>Chat de Partida</value>
   </data>

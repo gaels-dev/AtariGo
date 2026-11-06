@@ -1,8 +1,14 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Input;
+
+using Grpc.Core;
 
 using AtariGo.Client.Commands;
 using AtariGo.Client.Models;
@@ -12,10 +18,14 @@ using AtariGo.Contracts;
 
 namespace AtariGo.Client.ViewModels
 {
-    public class GameBoardViewModel : ViewModelBase
+    public class GameBoardViewModel : ViewModelBase, IDisposable
     {
         private const string BlackStoneColorName = "Black";
+        private const string WhiteStoneColorName = "White";
         private readonly INavigationService _navigationService;
+        private readonly IGameSessionClient? _gameSessionClient;
+        private CancellationTokenSource? _sessionCancellation;
+        private Task? _sessionTask;
 
         private StoneColor _currentTurn;
         private StoneColor _myColor;
@@ -26,38 +36,34 @@ namespace AtariGo.Client.ViewModels
         private int _targetCaptures;
         private bool _isChatEnabled;
         private string _chatInput;
+        private string _sessionStatusMessage;
+        private bool _isDisposed;
 
         public GameBoardViewModel(
             INavigationService navigationService,
-            bool isGuest = false,
-            string? playerName = null)
+            GameBoardViewModelContext context)
         {
             ArgumentNullException.ThrowIfNull(navigationService);
+            ArgumentNullException.ThrowIfNull(context);
             _navigationService = navigationService;
+            _gameSessionClient = context.SessionClient;
             _targetCaptures = GameRules.DefaultCaptureGoal;
-            _isChatEnabled = !isGuest;
+            _isChatEnabled = false;
 
             _currentTurn = StoneColor.Black;
             _myColor = StoneColor.White;
-            _myPlayerName = isGuest
-                && !string.IsNullOrWhiteSpace(playerName)
-                    ? playerName
+            _myPlayerName = context.IsGuest
+                && !string.IsNullOrWhiteSpace(context.PlayerName)
+                    ? context.PlayerName
                     : Properties.Resources.GameBoard_Lbl_You;
             _opponentName = Properties.Resources.GameBoard_Lbl_Opponent;
             _chatInput = string.Empty;
+            _sessionStatusMessage = string.Empty;
 
             Cells = new ObservableCollection<BoardCellViewModel>();
             ChatMessages = new ObservableCollection<ChatMessageViewModel>();
 
             InitializeBoard();
-            ChatMessages.Add(new ChatMessageViewModel(
-                Properties.Resources.GameBoard_Lbl_System,
-                Properties.Resources.GameBoard_Chat_GameStarted,
-                kind: ChatMessageKind.System));
-            ChatMessages.Add(new ChatMessageViewModel(
-                Properties.Resources.GameBoard_Lbl_Opponent,
-                Properties.Resources.GameBoard_Chat_GoodLuck,
-                kind: ChatMessageKind.Opponent));
 
             SendChatMessageCommand = new RelayCommand(
                 SendChatMessage,
@@ -82,6 +88,7 @@ namespace AtariGo.Client.ViewModels
                 {
                     OnPropertyChanged(nameof(IsMyTurn));
                     OnPropertyChanged(nameof(TurnStatusMessage));
+                    OnPropertyChanged(nameof(BoardStatusMessage));
                 }
             }
         }
@@ -105,6 +112,22 @@ namespace AtariGo.Client.ViewModels
         public string TurnStatusMessage => IsMyTurn
             ? Properties.Resources.GameBoard_Status_YourTurn
             : Properties.Resources.GameBoard_Status_OpponentTurn;
+
+        public string BoardStatusMessage => GameId.HasValue
+            ? SessionStatusMessage
+            : TurnStatusMessage;
+
+        public string SessionStatusMessage
+        {
+            get => _sessionStatusMessage;
+            private set
+            {
+                if (SetProperty(ref _sessionStatusMessage, value))
+                {
+                    OnPropertyChanged(nameof(BoardStatusMessage));
+                }
+            }
+        }
 
         public string MyColorLabel => _myColor == StoneColor.White
             ? Properties.Resources.GameBoard_Lbl_White
@@ -149,6 +172,9 @@ namespace AtariGo.Client.ViewModels
             get => _isChatEnabled;
             set => SetProperty(ref _isChatEnabled, value);
         }
+
+        public string ChatUnavailableMessage => GetLocalizedMessage(
+            "GameBoard_Lbl_ChatUnavailable");
 
         public string ChatInput
         {
@@ -195,6 +221,7 @@ namespace AtariGo.Client.ViewModels
                 participant => participant.IsHost != navigationContext.IsHost);
             OpponentName = opponent?.UserName ?? Properties.Resources.GameBoard_Lbl_Opponent;
             OnPropertyChanged(nameof(GameIdentifier));
+            StartGameSession(room.GameId);
         }
 
         public void OpenPublicGame(PublicMatchNavigationContext navigationContext)
@@ -212,8 +239,20 @@ namespace AtariGo.Client.ViewModels
             {
                 MyColor = StoneColor.White;
             }
-            IsChatEnabled = !navigationContext.IsGuest;
+            IsChatEnabled = false;
             OnPropertyChanged(nameof(GameIdentifier));
+            StartGameSession(game.GameId);
+        }
+
+        public void Dispose()
+        {
+            if (_isDisposed)
+            {
+                return;
+            }
+
+            _isDisposed = true;
+            _sessionCancellation?.Cancel();
         }
 
         private void InitializeBoard()
@@ -248,7 +287,7 @@ namespace AtariGo.Client.ViewModels
 
         private void SendChatMessage()
         {
-            if (string.IsNullOrWhiteSpace(ChatInput))
+            if (!_isChatEnabled || string.IsNullOrWhiteSpace(ChatInput))
             {
                 return;
             }
@@ -279,6 +318,186 @@ namespace AtariGo.Client.ViewModels
         {
             var dialog = new ReportPlayerDialogViewModel(_opponentName);
             _navigationService.OpenDialog(dialog);
+        }
+
+        private void StartGameSession(long gameId)
+        {
+            if (_gameSessionClient is null)
+            {
+                SessionStatusMessage = GetLocalizedMessage(
+                    "GameBoard_Status_ConnectionFailed");
+                return;
+            }
+
+            CancellationTokenSource cancellation = new CancellationTokenSource();
+            _sessionCancellation = cancellation;
+            SessionStatusMessage = GetLocalizedMessage(
+                "GameBoard_Status_Connecting");
+            _sessionTask = RunGameSessionAsync(gameId, cancellation);
+        }
+
+        private async Task RunGameSessionAsync(
+            long gameId,
+            CancellationTokenSource cancellation)
+        {
+            try
+            {
+                await foreach (GameSessionServerEvent serverEvent in
+                    _gameSessionClient!.ConnectAsync(gameId, cancellation.Token))
+                {
+                    if (serverEvent.EventCase
+                        == GameSessionServerEvent.EventOneofCase.Snapshot)
+                    {
+                        ApplyGameSnapshot(serverEvent.Snapshot);
+                    }
+                }
+
+                if (!cancellation.IsCancellationRequested)
+                {
+                    SessionStatusMessage = GetLocalizedMessage(
+                        "GameBoard_Status_ConnectionFailed");
+                }
+            }
+            catch (OperationCanceledException)
+                when (cancellation.IsCancellationRequested)
+            {
+            }
+            catch (RpcException exception)
+                when (GrpcCallPolicy.IsRequestedCancellation(
+                    exception,
+                    cancellation.Token))
+            {
+            }
+            catch (RpcException exception)
+            {
+                Trace.TraceWarning(
+                    "Game session connection failed with status {0}.",
+                    exception.StatusCode);
+                SessionStatusMessage = GrpcFailureMessages.GetMessage(exception);
+            }
+            finally
+            {
+                if (ReferenceEquals(_sessionCancellation, cancellation))
+                {
+                    _sessionCancellation = null;
+                }
+
+                cancellation.Dispose();
+            }
+        }
+
+        private void ApplyGameSnapshot(GameSessionSnapshot snapshot)
+        {
+            if (!IsValidSnapshot(snapshot))
+            {
+                SessionStatusMessage = GetLocalizedMessage(
+                    "GameBoard_Status_InvalidSnapshot");
+                return;
+            }
+
+            ApplyPlayerInformation(snapshot);
+            ApplyBoardCells(snapshot);
+
+            SessionStatusMessage = GetLocalizedMessage(
+                GetConnectionStatusResourceKey(snapshot));
+        }
+
+        private static string GetConnectionStatusResourceKey(
+            GameSessionSnapshot snapshot)
+        {
+            if (snapshot.OpponentConnected)
+            {
+                return "GameBoard_Status_BothConnected";
+            }
+
+            return snapshot.OpponentDisconnected
+                ? "GameBoard_Status_OpponentDisconnected"
+                : "GameBoard_Status_WaitingOpponent";
+        }
+
+        private bool IsValidSnapshot(GameSessionSnapshot snapshot)
+        {
+            if (snapshot.GameId != GameId
+                || snapshot.BoardSize != GameRules.BoardSize
+                || snapshot.Cells.Count != Cells.Count
+                || !IsValidStoneColor(snapshot.PlayerStoneColor)
+                || !IsValidStoneColor(snapshot.OpponentStoneColor))
+            {
+                return false;
+            }
+
+            HashSet<int> cellIndexes = new HashSet<int>();
+            foreach (GameBoardCell cell in snapshot.Cells)
+            {
+                if (cell.Row < 0 || cell.Row >= snapshot.BoardSize
+                    || cell.Column < 0 || cell.Column >= snapshot.BoardSize)
+                {
+                    return false;
+                }
+
+                int cellIndex = cell.Row * snapshot.BoardSize + cell.Column;
+                if (!cellIndexes.Add(cellIndex))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private void ApplyPlayerInformation(GameSessionSnapshot snapshot)
+        {
+            MyPlayerName = snapshot.PlayerName;
+            OpponentName = snapshot.OpponentName;
+            TargetCaptures = snapshot.CaptureGoal;
+            MyColor = MapStoneColor(snapshot.PlayerStoneColor);
+            CurrentTurn = StoneColor.Black;
+        }
+
+        private void ApplyBoardCells(GameSessionSnapshot snapshot)
+        {
+            foreach (GameBoardCell cell in snapshot.Cells)
+            {
+                int cellIndex = cell.Row * snapshot.BoardSize + cell.Column;
+                Cells[cellIndex].Stone = MapStone(cell.Stone);
+                Cells[cellIndex].IsLastMove = false;
+            }
+        }
+
+        private static bool IsValidStoneColor(string stoneColor)
+        {
+            return stoneColor == BlackStoneColorName
+                || stoneColor == WhiteStoneColorName;
+        }
+
+        private static StoneColor MapStoneColor(string stoneColor)
+        {
+            return stoneColor == BlackStoneColorName
+                ? StoneColor.Black
+                : StoneColor.White;
+        }
+
+        private static StoneColor MapStone(GameStoneState stone)
+        {
+            if (stone == GameStoneState.Black)
+            {
+                return StoneColor.Black;
+            }
+
+            if (stone == GameStoneState.White)
+            {
+                return StoneColor.White;
+            }
+
+            return StoneColor.None;
+        }
+
+        private static string GetLocalizedMessage(string resourceKey)
+        {
+            return Properties.Resources.ResourceManager.GetString(
+                resourceKey,
+                CultureInfo.CurrentUICulture)
+                ?? resourceKey;
         }
     }
 }

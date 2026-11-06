@@ -102,7 +102,12 @@ public sealed class InMemoryPublicMatchmakingQueueTests
 
     private static MatchmakingPlayer CreatePlayer(string key, string displayName)
     {
-        return new MatchmakingPlayer(key, null, displayName, displayName);
+        return new MatchmakingPlayer
+        {
+            PlayerKey = key,
+            DisplayName = displayName,
+            GuestName = displayName
+        };
     }
 
     private static MatchmakingTicket JoinPlayer(

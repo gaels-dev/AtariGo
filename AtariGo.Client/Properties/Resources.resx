@@ -283,6 +283,27 @@
   <data name="GameBoard_Status_OpponentTurn" xml:space="preserve">
     <value>Opponent's turn! Waiting for move...</value>
   </data>
+  <data name="GameBoard_Status_Connecting" xml:space="preserve">
+    <value>Connecting to the game session...</value>
+  </data>
+  <data name="GameBoard_Status_WaitingOpponent" xml:space="preserve">
+    <value>Waiting for the opponent to connect...</value>
+  </data>
+  <data name="GameBoard_Status_BothConnected" xml:space="preserve">
+    <value>Both players are connected.</value>
+  </data>
+  <data name="GameBoard_Status_OpponentDisconnected" xml:space="preserve">
+    <value>The opponent disconnected. Waiting for them to reconnect...</value>
+  </data>
+  <data name="GameBoard_Status_ConnectionFailed" xml:space="preserve">
+    <value>Could not connect to the game session.</value>
+  </data>
+  <data name="GameBoard_Status_InvalidSnapshot" xml:space="preserve">
+    <value>The server returned an invalid game state.</value>
+  </data>
+  <data name="GameBoard_Lbl_ChatUnavailable" xml:space="preserve">
+    <value>Game chat is not available yet.</value>
+  </data>
   <data name="GameBoard_Lbl_ChatTitle" xml:space="preserve">
     <value>Match Chat</value>
   </data>

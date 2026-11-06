@@ -118,11 +118,13 @@ public sealed class MatchmakingGrpcService : Matchmaking.MatchmakingBase
                 throw SessionRequestAuthentication.CreateUnauthenticatedException();
             }
 
-            return new MatchmakingPlayer(
-                $"guest:{guestIdentity.GuestId:N}",
-                null,
-                guestIdentity.DisplayName,
-                guestIdentity.DisplayName);
+            return new MatchmakingPlayer
+            {
+                PlayerKey = GameSessionRules.CreateGuestKey(guestIdentity.GuestId),
+                DisplayName = guestIdentity.DisplayName,
+                GuestName = guestIdentity.DisplayName,
+                GuestIdentityId = guestIdentity.GuestId
+            };
         }
 
         string sessionToken = SessionRequestAuthentication.GetSessionToken(context);
@@ -133,11 +135,12 @@ public sealed class MatchmakingGrpcService : Matchmaking.MatchmakingBase
             throw SessionRequestAuthentication.CreateUnauthenticatedException();
         }
 
-        return new MatchmakingPlayer(
-            $"user:{identity.UserId}",
-            identity.UserId,
-            identity.UserName,
-            null);
+        return new MatchmakingPlayer
+        {
+            PlayerKey = GameSessionRules.CreateUserKey(identity.UserId),
+            UserId = identity.UserId,
+            DisplayName = identity.UserName
+        };
     }
 
     private async Task SendSearchEventsAsync(

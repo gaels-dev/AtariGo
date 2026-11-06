@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+option csharp_namespace = "AtariGo.Contracts";
+
+package atarigo.gamesession.v1;
+
+service GameSession {
+  rpc Connect (stream GameSessionClientEvent) returns (stream GameSessionServerEvent);
+}
+
+message GameSessionClientEvent {
+  oneof event {
+    JoinGame join_game = 1;
+  }
+}
+
+message JoinGame {
+  int64 game_id = 1;
+}
+
+message GameSessionServerEvent {
+  oneof event {
+    GameSessionSnapshot snapshot = 1;
+  }
+}
+
+message GameSessionSnapshot {
+  int64 game_id = 1;
+  int32 board_size = 2;
+  int32 capture_goal = 3;
+  int32 game_time_seconds = 4;
+  int32 turn_time_seconds = 5;
+  string player_name = 6;
+  string player_stone_color = 7;
+  string opponent_name = 8;
+  string opponent_stone_color = 9;
+  bool opponent_connected = 10;
+  repeated GameBoardCell cells = 11;
+  bool opponent_disconnected = 12;
+}
+
+message GameBoardCell {
+  int32 row = 1;
+  int32 column = 2;
+  GameStoneState stone = 3;
+}
+
+enum GameStoneState {
+  GAME_STONE_STATE_UNSPECIFIED = 0;
+  GAME_STONE_STATE_EMPTY = 1;
+  GAME_STONE_STATE_BLACK = 2;
+  GAME_STONE_STATE_WHITE = 3;
+}

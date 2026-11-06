@@ -126,6 +126,7 @@ public sealed class GameLifecycleService : IGameLifecycleService
         {
             UserId = player.UserId,
             GuestName = player.GuestName,
+            GuestIdentityId = player.GuestIdentityId,
             StoneColor = stoneColor,
             TurnOrder = turnOrder,
             JoinedAt = joinedAt

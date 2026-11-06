@@ -193,10 +193,13 @@ namespace AtariGo.Client.ViewModels
 
         public void NavigateToPublicGame(PublicMatchNavigationContext navigationContext)
         {
-            var gameBoard = new GameBoardViewModel(
+            GameBoardViewModelContext boardContext = new GameBoardViewModelContext(
+                new GrpcGameSessionClient(SessionToken, GuestCredential),
+                navigationContext.IsGuest,
+                navigationContext.PlayerName);
+            GameBoardViewModel gameBoard = new GameBoardViewModel(
                 _navigationService,
-                isGuest: navigationContext.IsGuest,
-                playerName: navigationContext.PlayerName);
+                boardContext);
             gameBoard.OpenPublicGame(navigationContext);
             CurrentViewModel = gameBoard;
         }
@@ -238,8 +241,10 @@ namespace AtariGo.Client.ViewModels
             GameBoardViewModel gameBoard =
                 new GameBoardViewModel(
                     _navigationService,
-                    isGuest: isGuest,
-                    playerName: _playerName)
+                    new GameBoardViewModelContext(
+                        null,
+                        isGuest,
+                        _playerName))
                 {
                     TargetCaptures = targetCaptures
                 };
@@ -249,7 +254,13 @@ namespace AtariGo.Client.ViewModels
 
         public void NavigateToSharedGame(PrivateRoomNavigationContext navigationContext)
         {
-            var gameBoard = new GameBoardViewModel(_navigationService, playerName: _playerName);
+            GameBoardViewModelContext boardContext = new GameBoardViewModelContext(
+                new GrpcGameSessionClient(SessionToken, null),
+                false,
+                _playerName);
+            GameBoardViewModel gameBoard = new GameBoardViewModel(
+                _navigationService,
+                boardContext);
             gameBoard.OpenSharedGame(navigationContext);
             CurrentViewModel = gameBoard;
         }

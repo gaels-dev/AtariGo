@@ -282,6 +282,27 @@
   <data name="GameBoard_Status_OpponentTurn" xml:space="preserve">
     <value>Gegner ist am Zug! Warten auf Spielzug...</value>
   </data>
+  <data name="GameBoard_Status_Connecting" xml:space="preserve">
+    <value>Verbindung zur Spielsitzung wird hergestellt...</value>
+  </data>
+  <data name="GameBoard_Status_WaitingOpponent" xml:space="preserve">
+    <value>Warten auf die Verbindung des Gegners...</value>
+  </data>
+  <data name="GameBoard_Status_BothConnected" xml:space="preserve">
+    <value>Beide Spieler sind verbunden.</value>
+  </data>
+  <data name="GameBoard_Status_OpponentDisconnected" xml:space="preserve">
+    <value>Der Gegner wurde getrennt. Warten auf die erneute Verbindung...</value>
+  </data>
+  <data name="GameBoard_Status_ConnectionFailed" xml:space="preserve">
+    <value>Verbindung zur Spielsitzung fehlgeschlagen.</value>
+  </data>
+  <data name="GameBoard_Status_InvalidSnapshot" xml:space="preserve">
+    <value>Der Server hat einen ungültigen Spielstatus zurückgegeben.</value>
+  </data>
+  <data name="GameBoard_Lbl_ChatUnavailable" xml:space="preserve">
+    <value>Der Spielchat ist noch nicht verfügbar.</value>
+  </data>
   <data name="GameBoard_Lbl_ChatTitle" xml:space="preserve">
     <value>Spiel-Chat</value>
   </data>

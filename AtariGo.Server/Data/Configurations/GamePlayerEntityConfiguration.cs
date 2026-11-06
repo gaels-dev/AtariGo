@@ -25,7 +25,17 @@ public sealed class GamePlayerEntityConfiguration : IEntityTypeConfiguration<Gam
             .IsUnique()
             .HasFilter("([UserId] IS NOT NULL)");
 
+        entity.HasIndex(gamePlayer => new
+            {
+                gamePlayer.GameId,
+                gamePlayer.GuestIdentityId
+            }, "UX_GamePlayers_Game_GuestIdentity")
+            .IsUnique()
+            .HasFilter("([GuestIdentityId] IS NOT NULL)");
+
         entity.Property(gamePlayer => gamePlayer.GuestName).HasMaxLength(100);
+        entity.Property(gamePlayer => gamePlayer.GuestIdentityId)
+            .HasColumnType("uniqueidentifier");
         entity.Property(gamePlayer => gamePlayer.JoinedAt)
             .HasPrecision(0)
             .HasDefaultValueSql("(sysutcdatetime())", "DF_GamePlayers_JoinedAt");

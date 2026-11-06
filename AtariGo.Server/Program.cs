@@ -39,6 +39,8 @@ builder.Services.AddScoped<IRegistrationService, RegistrationService>();
 builder.Services.AddScoped<ILeaderboardService, LeaderboardService>();
 builder.Services.AddScoped<ISessionService, SessionService>();
 builder.Services.AddScoped<IGameLifecycleService, GameLifecycleService>();
+builder.Services.AddScoped<IGameSessionCatalog, GameSessionCatalog>();
+builder.Services.AddSingleton<IGameSessionRegistry, GameSessionRegistry>();
 builder.Services.AddSingleton<IGuestIdentityRegistry, GuestIdentityRegistry>();
 builder.Services.AddSingleton<IPublicMatchmakingQueue, InMemoryPublicMatchmakingQueue>();
 builder.Services.AddSingleton<IRoomsService, RoomsService>();
@@ -64,6 +66,7 @@ app.MapGrpcService<LeaderboardGrpcService>();
 app.MapGrpcService<SessionGrpcService>();
 app.MapGrpcService<RoomsGrpcService>();
 app.MapGrpcService<GameLifecycleGrpcService>();
+app.MapGrpcService<GameSessionGrpcService>();
 app.MapGrpcService<MatchmakingGrpcService>();
 app.MapGet("/", () =>
     "Communication with gRPC endpoints must be made through a gRPC client.");
