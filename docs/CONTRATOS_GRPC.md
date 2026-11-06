@@ -191,6 +191,18 @@ Cobertura: CU-08, CU-09, CU-10, CU-11; abandonar sala
 |  |  |  | CloseRoom | RoomId, ExpectedVersion |
 |  |  |  | WatchRoom | RoomId, FromVersion |
 
+La primera entrega implementa `CreatePrivateRoom`, `JoinRoom`, `LeaveRoom` y
+`WatchRoom` para jugadores registrados. Una cuenta puede alojar una sala privada
+a la vez. Repetir la creación con la misma configuración devuelve la misma sala.
+Para incorporar a un participante nuevo se requiere el código. El identificador
+por sí solo permite recuperar la sala a un miembro existente.
+
+`WatchRoom` entrega snapshots completos y versionados a los miembros. Si la versión
+indicada coincide con la actual, espera un cambio. Si difiere o se omite, entrega
+el estado actual. Los rechazos se comunican mediante códigos de estado gRPC.
+En esta entrega la sala en espera reside en memoria y vence una hora después de
+crearse. El inicio persistente de partida se incorpora con `GameLifecycle`.
+
 ### 4.11  RoomInvitations
 
 Responsabilidad: Invitaciones a salas (amistad, enlace o correo) y respuesta del invitado.

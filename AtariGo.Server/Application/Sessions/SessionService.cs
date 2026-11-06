@@ -33,6 +33,21 @@ public sealed class SessionService : ISessionService
         _timeProvider = timeProvider;
     }
 
+    public async Task<SessionIdentity?> ValidateSessionAsync(
+        string sessionToken,
+        CancellationToken cancellationToken)
+    {
+        Session? session = await ActiveSessions(sessionToken)
+            .AsNoTracking()
+            .SingleOrDefaultAsync(cancellationToken);
+        if (session is null || !IsSessionValid(session, _timeProvider.GetUtcNow().UtcDateTime))
+        {
+            return null;
+        }
+
+        return new SessionIdentity(session.UserId, session.User.UserName);
+    }
+
     public async Task<SessionConnectionInfo?> OpenConnectionAsync(
         string sessionToken,
         CancellationToken cancellationToken)
@@ -103,13 +118,16 @@ public sealed class SessionService : ISessionService
             return Task.FromResult<Session?>(null);
         }
 
+        return ActiveSessions(sessionToken).SingleOrDefaultAsync(cancellationToken);
+    }
+
+    private IQueryable<Session> ActiveSessions(string sessionToken)
+    {
         string tokenHash = _tokenProvider.Hash(sessionToken);
         return _dbContext.Sessions
             .Include(candidate => candidate.User)
-            .SingleOrDefaultAsync(
-                candidate => candidate.SessionTokenHash == tokenHash
-                    && candidate.State == DatabaseValues.SessionStates.Active,
-                cancellationToken);
+            .Where(candidate => candidate.SessionTokenHash == tokenHash
+                && candidate.State == DatabaseValues.SessionStates.Active);
     }
 
     private Task<Session?> FindSessionByTokenAsync(

@@ -10,9 +10,6 @@ namespace AtariGo.Server.Services;
 
 public sealed class SessionGrpcService : Session.SessionBase
 {
-    private const string AuthorizationHeader = "authorization";
-    private const string BearerPrefix = "Bearer ";
-
     private readonly ISessionService _sessionService;
     private readonly ISessionConnectionRegistry _connectionRegistry;
     private readonly ILogger<SessionGrpcService> _logger;
@@ -37,7 +34,7 @@ public sealed class SessionGrpcService : Session.SessionBase
         IServerStreamWriter<SessionServerEvent> responseStream,
         ServerCallContext context)
     {
-        string sessionToken = GetSessionToken(context);
+        string sessionToken = SessionRequestAuthentication.GetSessionToken(context);
         await RequireClientConnectionAsync(requestStream, context.CancellationToken);
         SessionConnectionInfo? connectionInfo =
             await _sessionService.OpenConnectionAsync(
@@ -45,7 +42,7 @@ public sealed class SessionGrpcService : Session.SessionBase
                 context.CancellationToken);
         if (connectionInfo is null)
         {
-            throw CreateUnauthenticatedException();
+            throw SessionRequestAuthentication.CreateUnauthenticatedException();
         }
 
         SessionConnectionLease connection =
@@ -72,7 +69,7 @@ public sealed class SessionGrpcService : Session.SessionBase
         ServerCallContext context)
     {
         await _sessionService.LogoutAsync(
-            GetSessionToken(context),
+            SessionRequestAuthentication.GetSessionToken(context),
             context.CancellationToken);
         return new LogoutResponse();
     }
@@ -90,27 +87,6 @@ public sealed class SessionGrpcService : Session.SessionBase
                 StatusCode.InvalidArgument,
                 "The real-time connection event is required."));
         }
-    }
-
-    private static string GetSessionToken(ServerCallContext context)
-    {
-        string? authorization = context.RequestHeaders.GetValue(
-            AuthorizationHeader);
-        if (authorization is null
-            || !authorization.StartsWith(
-                BearerPrefix,
-                StringComparison.OrdinalIgnoreCase))
-        {
-            throw CreateUnauthenticatedException();
-        }
-
-        string token = authorization[BearerPrefix.Length..].Trim();
-        if (string.IsNullOrWhiteSpace(token))
-        {
-            throw CreateUnauthenticatedException();
-        }
-
-        return token;
     }
 
     private async Task SendPresenceSnapshotAsync(
@@ -236,12 +212,5 @@ public sealed class SessionGrpcService : Session.SessionBase
             UserName = friend.UserName,
             IsOnline = friend.IsOnline
         };
-    }
-
-    private static RpcException CreateUnauthenticatedException()
-    {
-        return new RpcException(new Status(
-            StatusCode.Unauthenticated,
-            "La sesión no es válida o ha vencido."));
     }
 }

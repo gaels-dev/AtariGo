@@ -4,7 +4,7 @@ namespace AtariGo.Client.Tests.Services
 {
     public sealed class RecordedGrpcCall
     {
-        public RecordedGrpcCall(string methodName, CallOptions options, object request)
+        public RecordedGrpcCall(string methodName, CallOptions options, object? request)
         {
             MethodName = methodName;
             Options = options;
@@ -23,6 +23,6 @@ namespace AtariGo.Client.Tests.Services
             }
         }
 
-        public object Request { get; }
+        public object? Request { get; }
     }
 }

@@ -12,6 +12,7 @@ using AtariGo.Client.Services;
 namespace AtariGo.Client.Tests.Services
 {
     [TestClass]
+    [TestCategory("Unit")]
     public sealed class GrpcSessionClientTests
     {
         private const int TestCompletionSeconds = 5;

@@ -38,5 +38,16 @@ namespace AtariGo.Client.Tests.Services
                 () => new Metadata(),
                 () => { });
         }
+
+        public override AsyncDuplexStreamingCall<TRequest, TResponse> AsyncDuplexStreamingCall<
+            TRequest, TResponse>(
+            ClientInterceptorContext<TRequest, TResponse> context,
+            AsyncDuplexStreamingCallContinuation<TRequest, TResponse> continuation)
+        {
+            _calls.Add(new RecordedGrpcCall(context.Method.Name, context.Options, null));
+            throw new RpcException(new Status(
+                StatusCode.Unauthenticated,
+                "The test recorded the stream options."));
+        }
     }
 }

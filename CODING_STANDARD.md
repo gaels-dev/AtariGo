@@ -60,6 +60,7 @@ Su objetivo es mantener código consistente, comprensible y fácil de mantener.
   - [4.3 Complejidad Ciclomática y Tamaño de Métodos](#seccion-4-3)
   - [4.4 Responsabilidades del cliente WPF](#seccion-4-4)
   - [4.5 Configuración de persistencia](#seccion-4-5)
+  - [4.6 Autoridad del servidor y concurrencia](#seccion-4-6)
 - [5 Prácticas Específicas de Videojuegos](#seccion-5)
 - [6 Manejo de Errores y Excepciones](#seccion-6)
   - [6.1 Manejo General de Excepciones](#seccion-6-1)
@@ -1368,6 +1369,27 @@ necesarios para una operación se agrupan por significado, no como una bolsa de 
 La configuración de EF Core se mantiene en clases `IEntityTypeConfiguration<T>` por entidad.
 Mover un mapeo exige comprobar que el modelo relacional conserve tablas, columnas, índices
 y relaciones. La organización de estos archivos no implica ejecutar migraciones.
+
+<a id="seccion-4-6"></a>
+
+### 4.6 Autoridad del servidor y concurrencia
+
+Los adaptadores gRPC autentican y traducen solicitudes. Los servicios de aplicación
+validan permisos y reglas de negocio, y la capa de datos persiste la información.
+El servidor determina la membresía, configuración y estado de cada sala y partida.
+Cada sala y cada partida se identifica por separado. No se usa una variable estática
+compartida para representar el jugador, la sala o la partida actual.
+
+El estado mutable compartido debe tener un dueño, un mecanismo explícito de
+concurrencia y una política de liberación. Las comprobaciones y las escrituras que
+mantienen una misma regla de negocio deben ejecutarse como una sola operación lógica.
+Por ejemplo, verificar el cupo y asignar el último lugar son indivisibles. Si dos
+solicitudes compiten por ese lugar, solo una puede obtenerlo. El servidor publica
+el nuevo estado después de confirmar la transición. Si la transición requiere
+persistencia, se publica después de confirmarla en la base de datos.
+
+No se comparte una instancia de `DbContext` entre operaciones concurrentes. Las
+esperas de red se realizan fuera de la sección crítica que protege el estado en memoria.
 
 <a id="seccion-5"></a>
 
