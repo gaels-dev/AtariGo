@@ -240,6 +240,18 @@
   <data name="SearchingOpponent_Lbl_Searching" xml:space="preserve">
     <value>Suchen...</value>
   </data>
+  <data name="SearchingOpponent_Lbl_MatchFound" xml:space="preserve">
+    <value>Gegner gefunden. Das Spiel beginnt gleich.</value>
+  </data>
+  <data name="SearchingOpponent_Lbl_Countdown" xml:space="preserve">
+    <value>Start in {0} Sekunden</value>
+  </data>
+  <data name="SearchingOpponent_Msg_OpponentDisconnected" xml:space="preserve">
+    <value>Dein Gegner hat die Verbindung getrennt. Suche nach einem anderen Spieler...</value>
+  </data>
+  <data name="SearchingOpponent_Err_ConnectionClosed" xml:space="preserve">
+    <value>Die Verbindung zur Spielersuche wurde unerwartet getrennt.</value>
+  </data>
   <data name="SearchingOpponent_Btn_Cancel" xml:space="preserve">
     <value>Abbrechen</value>
   </data>
@@ -704,6 +716,9 @@
   </data>
   <data name="Session_Msg_LogoutFailed" xml:space="preserve">
     <value>Die Sitzung konnte nicht auf dem Server beendet werden. Prüfe die Verbindung und versuche es erneut.</value>
+  </data>
+  <data name="GuestRegistration_Err_Connection" xml:space="preserve">
+    <value>Der Gastzugang konnte nicht gestartet werden. Prüfe deine Verbindung und versuche es erneut.</value>
   </data>
   <data name="GuestRegistration_Title" xml:space="preserve">
     <value>Gastregistrierung</value>

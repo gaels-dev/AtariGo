@@ -30,6 +30,7 @@ public static class DatabaseValues
     public static class GameTypes
     {
         public const string Private = "Private";
+        public const string Public = "Public";
     }
 
     public static class StoneColors

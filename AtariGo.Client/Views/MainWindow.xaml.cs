@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Windows;
 
 using AtariGo.Client.Models;
@@ -7,6 +8,9 @@ namespace AtariGo.Client.Views
 {
     public partial class MainWindow : Window
     {
+        private bool _allowClose;
+        private bool _closePending;
+
         public MainWindow() : this(new MainViewModel())
         {
         }
@@ -16,7 +20,8 @@ namespace AtariGo.Client.Views
             InitializeComponent();
             DataContext = viewModel;
             viewModel.LanguageChanged += OnLanguageChanged;
-            Closed += (_, _) => viewModel.Dispose();
+            Closing += OnClosing;
+            Closed += OnClosed;
         }
 
         private void OnLanguageChanged()
@@ -31,7 +36,8 @@ namespace AtariGo.Client.Views
                     {
                         IsGuest = oldVm.IsGuest,
                         PlayerName = oldVm.PlayerName,
-                        SessionToken = oldVm.SessionToken
+                        SessionToken = oldVm.SessionToken,
+                        GuestCredential = oldVm.GuestCredential
                     });
                 var newWindow = new MainWindow(newVm)
                 {
@@ -44,7 +50,40 @@ namespace AtariGo.Client.Views
 
                 Application.Current.MainWindow = newWindow;
                 newWindow.Show();
+                _allowClose = true;
                 Close();
+            }
+        }
+
+        private async void OnClosing(object? sender, CancelEventArgs eventArgs)
+        {
+            if (_allowClose)
+            {
+                return;
+            }
+
+            eventArgs.Cancel = true;
+            if (_closePending)
+            {
+                return;
+            }
+
+            _closePending = true;
+            if (DataContext is MainViewModel viewModel)
+            {
+                viewModel.Dispose();
+                await viewModel.RevokeGuestIdentityAsync();
+            }
+
+            _allowClose = true;
+            await Dispatcher.InvokeAsync(new Action(Close));
+        }
+
+        private void OnClosed(object? sender, EventArgs eventArgs)
+        {
+            if (DataContext is MainViewModel viewModel)
+            {
+                viewModel.Dispose();
             }
         }
     }

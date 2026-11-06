@@ -7,5 +7,7 @@ namespace AtariGo.Client.Models
         public string PlayerName { get; init; } = "Player";
 
         public string? SessionToken { get; init; }
+
+        public string? GuestCredential { get; init; }
     }
 }

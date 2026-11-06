@@ -20,9 +20,11 @@ namespace AtariGo.Client.Services
         public void NavigateToMainWindow(
             bool isGuest,
             string playerName,
-            string? sessionToken = null)
+            string? sessionToken = null,
+            string? guestCredential = null)
         {
-            Dispatch(() => ShowMainWindow(isGuest, playerName, sessionToken));
+            Dispatch(() => ShowMainWindow(
+                isGuest, playerName, sessionToken, guestCredential));
         }
 
         public void RefreshLoginView()
@@ -51,6 +53,12 @@ namespace AtariGo.Client.Services
         {
             ArgumentNullException.ThrowIfNull(navigationContext);
             Dispatch(() => GetMainViewModel()?.NavigateToSharedGame(navigationContext));
+        }
+
+        public void NavigateToPublicGame(PublicMatchNavigationContext navigationContext)
+        {
+            ArgumentNullException.ThrowIfNull(navigationContext);
+            Dispatch(() => GetMainViewModel()?.NavigateToPublicGame(navigationContext));
         }
 
         public void NavigateToProfileCustomization()
@@ -208,13 +216,18 @@ namespace AtariGo.Client.Services
             dispatcher.BeginInvoke(action);
         }
 
-        private void ShowMainWindow(bool isGuest, string playerName, string? sessionToken)
+        private void ShowMainWindow(
+            bool isGuest,
+            string playerName,
+            string? sessionToken,
+            string? guestCredential)
         {
             var context = new ClientSessionContext
             {
                 IsGuest = isGuest,
                 PlayerName = playerName,
-                SessionToken = sessionToken
+                SessionToken = sessionToken,
+                GuestCredential = guestCredential
             };
             var mainWindow = new MainWindow(new MainViewModel(context, this));
             Application.Current.MainWindow = mainWindow;

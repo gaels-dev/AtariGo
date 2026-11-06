@@ -1,4 +1,5 @@
 using AtariGo.Server.Application.Rooms;
+using AtariGo.Server.Application.Matchmaking;
 using AtariGo.Server.Data;
 using AtariGo.Server.Data.Entities;
 
@@ -32,6 +33,35 @@ public sealed class GameLifecycleService : IGameLifecycleService
         CancellationToken cancellationToken)
     {
         return _roomsService.StartGameAsync(request, PersistGameAsync, cancellationToken);
+    }
+
+    public async Task<long> StartPublicGameAsync(
+        PublicMatchStartRequest request,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        DateTime now = _timeProvider.GetUtcNow().UtcDateTime;
+        var game = new Game
+        {
+            GameConfiguration = CreateConfiguration(request.Configuration),
+            GameType = DatabaseValues.GameTypes.Public,
+            State = DatabaseValues.GameStates.InProgress,
+            StartedAt = now
+        };
+        game.GamePlayers.Add(CreateGamePlayer(
+            request.BlackPlayer,
+            DatabaseValues.StoneColors.Black,
+            HostTurnOrder,
+            now));
+        game.GamePlayers.Add(CreateGamePlayer(
+            request.WhitePlayer,
+            DatabaseValues.StoneColors.White,
+            OpponentTurnOrder,
+            now));
+
+        _dbContext.Games.Add(game);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        return game.GameId;
     }
 
     private async Task<long> PersistGameAsync(
@@ -83,6 +113,22 @@ public sealed class GameLifecycleService : IGameLifecycleService
             CaptureGoal = checked((byte)configuration.CaptureGoal),
             GameTimeSeconds = configuration.GameTimeSeconds,
             TurnTimeSeconds = configuration.TurnTimeSeconds
+        };
+    }
+
+    private static GamePlayer CreateGamePlayer(
+        MatchmakingPlayer player,
+        string stoneColor,
+        byte turnOrder,
+        DateTime joinedAt)
+    {
+        return new GamePlayer
+        {
+            UserId = player.UserId,
+            GuestName = player.GuestName,
+            StoneColor = stoneColor,
+            TurnOrder = turnOrder,
+            JoinedAt = joinedAt
         };
     }
 }

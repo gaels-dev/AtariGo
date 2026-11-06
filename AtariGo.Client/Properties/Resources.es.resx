@@ -240,6 +240,18 @@
   <data name="SearchingOpponent_Lbl_Searching" xml:space="preserve">
     <value>Buscando...</value>
   </data>
+  <data name="SearchingOpponent_Lbl_MatchFound" xml:space="preserve">
+    <value>Partida encontrada. Iniciará en breve.</value>
+  </data>
+  <data name="SearchingOpponent_Lbl_Countdown" xml:space="preserve">
+    <value>Iniciando en {0} segundos</value>
+  </data>
+  <data name="SearchingOpponent_Msg_OpponentDisconnected" xml:space="preserve">
+    <value>Tu oponente se desconectó. Buscando otro jugador...</value>
+  </data>
+  <data name="SearchingOpponent_Err_ConnectionClosed" xml:space="preserve">
+    <value>La conexión de emparejamiento se cerró inesperadamente.</value>
+  </data>
   <data name="SearchingOpponent_Btn_Cancel" xml:space="preserve">
     <value>Cancelar</value>
   </data>
@@ -704,6 +716,9 @@
   </data>
   <data name="Session_Msg_LogoutFailed" xml:space="preserve">
     <value>No se pudo cerrar la sesión con el servidor. Comprueba la conexión e inténtalo de nuevo.</value>
+  </data>
+  <data name="GuestRegistration_Err_Connection" xml:space="preserve">
+    <value>No se pudo iniciar el acceso de invitado. Comprueba tu conexión e inténtalo de nuevo.</value>
   </data>
   <data name="GuestRegistration_Title" xml:space="preserve">
     <value>Registro de Invitado</value>

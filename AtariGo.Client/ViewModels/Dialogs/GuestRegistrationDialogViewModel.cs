@@ -1,4 +1,6 @@
 using System.Globalization;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Input;
 
 using AtariGo.Client.Commands;
@@ -7,22 +9,30 @@ using AtariGo.Client.Services;
 
 namespace AtariGo.Client.ViewModels.Dialogs;
 
-public sealed class GuestRegistrationDialogViewModel : ViewModelBase
+public sealed class GuestRegistrationDialogViewModel : ViewModelBase, IDisposable
 {
     private const int MaximumGuestNameLength = 15;
     private const string GuestNamePrefix = "Guest-";
 
     private readonly INavigationService _navigationService;
+    private readonly IGuestIdentityClient _guestIdentityClient;
+    private readonly CancellationTokenSource _lifetimeCancellation =
+        new CancellationTokenSource();
     private string _guestName = string.Empty;
     private string _errorMessage = string.Empty;
 
     public GuestRegistrationDialogViewModel(
-        INavigationService navigationService)
+        INavigationService navigationService,
+        IGuestIdentityClient? guestIdentityClient = null)
     {
         ArgumentNullException.ThrowIfNull(navigationService);
         _navigationService = navigationService;
+        _guestIdentityClient = guestIdentityClient ?? new GrpcMatchmakingClient();
 
-        EnterCommand = new RelayCommand(EnterAsGuest);
+        EnterCommand = new AsyncRelayCommand(
+            EnterAsGuestAsync,
+            HandleFailure,
+            _lifetimeCancellation.Token);
         BackCommand = new RelayCommand(
             _navigationService.CloseLoginDialog);
     }
@@ -58,7 +68,13 @@ public sealed class GuestRegistrationDialogViewModel : ViewModelBase
 
     public ICommand BackCommand { get; }
 
-    private void EnterAsGuest()
+    public void Dispose()
+    {
+        _lifetimeCancellation.Cancel();
+        _lifetimeCancellation.Dispose();
+    }
+
+    private async Task EnterAsGuestAsync(object? parameter)
     {
         string normalizedName = GuestName.Trim();
         if (normalizedName.Length == 0)
@@ -75,9 +91,19 @@ public sealed class GuestRegistrationDialogViewModel : ViewModelBase
             return;
         }
 
+        string displayName = $"{GuestNamePrefix}{normalizedName}";
+        string credential = await _guestIdentityClient.CreateAsync(
+            displayName,
+            _lifetimeCancellation.Token);
         _navigationService.NavigateToMainWindow(
             isGuest: true,
-            $"{GuestNamePrefix}{normalizedName}");
+            displayName,
+            guestCredential: credential);
+    }
+
+    private void HandleFailure(Exception _)
+    {
+        ErrorMessage = GetLocalizedMessage("GuestRegistration_Err_Connection");
     }
 
     private static string GetLocalizedMessage(string key)

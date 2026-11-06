@@ -14,6 +14,7 @@ namespace AtariGo.Client.ViewModels
 {
     public class GameBoardViewModel : ViewModelBase
     {
+        private const string BlackStoneColorName = "Black";
         private readonly INavigationService _navigationService;
 
         private StoneColor _currentTurn;
@@ -193,6 +194,26 @@ namespace AtariGo.Client.ViewModels
             RoomParticipant? opponent = room.Participants.FirstOrDefault(
                 participant => participant.IsHost != navigationContext.IsHost);
             OpponentName = opponent?.UserName ?? Properties.Resources.GameBoard_Lbl_Opponent;
+            OnPropertyChanged(nameof(GameIdentifier));
+        }
+
+        public void OpenPublicGame(PublicMatchNavigationContext navigationContext)
+        {
+            PublicGameStarted game = navigationContext.Game;
+            GameId = game.GameId;
+            MyPlayerName = navigationContext.PlayerName;
+            OpponentName = game.OpponentName;
+            TargetCaptures = game.CaptureGoal;
+            if (game.StoneColor == BlackStoneColorName)
+            {
+                MyColor = StoneColor.Black;
+            }
+            else
+            {
+                MyColor = StoneColor.White;
+            }
+            IsChatEnabled = !navigationContext.IsGuest;
+            OnPropertyChanged(nameof(GameIdentifier));
         }
 
         private void InitializeBoard()

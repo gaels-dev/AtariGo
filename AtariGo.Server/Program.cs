@@ -11,6 +11,7 @@ using AtariGo.Server.Application.Authentication;
 using AtariGo.Server.Application.Friends;
 using AtariGo.Server.Application.Games;
 using AtariGo.Server.Application.Leaderboard;
+using AtariGo.Server.Application.Matchmaking;
 using AtariGo.Server.Application.Rooms;
 using AtariGo.Server.Application.Sessions;
 using AtariGo.Server.Configuration;
@@ -38,6 +39,8 @@ builder.Services.AddScoped<IRegistrationService, RegistrationService>();
 builder.Services.AddScoped<ILeaderboardService, LeaderboardService>();
 builder.Services.AddScoped<ISessionService, SessionService>();
 builder.Services.AddScoped<IGameLifecycleService, GameLifecycleService>();
+builder.Services.AddSingleton<IGuestIdentityRegistry, GuestIdentityRegistry>();
+builder.Services.AddSingleton<IPublicMatchmakingQueue, InMemoryPublicMatchmakingQueue>();
 builder.Services.AddSingleton<IRoomsService, RoomsService>();
 builder.Services.AddSingleton<ISessionConnectionRegistry, SessionConnectionRegistry>();
 builder.Services.AddSingleton<IRegistrationValidator, RegistrationValidator>();
@@ -61,6 +64,7 @@ app.MapGrpcService<LeaderboardGrpcService>();
 app.MapGrpcService<SessionGrpcService>();
 app.MapGrpcService<RoomsGrpcService>();
 app.MapGrpcService<GameLifecycleGrpcService>();
+app.MapGrpcService<MatchmakingGrpcService>();
 app.MapGet("/", () =>
     "Communication with gRPC endpoints must be made through a gRPC client.");
 

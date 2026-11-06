@@ -241,6 +241,18 @@
   <data name="SearchingOpponent_Lbl_Searching" xml:space="preserve">
     <value>Searching...</value>
   </data>
+  <data name="SearchingOpponent_Lbl_MatchFound" xml:space="preserve">
+    <value>Match found. Starting shortly.</value>
+  </data>
+  <data name="SearchingOpponent_Lbl_Countdown" xml:space="preserve">
+    <value>Starting in {0} seconds</value>
+  </data>
+  <data name="SearchingOpponent_Msg_OpponentDisconnected" xml:space="preserve">
+    <value>Your opponent disconnected. Searching for another player...</value>
+  </data>
+  <data name="SearchingOpponent_Err_ConnectionClosed" xml:space="preserve">
+    <value>The matchmaking connection closed unexpectedly.</value>
+  </data>
   <data name="SearchingOpponent_Btn_Cancel" xml:space="preserve">
     <value>Cancel</value>
   </data>
@@ -705,6 +717,9 @@
   </data>
   <data name="Session_Msg_LogoutFailed" xml:space="preserve">
     <value>The session could not be closed on the server. Check your connection and try again.</value>
+  </data>
+  <data name="GuestRegistration_Err_Connection" xml:space="preserve">
+    <value>Could not start guest access. Check your connection and try again.</value>
   </data>
   <data name="GuestRegistration_Title" xml:space="preserve">
     <value>Guest Registration</value>

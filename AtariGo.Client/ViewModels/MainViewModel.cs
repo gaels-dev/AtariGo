@@ -20,6 +20,7 @@ namespace AtariGo.Client.ViewModels
     {
         private readonly INavigationService _navigationService;
         private readonly ISessionClient? _sessionClient;
+        private readonly IGuestIdentityClient? _guestIdentityClient;
         private readonly CancellationTokenSource _lifetimeCancellation =
             new CancellationTokenSource();
         private ViewModelBase _currentViewModel = null!;
@@ -30,6 +31,7 @@ namespace AtariGo.Client.ViewModels
         private string _playerName;
         private string _presenceStatusResourceKey = string.Empty;
         private bool _isDisposed;
+        private bool _guestCredentialRevoked;
 
         public MainViewModel(
             ClientSessionContext? sessionContext = null,
@@ -40,12 +42,19 @@ namespace AtariGo.Client.ViewModels
             _isGuest = sessionContext.IsGuest;
             _playerName = sessionContext.PlayerName;
             SessionToken = sessionContext.SessionToken;
+            GuestCredential = sessionContext.GuestCredential;
             _navigationService =
                 navigationService ?? new NavigationService();
             if (!_isGuest && !string.IsNullOrWhiteSpace(SessionToken))
             {
                 _sessionClient = sessionClient
                     ?? new GrpcSessionClient(SessionToken);
+            }
+
+            if (_isGuest && !string.IsNullOrWhiteSpace(GuestCredential))
+            {
+                _guestIdentityClient = new GrpcMatchmakingClient(
+                    guestCredential: GuestCredential);
             }
 
             NavigateToMainMenu();
@@ -117,6 +126,8 @@ namespace AtariGo.Client.ViewModels
 
         public string? SessionToken { get; }
 
+        public string? GuestCredential { get; }
+
         public ObservableCollection<FriendItemViewModel> Friends { get; } =
             new();
 
@@ -142,7 +153,8 @@ namespace AtariGo.Client.ViewModels
             {
                 CurrentViewModel = new GuestLobbyViewModel(
                     _navigationService,
-                    _playerName);
+                    _playerName,
+                    SignOutGuestAsync);
                 return;
             }
 
@@ -169,8 +181,54 @@ namespace AtariGo.Client.ViewModels
         {
             CurrentViewModel = new SearchingOpponentViewModel(
                 _navigationService,
-                _isGuest,
-                _playerName);
+                new GrpcMatchmakingClient(SessionToken, GuestCredential),
+                new ClientSessionContext
+                {
+                    IsGuest = _isGuest,
+                    PlayerName = _playerName,
+                    SessionToken = SessionToken,
+                    GuestCredential = GuestCredential
+                });
+        }
+
+        public void NavigateToPublicGame(PublicMatchNavigationContext navigationContext)
+        {
+            var gameBoard = new GameBoardViewModel(
+                _navigationService,
+                isGuest: navigationContext.IsGuest,
+                playerName: navigationContext.PlayerName);
+            gameBoard.OpenPublicGame(navigationContext);
+            CurrentViewModel = gameBoard;
+        }
+
+        public async Task RevokeGuestIdentityAsync()
+        {
+            if (!_isGuest || _guestCredentialRevoked
+                || string.IsNullOrWhiteSpace(GuestCredential)
+                || _guestIdentityClient is null)
+            {
+                return;
+            }
+
+            _guestCredentialRevoked = true;
+            try
+            {
+                await _guestIdentityClient.RevokeAsync(
+                    GuestCredential,
+                    CancellationToken.None);
+            }
+            catch (RpcException exception)
+            {
+                Trace.TraceWarning(
+                    "Guest identity revocation failed with status {0}.",
+                    exception.StatusCode);
+            }
+        }
+
+        private async Task SignOutGuestAsync()
+        {
+            await RevokeGuestIdentityAsync();
+            _navigationService.SignOut();
         }
 
         public void NavigateToGameBoard(

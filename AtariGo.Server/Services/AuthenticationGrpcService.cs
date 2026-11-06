@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 
 using Grpc.Core;
@@ -51,12 +52,21 @@ namespace AtariGo.Server.Services
             LoginRequest request,
             ServerCallContext context)
         {
-            LoginOperationResult result = await _authenticationService.LoginAsync(
-                request.Identifier,
-                request.Password,
-                context.CancellationToken);
+            try
+            {
+                LoginOperationResult result = await _authenticationService.LoginAsync(
+                    request.Identifier,
+                    request.Password,
+                    context.CancellationToken);
 
-            return CreateLoginResponse(result);
+                return CreateLoginResponse(result);
+            }
+            catch (OperationCanceledException)
+                when (context.CancellationToken.IsCancellationRequested)
+            {
+                Trace.TraceInformation("Login request was cancelled by the client.");
+                return new LoginResponse();
+            }
         }
     }
 }

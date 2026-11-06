@@ -13,7 +13,8 @@ namespace AtariGo.Client.Services
         void NavigateToMainWindow(
             bool isGuest,
             string playerName,
-            string? sessionToken = null);
+            string? sessionToken = null,
+            string? guestCredential = null);
 
         void RefreshLoginView();
 
@@ -26,6 +27,8 @@ namespace AtariGo.Client.Services
             int targetCaptures = GameRules.DefaultCaptureGoal);
 
         void NavigateToSharedGame(PrivateRoomNavigationContext navigationContext);
+
+        void NavigateToPublicGame(PublicMatchNavigationContext navigationContext);
 
         void NavigateToProfileCustomization();
 
