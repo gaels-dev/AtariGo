@@ -149,6 +149,17 @@
                            Margin="0,0,0,15"/>
 
                 <Button
+                    Content="{Binding StartGameLabel}"
+                    Command="{Binding StartGameCommand}"
+                    Height="42"
+                    Background="#4A90E2"
+                    Foreground="White"
+                    FontWeight="Bold"
+                    Margin="0,0,0,10"
+                    Visibility="{Binding CanStartGame,
+                        Converter={StaticResource BooleanToVisibilityConverter}}"/>
+
+                <Button
                     Content="{x:Static properties:Resources.PrivateRoom_Btn_Disband}"
                     Command="{Binding LeaveRoomCommand}"
                     Height="42"

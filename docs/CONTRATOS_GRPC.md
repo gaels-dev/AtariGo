@@ -201,7 +201,10 @@ por sí solo permite recuperar la sala a un miembro existente.
 indicada coincide con la actual, espera un cambio. Si difiere o se omite, entrega
 el estado actual. Los rechazos se comunican mediante códigos de estado gRPC.
 En esta entrega la sala en espera reside en memoria y vence una hora después de
-crearse. El inicio persistente de partida se incorpora con `GameLifecycle`.
+crearse. Al iniciar, `WatchRoom` entrega el estado `Started` con el `GameId` persistido y
+finaliza. Mientras la sala está en espera, su `RoomId` identifica el lobby en el
+proceso del servidor. SQL asigna su propia clave al registro histórico de sala,
+que se guarda junto con la partida.
 
 ### 4.11  RoomInvitations
 
@@ -241,6 +244,13 @@ Cobertura: CU-16, CU-18, CU-19; iniciar desde sala
 |  |  |  | LeaveGame | GameId, Reason |
 |  |  |  | SurrenderGame | GameId, ExpectedStateVersion |
 |  |  |  | WatchGameLifecycle | GameId, FromVersion |
+
+La primera operación implementada es `StartGame`. El anfitrión solicita iniciar
+con la versión de la sala que está viendo. El servidor comprueba que haya dos
+participantes y reserva el inicio antes de guardar en SQL. El anfitrión recibe
+`GameId`, participantes, configuración y estado. Ambos clientes navegan al
+tablero a partir del `GameId` que publica `WatchRoom`. La asignación inicial es
+negro para el anfitrión y blanco para el oponente.
 
 ### 4.14  GameMoves
 

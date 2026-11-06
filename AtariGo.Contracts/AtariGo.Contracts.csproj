@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -12,6 +12,7 @@
     <Protobuf Include="Protos\leaderboard.proto" GrpcServices="Both" />
     <Protobuf Include="Protos\session.proto" GrpcServices="Both" />
     <Protobuf Include="Protos\rooms.proto" GrpcServices="Both" />
+    <Protobuf Include="Protos\game_lifecycle.proto" GrpcServices="Both" />
     <Protobuf Include="Protos\friends.proto" GrpcServices="Both" />
   </ItemGroup>
 

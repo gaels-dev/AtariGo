@@ -5,8 +5,9 @@ namespace AtariGo.Server.Application.Rooms;
 
 public sealed class RoomsService : IRoomsService
 {
-    private const int MinimumCaptureGoal = 1;
-    private const int MaximumCaptureGoal = 3;
+    private const int DefaultCaptureGoal = 1;
+    private const int IntermediateCaptureGoal = 3;
+    private const int ExtendedCaptureGoal = 5;
     private const int InvitationCodeByteCount = 5;
     private const int RoomLifetimeHours = 1;
 
@@ -38,7 +39,8 @@ public sealed class RoomsService : IRoomsService
         {
             RemoveExpiredRooms();
             RoomEntry? existing = _rooms.Values.FirstOrDefault(
-                entry => entry.Snapshot.Host.UserId == host.UserId);
+                entry => entry.Snapshot.Host.UserId == host.UserId
+                    && entry.Snapshot.GameId is null);
             if (existing is not null)
             {
                 return ReuseRoom(existing.Snapshot, configuration);
@@ -74,7 +76,7 @@ public sealed class RoomsService : IRoomsService
                 return new RoomOperationResult(RoomOperationStatus.NotMember);
             }
 
-            if (!isMember && room.Opponent is not null)
+            if (!isMember && (room.Opponent is not null || room.GameId is not null))
             {
                 return new RoomOperationResult(RoomOperationStatus.Full);
             }
@@ -104,6 +106,11 @@ public sealed class RoomsService : IRoomsService
                 return new RoomOperationResult(RoomOperationStatus.NotMember);
             }
 
+            if (entry.IsStarting || room.GameId is not null)
+            {
+                return new RoomOperationResult(RoomOperationStatus.StartInProgress);
+            }
+
             if (room.Host.UserId == userId)
             {
                 CloseRoom(entry);
@@ -114,6 +121,56 @@ public sealed class RoomsService : IRoomsService
             }
 
             return new RoomOperationResult(RoomOperationStatus.Success, entry.Snapshot);
+        }
+    }
+
+    public async Task<RoomOperationResult> StartGameAsync(
+        RoomStartRequest request,
+        Func<PrivateRoom, CancellationToken, Task<long>> persistGameAsync,
+        CancellationToken cancellationToken)
+    {
+        RoomEntry entry;
+        PrivateRoom snapshot;
+        lock (_roomLock)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            RemoveExpiredRooms();
+            if (!_rooms.TryGetValue(request.RoomId, out RoomEntry? currentEntry))
+            {
+                return new RoomOperationResult(RoomOperationStatus.NotFound);
+            }
+
+            entry = currentEntry;
+            snapshot = entry.Snapshot;
+            RoomOperationStatus status = ValidateStart(request, entry);
+            if (status != RoomOperationStatus.Success || snapshot.GameId is not null)
+            {
+                return new RoomOperationResult(status, snapshot);
+            }
+
+            entry.IsStarting = true;
+        }
+
+        try
+        {
+            // Once reserved, the start must resolve even if the caller disconnects.
+            long gameId = await persistGameAsync(snapshot, CancellationToken.None);
+            lock (_roomLock)
+            {
+                entry.Publish(snapshot with { GameId = gameId, Version = snapshot.Version + 1 });
+                return new RoomOperationResult(RoomOperationStatus.Success, entry.Snapshot);
+            }
+        }
+        finally
+        {
+            lock (_roomLock)
+            {
+                entry.IsStarting = false;
+                if (entry.Snapshot.GameId is null && entry.ExpiresAt <= _timeProvider.GetUtcNow())
+                {
+                    CloseRoom(entry);
+                }
+            }
         }
     }
 
@@ -136,13 +193,44 @@ public sealed class RoomsService : IRoomsService
             yield return result;
 
             PrivateRoom? snapshot = result.Room;
-            isWatching = snapshot is not null && !snapshot.IsClosed
+            isWatching = snapshot is not null && !snapshot.IsClosed && snapshot.GameId is null
                 && IsMember(snapshot, observation.UserId);
             if (snapshot is not null)
             {
                 observation = observation with { FromVersion = snapshot.Version };
             }
         }
+    }
+
+    private static RoomOperationStatus ValidateStart(RoomStartRequest request, RoomEntry entry)
+    {
+        PrivateRoom room = entry.Snapshot;
+        if (room.Host.UserId != request.UserId)
+        {
+            return RoomOperationStatus.NotMember;
+        }
+
+        if (room.GameId is not null)
+        {
+            return RoomOperationStatus.Success;
+        }
+
+        if (entry.IsStarting)
+        {
+            return RoomOperationStatus.StartInProgress;
+        }
+
+        if (room.Version != request.ExpectedVersion)
+        {
+            return RoomOperationStatus.VersionMismatch;
+        }
+
+        if (room.Opponent is null)
+        {
+            return RoomOperationStatus.CannotStart;
+        }
+
+        return RoomOperationStatus.Success;
     }
 
     private static RoomOperationResult ReuseRoom(
@@ -181,7 +269,8 @@ public sealed class RoomsService : IRoomsService
                 return new RoomOperationResult(RoomOperationStatus.NotMember);
             }
 
-            if (snapshot.Version != observation.FromVersion || snapshot.IsClosed)
+            if (snapshot.Version != observation.FromVersion || snapshot.IsClosed
+                || snapshot.GameId is not null)
             {
                 return new RoomOperationResult(RoomOperationStatus.Success, snapshot);
             }
@@ -195,8 +284,8 @@ public sealed class RoomsService : IRoomsService
 
     private static bool IsValidConfiguration(LobbyConfiguration configuration)
     {
-        return configuration.CaptureGoal >= MinimumCaptureGoal
-            && configuration.CaptureGoal <= MaximumCaptureGoal
+        return configuration.CaptureGoal is
+            (DefaultCaptureGoal or IntermediateCaptureGoal or ExtendedCaptureGoal)
             && configuration.TurnTimeSeconds > 0
             && configuration.GameTimeSeconds >= configuration.TurnTimeSeconds;
     }
@@ -253,19 +342,20 @@ public sealed class RoomsService : IRoomsService
             }
         }
 
-        return snapshot ?? CloseExpiredRoom(entry, nextSnapshot);
+        return snapshot ?? await CloseExpiredRoom(entry, nextSnapshot)
+            .WaitAsync(cancellationToken);
     }
 
-    private PrivateRoom CloseExpiredRoom(RoomEntry entry, Task<PrivateRoom> nextSnapshot)
+    private Task<PrivateRoom> CloseExpiredRoom(RoomEntry entry, Task<PrivateRoom> nextSnapshot)
     {
         lock (_roomLock)
         {
-            if (!nextSnapshot.IsCompletedSuccessfully)
+            if (!nextSnapshot.IsCompletedSuccessfully && !entry.IsStarting)
             {
                 CloseRoom(entry);
             }
 
-            return nextSnapshot.Result;
+            return nextSnapshot;
         }
     }
 
@@ -273,7 +363,7 @@ public sealed class RoomsService : IRoomsService
     {
         DateTimeOffset now = _timeProvider.GetUtcNow();
         RoomEntry[] expiredRooms = _rooms.Values
-            .Where(entry => entry.ExpiresAt <= now)
+            .Where(entry => !entry.IsStarting && entry.ExpiresAt <= now)
             .ToArray();
         foreach (RoomEntry entry in expiredRooms)
         {

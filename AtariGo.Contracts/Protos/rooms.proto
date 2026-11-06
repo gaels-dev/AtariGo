@@ -51,6 +51,7 @@ message RoomSnapshot {
   repeated RoomParticipant participants = 4;
   int32 version = 5;
   RoomState state = 6;
+  int64 game_id = 7;
 }
 
 message RoomConfiguration {
@@ -69,4 +70,5 @@ enum RoomState {
   ROOM_STATE_UNSPECIFIED = 0;
   ROOM_STATE_WAITING = 1;
   ROOM_STATE_CLOSED = 2;
+  ROOM_STATE_STARTED = 3;
 }

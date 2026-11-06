@@ -98,7 +98,7 @@ public sealed class RoomsGrpcService : Rooms.RoomsBase
         return new LobbyParticipant(identity.UserId, identity.UserName);
     }
 
-    private static PrivateRoom RequireRoom(RoomOperationResult result)
+    internal static PrivateRoom RequireRoom(RoomOperationResult result)
     {
         if (result.Status != RoomOperationStatus.Success)
         {
@@ -112,6 +112,12 @@ public sealed class RoomsGrpcService : Rooms.RoomsBase
                     StatusCode.NotFound, "Room not found.")),
                 RoomOperationStatus.NotMember => new RpcException(new Status(
                     StatusCode.PermissionDenied, "Room membership is required.")),
+                RoomOperationStatus.CannotStart => new RpcException(new Status(
+                    StatusCode.FailedPrecondition, "Two participants are required.")),
+                RoomOperationStatus.VersionMismatch => new RpcException(new Status(
+                    StatusCode.Aborted, "The room version has changed.")),
+                RoomOperationStatus.StartInProgress => new RpcException(new Status(
+                    StatusCode.FailedPrecondition, "The room is starting or has started.")),
                 RoomOperationStatus.Full => new RpcException(new Status(
                     StatusCode.ResourceExhausted, "The room is full.")),
                 _ => new RpcException(new Status(StatusCode.Internal, "Room operation failed."))
@@ -121,7 +127,7 @@ public sealed class RoomsGrpcService : Rooms.RoomsBase
         return result.Room ?? throw new InvalidOperationException("Room result is missing.");
     }
 
-    private static RoomSnapshot MapRoom(PrivateRoom room)
+    internal static RoomSnapshot MapRoom(PrivateRoom room)
     {
         var snapshot = new RoomSnapshot
         {
@@ -140,6 +146,12 @@ public sealed class RoomsGrpcService : Rooms.RoomsBase
         if (room.IsClosed)
         {
             snapshot.State = RoomState.Closed;
+        }
+
+        if (room.GameId is long gameId)
+        {
+            snapshot.GameId = gameId;
+            snapshot.State = RoomState.Started;
         }
 
         snapshot.Participants.Add(MapParticipant(room.Host, isHost: true));

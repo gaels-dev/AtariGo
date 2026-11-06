@@ -11,5 +11,7 @@ public sealed record PrivateRoom(
 
     public int Version { get; init; } = 1;
 
+    public long? GameId { get; init; }
+
     public bool IsClosed { get; init; }
 }

@@ -1,11 +1,14 @@
 using System;
 using System.Collections.ObjectModel;
+using System.Globalization;
+using System.Linq;
 using System.Windows.Input;
 
 using AtariGo.Client.Commands;
 using AtariGo.Client.Models;
 using AtariGo.Client.Services;
 using AtariGo.Client.ViewModels.Dialogs;
+using AtariGo.Contracts;
 
 namespace AtariGo.Client.ViewModels
 {
@@ -62,6 +65,8 @@ namespace AtariGo.Client.ViewModels
             ReportPlayerCommand = new RelayCommand(PromptReportPlayer);
             LeaveGameCommand = new RelayCommand(_navigationService.NavigateToMainMenu);
         }
+
+        public long? GameId { get; private set; }
 
         public ObservableCollection<BoardCellViewModel> Cells { get; }
 
@@ -158,6 +163,38 @@ namespace AtariGo.Client.ViewModels
 
         public ICommand LeaveGameCommand { get; }
 
+        public string GameIdentifier
+        {
+            get
+            {
+                string label = string.Empty;
+                if (GameId is long gameId)
+                {
+                    string format = Properties.Resources.ResourceManager.GetString(
+                        "GameBoard_Lbl_GameIdentifier", CultureInfo.CurrentUICulture) ?? "#{0}";
+                    label = string.Format(CultureInfo.CurrentCulture, format, gameId);
+                }
+
+                return label;
+            }
+        }
+
+        public void OpenSharedGame(PrivateRoomNavigationContext navigationContext)
+        {
+            RoomSnapshot room = navigationContext.Room;
+            GameId = room.GameId;
+            TargetCaptures = room.Configuration.CaptureGoal;
+            MyColor = StoneColor.White;
+            if (navigationContext.IsHost)
+            {
+                MyColor = StoneColor.Black;
+            }
+
+            RoomParticipant? opponent = room.Participants.FirstOrDefault(
+                participant => participant.IsHost != navigationContext.IsHost);
+            OpponentName = opponent?.UserName ?? Properties.Resources.GameBoard_Lbl_Opponent;
+        }
+
         private void InitializeBoard()
         {
             Cells.Clear();
@@ -172,7 +209,7 @@ namespace AtariGo.Client.ViewModels
 
         private void HandleCellClicked(BoardCellViewModel cell)
         {
-            if (cell.Stone != StoneColor.None)//|| !IsMyTurn)
+            if (GameId is not null || cell.Stone != StoneColor.None)
             {
                 return;
             }

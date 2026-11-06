@@ -47,6 +47,12 @@ namespace AtariGo.Client.Services
             Dispatch(() => GetMainViewModel()?.NavigateToGameBoard(isGuest, targetCaptures));
         }
 
+        public void NavigateToSharedGame(PrivateRoomNavigationContext navigationContext)
+        {
+            ArgumentNullException.ThrowIfNull(navigationContext);
+            Dispatch(() => GetMainViewModel()?.NavigateToSharedGame(navigationContext));
+        }
+
         public void NavigateToProfileCustomization()
         {
             Dispatch(ShowProfileCustomization);
@@ -274,7 +280,7 @@ namespace AtariGo.Client.Services
             var roomsClient = new GrpcRoomsClient(mainViewModel.SessionToken);
             var lobby = new PrivateRoomLobbyViewModel(this, roomsClient, navigationContext);
             mainViewModel.CurrentViewModel = lobby;
-            _ = lobby.WatchRoomAsync();
+            _ = lobby.WatchRoomAsync(navigationContext);
         }
 
         private void ShowFriendSearch()

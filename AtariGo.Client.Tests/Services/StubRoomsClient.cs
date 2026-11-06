@@ -19,6 +19,8 @@ internal sealed class StubRoomsClient : IRoomsClient
 
     public RoomConfiguration? CreatedConfiguration { get; private set; }
 
+    public StartGameRequest? StartRequest { get; private set; }
+
     public WatchRoomRequest? Observation { get; private set; }
 
     public List<RoomSnapshot> Updates { get; } = new List<RoomSnapshot>();
@@ -41,6 +43,12 @@ internal sealed class StubRoomsClient : IRoomsClient
             Room = Room,
             AssignedParticipant = new RoomParticipant { IsHost = false }
         });
+    }
+
+    public Task StartGameAsync(StartGameRequest request, CancellationToken cancellationToken)
+    {
+        StartRequest = request;
+        return Task.CompletedTask;
     }
 
     public Task LeaveRoomAsync(int roomId, CancellationToken cancellationToken)

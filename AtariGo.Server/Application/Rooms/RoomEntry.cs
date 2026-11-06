@@ -10,6 +10,8 @@ internal sealed class RoomEntry
 
     public PrivateRoom Snapshot { get; private set; }
 
+    public bool IsStarting { get; set; }
+
     public DateTimeOffset ExpiresAt { get; }
 
     public TaskCompletionSource<PrivateRoom> Changed { get; private set; } =

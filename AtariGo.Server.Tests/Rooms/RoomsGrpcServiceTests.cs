@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using AtariGo.Contracts;
+using AtariGo.Server.Application.Games;
 using AtariGo.Server.Application.Rooms;
 using AtariGo.Server.Application.Sessions;
 using AtariGo.Server.Services;
@@ -126,6 +127,51 @@ public sealed class RoomsGrpcServiceTests
         Assert.AreEqual(StatusCode.Unauthenticated, unauthenticated);
     }
 
+    [TestMethod]
+    public async Task StartGame_TwoClients_ReceiveTheSameGameId()
+    {
+        // Arrange
+        await using WebApplication app = await StartServerAsync();
+        string address = app.Urls.Single();
+        using GrpcChannel hostChannel = GrpcChannel.ForAddress(address);
+        using GrpcChannel guestChannel = GrpcChannel.ForAddress(address);
+        var host = new Contracts.Rooms.RoomsClient(hostChannel);
+        var guest = new Contracts.Rooms.RoomsClient(guestChannel);
+        var lifecycle = new GameLifecycle.GameLifecycleClient(hostChannel);
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(TestTimeoutSeconds));
+        CallOptions hostOptions = CreateOptions("host", timeout.Token);
+        CallOptions guestOptions = CreateOptions("guest", timeout.Token);
+        CreatePrivateRoomResponse created = await host.CreatePrivateRoomAsync(
+            CreateRoomRequest(), hostOptions);
+        JoinRoomResponse joined = await guest.JoinRoomAsync(
+            new JoinRoomRequest { InvitationCode = created.Room.InvitationCode }, guestOptions);
+        var watchRequest = new WatchRoomRequest { RoomId = joined.Room.RoomId };
+        using AsyncServerStreamingCall<RoomSnapshot> hostWatch =
+            host.WatchRoom(watchRequest, hostOptions);
+        using AsyncServerStreamingCall<RoomSnapshot> guestWatch =
+            guest.WatchRoom(watchRequest, guestOptions);
+        await hostWatch.ResponseStream.MoveNext(timeout.Token);
+        await guestWatch.ResponseStream.MoveNext(timeout.Token);
+
+        // Act
+        var request = new StartGameRequest
+        {
+            RoomId = joined.Room.RoomId,
+            ExpectedRoomVersion = joined.Room.Version
+        };
+        StartGameResponse started = await lifecycle.StartGameAsync(request, hostOptions);
+        bool hostReceived = await hostWatch.ResponseStream.MoveNext(timeout.Token);
+        bool guestReceived = await guestWatch.ResponseStream.MoveNext(timeout.Token);
+
+        // Assert
+        Assert.IsTrue(hostReceived);
+        Assert.IsTrue(guestReceived);
+        Assert.AreEqual(TestGameLifecycleService.SavedGameId, started.GameId);
+        Assert.AreEqual(started.GameId, hostWatch.ResponseStream.Current.GameId);
+        Assert.AreEqual(hostWatch.ResponseStream.Current, guestWatch.ResponseStream.Current);
+        Assert.AreEqual(RoomState.Started, guestWatch.ResponseStream.Current.State);
+    }
+
     private static async Task<WebApplication> StartServerAsync()
     {
         WebApplicationBuilder builder = WebApplication.CreateBuilder();
@@ -135,9 +181,11 @@ public sealed class RoomsGrpcServiceTests
         builder.Services.AddSingleton(TimeProvider.System);
         builder.Services.AddSingleton<IRoomsService, RoomsService>();
         builder.Services.AddSingleton<ISessionService, TestRoomSessionService>();
+        builder.Services.AddSingleton<IGameLifecycleService, TestGameLifecycleService>();
 
         WebApplication app = builder.Build();
         app.MapGrpcService<RoomsGrpcService>();
+        app.MapGrpcService<GameLifecycleGrpcService>();
         await app.StartAsync();
         return app;
     }

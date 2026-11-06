@@ -22,8 +22,25 @@ public static class DatabaseValues
         public const string Rejected = "Rejected";
     }
 
+    public static class RoomStates
+    {
+        public const string Active = "Active";
+    }
+
+    public static class GameTypes
+    {
+        public const string Private = "Private";
+    }
+
+    public static class StoneColors
+    {
+        public const string Black = "Black";
+        public const string White = "White";
+    }
+
     public static class GameStates
     {
+        public const string InProgress = "InProgress";
         public const string Completed = "Completed";
     }
 

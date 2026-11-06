@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+import "Protos/rooms.proto";
+
+option csharp_namespace = "AtariGo.Contracts";
+
+package atarigo.game_lifecycle.v1;
+
+service GameLifecycle {
+  rpc StartGame (StartGameRequest) returns (StartGameResponse);
+}
+
+message StartGameRequest {
+  int32 room_id = 1;
+  int32 expected_room_version = 2;
+}
+
+message StartGameResponse {
+  int64 game_id = 1;
+  repeated atarigo.rooms.v1.RoomParticipant players = 2;
+  atarigo.rooms.v1.RoomConfiguration board_config = 3;
+  atarigo.rooms.v1.RoomState state = 4;
+}

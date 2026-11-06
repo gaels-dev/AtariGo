@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 using AtariGo.Server.Application.Authentication;
 using AtariGo.Server.Application.Friends;
+using AtariGo.Server.Application.Games;
 using AtariGo.Server.Application.Leaderboard;
 using AtariGo.Server.Application.Rooms;
 using AtariGo.Server.Application.Sessions;
@@ -36,6 +37,7 @@ builder.Services.AddScoped<IFriendService, FriendService>();
 builder.Services.AddScoped<IRegistrationService, RegistrationService>();
 builder.Services.AddScoped<ILeaderboardService, LeaderboardService>();
 builder.Services.AddScoped<ISessionService, SessionService>();
+builder.Services.AddScoped<IGameLifecycleService, GameLifecycleService>();
 builder.Services.AddSingleton<IRoomsService, RoomsService>();
 builder.Services.AddSingleton<ISessionConnectionRegistry, SessionConnectionRegistry>();
 builder.Services.AddSingleton<IRegistrationValidator, RegistrationValidator>();
@@ -58,6 +60,7 @@ app.MapGrpcService<RegistrationGrpcService>();
 app.MapGrpcService<LeaderboardGrpcService>();
 app.MapGrpcService<SessionGrpcService>();
 app.MapGrpcService<RoomsGrpcService>();
+app.MapGrpcService<GameLifecycleGrpcService>();
 app.MapGet("/", () =>
     "Communication with gRPC endpoints must be made through a gRPC client.");
 

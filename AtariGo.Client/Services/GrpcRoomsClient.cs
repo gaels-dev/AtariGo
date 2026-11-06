@@ -9,13 +9,16 @@ namespace AtariGo.Client.Services;
 public sealed class GrpcRoomsClient : IRoomsClient
 {
     private readonly Rooms.RoomsClient _client;
+    private readonly GameLifecycle.GameLifecycleClient _gameLifecycle;
     private readonly string _sessionToken;
 
     public GrpcRoomsClient(string sessionToken)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(sessionToken);
         _sessionToken = sessionToken;
-        _client = new Rooms.RoomsClient(GrpcClientConnection.Shared.CallInvoker);
+        CallInvoker invoker = GrpcClientConnection.Shared.CallInvoker;
+        _client = new Rooms.RoomsClient(invoker);
+        _gameLifecycle = new GameLifecycle.GameLifecycleClient(invoker);
     }
 
     public async Task<RoomSnapshot> CreatePrivateRoomAsync(
@@ -37,6 +40,15 @@ public sealed class GrpcRoomsClient : IRoomsClient
         using AsyncUnaryCall<JoinRoomResponse> call = _client.JoinRoomAsync(
             request, GrpcCallPolicy.CreateOptions(cancellationToken, CreateHeaders()));
         return await call.ResponseAsync;
+    }
+
+    public async Task StartGameAsync(
+        StartGameRequest request,
+        CancellationToken cancellationToken)
+    {
+        using AsyncUnaryCall<StartGameResponse> call = _gameLifecycle.StartGameAsync(
+            request, GrpcCallPolicy.CreateOptions(cancellationToken, CreateHeaders()));
+        await call.ResponseAsync;
     }
 
     public async Task LeaveRoomAsync(int roomId, CancellationToken cancellationToken)

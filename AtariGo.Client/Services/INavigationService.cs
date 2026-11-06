@@ -25,6 +25,8 @@ namespace AtariGo.Client.Services
             bool isGuest = false,
             int targetCaptures = GameRules.DefaultCaptureGoal);
 
+        void NavigateToSharedGame(PrivateRoomNavigationContext navigationContext);
+
         void NavigateToProfileCustomization();
 
         void NavigateToCreatePrivateRoom();

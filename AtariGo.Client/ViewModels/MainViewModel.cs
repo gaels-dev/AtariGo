@@ -189,6 +189,13 @@ namespace AtariGo.Client.ViewModels
             CurrentViewModel = gameBoard;
         }
 
+        public void NavigateToSharedGame(PrivateRoomNavigationContext navigationContext)
+        {
+            var gameBoard = new GameBoardViewModel(_navigationService, playerName: _playerName);
+            gameBoard.OpenSharedGame(navigationContext);
+            CurrentViewModel = gameBoard;
+        }
+
         public void OpenOptionsDialog()
         {
             OptionsDialogViewModel dialog =

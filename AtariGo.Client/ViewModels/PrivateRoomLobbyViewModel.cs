@@ -18,8 +18,9 @@ public sealed class PrivateRoomLobbyViewModel : ViewModelBase, IDisposable
     private readonly IRoomsClient _roomsClient;
     private readonly CancellationTokenSource _lifetimeCancellation = new CancellationTokenSource();
     private readonly int _roomId;
-    private readonly int _initialVersion;
+    private int _roomVersion;
 
+    private bool _canStartGame;
     private string _opponentName = WaitingOpponentName;
     private string _errorMessage = string.Empty;
 
@@ -35,12 +36,14 @@ public sealed class PrivateRoomLobbyViewModel : ViewModelBase, IDisposable
         _roomsClient = roomsClient;
         RoomSnapshot room = navigationContext.Room;
         _roomId = room.RoomId;
-        _initialVersion = room.Version;
+        _roomVersion = room.Version;
 
         IsHost = navigationContext.IsHost;
         RoomCode = room.InvitationCode;
         TargetCaptures = room.Configuration.CaptureGoal;
-        UpdateOpponent(room);
+        ApplyRoom(room);
+        StartGameCommand = new AsyncRelayCommand(
+            StartGameAsync, ShowFailure, _lifetimeCancellation.Token);
         LeaveRoomCommand = new AsyncRelayCommand(
             LeaveRoomAsync, ShowFailure, _lifetimeCancellation.Token);
     }
@@ -65,12 +68,29 @@ public sealed class PrivateRoomLobbyViewModel : ViewModelBase, IDisposable
         private set => SetProperty(ref _errorMessage, value);
     }
 
+    public bool CanStartGame
+    {
+        get => _canStartGame;
+        private set => SetProperty(ref _canStartGame, value);
+    }
+
+    public string StartGameLabel => Properties.Resources.ResourceManager.GetString(
+        "PrivateRoom_Btn_StartGame", System.Globalization.CultureInfo.CurrentUICulture)
+        ?? "Start game";
+
+    public ICommand StartGameCommand { get; }
+
     public ICommand LeaveRoomCommand { get; }
 
-    public async Task WatchRoomAsync()
+    public async Task WatchRoomAsync(PrivateRoomNavigationContext navigationContext)
     {
+        if (OpenStartedGame(navigationContext.Room))
+        {
+            return;
+        }
+
         CancellationToken cancellationToken = _lifetimeCancellation.Token;
-        var request = new WatchRoomRequest { RoomId = _roomId, FromVersion = _initialVersion };
+        var request = new WatchRoomRequest { RoomId = _roomId, FromVersion = _roomVersion };
         try
         {
             await foreach (RoomSnapshot room in _roomsClient.WatchRoomAsync(
@@ -83,7 +103,12 @@ public sealed class PrivateRoomLobbyViewModel : ViewModelBase, IDisposable
                     break;
                 }
 
-                UpdateOpponent(room);
+                if (OpenStartedGame(room))
+                {
+                    break;
+                }
+
+                ApplyRoom(room);
             }
         }
         catch (Exception exception)
@@ -109,6 +134,33 @@ public sealed class PrivateRoomLobbyViewModel : ViewModelBase, IDisposable
         }
     }
 
+    private bool OpenStartedGame(RoomSnapshot room)
+    {
+        bool hasStarted = room.State == RoomState.Started && room.GameId > 0;
+        if (hasStarted)
+        {
+            _navigationService.NavigateToSharedGame(new PrivateRoomNavigationContext(room, IsHost));
+        }
+
+        return hasStarted;
+    }
+
+    private async Task StartGameAsync(object? parameter)
+    {
+        if (!CanStartGame)
+        {
+            return;
+        }
+
+        ErrorMessage = string.Empty;
+        var request = new StartGameRequest
+        {
+            RoomId = _roomId,
+            ExpectedRoomVersion = _roomVersion
+        };
+        await _roomsClient.StartGameAsync(request, _lifetimeCancellation.Token);
+    }
+
     private async Task LeaveRoomAsync(object? parameter)
     {
         CancellationToken cancellationToken = _lifetimeCancellation.Token;
@@ -125,11 +177,13 @@ public sealed class PrivateRoomLobbyViewModel : ViewModelBase, IDisposable
         _navigationService.NavigateToMainMenu();
     }
 
-    private void UpdateOpponent(RoomSnapshot room)
+    private void ApplyRoom(RoomSnapshot room)
     {
+        _roomVersion = room.Version;
         RoomParticipant? opponent = room.Participants.FirstOrDefault(
             participant => participant.IsHost != IsHost);
         OpponentName = opponent?.UserName ?? WaitingOpponentName;
+        CanStartGame = IsHost && opponent is not null && room.State == RoomState.Waiting;
     }
 
     private void ShowFailure(Exception exception)

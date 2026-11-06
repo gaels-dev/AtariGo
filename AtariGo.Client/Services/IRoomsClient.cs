@@ -12,6 +12,8 @@ public interface IRoomsClient
         string invitationCode,
         CancellationToken cancellationToken);
 
+    Task StartGameAsync(StartGameRequest request, CancellationToken cancellationToken);
+
     Task LeaveRoomAsync(int roomId, CancellationToken cancellationToken);
 
     IAsyncEnumerable<RoomSnapshot> WatchRoomAsync(

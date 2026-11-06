@@ -45,6 +45,12 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
+                <TextBlock Grid.Column="4"
+                           Text="{Binding GameIdentifier}"
+                           Foreground="White"
+                           VerticalAlignment="Center"
+                           HorizontalAlignment="Right"/>
+
                 <Border Grid.Column="0"
                         BorderBrush="#333333"
                         BorderThickness="2"
@@ -409,7 +415,13 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
 
-                            <Border Grid.Column="0"
+                            <TextBlock Grid.Column="4"
+                           Text="{Binding GameIdentifier}"
+                           Foreground="White"
+                           VerticalAlignment="Center"
+                           HorizontalAlignment="Right"/>
+
+                <Border Grid.Column="0"
                                     BorderBrush="#CCCCCC"
                                     BorderThickness="1"
                                     CornerRadius="20"

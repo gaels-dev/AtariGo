@@ -759,4 +759,10 @@
   <data name="JoinPrivateRoom_Err_Full" xml:space="preserve">
     <value>Der Raum ist voll.</value>
   </data>
+  <data name="PrivateRoom_Btn_StartGame" xml:space="preserve">
+    <value>Partie starten</value>
+  </data>
+  <data name="GameBoard_Lbl_GameIdentifier" xml:space="preserve">
+    <value>Partie Nr. {0}</value>
+  </data>
 </root>

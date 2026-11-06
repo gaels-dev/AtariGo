@@ -29,12 +29,35 @@ public sealed class PrivateRoomLobbyViewModelTests
             navigation, client, new PrivateRoomNavigationContext(client.Room, IsHost: true));
 
         // Act
-        await viewModel.WatchRoomAsync();
+        await viewModel.WatchRoomAsync(new PrivateRoomNavigationContext(client.Room, IsHost: true));
 
         // Assert
         Assert.AreEqual(client.Room.RoomId, client.Observation?.RoomId);
         Assert.AreEqual(client.Room.Version, client.Observation?.FromVersion);
         Assert.AreEqual("Opponent", viewModel.OpponentName);
+    }
+
+    [TestMethod]
+    public async Task WatchRoomAsync_GameStarts_OpensSharedBoard()
+    {
+        // Arrange
+        INavigationService navigation =
+            DispatchProxy.Create<INavigationService, RecordingNavigationProxy>();
+        var client = new StubRoomsClient();
+        RoomSnapshot started = client.Room.Clone();
+        started.GameId = 42;
+        started.State = RoomState.Started;
+        client.Updates.Add(started);
+        var context = new PrivateRoomNavigationContext(client.Room, IsHost: false);
+        using var viewModel = new PrivateRoomLobbyViewModel(navigation, client, context);
+
+        // Act
+        await viewModel.WatchRoomAsync(context);
+
+        // Assert
+        var recorder = (RecordingNavigationProxy)navigation;
+        CollectionAssert.AreEqual(
+            new[] { nameof(INavigationService.NavigateToSharedGame) }, recorder.Calls.ToArray());
     }
 
     [TestMethod]

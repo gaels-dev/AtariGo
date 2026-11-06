@@ -7,5 +7,8 @@ public enum RoomOperationStatus
     AlreadyHosting,
     NotFound,
     NotMember,
-    Full
+    Full,
+    CannotStart,
+    VersionMismatch,
+    StartInProgress
 }
