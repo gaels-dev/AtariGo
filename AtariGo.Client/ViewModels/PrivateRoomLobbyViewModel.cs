@@ -1,123 +1,139 @@
-using System;
+using System.Diagnostics;
 using System.Windows.Input;
+
+using Grpc.Core;
 
 using AtariGo.Client.Commands;
 using AtariGo.Client.Models;
 using AtariGo.Client.Services;
+using AtariGo.Contracts;
 
-namespace AtariGo.Client.ViewModels
+namespace AtariGo.Client.ViewModels;
+
+public sealed class PrivateRoomLobbyViewModel : ViewModelBase, IDisposable
 {
-    public class PrivateRoomLobbyViewModel : ViewModelBase
+    private const string WaitingOpponentName = "?";
+
+    private readonly INavigationService _navigationService;
+    private readonly IRoomsClient _roomsClient;
+    private readonly CancellationTokenSource _lifetimeCancellation = new CancellationTokenSource();
+    private readonly int _roomId;
+    private readonly int _initialVersion;
+
+    private string _opponentName = WaitingOpponentName;
+    private string _errorMessage = string.Empty;
+
+    public PrivateRoomLobbyViewModel(
+        INavigationService navigationService,
+        IRoomsClient roomsClient,
+        PrivateRoomNavigationContext navigationContext)
     {
-        private const string WaitingOpponentName = "?";
+        ArgumentNullException.ThrowIfNull(navigationService);
+        ArgumentNullException.ThrowIfNull(roomsClient);
+        ArgumentNullException.ThrowIfNull(navigationContext);
+        _navigationService = navigationService;
+        _roomsClient = roomsClient;
+        RoomSnapshot room = navigationContext.Room;
+        _roomId = room.RoomId;
+        _initialVersion = room.Version;
 
-        private readonly INavigationService _navigationService;
-        private readonly bool _isHost;
-        private readonly string _roomCode;
-        private readonly int _targetCaptures;
+        IsHost = navigationContext.IsHost;
+        RoomCode = room.InvitationCode;
+        TargetCaptures = room.Configuration.CaptureGoal;
+        UpdateOpponent(room);
+        LeaveRoomCommand = new AsyncRelayCommand(
+            LeaveRoomAsync, ShowFailure, _lifetimeCancellation.Token);
+    }
 
-        private string _opponentName;
-        private bool _hasOpponent;
+    public bool IsHost { get; }
 
-        public PrivateRoomLobbyViewModel(
-            INavigationService navigationService,
-            PrivateRoomNavigationContext navigationContext)
+    public bool IsGuest => !IsHost;
+
+    public string RoomCode { get; }
+
+    public int TargetCaptures { get; }
+
+    public string OpponentName
+    {
+        get => _opponentName;
+        private set => SetProperty(ref _opponentName, value);
+    }
+
+    public string ErrorMessage
+    {
+        get => _errorMessage;
+        private set => SetProperty(ref _errorMessage, value);
+    }
+
+    public ICommand LeaveRoomCommand { get; }
+
+    public async Task WatchRoomAsync()
+    {
+        CancellationToken cancellationToken = _lifetimeCancellation.Token;
+        var request = new WatchRoomRequest { RoomId = _roomId, FromVersion = _initialVersion };
+        try
         {
-            ArgumentNullException.ThrowIfNull(navigationService);
-            ArgumentNullException.ThrowIfNull(navigationContext);
-
-            _navigationService = navigationService;
-            _isHost = navigationContext.IsHost;
-            _roomCode = navigationContext.RoomCode;
-            _targetCaptures = navigationContext.TargetCaptures;
-
-            _opponentName = WaitingOpponentName;
-            _hasOpponent = false;
-
-            InviteFriendsCommand = new RelayCommand(InviteFriends);
-            LeaveRoomCommand = new RelayCommand(LeaveRoom);
-            SimulateOpponentCommand = new RelayCommand(SimulateOpponent);
-        }
-
-        public bool IsHost
-        {
-            get
+            await foreach (RoomSnapshot room in _roomsClient.WatchRoomAsync(
+                request, cancellationToken))
             {
-                return _isHost;
+                cancellationToken.ThrowIfCancellationRequested();
+                if (room.State == RoomState.Closed)
+                {
+                    _navigationService.NavigateToMainMenu();
+                    break;
+                }
+
+                UpdateOpponent(room);
             }
         }
-
-        public bool IsGuest
+        catch (Exception exception)
+            when (GrpcCallPolicy.IsRequestedCancellation(exception, cancellationToken))
         {
-            get
+            Trace.TraceInformation("Room observation was cancelled.");
+        }
+        catch (Exception exception)
+        {
+            if (!cancellationToken.IsCancellationRequested)
             {
-                return !_isHost;
+                ShowFailure(exception);
             }
         }
+    }
 
-        public string RoomCode
+    public void Dispose()
+    {
+        if (!_lifetimeCancellation.IsCancellationRequested)
         {
-            get
-            {
-                return _roomCode;
-            }
+            _lifetimeCancellation.Cancel();
+            _lifetimeCancellation.Dispose();
+        }
+    }
+
+    private async Task LeaveRoomAsync(object? parameter)
+    {
+        CancellationToken cancellationToken = _lifetimeCancellation.Token;
+        try
+        {
+            await _roomsClient.LeaveRoomAsync(_roomId, cancellationToken);
+        }
+        catch (RpcException exception) when (exception.StatusCode == StatusCode.NotFound)
+        {
+            Trace.TraceInformation("The room was already closed.");
         }
 
-        public int TargetCaptures
-        {
-            get
-            {
-                return _targetCaptures;
-            }
-        }
+        cancellationToken.ThrowIfCancellationRequested();
+        _navigationService.NavigateToMainMenu();
+    }
 
-        public string OpponentName
-        {
-            get
-            {
-                return _opponentName;
-            }
-            private set
-            {
-                SetProperty(ref _opponentName, value);
-            }
-        }
+    private void UpdateOpponent(RoomSnapshot room)
+    {
+        RoomParticipant? opponent = room.Participants.FirstOrDefault(
+            participant => participant.IsHost != IsHost);
+        OpponentName = opponent?.UserName ?? WaitingOpponentName;
+    }
 
-        public bool HasOpponent
-        {
-            get
-            {
-                return _hasOpponent;
-            }
-            private set
-            {
-                SetProperty(ref _hasOpponent, value);
-            }
-        }
-
-        public ICommand InviteFriendsCommand { get; }
-
-        public ICommand LeaveRoomCommand { get; }
-
-        public ICommand SimulateOpponentCommand { get; }
-
-        private void InviteFriends()
-        {
-            _navigationService.NavigateToFriendList(
-                RoomCode,
-                TargetCaptures);
-        }
-
-        private void LeaveRoom()
-        {
-            _navigationService.NavigateToMainMenu();
-        }
-
-        private void SimulateOpponent()
-        {
-            _navigationService.NavigateToGameBoard(
-                false,
-                TargetCaptures);
-        }
+    private void ShowFailure(Exception exception)
+    {
+        ErrorMessage = GrpcFailureMessages.GetMessage(exception);
     }
 }

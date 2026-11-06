@@ -3,7 +3,6 @@ using System.Collections.ObjectModel;
 using System.Windows.Input;
 
 using AtariGo.Client.Commands;
-using AtariGo.Client.Models;
 using AtariGo.Client.Services;
 
 namespace AtariGo.Client.ViewModels
@@ -14,21 +13,12 @@ namespace AtariGo.Client.ViewModels
         private const string ExampleFriendTwo = "GoMaster";
         private const string ExampleFriendThree = "AtariNinja";
 
-        private readonly INavigationService _navigationService;
-        private readonly string _roomCode;
-        private readonly int _targetCaptures;
         private string _statusMessage;
 
-        public FriendListViewModel(
-            INavigationService navigationService,
-            string roomCode,
-            int targetCaptures)
+        public FriendListViewModel(INavigationService navigationService)
         {
             ArgumentNullException.ThrowIfNull(navigationService);
 
-            _navigationService = navigationService;
-            _roomCode = roomCode;
-            _targetCaptures = targetCaptures;
             _statusMessage = string.Empty;
 
             Friends = new ObservableCollection<FriendItemViewModel>
@@ -40,7 +30,7 @@ namespace AtariGo.Client.ViewModels
 
             InviteFriendCommand = new RelayCommand(InviteFriend);
             RemoveFriendCommand = new RelayCommand(RemoveFriend);
-            BackCommand = new RelayCommand(GoBack);
+            BackCommand = new RelayCommand(navigationService.NavigateToMainMenu);
         }
 
         public ObservableCollection<FriendItemViewModel> Friends { get; }
@@ -93,27 +83,6 @@ namespace AtariGo.Client.ViewModels
 
             StatusMessage =
                 Properties.Resources.FriendList_Msg_Removed;
-        }
-
-        private void GoBack()
-        {
-            if (string.IsNullOrWhiteSpace(_roomCode))
-            {
-                _navigationService.NavigateToMainMenu();
-
-                return;
-            }
-
-            PrivateRoomNavigationContext navigationContext =
-                new PrivateRoomNavigationContext
-                {
-                    IsHost = true,
-                    RoomCode = _roomCode,
-                    TargetCaptures = _targetCaptures
-                };
-
-            _navigationService.NavigateToPrivateRoomLobby(
-                navigationContext);
         }
     }
 }

@@ -59,6 +59,12 @@
                           Padding="8"
                           Margin="0,0,0,25"/>
 
+                <TextBlock Text="{Binding ErrorMessage}"
+                           Foreground="#D9534F"
+                           TextWrapping="Wrap"
+                           TextAlignment="Center"
+                           Margin="0,0,0,15"/>
+
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>

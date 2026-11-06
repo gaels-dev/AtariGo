@@ -1,11 +1,5 @@
-namespace AtariGo.Client.Models
-{
-    public class PrivateRoomNavigationContext
-    {
-        public bool IsHost { get; init; }
+using AtariGo.Contracts;
 
-        public string RoomCode { get; init; } = string.Empty;
+namespace AtariGo.Client.Models;
 
-        public int TargetCaptures { get; init; }
-    }
-}
+public sealed record PrivateRoomNavigationContext(RoomSnapshot Room, bool IsHost);

@@ -753,4 +753,10 @@
   <data name="Registration_Err_Unconfirmed" xml:space="preserve">
     <value>Wir konnten nicht bestätigen, ob dein Konto erstellt wurde. Versuche dich anzumelden, bevor du die Registrierung erneut sendest. Das Schließen dieses Dialogs macht eine bereits verarbeitete Registrierung nicht rückgängig.</value>
   </data>
+  <data name="JoinPrivateRoom_Err_UnknownCode" xml:space="preserve">
+    <value>Der Raumcode ist ungültig oder abgelaufen.</value>
+  </data>
+  <data name="JoinPrivateRoom_Err_Full" xml:space="preserve">
+    <value>Der Raum ist voll.</value>
+  </data>
 </root>

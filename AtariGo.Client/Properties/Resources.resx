@@ -754,4 +754,10 @@
   <data name="Registration_Err_Unconfirmed" xml:space="preserve">
     <value>We could not confirm whether your account was created. Try signing in before submitting registration again. Closing this dialog does not undo a registration already processed by the server.</value>
   </data>
+  <data name="JoinPrivateRoom_Err_UnknownCode" xml:space="preserve">
+    <value>That room code is invalid or has expired.</value>
+  </data>
+  <data name="JoinPrivateRoom_Err_Full" xml:space="preserve">
+    <value>The room is full.</value>
+  </data>
 </root>

@@ -78,9 +78,9 @@ namespace AtariGo.Client.Services
             Dispatch(ShowFriendRequests);
         }
 
-        public void NavigateToFriendList(string roomCode, int targetCaptures)
+        public void NavigateToFriendList()
         {
-            Dispatch(() => ShowFriendList(roomCode, targetCaptures));
+            Dispatch(ShowFriendList);
         }
 
         public void OpenOptionsDialog()
@@ -242,34 +242,39 @@ namespace AtariGo.Client.Services
         private void ShowCreatePrivateRoom()
         {
             MainViewModel? mainViewModel = GetMainViewModel();
-            if (mainViewModel is null)
+            if (mainViewModel is null || string.IsNullOrWhiteSpace(mainViewModel.SessionToken))
             {
                 return;
             }
 
-            mainViewModel.CurrentViewModel = new CreatePrivateRoomViewModel(this);
+            var roomsClient = new GrpcRoomsClient(mainViewModel.SessionToken);
+            mainViewModel.CurrentViewModel = new CreatePrivateRoomViewModel(this, roomsClient);
         }
 
         private void ShowJoinPrivateRoom()
         {
             MainViewModel? mainViewModel = GetMainViewModel();
-            if (mainViewModel is null)
+            if (mainViewModel is null || string.IsNullOrWhiteSpace(mainViewModel.SessionToken))
             {
                 return;
             }
 
-            mainViewModel.CurrentViewModel = new JoinPrivateRoomViewModel(this);
+            var roomsClient = new GrpcRoomsClient(mainViewModel.SessionToken);
+            mainViewModel.CurrentViewModel = new JoinPrivateRoomViewModel(this, roomsClient);
         }
 
         private void ShowPrivateRoomLobby(PrivateRoomNavigationContext navigationContext)
         {
             MainViewModel? mainViewModel = GetMainViewModel();
-            if (mainViewModel is null)
+            if (mainViewModel is null || string.IsNullOrWhiteSpace(mainViewModel.SessionToken))
             {
                 return;
             }
 
-            mainViewModel.CurrentViewModel = new PrivateRoomLobbyViewModel(this, navigationContext);
+            var roomsClient = new GrpcRoomsClient(mainViewModel.SessionToken);
+            var lobby = new PrivateRoomLobbyViewModel(this, roomsClient, navigationContext);
+            mainViewModel.CurrentViewModel = lobby;
+            _ = lobby.WatchRoomAsync();
         }
 
         private void ShowFriendSearch()
@@ -300,7 +305,7 @@ namespace AtariGo.Client.Services
             mainViewModel.CurrentViewModel = new FriendRequestsViewModel(this, context);
         }
 
-        private void ShowFriendList(string roomCode, int targetCaptures)
+        private void ShowFriendList()
         {
             MainViewModel? mainViewModel = GetMainViewModel();
             if (mainViewModel is null)
@@ -308,8 +313,7 @@ namespace AtariGo.Client.Services
                 return;
             }
 
-            mainViewModel.CurrentViewModel = new FriendListViewModel(
-                this, roomCode, targetCaptures);
+            mainViewModel.CurrentViewModel = new FriendListViewModel(this);
         }
 
         private void ReplaceMainWindowWithLogin(bool sessionExpired)

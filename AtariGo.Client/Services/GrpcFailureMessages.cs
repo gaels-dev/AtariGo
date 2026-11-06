@@ -27,6 +27,21 @@ namespace AtariGo.Client.Services
             return GetLocalizedMessage(resourceKey);
         }
 
+        public static string GetRoomJoinMessage(Exception exception)
+        {
+            string message = GetMessage(exception);
+            if (exception is RpcException { StatusCode: StatusCode.NotFound })
+            {
+                message = GetLocalizedMessage("JoinPrivateRoom_Err_UnknownCode");
+            }
+            else if (exception is RpcException { StatusCode: StatusCode.ResourceExhausted })
+            {
+                message = GetLocalizedMessage("JoinPrivateRoom_Err_Full");
+            }
+
+            return message;
+        }
+
         public static string GetRegistrationMessage(RpcException exception)
         {
             ArgumentNullException.ThrowIfNull(exception);

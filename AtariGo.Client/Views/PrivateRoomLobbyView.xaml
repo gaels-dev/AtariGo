@@ -81,7 +81,7 @@
                                     StaticResource BooleanToVisibilityConverter}}"/>
 
                         <TextBlock
-                            Text="{x:Static properties:Resources.PrivateRoom_Lbl_Host}"
+                            Text="{Binding OpponentName}"
                             FontSize="17"
                             FontWeight="Bold"
                             HorizontalAlignment="Center"
@@ -142,26 +142,11 @@
                     </StackPanel>
                 </Border>
 
-                <Button
-                    Content="{x:Static properties:Resources.PrivateRoom_Btn_InviteFriends}"
-                    Command="{Binding InviteFriendsCommand}"
-                    Height="42"
-                    Background="#4A90E2"
-                    Foreground="White"
-                    FontWeight="Bold"
-                    Margin="0,0,0,10"
-                    Visibility="{Binding IsHost,
-                        Converter={
-                            StaticResource BooleanToVisibilityConverter}}"/>
-
-                <Button
-                    Content="{x:Static properties:Resources.PrivateRoom_Btn_SimulateOpponent}"
-                    Command="{Binding SimulateOpponentCommand}"
-                    Height="42"
-                    Background="#E5D8C5"
-                    Foreground="#2C2A29"
-                    FontWeight="Bold"
-                    Margin="0,0,0,10"/>
+                <TextBlock Text="{Binding ErrorMessage}"
+                           Foreground="#D9534F"
+                           TextWrapping="Wrap"
+                           TextAlignment="Center"
+                           Margin="0,0,0,15"/>
 
                 <Button
                     Content="{x:Static properties:Resources.PrivateRoom_Btn_Disband}"

@@ -4,25 +4,33 @@ using System.Windows.Input;
 using AtariGo.Client.Commands;
 using AtariGo.Client.Models;
 using AtariGo.Client.Services;
+using AtariGo.Contracts;
 
 namespace AtariGo.Client.ViewModels
 {
-    public class JoinPrivateRoomViewModel : ViewModelBase
+    public class JoinPrivateRoomViewModel : ViewModelBase, IDisposable
     {
         private readonly INavigationService _navigationService;
+        private readonly IRoomsClient _roomsClient;
+        private readonly CancellationTokenSource _lifetimeCancellation =
+            new CancellationTokenSource();
         private string _roomCode;
         private string _errorMessage;
 
         public JoinPrivateRoomViewModel(
-            INavigationService navigationService)
+            INavigationService navigationService,
+            IRoomsClient roomsClient)
         {
             ArgumentNullException.ThrowIfNull(navigationService);
 
+            ArgumentNullException.ThrowIfNull(roomsClient);
             _navigationService = navigationService;
+            _roomsClient = roomsClient;
             _roomCode = string.Empty;
             _errorMessage = string.Empty;
 
-            JoinCommand = new RelayCommand(JoinRoom);
+            JoinCommand = new AsyncRelayCommand(
+                JoinRoomAsync, ShowFailure, _lifetimeCancellation.Token);
             CancelCommand = new RelayCommand(
                 _navigationService.NavigateToMainMenu);
         }
@@ -55,7 +63,13 @@ namespace AtariGo.Client.ViewModels
 
         public ICommand CancelCommand { get; }
 
-        private void JoinRoom()
+        public void Dispose()
+        {
+            _lifetimeCancellation.Cancel();
+            _lifetimeCancellation.Dispose();
+        }
+
+        private async Task JoinRoomAsync(object? parameter)
         {
             if (string.IsNullOrWhiteSpace(RoomCode))
             {
@@ -67,16 +81,17 @@ namespace AtariGo.Client.ViewModels
 
             ErrorMessage = string.Empty;
 
-            PrivateRoomNavigationContext navigationContext =
-                new PrivateRoomNavigationContext
-                {
-                    IsHost = false,
-                    RoomCode = RoomCode.Trim(),
-                    TargetCaptures = GameRules.DefaultCaptureGoal
-                };
-
+            CancellationToken cancellationToken = _lifetimeCancellation.Token;
+            JoinRoomResponse joined = await _roomsClient.JoinRoomAsync(
+                RoomCode.Trim(), cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
             _navigationService.NavigateToPrivateRoomLobby(
-                navigationContext);
+                new PrivateRoomNavigationContext(joined.Room, joined.AssignedParticipant.IsHost));
+        }
+
+        private void ShowFailure(Exception exception)
+        {
+            ErrorMessage = GrpcFailureMessages.GetRoomJoinMessage(exception);
         }
     }
 }

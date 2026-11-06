@@ -753,4 +753,10 @@
   <data name="Registration_Err_Unconfirmed" xml:space="preserve">
     <value>No pudimos confirmar si tu cuenta se creó. Intenta iniciar sesión antes de volver a enviar el registro. Cerrar este diálogo no deshace un registro que el servidor ya haya procesado.</value>
   </data>
+  <data name="JoinPrivateRoom_Err_UnknownCode" xml:space="preserve">
+    <value>El código de sala es inválido o ha vencido.</value>
+  </data>
+  <data name="JoinPrivateRoom_Err_Full" xml:space="preserve">
+    <value>La sala está llena.</value>
+  </data>
 </root>
