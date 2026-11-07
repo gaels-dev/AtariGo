@@ -1,5 +1,6 @@
 using System;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
@@ -47,10 +48,15 @@ namespace AtariGo.Client.ViewModels
             _playerWins = DefaultPlayerWins;
             _isGuest = false;
             Friends = context?.Friends ?? new ObservableCollection<FriendItemViewModel>();
+            FriendRemoval = new FriendRemovalViewModel(navigationService,
+                new FriendListNavigationContext
+                {
+                    SessionToken = context?.SessionToken,
+                    Friends = Friends
+                });
             FilteredFriends = CollectionViewSource.GetDefaultView(Friends);
             FilteredFriends.Filter = IsFriendVisible;
-            Friends.CollectionChanged += (_, _) =>
-                OnPropertyChanged(nameof(FriendSearchStatus));
+            Friends.CollectionChanged += HandleFriendsChanged;
 
             InitializePlayCommands(navigationService);
             InitializeAccountCommands(navigationService, context?.SignOutAsync);
@@ -68,6 +74,8 @@ namespace AtariGo.Client.ViewModels
         public ObservableCollection<FriendItemViewModel> Friends { get; }
 
         public ICollectionView FilteredFriends { get; }
+
+        public FriendRemovalViewModel FriendRemoval { get; }
 
         public string FriendSearchText
         {
@@ -209,6 +217,12 @@ namespace AtariGo.Client.ViewModels
 
         public void Dispose()
         {
+            FriendRemoval.Dispose();
+            Friends.CollectionChanged -= HandleFriendsChanged;
+            if (FilteredFriends.Filter == IsFriendVisible)
+            {
+                FilteredFriends.Filter = null;
+            }
             if (!_lifetimeCancellation.IsCancellationRequested)
             {
                 _lifetimeCancellation.Cancel();
@@ -223,7 +237,7 @@ namespace AtariGo.Client.ViewModels
                 navigationService.NavigateToCreatePrivateRoom);
             JoinWithCodeCommand = new RelayCommand(navigationService.NavigateToJoinPrivateRoom);
             InviteFriendCommand = new RelayCommand(navigationService.NavigateToFriendList);
-            RemoveFriendCommand = new RelayCommand(navigationService.NavigateToFriendList);
+            RemoveFriendCommand = FriendRemoval.RemoveCommand;
         }
 
         private void InitializeAccountCommands(
@@ -242,6 +256,11 @@ namespace AtariGo.Client.ViewModels
                 navigationService.NavigateToFriendRequests);
             RefreshLeaderboardCommand = new AsyncRelayCommand(
                 _ => LoadLeaderboardAsync(), HandleLeaderboardFailure);
+        }
+
+        private void HandleFriendsChanged(object? sender, NotifyCollectionChangedEventArgs args)
+        {
+            OnPropertyChanged(nameof(FriendSearchStatus));
         }
 
         private bool IsFriendVisible(object item)

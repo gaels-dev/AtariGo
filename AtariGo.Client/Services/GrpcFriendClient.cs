@@ -81,6 +81,30 @@ public sealed class GrpcFriendClient : IFriendClient
                 CreateAuthorizationHeaders())).ResponseAsync;
     }
 
+    public Task<ListFriendRequestsBySenderResponse> ListFriendRequestsBySenderAsync(
+        string pageToken,
+        CancellationToken cancellationToken = default)
+    {
+        return _client.ListFriendRequestsBySenderAsync(
+            new ListFriendRequestsBySenderRequest
+            {
+                Filter = FriendRequestFilter.Pending,
+                Page = new PageRequest { PageToken = pageToken }
+            },
+            GrpcCallPolicy.CreateOptions(cancellationToken,
+                CreateAuthorizationHeaders())).ResponseAsync;
+    }
+
+    public Task<CancelFriendRequestResponse> CancelFriendRequestAsync(
+        long requestId,
+        CancellationToken cancellationToken = default)
+    {
+        return _client.CancelFriendRequestAsync(
+            new CancelFriendRequestRequest { RequestId = requestId },
+            GrpcCallPolicy.CreateOptions(cancellationToken,
+                CreateAuthorizationHeaders())).ResponseAsync;
+    }
+
     private Metadata CreateAuthorizationHeaders()
     {
         return new Metadata

@@ -810,4 +810,40 @@
   <data name="GameBoard_Lbl_GameIdentifier" xml:space="preserve">
     <value>Partie Nr. {0}</value>
   </data>
+  <data name="FriendList_Lbl_RemoveTitle" xml:space="preserve">
+    <value>Freund entfernen</value>
+  </data>
+  <data name="FriendList_Msg_ConfirmRemove" xml:space="preserve">
+    <value>{0} aus deiner Freundesliste entfernen?</value>
+  </data>
+  <data name="FriendList_Msg_Removing" xml:space="preserve">
+    <value>Freund wird entfernt…</value>
+  </data>
+  <data name="FriendList_Err_Unconfirmed" xml:space="preserve">
+    <value>Das Entfernen konnte nicht bestätigt werden. Prüfe deine Verbindung und versuche es erneut.</value>
+  </data>
+  <data name="FriendRequests_Tab_Incoming" xml:space="preserve">
+    <value>Empfangen</value>
+  </data>
+  <data name="FriendRequests_Tab_Sent" xml:space="preserve">
+    <value>Gesendet</value>
+  </data>
+  <data name="FriendRequests_Btn_Cancel" xml:space="preserve">
+    <value>Anfrage zurückziehen</value>
+  </data>
+  <data name="FriendRequests_Btn_More" xml:space="preserve">
+    <value>Mehr laden</value>
+  </data>
+  <data name="FriendRequests_Msg_SentEmpty" xml:space="preserve">
+    <value>Du hast keine ausstehenden gesendeten Anfragen.</value>
+  </data>
+  <data name="FriendRequests_Msg_Cancelled" xml:space="preserve">
+    <value>Freundschaftsanfrage zurückgezogen.</value>
+  </data>
+  <data name="FriendRequests_Msg_NoLongerPending" xml:space="preserve">
+    <value>Diese Anfrage ist nicht mehr ausstehend. Aktualisiere die Liste.</value>
+  </data>
+  <data name="FriendRequests_Err_Unconfirmed" xml:space="preserve">
+    <value>Der Vorgang konnte nicht bestätigt werden. Aktualisiere die Liste oder versuche es erneut.</value>
+  </data>
 </root>

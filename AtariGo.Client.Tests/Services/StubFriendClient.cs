@@ -14,7 +14,42 @@ public sealed class StubFriendClient : IFriendClient
     public Task<GetIncomingFriendRequestsResponse> IncomingResponse { get; set; } =
         Task.FromResult(new GetIncomingFriendRequestsResponse());
 
+    public Task<ListFriendRequestsBySenderResponse> SentResponse { get; set; } =
+        Task.FromResult(new ListFriendRequestsBySenderResponse());
+
+    public Queue<ListFriendRequestsBySenderResponse> SentPages { get; } = new();
+
+    public List<string> PageTokens { get; } = new();
+
+    public Task<CancelFriendRequestResponse>? CancelResponse { get; set; }
+
+    public FriendRequestResponseStatus ResponseStatus { get; set; }
+
+    public Task<RespondToFriendRequestResponse>? Response { get; set; }
+
+    public CancelFriendRequestStatus CancelStatus { get; set; } =
+        CancelFriendRequestStatus.Cancelled;
+
     public CancellationToken RequestToken { get; private set; }
+
+    public Task<ListFriendRequestsBySenderResponse> ListFriendRequestsBySenderAsync(
+        string pageToken,
+        CancellationToken cancellationToken = default)
+    {
+        RequestToken = cancellationToken;
+        PageTokens.Add(pageToken);
+        return SentPages.Count > 0 ? Task.FromResult(SentPages.Dequeue()) : SentResponse;
+    }
+
+    public Task<CancelFriendRequestResponse> CancelFriendRequestAsync(
+        long requestId,
+        CancellationToken cancellationToken = default)
+    {
+        RequestToken = cancellationToken;
+        return CancelResponse
+            ?? Task.FromResult(new CancelFriendRequestResponse { Status = CancelStatus });
+    }
+
 
     public Task<SearchUsersResponse> SearchUsersAsync(
         string query,
@@ -45,6 +80,7 @@ public sealed class StubFriendClient : IFriendClient
         CancellationToken cancellationToken = default)
     {
         RequestToken = cancellationToken;
-        return Task.FromResult(new RespondToFriendRequestResponse());
+        return Response
+            ?? Task.FromResult(new RespondToFriendRequestResponse { Status = ResponseStatus });
     }
 }

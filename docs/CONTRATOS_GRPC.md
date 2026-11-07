@@ -149,8 +149,17 @@ Cobertura: CU-07, CU-13
 |  |  |  | GetIncomingFriendRequests | Solicitud vacía |
 |  |  |  | RespondToFriendRequest | RequestId, Accept |
 |  |  |  | GetPublicProfileByUserId (propuesta) | UserId |
-|  |  |  | ListFriendRequestsBySender (propuesta) | Filter, PageRequest { PageSize, PageToken } |
-|  |  |  | CancelFriendRequest (propuesta) | RequestId |
+|  |  |  | ListFriendRequestsBySender | Filter, PageRequest { PageSize, PageToken } |
+|  |  |  | CancelFriendRequest | RequestId |
+
+La consulta de solicitudes enviadas está implementada para solicitudes pendientes del
+usuario autenticado. Acepta `Filter = Pending` (también el valor omitido), usa páginas de
+20 elementos por defecto y un máximo de 100, y devuelve `NextPageToken`. El cursor sigue
+el identificador de solicitud en orden ascendente. No representa un historial de respuestas.
+`CancelFriendRequest` elimina solo una solicitud pendiente cuyo remitente sea el usuario
+autenticado. Repetir la cancelación devuelve `NoLongerPending`; una solicitud ajena recibe
+el mismo resultado sin exponer su existencia. Si aceptar y cancelar compiten, solo una
+transición puede completarse.
 
 ### 4.8  Presence
 
@@ -171,8 +180,20 @@ Cobertura: CU-14, CU-15
 
 | Servicio .proto | Interfaz de aplicación | Clase gRPC | Operaciones | Parámetros definidos |
 | --- | --- | --- | --- | --- |
-| friendships.proto | IFriendshipsService | FriendshipsGrpcService | ListFriendshipsByUser | PageRequest { PageSize, PageToken} |
+| friendships.proto | IFriendshipsService | FriendshipsGrpcService | ListFriendshipsByUser (propuesta) | PageRequest { PageSize, PageToken} |
 |  |  |  | RemoveFriendship | FriendUserId |
+
+`RemoveFriendship` está implementada. La identidad se obtiene del token de sesión y se
+elimina únicamente la relación con `FriendUserId`. Devuelve `Removed` o `AlreadyAbsent`;
+ambos resultados permiten reconciliar la lista local sin duplicar cambios. Después de
+confirmar SQL se retira la relación de las conexiones activas y se envía `FriendshipRemoved`
+a ambos jugadores mediante `Session.Connect`. Este evento solo contiene el identificador
+del antiguo amigo. La lista visible reutiliza la colección compartida de la sesión;
+`ListFriendshipsByUser` sigue pendiente como consulta independiente paginada.
+
+Las mutaciones sociales y la carga inicial de amigos se coordinan dentro del proceso del
+servidor. Esta entrega asume un único proceso servidor; no implementa coordinación entre
+réplicas ni entrega persistente de eventos. Al reconectar, la lista se reconstruye desde SQL.
 
 ### 4.10  Rooms
 

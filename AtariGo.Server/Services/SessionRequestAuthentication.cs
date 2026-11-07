@@ -32,6 +32,6 @@ internal static class SessionRequestAuthentication
     {
         return new RpcException(new Status(
             StatusCode.Unauthenticated,
-            "La sesión no es válida o ha vencido."));
+            "The session is invalid or expired."));
     }
 }

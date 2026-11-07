@@ -6,7 +6,6 @@ using Microsoft.EntityFrameworkCore.Storage;
 using AtariGo.Server.Application.Sessions;
 using AtariGo.Server.Data;
 using AtariGo.Server.Data.Entities;
-using AtariGo.Server.Security;
 
 namespace AtariGo.Server.Application.Friends;
 
@@ -15,27 +14,32 @@ public sealed class FriendService : IFriendService
     private const int MinimumSearchLength = 2;
     private const int MaximumSearchLength = 15;
     private const int MaximumSearchResults = 20;
+    private const int MaximumPageSize = 100;
     private const string PendingRequestState =
         DatabaseValues.FriendRequestStates.Pending;
 
     private readonly AtariGoDbContext _dbContext;
-    private readonly ISessionTokenProvider _tokenProvider;
+    private readonly ISessionService _sessionService;
+    private readonly FriendMutationCoordinator _mutations;
     private readonly ISessionConnectionRegistry _connectionRegistry;
     private readonly TimeProvider _timeProvider;
 
     public FriendService(
         AtariGoDbContext dbContext,
-        ISessionTokenProvider tokenProvider,
+        ISessionService sessionService,
         ISessionConnectionRegistry connectionRegistry,
-        TimeProvider timeProvider)
+        TimeProvider timeProvider,
+        FriendMutationCoordinator mutations)
     {
         ArgumentNullException.ThrowIfNull(dbContext);
-        ArgumentNullException.ThrowIfNull(tokenProvider);
+        ArgumentNullException.ThrowIfNull(sessionService);
+        ArgumentNullException.ThrowIfNull(mutations);
         ArgumentNullException.ThrowIfNull(connectionRegistry);
         ArgumentNullException.ThrowIfNull(timeProvider);
 
         _dbContext = dbContext;
-        _tokenProvider = tokenProvider;
+        _sessionService = sessionService;
+        _mutations = mutations;
         _connectionRegistry = connectionRegistry;
         _timeProvider = timeProvider;
     }
@@ -46,10 +50,8 @@ public sealed class FriendService : IFriendService
         CancellationToken cancellationToken)
     {
         string normalizedQuery = NormalizeQuery(query);
-        DateTime now = _timeProvider.GetUtcNow().UtcDateTime;
         int? requesterId = await FindActiveUserIdAsync(
             sessionToken,
-            now,
             cancellationToken);
 
         if (requesterId is null)
@@ -71,7 +73,6 @@ public sealed class FriendService : IFriendService
         DateTime now = _timeProvider.GetUtcNow().UtcDateTime;
         int? requesterId = await FindActiveUserIdAsync(
             sessionToken,
-            now,
             cancellationToken);
 
         if (requesterId is null)
@@ -79,6 +80,7 @@ public sealed class FriendService : IFriendService
             return null;
         }
 
+        using FriendMutationLease lease = await _mutations.EnterAsync(cancellationToken);
         FriendRequestResult? validationResult =
             await ValidateFriendRequestAsync(
                 requesterId.Value,
@@ -107,10 +109,8 @@ public sealed class FriendService : IFriendService
             string sessionToken,
             CancellationToken cancellationToken)
     {
-        DateTime now = _timeProvider.GetUtcNow().UtcDateTime;
         int? recipientId = await FindActiveUserIdAsync(
             sessionToken,
-            now,
             cancellationToken);
 
         if (recipientId is null)
@@ -132,7 +132,6 @@ public sealed class FriendService : IFriendService
         DateTime now = _timeProvider.GetUtcNow().UtcDateTime;
         int? recipientId = await FindActiveUserIdAsync(
             command.SessionToken,
-            now,
             cancellationToken);
 
         if (recipientId is null)
@@ -140,6 +139,7 @@ public sealed class FriendService : IFriendService
             return null;
         }
 
+        using FriendMutationLease lease = await _mutations.EnterAsync(cancellationToken);
         var decision = new FriendRequestDecision
         {
             RecipientUserId = recipientId.Value,
@@ -148,6 +148,72 @@ public sealed class FriendService : IFriendService
             RecordedAt = now
         };
         return await ApplyFriendRequestResponseAsync(decision, cancellationToken);
+    }
+
+    public async Task<SentFriendRequestsPage?> ListFriendRequestsBySenderAsync(
+        string sessionToken,
+        SentFriendRequestsQuery query,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(query);
+        if (query.PageSize < 1 || query.PageSize > MaximumPageSize || query.AfterRequestId < 0)
+        {
+            throw new ArgumentException("Invalid request page.", nameof(query));
+        }
+
+        SessionIdentity? identity = await _sessionService.ValidateSessionAsync(
+            sessionToken, cancellationToken);
+        if (identity is null)
+        {
+            return null;
+        }
+
+        List<OutgoingFriendRequestEntry> requests = await _dbContext.FriendRequests
+            .AsNoTracking()
+            .Where(request => request.RequesterId == identity.UserId
+                && request.State == PendingRequestState
+                && request.FriendRequestId > query.AfterRequestId)
+            .OrderBy(request => request.FriendRequestId)
+            .Take(query.PageSize + 1)
+            .Select(request => new OutgoingFriendRequestEntry(
+                request.FriendRequestId, request.RecipientId, request.Recipient.UserName))
+            .ToListAsync(cancellationToken);
+        long? nextRequestId = null;
+        if (requests.Count > query.PageSize)
+        {
+            requests.RemoveAt(query.PageSize);
+            nextRequestId = requests[^1].RequestId;
+        }
+
+        return new SentFriendRequestsPage(requests, nextRequestId);
+    }
+
+    public async Task<CancelFriendRequestResult?> CancelFriendRequestAsync(
+        string sessionToken,
+        long requestId,
+        CancellationToken cancellationToken)
+    {
+        if (requestId <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(requestId));
+        }
+
+        SessionIdentity? identity = await _sessionService.ValidateSessionAsync(
+            sessionToken, cancellationToken);
+        if (identity is null)
+        {
+            return null;
+        }
+
+        using FriendMutationLease lease = await _mutations.EnterAsync(cancellationToken);
+        int removed = await _dbContext.FriendRequests
+            .Where(request => request.FriendRequestId == requestId
+                && request.RequesterId == identity.UserId
+                && request.State == PendingRequestState)
+            .ExecuteDeleteAsync(cancellationToken);
+        return removed > 0
+            ? CancelFriendRequestResult.Cancelled
+            : CancelFriendRequestResult.NoLongerPending;
     }
 
     private static string NormalizeQuery(string query)
@@ -167,37 +233,11 @@ public sealed class FriendService : IFriendService
 
     private async Task<int?> FindActiveUserIdAsync(
         string sessionToken,
-        DateTime now,
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(sessionToken))
-        {
-            return null;
-        }
-
-        string tokenHash = _tokenProvider.Hash(sessionToken);
-
-        var session = await _dbContext.Sessions
-            .AsNoTracking()
-            .Where(session =>
-                session.SessionTokenHash == tokenHash
-                && session.State == DatabaseValues.SessionStates.Active
-                && session.User.State == DatabaseValues.AccountStates.Active)
-            .Select(session => new
-            {
-                session.SessionId,
-                session.UserId,
-                session.ExpiresAt
-            })
-            .SingleOrDefaultAsync(cancellationToken);
-        if (session is null)
-        {
-            return null;
-        }
-
-        bool isWithinIdleLifetime = session.ExpiresAt > now
-            || _connectionRegistry.IsSessionConnected(session.SessionId);
-        return isWithinIdleLifetime ? session.UserId : null;
+        SessionIdentity? identity = await _sessionService.ValidateSessionAsync(
+            sessionToken, cancellationToken);
+        return identity?.UserId;
     }
 
     private Task<List<FriendAccountEntry>> FindMatchingUsersAsync(
@@ -259,6 +299,12 @@ public sealed class FriendService : IFriendService
             return FriendRequestResponseResult.NotFound;
         }
 
+        if (decision.Accept
+            && request.Requester.State != DatabaseValues.AccountStates.Active)
+        {
+            return FriendRequestResponseResult.NotFound;
+        }
+
         if (request.State != PendingRequestState)
         {
             return FriendRequestResponseResult.AlreadyProcessed;
@@ -272,10 +318,8 @@ public sealed class FriendService : IFriendService
         if (result == FriendRequestResponseResult.Accepted)
         {
             _connectionRegistry.AddFriendship(
-                request.RequesterId,
-                request.Requester.UserName,
-                request.RecipientId,
-                request.Recipient.UserName);
+                new SessionIdentity(request.RequesterId, request.Requester.UserName),
+                new SessionIdentity(request.RecipientId, request.Recipient.UserName));
         }
 
         return result;

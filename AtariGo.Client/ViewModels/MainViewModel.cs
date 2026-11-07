@@ -163,6 +163,7 @@ namespace AtariGo.Client.ViewModels
                 context: new RegisteredLobbyContext
                 {
                     Friends = Friends,
+                    SessionToken = SessionToken,
                     SignOutAsync = SignOutAsync
                 })
             {
@@ -362,6 +363,9 @@ namespace AtariGo.Client.ViewModels
         {
             switch (serverEvent.EventCase)
             {
+                case SessionServerEvent.EventOneofCase.FriendshipRemoved:
+                    RemoveFriendFromList(serverEvent.FriendshipRemoved.FriendUserId);
+                    break;
                 case SessionServerEvent.EventOneofCase.FriendPresenceSnapshot:
                     ApplyFriendPresenceSnapshot(
                         serverEvent.FriendPresenceSnapshot);
@@ -370,6 +374,16 @@ namespace AtariGo.Client.ViewModels
                     ApplyFriendPresenceChange(
                         serverEvent.FriendPresenceChanged.Friend);
                     break;
+            }
+        }
+
+        private void RemoveFriendFromList(int friendUserId)
+        {
+            FriendItemViewModel? friend = Friends.FirstOrDefault(
+                candidate => candidate.UserId == friendUserId);
+            if (friend is not null)
+            {
+                Friends.Remove(friend);
             }
         }
 
@@ -397,6 +411,8 @@ namespace AtariGo.Client.ViewModels
                 candidate => candidate.UserId == friendPresence.UserId);
             if (friend is null)
             {
+                Friends.Add(new FriendItemViewModel(friendPresence.UserId,
+                    friendPresence.UserName, friendPresence.IsOnline));
                 return;
             }
 

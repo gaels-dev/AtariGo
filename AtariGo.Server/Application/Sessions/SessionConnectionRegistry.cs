@@ -45,28 +45,29 @@ public sealed class SessionConnectionRegistry : ISessionConnectionRegistry
             connection.ConnectionInfo.SessionId == sessionId);
     }
 
-    public void AddFriendship(
-        int firstUserId,
-        string firstUserName,
-        int secondUserId,
-        string secondUserName)
+    public void AddFriendship(SessionIdentity firstUser, SessionIdentity secondUser)
+    {
+        ArgumentNullException.ThrowIfNull(firstUser);
+        ArgumentNullException.ThrowIfNull(secondUser);
+        lock (_registryLock)
+        {
+            bool isFirstOnline = _connections.ContainsKey(firstUser.UserId);
+            bool isSecondOnline = _connections.ContainsKey(secondUser.UserId);
+            AddFriendToConnection(
+                firstUser.UserId,
+                new FriendPresenceEntry(secondUser.UserId, secondUser.UserName, isSecondOnline));
+            AddFriendToConnection(
+                secondUser.UserId,
+                new FriendPresenceEntry(firstUser.UserId, firstUser.UserName, isFirstOnline));
+        }
+    }
+
+    public void RemoveFriendship(int firstUserId, int secondUserId)
     {
         lock (_registryLock)
         {
-            bool isFirstOnline = _connections.ContainsKey(firstUserId);
-            bool isSecondOnline = _connections.ContainsKey(secondUserId);
-            AddFriendToConnection(
-                firstUserId,
-                new FriendPresenceEntry(
-                    secondUserId,
-                    secondUserName,
-                    isSecondOnline));
-            AddFriendToConnection(
-                secondUserId,
-                new FriendPresenceEntry(
-                    firstUserId,
-                    firstUserName,
-                    isFirstOnline));
+            RemoveFriendFromConnection(firstUserId, secondUserId);
+            RemoveFriendFromConnection(secondUserId, firstUserId);
         }
     }
 
@@ -196,6 +197,28 @@ public sealed class SessionConnectionRegistry : ISessionConnectionRegistry
             Friends = friends
         };
         QueuePresenceEvent(connection, friend);
+    }
+
+    private void RemoveFriendFromConnection(int userId, int friendUserId)
+    {
+        if (!_connections.TryGetValue(userId, out SessionConnectionLease? connection))
+        {
+            return;
+        }
+
+        connection.ConnectionInfo = connection.ConnectionInfo with
+        {
+            Friends = connection.ConnectionInfo.Friends
+                .Where(friend => friend.UserId != friendUserId).ToList()
+        };
+        bool wasQueued = connection.OutboundEvents.Writer.TryWrite(new SessionServerEvent
+        {
+            FriendshipRemoved = new FriendshipRemoved { FriendUserId = friendUserId }
+        });
+        if (!wasQueued)
+        {
+            connection.Stop();
+        }
     }
 
     private static void QueuePresenceEvent(

@@ -6,6 +6,8 @@ namespace AtariGo.Client.ViewModels
 {
     public sealed class RegisteredLobbyContext
     {
+        public string? SessionToken { get; init; }
+
         public ObservableCollection<FriendItemViewModel> Friends { get; init; } =
             new ObservableCollection<FriendItemViewModel>();
 

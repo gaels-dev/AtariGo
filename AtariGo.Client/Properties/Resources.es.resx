@@ -810,4 +810,40 @@
   <data name="GameBoard_Lbl_GameIdentifier" xml:space="preserve">
     <value>Partida #{0}</value>
   </data>
+  <data name="FriendList_Lbl_RemoveTitle" xml:space="preserve">
+    <value>Eliminar amigo</value>
+  </data>
+  <data name="FriendList_Msg_ConfirmRemove" xml:space="preserve">
+    <value>¿Eliminar a {0} de tus amigos?</value>
+  </data>
+  <data name="FriendList_Msg_Removing" xml:space="preserve">
+    <value>Eliminando amigo…</value>
+  </data>
+  <data name="FriendList_Err_Unconfirmed" xml:space="preserve">
+    <value>No se pudo confirmar la eliminación. Revisa tu conexión y vuelve a intentarlo.</value>
+  </data>
+  <data name="FriendRequests_Tab_Incoming" xml:space="preserve">
+    <value>Recibidas</value>
+  </data>
+  <data name="FriendRequests_Tab_Sent" xml:space="preserve">
+    <value>Enviadas</value>
+  </data>
+  <data name="FriendRequests_Btn_Cancel" xml:space="preserve">
+    <value>Cancelar solicitud</value>
+  </data>
+  <data name="FriendRequests_Btn_More" xml:space="preserve">
+    <value>Cargar más</value>
+  </data>
+  <data name="FriendRequests_Msg_SentEmpty" xml:space="preserve">
+    <value>No tienes solicitudes enviadas pendientes.</value>
+  </data>
+  <data name="FriendRequests_Msg_Cancelled" xml:space="preserve">
+    <value>Solicitud de amistad cancelada.</value>
+  </data>
+  <data name="FriendRequests_Msg_NoLongerPending" xml:space="preserve">
+    <value>Esta solicitud ya no está pendiente. Actualiza para consultar la lista actual.</value>
+  </data>
+  <data name="FriendRequests_Err_Unconfirmed" xml:space="preserve">
+    <value>No se pudo confirmar la operación. Actualiza la lista o vuelve a intentarlo.</value>
+  </data>
 </root>

@@ -32,13 +32,15 @@ public sealed class GrpcFriendClientTests
         await client.SendFriendRequestAsync(2, cancellation.Token);
         await client.GetIncomingFriendRequestsAsync(cancellation.Token);
         await client.RespondToFriendRequestAsync(3, true, cancellation.Token);
+        await client.ListFriendRequestsBySenderAsync("cursor", cancellation.Token);
+        await client.CancelFriendRequestAsync(3, cancellation.Token);
         DateTime latest = DateTime.UtcNow.AddSeconds(GrpcCallPolicy.RequestTimeoutSeconds);
 
         // Assert
         CollectionAssert.AreEqual(new[]
         {
             "SearchUsers", "SendFriendRequest", "GetIncomingFriendRequests",
-                "RespondToFriendRequest"
+                "RespondToFriendRequest", "ListFriendRequestsBySender", "CancelFriendRequest"
         }, recorder.Calls.Select(call => call.MethodName).ToArray());
         foreach (RecordedGrpcCall call in recorder.Calls)
         {

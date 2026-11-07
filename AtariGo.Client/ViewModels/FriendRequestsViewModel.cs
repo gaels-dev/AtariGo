@@ -23,7 +23,6 @@ public sealed class FriendRequestsViewModel : ViewModelBase, IDisposable
     private bool _isDisposed;
     private readonly INavigationService _navigationService;
     private readonly IFriendClient? _friendClient;
-    private readonly ObservableCollection<FriendItemViewModel> _friends;
     private string _statusMessage = string.Empty;
     private bool _isLoading;
 
@@ -38,12 +37,12 @@ public sealed class FriendRequestsViewModel : ViewModelBase, IDisposable
 
         _lifetimeToken = _lifetimeCancellation.Token;
         _navigationService = navigationService;
-        _friends = context.Friends;
         _friendClient = friendClient
             ?? (string.IsNullOrWhiteSpace(context.SessionToken)
                 ? null
                 : new GrpcFriendClient(context.SessionToken));
 
+        Sent = new SentFriendRequestsViewModel(_friendClient);
         Requests = new ObservableCollection<IncomingFriendRequestViewModel>();
         RefreshCommand = new AsyncRelayCommand(
             _ => LoadRequestsAsync(),
@@ -85,6 +84,12 @@ public sealed class FriendRequestsViewModel : ViewModelBase, IDisposable
     public string BackLabel => GetLocalizedMessage(
         "FriendSearch_Btn_Back");
 
+    public SentFriendRequestsViewModel Sent { get; }
+
+    public string IncomingLabel => GetLocalizedMessage("FriendRequests_Tab_Incoming");
+
+    public string SentLabel => GetLocalizedMessage("FriendRequests_Tab_Sent");
+
     public Task Initialization { get; }
 
     public ICommand RefreshCommand { get; }
@@ -99,6 +104,7 @@ public sealed class FriendRequestsViewModel : ViewModelBase, IDisposable
         }
 
         _isDisposed = true;
+        Sent.Dispose();
         _lifetimeCancellation.Cancel();
         _lifetimeCancellation.Dispose();
     }
@@ -142,6 +148,7 @@ public sealed class FriendRequestsViewModel : ViewModelBase, IDisposable
             StatusMessage = Requests.Count == 0
                 ? GetLocalizedMessage("FriendRequests_Msg_Empty")
                 : string.Empty;
+            await Sent.LoadAsync();
         }
         catch (Exception exception)
         {
@@ -203,10 +210,10 @@ public sealed class FriendRequestsViewModel : ViewModelBase, IDisposable
         RespondToFriendRequestResponse response,
         long requestId)
     {
+        // Membership follows the ordered session stream; replies may arrive after a removal.
         switch (response.Status)
         {
             case FriendRequestResponseStatus.Accepted:
-                AddFriendFromRequest(requestId);
                 StatusMessage = GetLocalizedMessage(
                     "FriendRequests_Msg_Accepted");
                 RemoveRequest(requestId);
@@ -217,7 +224,6 @@ public sealed class FriendRequestsViewModel : ViewModelBase, IDisposable
                 RemoveRequest(requestId);
                 break;
             case FriendRequestResponseStatus.AlreadyFriends:
-                AddFriendFromRequest(requestId);
                 StatusMessage = GetLocalizedMessage(
                     "FriendRequests_Msg_AlreadyFriends");
                 RemoveRequest(requestId);
@@ -233,23 +239,6 @@ public sealed class FriendRequestsViewModel : ViewModelBase, IDisposable
                     "FriendRequests_Err_Service");
                 break;
         }
-    }
-
-    private void AddFriendFromRequest(long requestId)
-    {
-        IncomingFriendRequestViewModel? request = Requests
-            .FirstOrDefault(candidate => candidate.RequestId == requestId);
-
-        if (request is null || _friends.Any(friend =>
-                friend.UserId == request.RequesterUserId))
-        {
-            return;
-        }
-
-        _friends.Add(new FriendItemViewModel(
-            request.RequesterUserId,
-            request.RequesterUserName,
-            isOnline: false));
     }
 
     private void RemoveRequest(long requestId)

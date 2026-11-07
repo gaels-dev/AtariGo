@@ -9,11 +9,9 @@ public interface ISessionConnectionRegistry
 
     bool IsSessionConnected(long sessionId);
 
-    void AddFriendship(
-        int firstUserId,
-        string firstUserName,
-        int secondUserId,
-        string secondUserName);
+    void AddFriendship(SessionIdentity firstUser, SessionIdentity secondUser);
+
+    void RemoveFriendship(int firstUserId, int secondUserId);
 
     bool Remove(SessionConnectionLease connection);
 

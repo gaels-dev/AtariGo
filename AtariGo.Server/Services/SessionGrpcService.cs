@@ -1,9 +1,11 @@
 using System.IO;
 
-using Grpc.Core;
 using Microsoft.Extensions.Logging;
 
+using Grpc.Core;
+
 using AtariGo.Contracts;
+using AtariGo.Server.Application.Friends;
 using AtariGo.Server.Application.Sessions;
 
 namespace AtariGo.Server.Services;
@@ -13,65 +15,38 @@ public sealed class SessionGrpcService : Session.SessionBase
     private readonly ISessionService _sessionService;
     private readonly ISessionConnectionRegistry _connectionRegistry;
     private readonly ILogger<SessionGrpcService> _logger;
+    private readonly FriendMutationCoordinator _mutations;
 
     public SessionGrpcService(
         ISessionService sessionService,
         ISessionConnectionRegistry connectionRegistry,
-        ILogger<SessionGrpcService> logger)
+        ILogger<SessionGrpcService> logger,
+        FriendMutationCoordinator mutations)
     {
         ArgumentNullException.ThrowIfNull(sessionService);
         ArgumentNullException.ThrowIfNull(connectionRegistry);
         ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(mutations);
 
         _sessionService = sessionService;
         _connectionRegistry = connectionRegistry;
         _logger = logger;
+        _mutations = mutations;
     }
 
-    /// <summary>Maintains the authenticated player's real-time lobby connection.</summary>
-    public override async Task Connect(
-        IAsyncStreamReader<SessionClientEvent> requestStream,
-        IServerStreamWriter<SessionServerEvent> responseStream,
-        ServerCallContext context)
+    private async Task<SessionConnectionLease> OpenConnectionAsync(
+        string sessionToken,
+        CancellationToken cancellationToken)
     {
-        string sessionToken = SessionRequestAuthentication.GetSessionToken(context);
-        await RequireClientConnectionAsync(requestStream, context.CancellationToken);
-        SessionConnectionInfo? connectionInfo =
-            await _sessionService.OpenConnectionAsync(
-                sessionToken,
-                context.CancellationToken);
-        if (connectionInfo is null)
+        using FriendMutationLease lease = await _mutations.EnterAsync(cancellationToken);
+        SessionConnectionInfo? info = await _sessionService.OpenConnectionAsync(
+            sessionToken, cancellationToken);
+        if (info is null)
         {
             throw SessionRequestAuthentication.CreateUnauthenticatedException();
         }
 
-        SessionConnectionLease connection =
-            _connectionRegistry.Register(connectionInfo);
-        try
-        {
-            await SendPresenceSnapshotAsync(
-                connectionInfo,
-                responseStream);
-            await RunDuplexStreamAsync(
-                requestStream,
-                responseStream,
-                connection,
-                context.CancellationToken);
-        }
-        finally
-        {
-            await RemoveConnectionAsync(connection);
-        }
-    }
-
-    public override async Task<LogoutResponse> Logout(
-        LogoutRequest request,
-        ServerCallContext context)
-    {
-        await _sessionService.LogoutAsync(
-            SessionRequestAuthentication.GetSessionToken(context),
-            context.CancellationToken);
-        return new LogoutResponse();
+        return _connectionRegistry.Register(info);
     }
 
     private async Task RequireClientConnectionAsync(
@@ -108,8 +83,7 @@ public sealed class SessionGrpcService : Session.SessionBase
     }
 
     private async Task RunDuplexStreamAsync(
-        IAsyncStreamReader<SessionClientEvent> requestStream,
-        IServerStreamWriter<SessionServerEvent> responseStream,
+        SessionDuplexStreams streams,
         SessionConnectionLease connection,
         CancellationToken callCancellationToken)
     {
@@ -117,11 +91,11 @@ public sealed class SessionGrpcService : Session.SessionBase
             callCancellationToken,
             connection.CancellationToken);
         Task receiveTask = DrainClientEventsAsync(
-            requestStream,
+            streams.RequestStream,
             streamCancellation.Token);
         Task sendTask = SendQueuedEventsAsync(
             connection,
-            responseStream,
+            streams.ResponseStream,
             streamCancellation.Token);
 
         await Task.WhenAny(receiveTask, sendTask);
@@ -212,5 +186,41 @@ public sealed class SessionGrpcService : Session.SessionBase
             UserName = friend.UserName,
             IsOnline = friend.IsOnline
         };
+    }
+
+    /// <summary>Maintains the authenticated player's real-time lobby connection.</summary>
+    public override async Task Connect(
+        IAsyncStreamReader<SessionClientEvent> requestStream,
+        IServerStreamWriter<SessionServerEvent> responseStream,
+        ServerCallContext context)
+    {
+        string sessionToken = SessionRequestAuthentication.GetSessionToken(context);
+        await RequireClientConnectionAsync(requestStream, context.CancellationToken);
+        SessionConnectionLease connection = await OpenConnectionAsync(
+            sessionToken, context.CancellationToken);
+        try
+        {
+            await SendPresenceSnapshotAsync(
+                connection.ConnectionInfo,
+                responseStream);
+            await RunDuplexStreamAsync(
+                new SessionDuplexStreams(requestStream, responseStream),
+                connection,
+                context.CancellationToken);
+        }
+        finally
+        {
+            await RemoveConnectionAsync(connection);
+        }
+    }
+
+    public override async Task<LogoutResponse> Logout(
+        LogoutRequest request,
+        ServerCallContext context)
+    {
+        await _sessionService.LogoutAsync(
+            SessionRequestAuthentication.GetSessionToken(context),
+            context.CancellationToken);
+        return new LogoutResponse();
     }
 }

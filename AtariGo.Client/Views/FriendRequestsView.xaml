@@ -54,90 +54,135 @@
                             BorderThickness="1"/>
                 </Grid>
 
-                <TextBlock Text="{Binding StatusMessage}"
-                           Foreground="#666666"
-                           TextAlignment="Center"
-                           TextWrapping="Wrap"
-                           MinHeight="22"
-                           Margin="0,0,0,10"/>
+                <TabControl Margin="0,0,0,12">
+                    <TabItem Header="{Binding IncomingLabel}">
+                        <StackPanel>
+                            <TextBlock Text="{Binding StatusMessage}"
+                                       Foreground="#666666"
+                                       TextAlignment="Center"
+                                       TextWrapping="Wrap"
+                                       MinHeight="22"
+                                       Margin="0,0,0,10"/>
 
-                <Border Height="320"
-                        Margin="0,0,0,18"
-                        Padding="6"
-                        BorderBrush="#2C2A29"
-                        BorderThickness="1.5"
-                        CornerRadius="8"
-                        Background="#F7F7F7">
-                    <ListBox ItemsSource="{Binding Requests}"
-                             Background="Transparent"
-                             BorderThickness="0"
-                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                             ScrollViewer.VerticalScrollBarVisibility="Auto">
-                        <ListBox.ItemContainerStyle>
-                            <Style TargetType="ListBoxItem">
-                                <Setter Property="HorizontalContentAlignment"
-                                        Value="Stretch"/>
-                                <Setter Property="Padding" Value="0"/>
-                                <Setter Property="BorderThickness" Value="0"/>
-                            </Style>
-                        </ListBox.ItemContainerStyle>
-                        <ListBox.ItemTemplate>
-                            <DataTemplate>
-                                <Border BorderBrush="#D0C8BC"
-                                        BorderThickness="1"
-                                        CornerRadius="7"
-                                        Background="White"
-                                        Padding="10,8"
-                                        Margin="2,3">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="90"/>
-                                            <ColumnDefinition Width="90"/>
-                                        </Grid.ColumnDefinitions>
+                            <Border Height="320"
+                                    Margin="0,0,0,18"
+                                    Padding="6"
+                                    BorderBrush="#2C2A29"
+                                    BorderThickness="1.5"
+                                    CornerRadius="8"
+                                    Background="#F7F7F7">
+                                <ListBox ItemsSource="{Binding Requests}"
+                                         Background="Transparent"
+                                         BorderThickness="0"
+                                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                         ScrollViewer.VerticalScrollBarVisibility="Auto">
+                                    <ListBox.ItemContainerStyle>
+                                        <Style TargetType="ListBoxItem">
+                                            <Setter Property="HorizontalContentAlignment"
+                                                    Value="Stretch"/>
+                                            <Setter Property="Padding" Value="0"/>
+                                            <Setter Property="BorderThickness" Value="0"/>
+                                        </Style>
+                                    </ListBox.ItemContainerStyle>
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border BorderBrush="#D0C8BC"
+                                                    BorderThickness="1"
+                                                    CornerRadius="7"
+                                                    Background="White"
+                                                    Padding="10,8"
+                                                    Margin="2,3">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="90"/>
+                                                        <ColumnDefinition Width="90"/>
+                                                    </Grid.ColumnDefinitions>
 
-                                        <TextBlock Text="{Binding RequesterUserName}"
-                                                   VerticalAlignment="Center"
-                                                   FontWeight="SemiBold"
-                                                   TextTrimming="CharacterEllipsis"
-                                                   ToolTip="{Binding RequesterUserName}"
-                                                   Margin="0,0,8,0"/>
+                                                    <TextBlock Text="{Binding RequesterUserName}"
+                                                               VerticalAlignment="Center"
+                                                               FontWeight="SemiBold"
+                                                               TextTrimming="CharacterEllipsis"
+                                                               ToolTip="{Binding RequesterUserName}"
+                                                               Margin="0,0,8,0"/>
 
-                                        <Button Grid.Column="1"
-                                                Content="{Binding DataContext.RejectLabel,
-                                                    RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                Command="{Binding RejectCommand}"
-                                                IsEnabled="{Binding CanRespond}"
-                                                Style="{StaticResource RoundedButtonStyle}"
-                                                Height="32"
-                                                Margin="0,0,5,0"
-                                                Background="#D9534F"
-                                                Foreground="White"
-                                                FontWeight="Bold"
-                                                FontSize="11"
-                                                BorderBrush="#2C2A29"
-                                                BorderThickness="1"/>
+                                                    <Button Grid.Column="1"
+                                                            Content="{Binding DataContext.RejectLabel,
+                                                                RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                            Command="{Binding RejectCommand}"
+                                                            IsEnabled="{Binding CanRespond}"
+                                                            Style="{StaticResource RoundedButtonStyle}"
+                                                            Height="32"
+                                                            Margin="0,0,5,0"
+                                                            Background="#D9534F"
+                                                            Foreground="White"
+                                                            FontWeight="Bold"
+                                                            FontSize="11"
+                                                            BorderBrush="#2C2A29"
+                                                            BorderThickness="1"/>
 
-                                        <Button Grid.Column="2"
-                                                Content="{Binding DataContext.AcceptLabel,
-                                                    RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                Command="{Binding AcceptCommand}"
-                                                IsEnabled="{Binding CanRespond}"
-                                                Style="{StaticResource RoundedButtonStyle}"
-                                                Height="32"
-                                                Margin="5,0,0,0"
-                                                Background="#2E7D32"
-                                                Foreground="White"
-                                                FontWeight="Bold"
-                                                FontSize="11"
-                                                BorderBrush="#2C2A29"
-                                                BorderThickness="1"/>
-                                    </Grid>
-                                </Border>
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
-                </Border>
+                                                    <Button Grid.Column="2"
+                                                            Content="{Binding DataContext.AcceptLabel,
+                                                                RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                            Command="{Binding AcceptCommand}"
+                                                            IsEnabled="{Binding CanRespond}"
+                                                            Style="{StaticResource RoundedButtonStyle}"
+                                                            Height="32"
+                                                            Margin="5,0,0,0"
+                                                            Background="#2E7D32"
+                                                            Foreground="White"
+                                                            FontWeight="Bold"
+                                                            FontSize="11"
+                                                            BorderBrush="#2C2A29"
+                                                            BorderThickness="1"/>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </Border>
+
+                        </StackPanel>
+                    </TabItem>
+                    <TabItem Header="{Binding SentLabel}">
+                        <StackPanel DataContext="{Binding Sent}" Margin="0,8,0,0">
+                            <TextBlock Text="{Binding StatusMessage}" TextWrapping="Wrap"
+                                       MinHeight="32" Foreground="#666666"/>
+                            <ListBox ItemsSource="{Binding Requests}" Height="320"
+                                     IsEnabled="{Binding CanInteract}"
+                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                <ListBox.ItemContainerStyle>
+                                    <Style TargetType="ListBoxItem">
+                                        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                    </Style>
+                                </ListBox.ItemContainerStyle>
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <DockPanel Margin="6">
+                                            <Button DockPanel.Dock="Right"
+                                                    Content="{Binding DataContext.CancelLabel,
+                                                        RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                                    Command="{Binding CancelCommand}"
+                                                    Style="{StaticResource RoundedButtonStyle}"
+                                                    Background="#D9534F" Foreground="White"
+                                                    BorderBrush="#2C2A29" BorderThickness="1"
+                                                    Padding="12,6" Margin="8,0,0,0"/>
+                                            <TextBlock Text="{Binding RecipientUserName}"
+                                                       VerticalAlignment="Center"
+                                                       TextTrimming="CharacterEllipsis"/>
+                                        </DockPanel>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                            <Button Content="{Binding MoreLabel}" Command="{Binding LoadMoreCommand}"
+                                    IsEnabled="{Binding CanLoadMore}"
+                                    Style="{StaticResource RoundedButtonStyle}"
+                                    Background="#EAEAEA" Foreground="#2C2A29"
+                                    BorderBrush="#2C2A29" BorderThickness="1"
+                                    Margin="0,8,0,0" Height="32"/>
+                        </StackPanel>
+                    </TabItem>
+                </TabControl>
 
                 <Button Content="{Binding BackLabel}"
                         Command="{Binding BackCommand}"

@@ -1,88 +1,37 @@
-using System;
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.Windows.Input;
 
 using AtariGo.Client.Commands;
 using AtariGo.Client.Services;
 
-namespace AtariGo.Client.ViewModels
+namespace AtariGo.Client.ViewModels;
+
+public sealed class FriendListViewModel : ViewModelBase, IDisposable
 {
-    public class FriendListViewModel : ViewModelBase
+    public FriendListViewModel(
+        INavigationService navigation,
+        FriendListNavigationContext context,
+        IFriendshipsClient? client = null)
     {
-        private const string ExampleFriendOne = "KitsunePlayer";
-        private const string ExampleFriendTwo = "GoMaster";
-        private const string ExampleFriendThree = "AtariNinja";
+        ArgumentNullException.ThrowIfNull(navigation);
+        ArgumentNullException.ThrowIfNull(context);
+        Friends = context.Friends;
+        FriendRemoval = new FriendRemovalViewModel(navigation, context, client);
+        BackCommand = new RelayCommand(navigation.NavigateToMainMenu);
+    }
 
-        private string _statusMessage;
+    public ObservableCollection<FriendItemViewModel> Friends { get; }
 
-        public FriendListViewModel(INavigationService navigationService)
-        {
-            ArgumentNullException.ThrowIfNull(navigationService);
+    public FriendRemovalViewModel FriendRemoval { get; }
 
-            _statusMessage = string.Empty;
+    public string EmptyLabel => Properties.Resources.ResourceManager.GetString(
+        "Presence_Msg_Empty", CultureInfo.CurrentUICulture) ?? string.Empty;
 
-            Friends = new ObservableCollection<FriendItemViewModel>
-            {
-                new FriendItemViewModel(ExampleFriendOne, true),
-                new FriendItemViewModel(ExampleFriendTwo, false),
-                new FriendItemViewModel(ExampleFriendThree, true)
-            };
+    public ICommand BackCommand { get; }
 
-            InviteFriendCommand = new RelayCommand(InviteFriend);
-            RemoveFriendCommand = new RelayCommand(RemoveFriend);
-            BackCommand = new RelayCommand(navigationService.NavigateToMainMenu);
-        }
-
-        public ObservableCollection<FriendItemViewModel> Friends { get; }
-
-        public string StatusMessage
-        {
-            get
-            {
-                return _statusMessage;
-            }
-            private set
-            {
-                SetProperty(ref _statusMessage, value);
-            }
-        }
-
-        public ICommand InviteFriendCommand { get; }
-
-        public ICommand RemoveFriendCommand { get; }
-
-        public ICommand BackCommand { get; }
-
-        private void InviteFriend(object? parameter)
-        {
-            if (parameter is not FriendItemViewModel friend)
-            {
-                return;
-            }
-
-            if (!friend.IsOnline)
-            {
-                StatusMessage =
-                    Properties.Resources.FriendList_Msg_Offline;
-
-                return;
-            }
-
-            StatusMessage =
-                Properties.Resources.FriendList_Msg_InvitationSent;
-        }
-
-        private void RemoveFriend(object? parameter)
-        {
-            if (parameter is not FriendItemViewModel friend)
-            {
-                return;
-            }
-
-            Friends.Remove(friend);
-
-            StatusMessage =
-                Properties.Resources.FriendList_Msg_Removed;
-        }
+    public void Dispose()
+    {
+        FriendRemoval.Dispose();
     }
 }

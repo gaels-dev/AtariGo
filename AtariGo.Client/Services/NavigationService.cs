@@ -332,7 +332,12 @@ namespace AtariGo.Client.Services
                 return;
             }
 
-            mainViewModel.CurrentViewModel = new FriendListViewModel(this);
+            mainViewModel.CurrentViewModel = new FriendListViewModel(this,
+                new FriendListNavigationContext
+                {
+                    SessionToken = mainViewModel.SessionToken,
+                    Friends = mainViewModel.Friends
+                });
         }
 
         private void ReplaceMainWindowWithLogin(bool sessionExpired)
