@@ -78,6 +78,24 @@
                         HorizontalContentAlignment="Stretch"
                         VerticalContentAlignment="Stretch"/>
 
+        <Button Content="{Binding RoomInvitations.OpenLabel}"
+                Command="{Binding RoomInvitations.OpenCommand}"
+                IsEnabled="{Binding RoomInvitations.CanOpen}"
+                HorizontalAlignment="Right" VerticalAlignment="Top"
+                Margin="12,8" Padding="12,5"
+                Visibility="{Binding HasRoomInvitations,
+                    Converter={StaticResource BooleanToVisibilityConverter}}"/>
+
+        <Grid Background="#99000000" Panel.ZIndex="90"
+              Visibility="{Binding RoomInvitations.IsOpen, FallbackValue=Collapsed,
+                    Converter={StaticResource BooleanToVisibilityConverter}}">
+            <Border DataContext="{Binding RoomInvitations}" Background="White"
+                    Width="620" Padding="24" CornerRadius="8"
+                    HorizontalAlignment="Center" VerticalAlignment="Center">
+                <views:RoomInvitationsView/>
+            </Border>
+        </Grid>
+
         <Grid Background="#99000000"
               Visibility="{Binding IsDialogVisible,
                            Converter={StaticResource BooleanToVisibilityConverter}}"

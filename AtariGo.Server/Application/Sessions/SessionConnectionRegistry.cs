@@ -39,6 +39,29 @@ public sealed class SessionConnectionRegistry : ISessionConnectionRegistry
             .ToList();
     }
 
+    public bool IsUserConnected(int userId)
+    {
+        return _connections.ContainsKey(userId);
+    }
+
+    public void NotifyRoomInvitationsChanged(int userId)
+    {
+        lock (_registryLock)
+        {
+            if (_connections.TryGetValue(userId, out SessionConnectionLease? connection))
+            {
+                var serverEvent = new SessionServerEvent
+                {
+                    RoomInvitationsChanged = new RoomInvitationsChanged()
+                };
+                if (!connection.OutboundEvents.Writer.TryWrite(serverEvent))
+                {
+                    connection.Stop();
+                }
+            }
+        }
+    }
+
     public bool IsSessionConnected(long sessionId)
     {
         return _connections.Values.Any(connection =>

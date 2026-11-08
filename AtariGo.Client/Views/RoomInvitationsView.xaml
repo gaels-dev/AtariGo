@@ -1,0 +1,61 @@
+<UserControl x:Class="AtariGo.Client.Views.RoomInvitationsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+    </UserControl.Resources>
+    <StackPanel>
+        <TextBlock Text="{Binding Title}" FontSize="21" FontWeight="Bold" Margin="0,0,0,12"/>
+        <StackPanel Visibility="{Binding IsOutgoing,
+                    Converter={StaticResource BooleanToVisibilityConverter}}">
+            <TextBlock Text="{Binding FriendLabel}"/>
+            <ComboBox ItemsSource="{Binding Friends}" DisplayMemberPath="Username"
+                      SelectedItem="{Binding SelectedFriend}" IsEnabled="{Binding CanInteract}"
+                      Height="32" Margin="0,5,0,8">
+                <ComboBox.ItemContainerStyle>
+                    <Style TargetType="ComboBoxItem">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsOnline}" Value="False">
+                                <Setter Property="IsEnabled" Value="False"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ComboBox.ItemContainerStyle>
+            </ComboBox>
+            <TextBlock Text="{Binding SelectedRecipientLabel}" TextWrapping="Wrap" Margin="0,0,0,8"/>
+            <Button Content="{Binding SendLabel}" Command="{Binding SendCommand}"
+                    IsEnabled="{Binding CanSend}" Height="32" Margin="0,0,0,12"/>
+        </StackPanel>
+        <ListBox ItemsSource="{Binding Invitations}" SelectedItem="{Binding SelectedInvitation}"
+                 Height="150" IsEnabled="{Binding CanInteract}">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel Orientation="Horizontal" Margin="4">
+                        <TextBlock Text="{Binding PlayerName}" FontWeight="Bold" Margin="0,0,12,0"/>
+                        <TextBlock Text="{Binding RoomCode}" FontFamily="Consolas" Margin="0,0,12,0"/>
+                        <TextBlock Text="{Binding StateLabel}"/>
+                    </StackPanel>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+        <UniformGrid Columns="2" Margin="0,10,0,0"
+                     Visibility="{Binding IsIncoming,
+                        Converter={StaticResource BooleanToVisibilityConverter}}">
+            <Button Content="{Binding AcceptLabel}" Command="{Binding AcceptCommand}"
+                    IsEnabled="{Binding CanRespond}" Height="32" Margin="0,0,4,0"/>
+            <Button Content="{Binding RejectLabel}" Command="{Binding RejectCommand}"
+                    IsEnabled="{Binding CanRespond}" Height="32" Margin="4,0,0,0"/>
+        </UniformGrid>
+        <Button Content="{Binding CancelLabel}" Command="{Binding CancelCommand}"
+                IsEnabled="{Binding CanCancel}" Height="32" Margin="0,10,0,0"
+                Visibility="{Binding IsOutgoing,
+                    Converter={StaticResource BooleanToVisibilityConverter}}"/>
+        <TextBlock Text="{Binding Message}" TextWrapping="Wrap" Margin="0,10,0,10"/>
+        <UniformGrid Columns="2">
+            <Button Content="{Binding RefreshLabel}" Command="{Binding RefreshCommand}"
+                    IsEnabled="{Binding CanInteract}" Height="32" Margin="0,0,4,0"/>
+            <Button Content="{Binding CloseLabel}" Command="{Binding CloseCommand}"
+                    IsEnabled="{Binding CanInteract}" Height="32" Margin="4,0,0,0"/>
+        </UniformGrid>
+    </StackPanel>
+</UserControl>

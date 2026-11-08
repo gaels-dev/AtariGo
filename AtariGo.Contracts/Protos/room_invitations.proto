@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+import "Protos/rooms.proto";
+option csharp_namespace = "AtariGo.Contracts";
+package atarigo.roominvitations.v1;
+
+service RoomInvitations {
+  rpc SendRoomInvitation (SendRoomInvitationRequest) returns (SendRoomInvitationResponse);
+  rpc ListRoomInvitations (ListRoomInvitationsRequest) returns (ListRoomInvitationsResponse);
+  rpc RespondRoomInvitation (RespondRoomInvitationRequest) returns (RespondRoomInvitationResponse);
+  rpc CancelRoomInvitation (CancelRoomInvitationRequest) returns (CancelRoomInvitationResponse);
+}
+message SendRoomInvitationRequest {
+  int32 room_id = 1;
+  int32 recipient_user_id = 2;
+}
+message SendRoomInvitationResponse { RoomInvitation invitation = 1; }
+message ListRoomInvitationsRequest { int32 room_id = 1; }
+message ListRoomInvitationsResponse { repeated RoomInvitation invitations = 1; }
+message RespondRoomInvitationRequest {
+  int64 invitation_id = 1;
+  bool accept = 2;
+}
+message RespondRoomInvitationResponse {
+  RoomInvitation invitation = 1;
+  atarigo.rooms.v1.RoomSnapshot room = 2;
+}
+message CancelRoomInvitationRequest { int64 invitation_id = 1; }
+message CancelRoomInvitationResponse { RoomInvitation invitation = 1; }
+message RoomInvitation {
+  int64 invitation_id = 1;
+  int32 room_id = 2;
+  string room_code = 3;
+  int32 sender_user_id = 4;
+  string sender_name = 5;
+  int32 recipient_user_id = 6;
+  string recipient_name = 7;
+  int64 expires_at_unix_milliseconds = 8;
+  RoomInvitationState state = 9;
+}
+enum RoomInvitationState {
+  ROOM_INVITATION_STATE_UNSPECIFIED = 0;
+  ROOM_INVITATION_STATE_PENDING = 1;
+  ROOM_INVITATION_STATE_ACCEPTED = 2;
+  ROOM_INVITATION_STATE_REJECTED = 3;
+  ROOM_INVITATION_STATE_CANCELLED = 4;
+  ROOM_INVITATION_STATE_EXPIRED = 5;
+  ROOM_INVITATION_STATE_UNAVAILABLE = 6;
+}

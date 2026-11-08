@@ -23,6 +23,7 @@ message SessionServerEvent {
     FriendPresenceSnapshot friend_presence_snapshot = 1;
     FriendPresenceChanged friend_presence_changed = 2;
     FriendshipRemoved friendship_removed = 3;
+    RoomInvitationsChanged room_invitations_changed = 4;
   }
 }
 
@@ -48,4 +49,7 @@ message LogoutResponse {
 
 message FriendshipRemoved {
   int32 friend_user_id = 1;
+}
+
+message RoomInvitationsChanged {
 }

@@ -871,4 +871,88 @@
   <data name="PrivateRoom_Err_ConfigurationUnconfirmed" xml:space="preserve">
     <value>The update could not be confirmed. Refresh the room before continuing.</value>
   </data>
+  <data name="RoomInvitations_Title_Incoming" xml:space="preserve">
+    <value>Room invitations</value>
+  </data>
+  <data name="RoomInvitations_Title_Outgoing" xml:space="preserve">
+    <value>Invite a friend</value>
+  </data>
+  <data name="RoomInvitations_Btn_Open" xml:space="preserve">
+    <value>Invitations ({0})</value>
+  </data>
+  <data name="RoomInvitations_Btn_Send" xml:space="preserve">
+    <value>Send invitation</value>
+  </data>
+  <data name="RoomInvitations_Btn_Accept" xml:space="preserve">
+    <value>Accept</value>
+  </data>
+  <data name="RoomInvitations_Btn_Reject" xml:space="preserve">
+    <value>Reject</value>
+  </data>
+  <data name="RoomInvitations_Btn_Cancel" xml:space="preserve">
+    <value>Cancel invitation</value>
+  </data>
+  <data name="RoomInvitations_Btn_Close" xml:space="preserve">
+    <value>Back</value>
+  </data>
+  <data name="RoomInvitations_Btn_Refresh" xml:space="preserve">
+    <value>Refresh</value>
+  </data>
+  <data name="RoomInvitations_Lbl_Friend" xml:space="preserve">
+    <value>Select an online friend</value>
+  </data>
+  <data name="RoomInvitations_Lbl_Room" xml:space="preserve">
+    <value>Room</value>
+  </data>
+  <data name="RoomInvitations_Lbl_Review" xml:space="preserve">
+    <value>Recipient: {0} · Room: {1}</value>
+  </data>
+  <data name="RoomInvitations_Msg_Sent" xml:space="preserve">
+    <value>Invitation registered. You may select another friend.</value>
+  </data>
+  <data name="RoomInvitations_Msg_Updated" xml:space="preserve">
+    <value>Invitation updated.</value>
+  </data>
+  <data name="RoomInvitations_Err_Unconfirmed" xml:space="preserve">
+    <value>The operation could not be confirmed. Refresh before retrying.</value>
+  </data>
+  <data name="RoomInvitations_Err_NotFriends" xml:space="preserve">
+    <value>You are no longer friends with this player.</value>
+  </data>
+  <data name="RoomInvitations_Err_RecipientOffline" xml:space="preserve">
+    <value>The recipient is no longer connected.</value>
+  </data>
+  <data name="RoomInvitations_Err_RoomUnavailable" xml:space="preserve">
+    <value>The room is full, closed or no longer available.</value>
+  </data>
+  <data name="RoomInvitations_Err_InvitationUnavailable" xml:space="preserve">
+    <value>The invitation is no longer pending. Refresh the list.</value>
+  </data>
+  <data name="RoomInvitations_Err_AlreadyInRoom" xml:space="preserve">
+    <value>Leave your current private room before accepting.</value>
+  </data>
+  <data name="RoomInvitations_Err_PermissionDenied" xml:space="preserve">
+    <value>You cannot perform this invitation action.</value>
+  </data>
+  <data name="RoomInvitations_Err_NotFound" xml:space="preserve">
+    <value>The invitation is no longer available.</value>
+  </data>
+  <data name="RoomInvitations_State_Pending" xml:space="preserve">
+    <value>Pending</value>
+  </data>
+  <data name="RoomInvitations_State_Accepted" xml:space="preserve">
+    <value>Accepted</value>
+  </data>
+  <data name="RoomInvitations_State_Rejected" xml:space="preserve">
+    <value>Rejected</value>
+  </data>
+  <data name="RoomInvitations_State_Cancelled" xml:space="preserve">
+    <value>Cancelled</value>
+  </data>
+  <data name="RoomInvitations_State_Expired" xml:space="preserve">
+    <value>Expired</value>
+  </data>
+  <data name="RoomInvitations_State_Unavailable" xml:space="preserve">
+    <value>Unavailable</value>
+  </data>
 </root>

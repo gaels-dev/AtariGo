@@ -1,6 +1,8 @@
+using AtariGo.Server.Application.RoomInvitations;
+
 namespace AtariGo.Server.Application.Sessions;
 
-public interface ISessionConnectionRegistry
+public interface ISessionConnectionRegistry : IRoomInvitationNotifier
 {
     SessionConnectionLease Register(SessionConnectionInfo connectionInfo);
 

@@ -236,7 +236,7 @@ namespace AtariGo.Client.ViewModels
             CreatePrivateRoomCommand = new RelayCommand(
                 navigationService.NavigateToCreatePrivateRoom);
             JoinWithCodeCommand = new RelayCommand(navigationService.NavigateToJoinPrivateRoom);
-            InviteFriendCommand = new RelayCommand(navigationService.NavigateToFriendList);
+            InviteFriendCommand = new RelayCommand(navigationService.NavigateToCreatePrivateRoom);
             RemoveFriendCommand = FriendRemoval.RemoveCommand;
         }
 

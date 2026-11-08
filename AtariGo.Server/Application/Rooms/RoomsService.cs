@@ -1,6 +1,8 @@
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 
+using AtariGo.Server.Application.RoomInvitations;
+
 namespace AtariGo.Server.Application.Rooms;
 
 public sealed class RoomsService : IRoomsService
@@ -13,17 +15,28 @@ public sealed class RoomsService : IRoomsService
 
     private static readonly TimeSpan s_roomLifetime = TimeSpan.FromHours(RoomLifetimeHours);
 
+    private static readonly TimeSpan s_invitationLifetime = TimeSpan.FromMinutes(2);
+
     private readonly object _roomLock = new object();
     private readonly Dictionary<int, RoomEntry> _rooms = new Dictionary<int, RoomEntry>();
     private readonly Dictionary<string, RoomEntry> _codes =
         new Dictionary<string, RoomEntry>(StringComparer.OrdinalIgnoreCase);
     private readonly TimeProvider _timeProvider;
+    private readonly RoomInvitationRegistry _invitations;
+    private readonly IRoomInvitationNotifier _invitationNotifier;
     private int _lastRoomId;
 
-    public RoomsService(TimeProvider timeProvider)
+    public RoomsService(
+        TimeProvider timeProvider,
+        IRoomInvitationNotifier invitationNotifier,
+        ILogger<RoomsService> logger)
     {
         ArgumentNullException.ThrowIfNull(timeProvider);
+        ArgumentNullException.ThrowIfNull(invitationNotifier);
+        ArgumentNullException.ThrowIfNull(logger);
         _timeProvider = timeProvider;
+        _invitationNotifier = invitationNotifier;
+        _invitations = new RoomInvitationRegistry(invitationNotifier, logger);
     }
 
     public RoomOperationResult CreatePrivateRoom(
@@ -110,17 +123,146 @@ public sealed class RoomsService : IRoomsService
                 return new RoomOperationResult(RoomOperationStatus.NotMember);
             }
 
-            if (!isMember && (room.Opponent is not null || room.GameId is not null))
+            return JoinParticipant(entry, participant, null);
+        }
+    }
+
+    public RoomInvitationResult SendRoomInvitation(
+        SendRoomInvitationCommand command,
+        LobbyParticipant recipient,
+        int senderId)
+    {
+        lock (_roomLock)
+        {
+            RemoveExpiredRooms();
+            if (!_rooms.TryGetValue(command.RoomId, out RoomEntry? room))
             {
-                return new RoomOperationResult(RoomOperationStatus.Full);
+                return new RoomInvitationResult(RoomInvitationOperationStatus.RoomUnavailable);
             }
 
-            if (!isMember)
+            if (room.Snapshot.Host.UserId != senderId)
             {
-                entry.Publish(room with { Opponent = participant, Version = room.Version + 1 });
+                return new RoomInvitationResult(RoomInvitationOperationStatus.PermissionDenied);
             }
 
-            return new RoomOperationResult(RoomOperationStatus.Success, entry.Snapshot);
+            if (!CanReceiveOpponent(room))
+            {
+                return new RoomInvitationResult(RoomInvitationOperationStatus.RoomUnavailable);
+            }
+
+            if (!_invitationNotifier.IsUserConnected(recipient.UserId))
+            {
+                return new RoomInvitationResult(RoomInvitationOperationStatus.RecipientOffline);
+            }
+
+            DateTimeOffset expiresAt = _timeProvider.GetUtcNow().Add(s_invitationLifetime);
+            if (expiresAt > room.ExpiresAt)
+            {
+                expiresAt = room.ExpiresAt;
+            }
+
+            RoomInvitationEntry invitation = _invitations.Create(
+                room.Snapshot, recipient, expiresAt);
+            return new RoomInvitationResult(RoomInvitationOperationStatus.Success, invitation);
+        }
+    }
+
+    public IReadOnlyList<RoomInvitationEntry> ListRoomInvitations(int userId, int roomId)
+    {
+        lock (_roomLock)
+        {
+            RemoveExpiredRooms();
+            return _invitations.List(userId, roomId);
+        }
+    }
+
+    public RoomInvitationResult RespondRoomInvitation(
+        RespondRoomInvitationCommand command,
+        LobbyParticipant participant)
+    {
+        lock (_roomLock)
+        {
+            RemoveExpiredRooms();
+            RoomInvitationEntry? invitation = _invitations.Find(command.InvitationId);
+            if (invitation is null)
+            {
+                return new RoomInvitationResult(RoomInvitationOperationStatus.NotFound);
+            }
+
+            if (invitation.Recipient.UserId != participant.UserId)
+            {
+                return new RoomInvitationResult(RoomInvitationOperationStatus.PermissionDenied);
+            }
+
+            if (invitation.State == RoomInvitationStatus.Accepted && command.Accept)
+            {
+                return GetAcceptedInvitation(invitation, participant.UserId);
+            }
+
+            if (invitation.State != RoomInvitationStatus.Pending)
+            {
+                return CreateRepeatedDecisionResult(invitation, command.Accept);
+            }
+
+            if (!command.Accept)
+            {
+                RoomInvitationEntry rejected = _invitations.Transition(
+                    invitation, RoomInvitationStatus.Rejected);
+                return new RoomInvitationResult(RoomInvitationOperationStatus.Success, rejected);
+            }
+
+            return AcceptRoomInvitation(invitation, participant);
+        }
+    }
+
+    public RoomInvitationResult CancelRoomInvitation(long invitationId, int senderId)
+    {
+        lock (_roomLock)
+        {
+            RemoveExpiredRooms();
+            RoomInvitationEntry? invitation = _invitations.Find(invitationId);
+            if (invitation is null)
+            {
+                return new RoomInvitationResult(RoomInvitationOperationStatus.NotFound);
+            }
+
+            if (invitation.Sender.UserId != senderId)
+            {
+                return new RoomInvitationResult(RoomInvitationOperationStatus.PermissionDenied);
+            }
+
+            if (invitation.State == RoomInvitationStatus.Cancelled)
+            {
+                return new RoomInvitationResult(RoomInvitationOperationStatus.Success, invitation);
+            }
+
+            if (invitation.State != RoomInvitationStatus.Pending)
+            {
+                return new RoomInvitationResult(
+                    RoomInvitationOperationStatus.InvitationUnavailable);
+            }
+
+            RoomInvitationEntry cancelled = _invitations.Transition(
+                invitation, RoomInvitationStatus.Cancelled);
+            return new RoomInvitationResult(RoomInvitationOperationStatus.Success, cancelled);
+        }
+    }
+
+    public RoomInvitationEntry? FindRoomInvitation(long invitationId, int recipientId)
+    {
+        lock (_roomLock)
+        {
+            RemoveExpiredRooms();
+            RoomInvitationEntry? invitation = _invitations.Find(invitationId);
+            return invitation?.Recipient.UserId == recipientId ? invitation : null;
+        }
+    }
+
+    public void ExpireRoomInvitations()
+    {
+        lock (_roomLock)
+        {
+            RemoveExpiredRooms();
         }
     }
 
@@ -183,6 +325,7 @@ public sealed class RoomsService : IRoomsService
             }
 
             entry.IsStarting = true;
+            _invitations.Invalidate(snapshot.RoomId);
         }
 
         try
@@ -234,6 +377,90 @@ public sealed class RoomsService : IRoomsService
                 observation = observation with { FromVersion = snapshot.Version };
             }
         }
+    }
+
+    private RoomOperationResult JoinParticipant(
+        RoomEntry entry,
+        LobbyParticipant participant,
+        long? acceptedInvitationId)
+    {
+        PrivateRoom room = entry.Snapshot;
+        if (IsMember(room, participant.UserId))
+        {
+            return new RoomOperationResult(RoomOperationStatus.Success, room);
+        }
+
+        if (!CanReceiveOpponent(entry))
+        {
+            return new RoomOperationResult(RoomOperationStatus.Full);
+        }
+
+        bool hasAnotherRoom = _rooms.Values.Any(other => other.Snapshot.RoomId != room.RoomId
+            && other.Snapshot.GameId is null && IsMember(other.Snapshot, participant.UserId));
+        if (hasAnotherRoom)
+        {
+            return new RoomOperationResult(RoomOperationStatus.AlreadyHosting);
+        }
+
+        entry.Publish(room with { Opponent = participant, Version = room.Version + 1 });
+        _invitations.Invalidate(room.RoomId, acceptedInvitationId);
+        return new RoomOperationResult(RoomOperationStatus.Success, entry.Snapshot);
+    }
+
+    private static bool CanReceiveOpponent(RoomEntry entry)
+    {
+        PrivateRoom room = entry.Snapshot;
+        return !entry.IsStarting && !room.IsClosed && room.GameId is null
+            && room.Opponent is null;
+    }
+
+    private RoomInvitationResult AcceptRoomInvitation(
+        RoomInvitationEntry invitation,
+        LobbyParticipant participant)
+    {
+        if (!_rooms.TryGetValue(invitation.RoomId, out RoomEntry? entry))
+        {
+            return new RoomInvitationResult(RoomInvitationOperationStatus.RoomUnavailable);
+        }
+
+        RoomOperationResult joined = JoinParticipant(entry, participant, invitation.InvitationId);
+        if (joined.Status == RoomOperationStatus.AlreadyHosting)
+        {
+            return new RoomInvitationResult(RoomInvitationOperationStatus.AlreadyInRoom);
+        }
+
+        if (joined.Status != RoomOperationStatus.Success)
+        {
+            _invitations.Transition(invitation, RoomInvitationStatus.Unavailable);
+            return new RoomInvitationResult(RoomInvitationOperationStatus.RoomUnavailable);
+        }
+
+        RoomInvitationEntry accepted = _invitations.Transition(
+            invitation, RoomInvitationStatus.Accepted);
+        return new RoomInvitationResult(
+            RoomInvitationOperationStatus.Success, accepted, joined.Room);
+    }
+
+    private RoomInvitationResult GetAcceptedInvitation(RoomInvitationEntry invitation, int userId)
+    {
+        if (_rooms.TryGetValue(invitation.RoomId, out RoomEntry? room)
+            && IsMember(room.Snapshot, userId))
+        {
+            return new RoomInvitationResult(
+                RoomInvitationOperationStatus.Success, invitation, room.Snapshot);
+        }
+
+        return new RoomInvitationResult(RoomInvitationOperationStatus.RoomUnavailable);
+    }
+
+    private static RoomInvitationResult CreateRepeatedDecisionResult(
+        RoomInvitationEntry invitation,
+        bool accept)
+    {
+        bool repeatedRejection = !accept && invitation.State == RoomInvitationStatus.Rejected;
+        return new RoomInvitationResult(repeatedRejection
+            ? RoomInvitationOperationStatus.Success
+            : RoomInvitationOperationStatus.InvitationUnavailable, invitation);
     }
 
     private static RoomOperationStatus ValidateConfigurationUpdate(
@@ -422,6 +649,7 @@ public sealed class RoomsService : IRoomsService
     private void RemoveExpiredRooms()
     {
         DateTimeOffset now = _timeProvider.GetUtcNow();
+        _invitations.Expire(now);
         RoomEntry[] expiredRooms = _rooms.Values
             .Where(entry => !entry.IsStarting && entry.ExpiresAt <= now)
             .ToArray();
@@ -434,6 +662,7 @@ public sealed class RoomsService : IRoomsService
     private void CloseRoom(RoomEntry entry)
     {
         PrivateRoom room = entry.Snapshot;
+        _invitations.Invalidate(room.RoomId);
         _rooms.Remove(room.RoomId);
         _codes.Remove(room.InvitationCode);
         entry.Publish(room with { IsClosed = true, Version = room.Version + 1 });

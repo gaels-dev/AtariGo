@@ -63,6 +63,8 @@ public sealed class PrivateRoomLobbyViewModel : ViewModelBase, IDisposable
             RefreshConfigurationAsync, ShowFailure, _lifetimeCancellation.Token);
     }
 
+    public RoomInvitationsViewModel? RoomInvitations { get; private set; }
+
     public bool IsHost { get; }
 
     public bool IsGuest => !IsHost;
@@ -159,6 +161,14 @@ public sealed class PrivateRoomLobbyViewModel : ViewModelBase, IDisposable
 
     public ICommand RefreshConfigurationCommand { get; }
 
+    public void AttachInvitations(RoomInvitationsViewModel invitations)
+    {
+        RoomInvitations?.Dispose();
+        RoomInvitations = invitations;
+        UpdateInvitationAvailability();
+        OnPropertyChanged(nameof(RoomInvitations));
+    }
+
     public Task WatchRoomAsync(PrivateRoomNavigationContext navigationContext)
     {
         if (_isDisposed)
@@ -182,6 +192,7 @@ public sealed class PrivateRoomLobbyViewModel : ViewModelBase, IDisposable
         }
 
         _isDisposed = true;
+        RoomInvitations?.Dispose();
         _lifetimeCancellation.Cancel();
         _lifetimeCancellation.Dispose();
     }
@@ -316,6 +327,7 @@ public sealed class PrivateRoomLobbyViewModel : ViewModelBase, IDisposable
         bool invalidatedDraft = changed && HasPendingChanges && !_isBusy;
         _room = room.Clone();
         _roomVersion = room.Version;
+        UpdateInvitationAvailability();
         TargetCaptures = room.Configuration.CaptureGoal;
         GameTimeSeconds = room.Configuration.GameTimeSeconds;
         TurnTimeSeconds = room.Configuration.TurnTimeSeconds;
@@ -333,6 +345,15 @@ public sealed class PrivateRoomLobbyViewModel : ViewModelBase, IDisposable
         }
 
         NotifyConfigurationState();
+    }
+
+    private void UpdateInvitationAvailability()
+    {
+        if (RoomInvitations is not null)
+        {
+            RoomInvitations.IsRoomAvailable = IsHost && _room.State == RoomState.Waiting
+                && !_room.Participants.Any(participant => !participant.IsHost);
+        }
     }
 
     private void NotifyConfigurationState()

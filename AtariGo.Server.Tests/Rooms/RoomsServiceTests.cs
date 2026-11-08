@@ -1,6 +1,9 @@
+using Microsoft.Extensions.Logging.Abstractions;
+
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using AtariGo.Server.Application.Rooms;
+using AtariGo.Server.Application.Sessions;
 
 namespace AtariGo.Server.Tests.Rooms;
 
@@ -14,7 +17,10 @@ public sealed class RoomsServiceTests
     public async Task StartGameAsync_ConcurrentRequests_PublishesOnlyConfirmedGame()
     {
         // Arrange
-        var service = new RoomsService(TimeProvider.System);
+        var service = new RoomsService(
+            TimeProvider.System,
+            new SessionConnectionRegistry(),
+            NullLogger<RoomsService>.Instance);
         PrivateRoom room = CreateRoomWithOpponent(service);
         var request = new RoomStartRequest(room.RoomId, room.Version, room.Host.UserId);
         var persist = new TaskCompletionSource<long>(
@@ -50,7 +56,10 @@ public sealed class RoomsServiceTests
     public async Task StartGameAsync_StaleVersionOrOpponent_RejectsStart()
     {
         // Arrange
-        var service = new RoomsService(TimeProvider.System);
+        var service = new RoomsService(
+            TimeProvider.System,
+            new SessionConnectionRegistry(),
+            NullLogger<RoomsService>.Instance);
         PrivateRoom room = CreateRoomWithOpponent(service);
         var stale = new RoomStartRequest(room.RoomId, room.Version - 1, room.Host.UserId);
         var opponent = new RoomStartRequest(room.RoomId, room.Version, room.Opponent!.UserId);
@@ -70,7 +79,10 @@ public sealed class RoomsServiceTests
     public async Task StartGameAsync_PersistenceFails_ReleasesReservationForRetry()
     {
         // Arrange
-        var service = new RoomsService(TimeProvider.System);
+        var service = new RoomsService(
+            TimeProvider.System,
+            new SessionConnectionRegistry(),
+            NullLogger<RoomsService>.Instance);
         PrivateRoom room = CreateRoomWithOpponent(service);
         var request = new RoomStartRequest(room.RoomId, room.Version, room.Host.UserId);
 
@@ -89,7 +101,10 @@ public sealed class RoomsServiceTests
     public async Task UpdateRoomConfiguration_Host_UpdatesBothObserversAndStartConfiguration()
     {
         // Arrange
-        var service = new RoomsService(TimeProvider.System);
+        var service = new RoomsService(
+            TimeProvider.System,
+            new SessionConnectionRegistry(),
+            NullLogger<RoomsService>.Instance);
         PrivateRoom room = CreateRoomWithOpponent(service);
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
         await using IAsyncEnumerator<RoomOperationResult> host = service.WatchRoomAsync(
@@ -131,7 +146,10 @@ public sealed class RoomsServiceTests
     public void UpdateRoomConfiguration_NonHost_RejectsAndPreservesRoom(int userId)
     {
         // Arrange
-        var service = new RoomsService(TimeProvider.System);
+        var service = new RoomsService(
+            TimeProvider.System,
+            new SessionConnectionRegistry(),
+            NullLogger<RoomsService>.Instance);
         PrivateRoom room = CreateRoomWithOpponent(service);
         var command = new UpdateRoomConfigurationCommand(
             room.RoomId, new LobbyConfiguration(3, 600, 30), room.Version);
@@ -154,7 +172,10 @@ public sealed class RoomsServiceTests
         int captureGoal, int gameSeconds, int turnSeconds)
     {
         // Arrange
-        var service = new RoomsService(TimeProvider.System);
+        var service = new RoomsService(
+            TimeProvider.System,
+            new SessionConnectionRegistry(),
+            NullLogger<RoomsService>.Instance);
         PrivateRoom room = CreateRoomWithOpponent(service);
         var command = new UpdateRoomConfigurationCommand(
             room.RoomId,
@@ -175,7 +196,10 @@ public sealed class RoomsServiceTests
     public async Task UpdateRoomConfiguration_UpdateBeforeStart_RejectsStaleStartAndUpdate()
     {
         // Arrange
-        var service = new RoomsService(TimeProvider.System);
+        var service = new RoomsService(
+            TimeProvider.System,
+            new SessionConnectionRegistry(),
+            NullLogger<RoomsService>.Instance);
         PrivateRoom room = CreateRoomWithOpponent(service);
         var command = new UpdateRoomConfigurationCommand(
             room.RoomId, new LobbyConfiguration(3, 600, 30), room.Version);
@@ -197,7 +221,10 @@ public sealed class RoomsServiceTests
     public async Task UpdateRoomConfiguration_StartReservedOrCompleted_RejectsChange()
     {
         // Arrange
-        var service = new RoomsService(TimeProvider.System);
+        var service = new RoomsService(
+            TimeProvider.System,
+            new SessionConnectionRegistry(),
+            NullLogger<RoomsService>.Instance);
         PrivateRoom room = CreateRoomWithOpponent(service);
         var persist = new TaskCompletionSource<long>(
             TaskCreationOptions.RunContinuationsAsynchronously);
@@ -224,7 +251,10 @@ public sealed class RoomsServiceTests
     public void UpdateRoomConfiguration_IdenticalOrClosedRoom_DoesNotCreateNewVersion()
     {
         // Arrange
-        var service = new RoomsService(TimeProvider.System);
+        var service = new RoomsService(
+            TimeProvider.System,
+            new SessionConnectionRegistry(),
+            NullLogger<RoomsService>.Instance);
         PrivateRoom room = CreateRoomWithOpponent(service);
         var command = new UpdateRoomConfigurationCommand(
             room.RoomId, room.Configuration, room.Version);

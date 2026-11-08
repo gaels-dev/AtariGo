@@ -292,6 +292,19 @@ namespace AtariGo.Client.Services
 
             var roomsClient = new GrpcRoomsClient(mainViewModel.SessionToken);
             var lobby = new PrivateRoomLobbyViewModel(this, roomsClient, navigationContext);
+            if (navigationContext.IsHost)
+            {
+                var invitationContext = new RoomInvitationsNavigationContext(
+                    navigationContext.Room.RoomId, navigationContext.Room.InvitationCode)
+                {
+                    Friends = mainViewModel.Friends
+                };
+                lobby.AttachInvitations(new RoomInvitationsViewModel(
+                    this,
+                    new GrpcRoomInvitationsClient(mainViewModel.SessionToken),
+                    invitationContext));
+            }
+
             mainViewModel.CurrentViewModel = lobby;
             _ = lobby.WatchRoomAsync(navigationContext);
         }

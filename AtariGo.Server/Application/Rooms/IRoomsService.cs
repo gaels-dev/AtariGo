@@ -1,3 +1,5 @@
+using AtariGo.Server.Application.RoomInvitations;
+
 namespace AtariGo.Server.Application.Rooms;
 
 public interface IRoomsService
@@ -11,6 +13,20 @@ public interface IRoomsService
         int userId);
 
     RoomOperationResult JoinRoom(LobbyParticipant participant, RoomLocator locator);
+
+    RoomInvitationResult SendRoomInvitation(
+        SendRoomInvitationCommand command, LobbyParticipant recipient, int senderId);
+
+    IReadOnlyList<RoomInvitationEntry> ListRoomInvitations(int userId, int roomId);
+
+    RoomInvitationResult RespondRoomInvitation(
+        RespondRoomInvitationCommand command, LobbyParticipant participant);
+
+    RoomInvitationResult CancelRoomInvitation(long invitationId, int senderId);
+
+    RoomInvitationEntry? FindRoomInvitation(long invitationId, int recipientId);
+
+    void ExpireRoomInvitations();
 
     RoomOperationResult LeaveRoom(int userId, int roomId);
 

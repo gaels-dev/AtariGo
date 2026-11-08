@@ -8,6 +8,8 @@ using Microsoft.Extensions.Logging;
 
 using AtariGo.Server.Application.Friends;
 using AtariGo.Server.Application.Friendships;
+using AtariGo.Server.Application.RoomInvitations;
+using AtariGo.Server.Application.Rooms;
 using AtariGo.Server.Application.Sessions;
 using AtariGo.Server.Services;
 
@@ -43,12 +45,18 @@ internal sealed class SocialGrpcTestHost : IAsyncDisposable
         builder.Services.AddScoped<IFriendService, FriendService>();
         builder.Services.AddScoped<IFriendshipsService, FriendshipsService>();
         builder.Services.AddSingleton<ISessionConnectionRegistry, SessionConnectionRegistry>();
+        builder.Services.AddSingleton<IRoomInvitationNotifier>(provider =>
+            provider.GetRequiredService<ISessionConnectionRegistry>());
+        builder.Services.AddSingleton<IRoomsService, RoomsService>();
+        builder.Services.AddScoped<IRoomInvitationsService, RoomInvitationsService>();
         builder.Services.AddSingleton<FriendMutationCoordinator>();
         builder.Services.AddSingleton(TimeProvider.System);
         WebApplication app = builder.Build();
         app.MapGrpcService<FriendDirectoryGrpcService>();
         app.MapGrpcService<FriendshipsGrpcService>();
         app.MapGrpcService<SessionGrpcService>();
+        app.MapGrpcService<RoomsGrpcService>();
+        app.MapGrpcService<RoomInvitationsGrpcService>();
         await app.StartAsync();
         return new SocialGrpcTestHost(app, database);
     }

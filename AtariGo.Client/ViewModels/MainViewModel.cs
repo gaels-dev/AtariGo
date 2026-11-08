@@ -49,6 +49,10 @@ namespace AtariGo.Client.ViewModels
             {
                 _sessionClient = sessionClient
                     ?? new GrpcSessionClient(SessionToken);
+                RoomInvitations = new RoomInvitationsViewModel(
+                    _navigationService,
+                    new GrpcRoomInvitationsClient(SessionToken),
+                    new RoomInvitationsNavigationContext(0, string.Empty));
             }
 
             if (_isGuest && !string.IsNullOrWhiteSpace(GuestCredential))
@@ -60,6 +64,10 @@ namespace AtariGo.Client.ViewModels
             NavigateToMainMenu();
             StartRealtimeConnection();
         }
+
+        public RoomInvitationsViewModel? RoomInvitations { get; }
+
+        public bool HasRoomInvitations => RoomInvitations is not null;
 
         public ViewModelBase CurrentViewModel
         {
@@ -73,6 +81,10 @@ namespace AtariGo.Client.ViewModels
                 if (SetProperty(ref _currentViewModel, value))
                 {
                     (previousViewModel as IDisposable)?.Dispose();
+                    if (RoomInvitations is not null)
+                    {
+                        RoomInvitations.IsAcceptanceAllowed = value is RegisterPlayerLobbyViewModel;
+                    }
                 }
             }
         }
@@ -143,6 +155,7 @@ namespace AtariGo.Client.ViewModels
             _isDisposed = true;
             _lifetimeCancellation.Cancel();
             StopRealtimeConnection();
+            RoomInvitations?.Dispose();
             (CurrentViewModel as IDisposable)?.Dispose();
             _lifetimeCancellation.Dispose();
         }
@@ -363,17 +376,30 @@ namespace AtariGo.Client.ViewModels
         {
             switch (serverEvent.EventCase)
             {
+                case SessionServerEvent.EventOneofCase.RoomInvitationsChanged:
+                    RefreshRoomInvitations();
+                    break;
                 case SessionServerEvent.EventOneofCase.FriendshipRemoved:
                     RemoveFriendFromList(serverEvent.FriendshipRemoved.FriendUserId);
                     break;
                 case SessionServerEvent.EventOneofCase.FriendPresenceSnapshot:
                     ApplyFriendPresenceSnapshot(
                         serverEvent.FriendPresenceSnapshot);
+                    RefreshRoomInvitations();
                     break;
                 case SessionServerEvent.EventOneofCase.FriendPresenceChanged:
                     ApplyFriendPresenceChange(
                         serverEvent.FriendPresenceChanged.Friend);
                     break;
+            }
+        }
+
+        private void RefreshRoomInvitations()
+        {
+            RoomInvitations?.RequestRefresh();
+            if (CurrentViewModel is PrivateRoomLobbyViewModel lobby)
+            {
+                lobby.RoomInvitations?.RequestRefresh();
             }
         }
 

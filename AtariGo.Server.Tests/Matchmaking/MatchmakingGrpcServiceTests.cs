@@ -11,6 +11,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using AtariGo.Contracts;
 using AtariGo.Server.Application.Games;
 using AtariGo.Server.Application.Matchmaking;
+using AtariGo.Server.Application.RoomInvitations;
 using AtariGo.Server.Application.Rooms;
 using AtariGo.Server.Application.Sessions;
 using AtariGo.Server.Services;
@@ -117,6 +118,7 @@ public sealed class MatchmakingGrpcServiceTests
         builder.Services.AddSingleton<IGuestIdentityRegistry, GuestIdentityRegistry>();
         builder.Services.AddSingleton<IPublicMatchmakingQueue, InMemoryPublicMatchmakingQueue>();
         builder.Services.AddSingleton<ISessionService, TestRoomSessionService>();
+        builder.Services.AddSingleton<IRoomInvitationNotifier, SessionConnectionRegistry>();
         builder.Services.AddSingleton<IRoomsService, RoomsService>();
         builder.Services.AddSingleton<IGameLifecycleService, TestGameLifecycleService>();
 

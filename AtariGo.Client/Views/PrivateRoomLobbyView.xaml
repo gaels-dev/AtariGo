@@ -4,6 +4,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:properties="clr-namespace:AtariGo.Client.Properties"
+             xmlns:views="clr-namespace:AtariGo.Client.Views"
              mc:Ignorable="d"
              d:DesignHeight="700"
              d:DesignWidth="1000"
@@ -181,6 +182,14 @@
                         </UniformGrid>
                     </StackPanel>
 
+                    <StackPanel Margin="0,0,0,12"
+                                Visibility="{Binding IsHost,
+                                    Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <Button Content="{Binding RoomInvitations.Title}"
+                                Command="{Binding RoomInvitations.OpenCommand}"
+                                IsEnabled="{Binding RoomInvitations.CanOpen}" Height="32"/>
+                    </StackPanel>
+
                     <Button Content="{Binding RefreshConfigurationLabel}"
                             Command="{Binding RefreshConfigurationCommand}"
                             IsEnabled="{Binding CanRefreshConfiguration}"
@@ -228,5 +237,14 @@
                 </StackPanel>
             </Border>
         </ScrollViewer>
+        <Grid Grid.RowSpan="2" DataContext="{Binding RoomInvitations}"
+              Background="#99000000" Panel.ZIndex="80"
+              Visibility="{Binding IsOpen, FallbackValue=Collapsed,
+                Converter={StaticResource BooleanToVisibilityConverter}}">
+            <Border Width="620" Padding="24" Background="White" CornerRadius="8"
+                    HorizontalAlignment="Center" VerticalAlignment="Center">
+                <views:RoomInvitationsView/>
+            </Border>
+        </Grid>
     </Grid>
 </UserControl>
