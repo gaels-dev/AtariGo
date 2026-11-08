@@ -13,10 +13,15 @@ public sealed class GrpcRoomsClient : IRoomsClient
     private readonly string _sessionToken;
 
     public GrpcRoomsClient(string sessionToken)
+        : this(sessionToken, GrpcClientConnection.Shared.CallInvoker)
+    {
+    }
+
+    public GrpcRoomsClient(string sessionToken, CallInvoker invoker)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(sessionToken);
+        ArgumentNullException.ThrowIfNull(invoker);
         _sessionToken = sessionToken;
-        CallInvoker invoker = GrpcClientConnection.Shared.CallInvoker;
         _client = new Rooms.RoomsClient(invoker);
         _gameLifecycle = new GameLifecycle.GameLifecycleClient(invoker);
     }
@@ -29,6 +34,17 @@ public sealed class GrpcRoomsClient : IRoomsClient
         using AsyncUnaryCall<CreatePrivateRoomResponse> call = _client.CreatePrivateRoomAsync(
             request, GrpcCallPolicy.CreateOptions(cancellationToken, CreateHeaders()));
         CreatePrivateRoomResponse response = await call.ResponseAsync;
+        return response.Room;
+    }
+
+    public async Task<RoomSnapshot> UpdateRoomConfigurationAsync(
+        UpdateRoomConfigurationRequest request,
+        CancellationToken cancellationToken)
+    {
+        using AsyncUnaryCall<UpdateRoomConfigurationResponse> call =
+            _client.UpdateRoomConfigurationAsync(
+                request, GrpcCallPolicy.CreateOptions(cancellationToken, CreateHeaders()));
+        UpdateRoomConfigurationResponse response = await call.ResponseAsync;
         return response.Room;
     }
 

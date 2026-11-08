@@ -10,14 +10,20 @@ public sealed class RoomsGrpcService : Rooms.RoomsBase
 {
     private readonly IRoomsService _roomsService;
     private readonly ISessionService _sessionService;
+    private readonly ILogger<RoomsGrpcService> _logger;
 
-    public RoomsGrpcService(IRoomsService roomsService, ISessionService sessionService)
+    public RoomsGrpcService(
+        IRoomsService roomsService,
+        ISessionService sessionService,
+        ILogger<RoomsGrpcService> logger)
     {
         ArgumentNullException.ThrowIfNull(roomsService);
         ArgumentNullException.ThrowIfNull(sessionService);
 
         _roomsService = roomsService;
         _sessionService = sessionService;
+        ArgumentNullException.ThrowIfNull(logger);
+        _logger = logger;
     }
 
     public override async Task<CreatePrivateRoomResponse> CreatePrivateRoom(
@@ -102,26 +108,7 @@ public sealed class RoomsGrpcService : Rooms.RoomsBase
     {
         if (result.Status != RoomOperationStatus.Success)
         {
-            throw result.Status switch
-            {
-                RoomOperationStatus.InvalidConfiguration => new RpcException(new Status(
-                    StatusCode.InvalidArgument, "Invalid room configuration.")),
-                RoomOperationStatus.AlreadyHosting => new RpcException(new Status(
-                    StatusCode.FailedPrecondition, "Close the existing room first.")),
-                RoomOperationStatus.NotFound => new RpcException(new Status(
-                    StatusCode.NotFound, "Room not found.")),
-                RoomOperationStatus.NotMember => new RpcException(new Status(
-                    StatusCode.PermissionDenied, "Room membership is required.")),
-                RoomOperationStatus.CannotStart => new RpcException(new Status(
-                    StatusCode.FailedPrecondition, "Two participants are required.")),
-                RoomOperationStatus.VersionMismatch => new RpcException(new Status(
-                    StatusCode.Aborted, "The room version has changed.")),
-                RoomOperationStatus.StartInProgress => new RpcException(new Status(
-                    StatusCode.FailedPrecondition, "The room is starting or has started.")),
-                RoomOperationStatus.Full => new RpcException(new Status(
-                    StatusCode.ResourceExhausted, "The room is full.")),
-                _ => new RpcException(new Status(StatusCode.Internal, "Room operation failed."))
-            };
+            throw CreateRoomFailure(result.Status);
         }
 
         return result.Room ?? throw new InvalidOperationException("Room result is missing.");
@@ -163,6 +150,40 @@ public sealed class RoomsGrpcService : Rooms.RoomsBase
         return snapshot;
     }
 
+    private static RpcException CreateRoomFailure(RoomOperationStatus status)
+    {
+        return status switch
+        {
+            RoomOperationStatus.InvalidConfiguration => new RpcException(new Status(
+                StatusCode.InvalidArgument, "Invalid room configuration.")),
+            RoomOperationStatus.AlreadyHosting => new RpcException(new Status(
+                StatusCode.FailedPrecondition, "Close the existing room first.")),
+            RoomOperationStatus.NotFound => new RpcException(new Status(
+                StatusCode.NotFound, "Room not found.")),
+            RoomOperationStatus.VersionMismatch => new RpcException(new Status(
+                StatusCode.Aborted, "The room version has changed.")),
+            RoomOperationStatus.Full => new RpcException(new Status(
+                StatusCode.ResourceExhausted, "The room is full.")),
+            _ => CreateRoomStateFailure(status)
+        };
+    }
+
+    private static RpcException CreateRoomStateFailure(RoomOperationStatus status)
+    {
+        return status switch
+        {
+            RoomOperationStatus.HostRequired => new RpcException(new Status(
+                StatusCode.PermissionDenied, "Only the host can update the configuration.")),
+            RoomOperationStatus.NotMember => new RpcException(new Status(
+                StatusCode.PermissionDenied, "Room membership is required.")),
+            RoomOperationStatus.CannotStart => new RpcException(new Status(
+                StatusCode.FailedPrecondition, "Two participants are required.")),
+            RoomOperationStatus.StartInProgress => new RpcException(new Status(
+                StatusCode.FailedPrecondition, "The room is starting or has started.")),
+            _ => new RpcException(new Status(StatusCode.Internal, "Room operation failed."))
+        };
+    }
+
     private static RoomParticipant MapParticipant(LobbyParticipant participant, bool isHost)
     {
         return new RoomParticipant
@@ -171,5 +192,30 @@ public sealed class RoomsGrpcService : Rooms.RoomsBase
             UserName = participant.UserName,
             IsHost = isHost
         };
+    }
+
+    public override async Task<UpdateRoomConfigurationResponse> UpdateRoomConfiguration(
+        UpdateRoomConfigurationRequest request,
+        ServerCallContext context)
+    {
+        LobbyParticipant participant = await GetParticipantAsync(context);
+        if (request.Configuration is null)
+        {
+            throw new RpcException(new Status(
+                StatusCode.InvalidArgument, "Room configuration is required."));
+        }
+
+        var configuration = new LobbyConfiguration(
+            request.Configuration.CaptureGoal,
+            request.Configuration.GameTimeSeconds,
+            request.Configuration.TurnTimeSeconds);
+        var command = new UpdateRoomConfigurationCommand(
+            request.RoomId, configuration, request.ExpectedVersion);
+        RoomOperationResult result = _roomsService.UpdateRoomConfiguration(
+            command, participant.UserId);
+        _logger.LogInformation(
+            "Room configuration request for room {RoomId} by user {UserId}: {Status}.",
+            request.RoomId, participant.UserId, result.Status);
+        return new UpdateRoomConfigurationResponse { Room = MapRoom(RequireRoom(result)) };
     }
 }

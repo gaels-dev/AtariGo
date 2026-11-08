@@ -846,4 +846,28 @@
   <data name="FriendRequests_Err_Unconfirmed" xml:space="preserve">
     <value>Der Vorgang konnte nicht bestätigt werden. Aktualisiere die Liste oder versuche es erneut.</value>
   </data>
+  <data name="PrivateRoom_Btn_SaveConfiguration" xml:space="preserve">
+    <value>Konfiguration speichern</value>
+  </data>
+  <data name="PrivateRoom_Btn_DiscardConfiguration" xml:space="preserve">
+    <value>Änderungen verwerfen</value>
+  </data>
+  <data name="PrivateRoom_Btn_RefreshConfiguration" xml:space="preserve">
+    <value>Raum aktualisieren</value>
+  </data>
+  <data name="PrivateRoom_Lbl_CaptureGoal" xml:space="preserve">
+    <value>Fangziel (nur Gastgeber)</value>
+  </data>
+  <data name="PrivateRoom_Lbl_GameTimeSeconds" xml:space="preserve">
+    <value>Spielzeit (Sekunden)</value>
+  </data>
+  <data name="PrivateRoom_Lbl_TurnTimeSeconds" xml:space="preserve">
+    <value>Zugzeit (Sekunden)</value>
+  </data>
+  <data name="PrivateRoom_Err_ConfigurationChanged" xml:space="preserve">
+    <value>Der Raum wurde geändert. Prüfe die aktuelle Konfiguration vor dem Speichern oder Starten.</value>
+  </data>
+  <data name="PrivateRoom_Err_ConfigurationUnconfirmed" xml:space="preserve">
+    <value>Die Änderung konnte nicht bestätigt werden. Aktualisiere den Raum, bevor du fortfährst.</value>
+  </data>
 </root>

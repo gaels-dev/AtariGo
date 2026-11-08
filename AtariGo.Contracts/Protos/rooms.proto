@@ -6,6 +6,8 @@ package atarigo.rooms.v1;
 
 service Rooms {
   rpc CreatePrivateRoom (CreatePrivateRoomRequest) returns (CreatePrivateRoomResponse);
+  rpc UpdateRoomConfiguration (UpdateRoomConfigurationRequest)
+      returns (UpdateRoomConfigurationResponse);
   rpc JoinRoom (JoinRoomRequest) returns (JoinRoomResponse);
   rpc LeaveRoom (LeaveRoomRequest) returns (LeaveRoomResponse);
   rpc WatchRoom (WatchRoomRequest) returns (stream RoomSnapshot);
@@ -71,4 +73,14 @@ enum RoomState {
   ROOM_STATE_WAITING = 1;
   ROOM_STATE_CLOSED = 2;
   ROOM_STATE_STARTED = 3;
+}
+
+message UpdateRoomConfigurationRequest {
+  int32 room_id = 1;
+  RoomConfiguration configuration = 2;
+  int32 expected_version = 3;
+}
+
+message UpdateRoomConfigurationResponse {
+  RoomSnapshot room = 1;
 }

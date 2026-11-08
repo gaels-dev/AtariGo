@@ -8,6 +8,10 @@ public interface IRoomsClient
         RoomConfiguration configuration,
         CancellationToken cancellationToken);
 
+    Task<RoomSnapshot> UpdateRoomConfigurationAsync(
+        UpdateRoomConfigurationRequest request,
+        CancellationToken cancellationToken);
+
     Task<JoinRoomResponse> JoinRoomAsync(
         string invitationCode,
         CancellationToken cancellationToken);

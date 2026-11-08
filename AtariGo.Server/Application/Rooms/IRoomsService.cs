@@ -6,6 +6,10 @@ public interface IRoomsService
         LobbyParticipant host,
         LobbyConfiguration configuration);
 
+    RoomOperationResult UpdateRoomConfiguration(
+        UpdateRoomConfigurationCommand command,
+        int userId);
+
     RoomOperationResult JoinRoom(LobbyParticipant participant, RoomLocator locator);
 
     RoomOperationResult LeaveRoom(int userId, int roomId);

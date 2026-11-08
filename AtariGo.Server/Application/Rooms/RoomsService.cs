@@ -58,6 +58,40 @@ public sealed class RoomsService : IRoomsService
         }
     }
 
+    public RoomOperationResult UpdateRoomConfiguration(
+        UpdateRoomConfigurationCommand command,
+        int userId)
+    {
+        ArgumentNullException.ThrowIfNull(command);
+        ArgumentNullException.ThrowIfNull(command.Configuration);
+        lock (_roomLock)
+        {
+            RemoveExpiredRooms();
+            if (!_rooms.TryGetValue(command.RoomId, out RoomEntry? entry))
+            {
+                return new RoomOperationResult(RoomOperationStatus.NotFound);
+            }
+
+            RoomOperationStatus status = ValidateConfigurationUpdate(command, userId, entry);
+            if (status != RoomOperationStatus.Success)
+            {
+                return new RoomOperationResult(status);
+            }
+
+            PrivateRoom room = entry.Snapshot;
+            if (room.Configuration != command.Configuration)
+            {
+                entry.Publish(room with
+                {
+                    Configuration = command.Configuration,
+                    Version = room.Version + 1
+                });
+            }
+
+            return new RoomOperationResult(RoomOperationStatus.Success, entry.Snapshot);
+        }
+    }
+
     public RoomOperationResult JoinRoom(LobbyParticipant participant, RoomLocator locator)
     {
         lock (_roomLock)
@@ -200,6 +234,32 @@ public sealed class RoomsService : IRoomsService
                 observation = observation with { FromVersion = snapshot.Version };
             }
         }
+    }
+
+    private static RoomOperationStatus ValidateConfigurationUpdate(
+        UpdateRoomConfigurationCommand command,
+        int userId,
+        RoomEntry entry)
+    {
+        PrivateRoom room = entry.Snapshot;
+        if (room.Host.UserId != userId)
+        {
+            return RoomOperationStatus.HostRequired;
+        }
+
+        if (room.IsClosed || entry.IsStarting || room.GameId is not null)
+        {
+            return RoomOperationStatus.StartInProgress;
+        }
+
+        if (room.Version != command.ExpectedVersion)
+        {
+            return RoomOperationStatus.VersionMismatch;
+        }
+
+        return IsValidConfiguration(command.Configuration)
+            ? RoomOperationStatus.Success
+            : RoomOperationStatus.InvalidConfiguration;
     }
 
     private static RoomOperationStatus ValidateStart(RoomStartRequest request, RoomEntry entry)

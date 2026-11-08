@@ -846,4 +846,28 @@
   <data name="FriendRequests_Err_Unconfirmed" xml:space="preserve">
     <value>No se pudo confirmar la operación. Actualiza la lista o vuelve a intentarlo.</value>
   </data>
+  <data name="PrivateRoom_Btn_SaveConfiguration" xml:space="preserve">
+    <value>Guardar configuración</value>
+  </data>
+  <data name="PrivateRoom_Btn_DiscardConfiguration" xml:space="preserve">
+    <value>Descartar cambios</value>
+  </data>
+  <data name="PrivateRoom_Btn_RefreshConfiguration" xml:space="preserve">
+    <value>Actualizar sala</value>
+  </data>
+  <data name="PrivateRoom_Lbl_CaptureGoal" xml:space="preserve">
+    <value>Meta de capturas (solo anfitrión)</value>
+  </data>
+  <data name="PrivateRoom_Lbl_GameTimeSeconds" xml:space="preserve">
+    <value>Tiempo de partida (segundos)</value>
+  </data>
+  <data name="PrivateRoom_Lbl_TurnTimeSeconds" xml:space="preserve">
+    <value>Tiempo por turno (segundos)</value>
+  </data>
+  <data name="PrivateRoom_Err_ConfigurationChanged" xml:space="preserve">
+    <value>La sala cambió. Revisa la configuración actual antes de guardar o iniciar.</value>
+  </data>
+  <data name="PrivateRoom_Err_ConfigurationUnconfirmed" xml:space="preserve">
+    <value>No se pudo confirmar el cambio. Actualiza la sala antes de continuar.</value>
+  </data>
 </root>

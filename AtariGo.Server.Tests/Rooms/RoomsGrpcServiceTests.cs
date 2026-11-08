@@ -172,6 +172,101 @@ public sealed class RoomsGrpcServiceTests
         Assert.AreEqual(RoomState.Started, guestWatch.ResponseStream.Current.State);
     }
 
+    [TestMethod]
+    public async Task UpdateRoomConfiguration_TwoClients_ReceiveConfirmedConfiguration()
+    {
+        // Arrange
+        await using WebApplication app = await StartServerAsync();
+        using GrpcChannel channel = GrpcChannel.ForAddress(app.Urls.Single());
+        var client = new Contracts.Rooms.RoomsClient(channel);
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(TestTimeoutSeconds));
+        CallOptions host = CreateOptions("host", timeout.Token);
+        CallOptions guest = CreateOptions("guest", timeout.Token);
+        CreatePrivateRoomResponse created = await client.CreatePrivateRoomAsync(
+            CreateRoomRequest(), host);
+        JoinRoomResponse joined = await client.JoinRoomAsync(
+            new JoinRoomRequest { InvitationCode = created.Room.InvitationCode }, guest);
+        var watch = new WatchRoomRequest { RoomId = joined.Room.RoomId };
+        using AsyncServerStreamingCall<RoomSnapshot> hostWatch = client.WatchRoom(watch, host);
+        using AsyncServerStreamingCall<RoomSnapshot> guestWatch = client.WatchRoom(watch, guest);
+        await hostWatch.ResponseStream.MoveNext(timeout.Token);
+        await guestWatch.ResponseStream.MoveNext(timeout.Token);
+        var update = new UpdateRoomConfigurationRequest
+        {
+            RoomId = joined.Room.RoomId,
+            ExpectedVersion = joined.Room.Version,
+            Configuration = new RoomConfiguration
+            {
+                CaptureGoal = 3, GameTimeSeconds = 600, TurnTimeSeconds = 30
+            }
+        };
+
+        // Act
+        UpdateRoomConfigurationResponse confirmed = await client.UpdateRoomConfigurationAsync(
+            update, host);
+        bool receivedHost = await hostWatch.ResponseStream.MoveNext(timeout.Token);
+        bool receivedGuest = await guestWatch.ResponseStream.MoveNext(timeout.Token);
+        var lifecycle = new GameLifecycle.GameLifecycleClient(channel);
+        StartGameResponse started = await lifecycle.StartGameAsync(new StartGameRequest
+        {
+            RoomId = confirmed.Room.RoomId,
+            ExpectedRoomVersion = confirmed.Room.Version
+        }, host);
+
+        // Assert
+        Assert.IsTrue(receivedHost && receivedGuest);
+        Assert.AreEqual(3, confirmed.Room.Configuration.CaptureGoal);
+        Assert.AreEqual(joined.Room.Version + 1, confirmed.Room.Version);
+        Assert.AreEqual(confirmed.Room, hostWatch.ResponseStream.Current);
+        Assert.AreEqual(confirmed.Room, guestWatch.ResponseStream.Current);
+        Assert.AreEqual(confirmed.Room.Configuration, started.BoardConfig);
+    }
+
+    [TestMethod]
+    [DataRow("unknown", StatusCode.Unauthenticated)]
+    [DataRow("guest", StatusCode.PermissionDenied)]
+    [DataRow("other", StatusCode.PermissionDenied)]
+    [DataRow("host", StatusCode.InvalidArgument)]
+    [DataRow("stale", StatusCode.Aborted)]
+    [DataRow("missing", StatusCode.InvalidArgument)]
+    public async Task UpdateRoomConfiguration_InvalidRequest_ReturnsControlledStatus(
+        string scenario, StatusCode expected)
+    {
+        // Arrange
+        await using WebApplication app = await StartServerAsync();
+        using GrpcChannel channel = GrpcChannel.ForAddress(app.Urls.Single());
+        var client = new Contracts.Rooms.RoomsClient(channel);
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(TestTimeoutSeconds));
+        CreatePrivateRoomResponse created = await client.CreatePrivateRoomAsync(
+            CreateRoomRequest(), CreateOptions("host", timeout.Token));
+        var request = new UpdateRoomConfigurationRequest
+        {
+            RoomId = created.Room.RoomId,
+            ExpectedVersion = scenario == "stale" ? 0 : created.Room.Version,
+            Configuration = new RoomConfiguration
+            {
+                CaptureGoal = scenario == "host" ? 2 : 3,
+                GameTimeSeconds = 600,
+                TurnTimeSeconds = 30
+            }
+        };
+
+        if (scenario == "missing")
+        {
+            request.Configuration = null;
+        }
+
+        string token = scenario is "stale" or "missing" ? "host" : scenario;
+
+        // Act
+        RpcException failure = await Assert.ThrowsExactlyAsync<RpcException>(async () =>
+            await client.UpdateRoomConfigurationAsync(
+                request, CreateOptions(token, timeout.Token)));
+
+        // Assert
+        Assert.AreEqual(expected, failure.StatusCode);
+    }
+
     private static async Task<WebApplication> StartServerAsync()
     {
         WebApplicationBuilder builder = WebApplication.CreateBuilder();

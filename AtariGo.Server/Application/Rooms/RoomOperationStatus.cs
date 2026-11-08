@@ -10,5 +10,6 @@ public enum RoomOperationStatus
     Full,
     CannotStart,
     VersionMismatch,
+    HostRequired,
     StartInProgress
 }
