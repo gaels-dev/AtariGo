@@ -1,6 +1,4 @@
 using System.Globalization;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Windows.Input;
 
 using AtariGo.Client.Commands;

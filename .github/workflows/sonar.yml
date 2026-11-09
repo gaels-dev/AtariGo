@@ -1,0 +1,90 @@
+name: SonarQube Analysis
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    name: Build and analyze
+    runs-on: windows-latest
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Set up .NET SDK
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Install SonarScanner for .NET
+        run: dotnet tool install --tool-path .\.sonar\scanner dotnet-sonarscanner --version 11.3.0
+        shell: pwsh
+
+      - name: Validate SonarQube configuration
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY }}
+          SONAR_ORGANIZATION: ${{ vars.SONAR_ORGANIZATION }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:SONAR_TOKEN)) {
+              throw "GitHub secret SONAR_TOKEN is missing."
+          }
+
+          if ([string]::IsNullOrWhiteSpace($env:SONAR_PROJECT_KEY)) {
+              throw "GitHub variable SONAR_PROJECT_KEY is missing."
+          }
+
+          if ([string]::IsNullOrWhiteSpace($env:SONAR_ORGANIZATION)) {
+              throw "GitHub variable SONAR_ORGANIZATION is missing."
+          }
+        shell: pwsh
+
+      - name: Begin SonarQube analysis
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY }}
+          SONAR_ORGANIZATION: ${{ vars.SONAR_ORGANIZATION }}
+        run: |
+          $arguments = @(
+              "begin"
+              "/k:$env:SONAR_PROJECT_KEY"
+              "/o:$env:SONAR_ORGANIZATION"
+              "/d:sonar.token=$env:SONAR_TOKEN"
+              "/d:sonar.host.url=https://sonarcloud.io"
+          )
+
+          & .\.sonar\scanner\dotnet-sonarscanner.exe @arguments
+          if ($LASTEXITCODE -ne 0) {
+              exit $LASTEXITCODE
+          }
+        shell: pwsh
+
+      - name: Build solution
+        run: dotnet build .\AtariGo.slnx --configuration Release --no-incremental
+        shell: pwsh
+
+      - name: End SonarQube analysis
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          $arguments = @(
+              "end"
+              "/d:sonar.token=$env:SONAR_TOKEN"
+          )
+
+          & .\.sonar\scanner\dotnet-sonarscanner.exe @arguments
+          if ($LASTEXITCODE -ne 0) {
+              exit $LASTEXITCODE
+          }
+        shell: pwsh
