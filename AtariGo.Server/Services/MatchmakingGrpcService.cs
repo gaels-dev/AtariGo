@@ -16,14 +16,14 @@ public sealed class MatchmakingGrpcService : Matchmaking.MatchmakingBase
     private const string GuestNamePrefix = "Guest-";
     private const int MaximumGuestNameLength = 15;
 
-    private readonly IPublicMatchmakingQueue _matchmakingQueue;
+    private readonly InMemoryPublicMatchmakingQueue _matchmakingQueue;
     private readonly IGuestIdentityRegistry _guestIdentityRegistry;
     private readonly ISessionService _sessionService;
     private readonly IGameLifecycleService _gameLifecycleService;
     private readonly TimeProvider _timeProvider;
 
     public MatchmakingGrpcService(
-        IPublicMatchmakingQueue matchmakingQueue,
+        InMemoryPublicMatchmakingQueue matchmakingQueue,
         IGuestIdentityRegistry guestIdentityRegistry,
         ISessionService sessionService,
         IGameLifecycleService gameLifecycleService,

@@ -46,14 +46,14 @@ builder.Services.AddScoped<IGameLifecycleService, GameLifecycleService>();
 builder.Services.AddScoped<IGameSessionCatalog, GameSessionCatalog>();
 builder.Services.AddSingleton<IGameSessionRegistry, GameSessionRegistry>();
 builder.Services.AddSingleton<IGuestIdentityRegistry, GuestIdentityRegistry>();
-builder.Services.AddSingleton<IPublicMatchmakingQueue, InMemoryPublicMatchmakingQueue>();
+builder.Services.AddSingleton<InMemoryPublicMatchmakingQueue>();
 builder.Services.AddSingleton<IRoomInvitationNotifier>(provider =>
     provider.GetRequiredService<ISessionConnectionRegistry>());
 builder.Services.AddSingleton<IRoomsService, RoomsService>();
 builder.Services.AddScoped<IRoomInvitationsService, RoomInvitationsService>();
 builder.Services.AddHostedService<RoomInvitationExpiryService>();
 builder.Services.AddSingleton<ISessionConnectionRegistry, SessionConnectionRegistry>();
-builder.Services.AddSingleton<IRegistrationValidator, RegistrationValidator>();
+builder.Services.AddSingleton<RegistrationValidator>();
 builder.Services.AddSingleton<ISessionTokenProvider, SessionTokenProvider>();
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 

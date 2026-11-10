@@ -116,7 +116,7 @@ public sealed class MatchmakingGrpcServiceTests
         builder.Services.AddGrpc();
         builder.Services.AddSingleton(TimeProvider.System);
         builder.Services.AddSingleton<IGuestIdentityRegistry, GuestIdentityRegistry>();
-        builder.Services.AddSingleton<IPublicMatchmakingQueue, InMemoryPublicMatchmakingQueue>();
+        builder.Services.AddSingleton<InMemoryPublicMatchmakingQueue>();
         builder.Services.AddSingleton<ISessionService, TestRoomSessionService>();
         builder.Services.AddSingleton<IRoomInvitationNotifier, SessionConnectionRegistry>();
         builder.Services.AddSingleton<IRoomsService, RoomsService>();

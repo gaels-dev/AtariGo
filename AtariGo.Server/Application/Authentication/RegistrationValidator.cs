@@ -2,7 +2,7 @@ using System.Net.Mail;
 
 namespace AtariGo.Server.Application.Authentication;
 
-public sealed class RegistrationValidator : IRegistrationValidator
+public sealed class RegistrationValidator
 {
     private const int MaximumUserNameLength = 15;
     private const int MaximumEmailLength = 254;

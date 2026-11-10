@@ -464,7 +464,6 @@ Los siguientes límites son importantes para una arquitectura completa, pero no 
 | --- | --- | --- |
 | IGameRulesEngine (propuesta) | Legalidad del turno, grupos, libertades, suicidio según reglas, capturas, victoria y configuración. | Lógica pura de dominio; usada por GameMoves y GameLifecycle. |
 | IAuthenticationService (existe) | Inicio de sesión y validación de credenciales en Application. | Se publica únicamente mediante el adaptador AuthenticationGrpcService. |
-| IRegistrationValidator (existe) | Validar información de una solicitud de alta. | Validación local del caso de uso, no operación de red. |
 | ISessionTokenProvider (existe) | Emitir token aleatorio y su hash para almacenamiento. | Servicio de seguridad dentro del servidor. |
 | IEmailDeliveryService (propuesta) | Enviar confirmaciones, recuperación e invitaciones por correo. | Adaptador a proveedor externo; nunca se invoca directamente desde WPF. |
 | INotificationPublisher (propuesta) | Publicar eventos de dominio a Notifications. | Infraestructura interna; la lectura de avisos sí se expone por gRPC. |

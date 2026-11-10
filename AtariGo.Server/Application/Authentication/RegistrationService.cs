@@ -10,14 +10,14 @@ public sealed class RegistrationService : IRegistrationService
 {
     private readonly AtariGoDbContext _dbContext;
     private readonly IPasswordHasher<User> _passwordHasher;
-    private readonly IRegistrationValidator _registrationValidator;
+    private readonly RegistrationValidator _registrationValidator;
     private readonly ILogger<RegistrationService> _logger;
     private readonly TimeProvider _timeProvider;
 
     public RegistrationService(
         AtariGoDbContext dbContext,
         IPasswordHasher<User> passwordHasher,
-        IRegistrationValidator registrationValidator,
+        RegistrationValidator registrationValidator,
         ILogger<RegistrationService> logger,
         TimeProvider timeProvider)
     {

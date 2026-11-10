@@ -13,7 +13,7 @@ public sealed class InMemoryPublicMatchmakingQueueTests
     public void Join_TwoPlayersWaiting_PairsFifoPlayers()
     {
         // Arrange
-        IPublicMatchmakingQueue queue = new InMemoryPublicMatchmakingQueue(
+        InMemoryPublicMatchmakingQueue queue = new InMemoryPublicMatchmakingQueue(
             TimeProvider.System);
         MatchmakingTicket firstTicket = JoinPlayer(queue, "first", "First");
 
@@ -45,7 +45,7 @@ public sealed class InMemoryPublicMatchmakingQueueTests
     public void Disconnect_DuringCountdown_RequeuesRemainingPlayer()
     {
         // Arrange
-        IPublicMatchmakingQueue queue = new InMemoryPublicMatchmakingQueue(
+        InMemoryPublicMatchmakingQueue queue = new InMemoryPublicMatchmakingQueue(
             TimeProvider.System);
         MatchmakingTicket leavingTicket = JoinPlayer(queue, "leaving", "Leaving");
         MatchmakingTicket remainingTicket = JoinPlayer(
@@ -88,7 +88,7 @@ public sealed class InMemoryPublicMatchmakingQueueTests
     public void Join_SamePlayerAlreadyQueued_RejectsDuplicateTicket()
     {
         // Arrange
-        IPublicMatchmakingQueue queue = new InMemoryPublicMatchmakingQueue(
+        InMemoryPublicMatchmakingQueue queue = new InMemoryPublicMatchmakingQueue(
             TimeProvider.System);
         JoinPlayer(queue, "same", "Same");
 
@@ -111,7 +111,7 @@ public sealed class InMemoryPublicMatchmakingQueueTests
     }
 
     private static MatchmakingTicket JoinPlayer(
-        IPublicMatchmakingQueue queue,
+        InMemoryPublicMatchmakingQueue queue,
         string key,
         string displayName)
     {

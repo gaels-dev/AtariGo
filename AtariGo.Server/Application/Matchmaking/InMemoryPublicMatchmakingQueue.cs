@@ -3,7 +3,7 @@ using AtariGo.Server.Data;
 
 namespace AtariGo.Server.Application.Matchmaking;
 
-public sealed class InMemoryPublicMatchmakingQueue : IPublicMatchmakingQueue
+public sealed class InMemoryPublicMatchmakingQueue
 {
     private static readonly TimeSpan s_countdownDuration =
         TimeSpan.FromSeconds(PublicGameRules.CountdownSeconds);
