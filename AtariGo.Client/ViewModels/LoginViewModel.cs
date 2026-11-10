@@ -269,10 +269,12 @@ namespace AtariGo.Client.ViewModels
             {
                 await Task.Delay(s_loginSuccessMessageDelay, cancellationToken);
                 cancellationToken.ThrowIfCancellationRequested();
-                _navigationService.NavigateToMainWindow(
-                    isGuest: false,
-                    response.UserName,
-                    response.SessionToken);
+                _navigationService.NavigateToMainWindow(new ClientSessionContext
+                {
+                    IsGuest = false,
+                    PlayerName = response.UserName,
+                    SessionToken = response.SessionToken
+                });
             }
         }
 

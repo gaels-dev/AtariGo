@@ -17,82 +17,97 @@ namespace AtariGo.Client.Tests.ViewModels;
 public sealed class RoomInvitationsViewModelTests
 {
     [TestMethod]
-    public async Task SendCommand_SelectionChanged_SendsReviewedFriendAndRoomOnlyOnConfirmation()
+    public async Task SendCommand_FriendRow_SendsOnlyTheClickedConnectedFriend()
     {
         // Arrange
         var client = new StubRoomInvitationsClient();
-        var context = new RoomInvitationsNavigationContext(42, "ROOMCODE");
+        var context = new RoomInvitationsNavigationContext(42);
         context.Friends.Add(new FriendItemViewModel(2, "First", true));
         context.Friends.Add(new FriendItemViewModel(3, "Second", true));
+        context.Friends.Add(new FriendItemViewModel(4, "Offline", false));
         using RoomInvitationsViewModel model = Create(client, context);
         model.OpenCommand.Execute(null);
-        model.SelectedFriend = context.Friends[0];
-        model.SelectedFriend = context.Friends[1];
-        string reviewed = model.SelectedRecipientLabel;
-        int sentBeforeConfirmation = client.SendCount;
+        int sentBeforeClick = client.SendCount;
 
         // Act
-        await CommandExecution.ExecuteAsync(model.SendCommand, null);
+        await CommandExecution.ExecuteAsync(model.SendCommand, context.Friends[1]);
 
         // Assert
-        Assert.AreEqual(0, sentBeforeConfirmation);
-        StringAssert.Contains(reviewed, "Second");
-        StringAssert.Contains(reviewed, "ROOMCODE");
+        Assert.AreEqual(0, sentBeforeClick);
+        Assert.HasCount(2, model.OnlineFriends);
         Assert.AreEqual(3, client.Sent?.RecipientUserId);
         Assert.AreEqual(42, client.Sent?.RoomId);
         Assert.AreNotEqual(string.Empty, model.Message);
         Assert.IsTrue(model.IsOpen);
+        Assert.AreEqual(0, client.ListCount);
     }
 
     [TestMethod]
-    public void CloseCommand_SelectionPending_DoesNotCreateInvitation()
+    public void CloseCommand_BeforeInviting_DoesNotCreateInvitation()
     {
         // Arrange
         var client = new StubRoomInvitationsClient();
-        var context = new RoomInvitationsNavigationContext(42, "ROOMCODE");
-        context.Friends.Add(new FriendItemViewModel(2, "Friend", true));
-        using RoomInvitationsViewModel model = Create(client, context);
+        using RoomInvitationsViewModel model = Create(
+            client, new RoomInvitationsNavigationContext(42));
         model.OpenCommand.Execute(null);
-        model.SelectedFriend = context.Friends[0];
 
         // Act
         model.CloseCommand.Execute(null);
 
         // Assert
         Assert.IsFalse(model.IsOpen);
-        Assert.IsNull(model.SelectedFriend);
         Assert.AreEqual(0, client.SendCount);
     }
 
     [TestMethod]
-    public async Task SendCommand_FriendDisconnectsOrIsRemoved_DoesNotSend()
+    public async Task OnlineFriends_PresenceAndMembershipChanges_UpdatesWithoutManualRefresh()
     {
         // Arrange
         var client = new StubRoomInvitationsClient();
-        var context = new RoomInvitationsNavigationContext(42, "ROOMCODE");
-        var friend = new FriendItemViewModel(2, "Friend", true);
+        var context = new RoomInvitationsNavigationContext(42);
+        var friend = new FriendItemViewModel(2, "Friend", false);
         context.Friends.Add(friend);
         using RoomInvitationsViewModel model = Create(client, context);
-        model.SelectedFriend = friend;
-        friend.IsOnline = false;
+        int initiallyVisible = model.OnlineFriends.Count;
 
         // Act
-        await CommandExecution.ExecuteAsync(model.SendCommand, null);
+        friend.IsOnline = true;
+        int visibleAfterConnecting = model.OnlineFriends.Count;
+        friend.IsOnline = false;
+        await CommandExecution.ExecuteAsync(model.SendCommand, friend);
         friend.IsOnline = true;
         context.Friends.Remove(friend);
-        await CommandExecution.ExecuteAsync(model.SendCommand, null);
+        await CommandExecution.ExecuteAsync(model.SendCommand, friend);
 
         // Assert
-        Assert.IsFalse(model.CanSend);
-        Assert.IsNull(model.SelectedFriend);
+        Assert.AreEqual(0, initiallyVisible);
+        Assert.AreEqual(1, visibleAfterConnecting);
+        Assert.HasCount(0, model.OnlineFriends);
         Assert.AreEqual(0, client.SendCount);
+    }
+
+    [TestMethod]
+    public async Task SendCommand_FullRoom_DoesNotInvite()
+    {
+        // Arrange
+        var client = new StubRoomInvitationsClient();
+        var context = new RoomInvitationsNavigationContext(42);
+        context.Friends.Add(new FriendItemViewModel(2, "Friend", true));
+        using RoomInvitationsViewModel model = Create(client, context);
+        model.IsRoomAvailable = false;
+
+        // Act
+        await CommandExecution.ExecuteAsync(model.SendCommand, context.Friends[0]);
+
+        // Assert
+        Assert.IsNull(client.Sent);
     }
 
     [TestMethod]
     public async Task AcceptCommand_ConfirmedResponse_OpensPrivateLobby()
     {
         // Arrange
-        var client = IncomingClient();
+        StubRoomInvitationsClient client = IncomingClient();
         client.Response = new RespondRoomInvitationResponse
         {
             Room = new RoomSnapshot { RoomId = 42, State = RoomState.Waiting }
@@ -100,8 +115,8 @@ public sealed class RoomInvitationsViewModelTests
         INavigationService navigation =
             DispatchProxy.Create<INavigationService, RecordingNavigationProxy>();
         using var model = new RoomInvitationsViewModel(navigation, client,
-            new RoomInvitationsNavigationContext(0, string.Empty)) { IsAcceptanceAllowed = true };
-        await CommandExecution.ExecuteAsync(model.RefreshCommand, null);
+            new RoomInvitationsNavigationContext(0)) { IsAcceptanceAllowed = true };
+        model.RequestRefresh();
         model.SelectedInvitation = model.Invitations[0];
 
         // Act
@@ -118,18 +133,17 @@ public sealed class RoomInvitationsViewModelTests
     public async Task AcceptCommand_PlayerBusyOrInvitationExpired_DoesNotAccept()
     {
         // Arrange
-        var client = IncomingClient();
-        using RoomInvitationsViewModel model = Create(client,
-            new RoomInvitationsNavigationContext(0, string.Empty));
-        await CommandExecution.ExecuteAsync(model.RefreshCommand, null);
+        StubRoomInvitationsClient client = IncomingClient();
+        using RoomInvitationsViewModel model = Create(
+            client, new RoomInvitationsNavigationContext(0));
+        model.RequestRefresh();
         model.SelectedInvitation = model.Invitations[0];
 
         // Act
         await CommandExecution.ExecuteAsync(model.AcceptCommand, null);
         model.IsAcceptanceAllowed = true;
         client.ListResponse.Invitations[0].State = RoomInvitationState.Expired;
-        await CommandExecution.ExecuteAsync(model.RefreshCommand, null);
-        model.SelectedInvitation = model.Invitations[0];
+        model.RequestRefresh();
         await CommandExecution.ExecuteAsync(model.AcceptCommand, null);
 
         // Assert
@@ -138,32 +152,26 @@ public sealed class RoomInvitationsViewModelTests
     }
 
     [TestMethod]
-    public async Task RespondCommands_RejectOrCancel_SendsSelectedInvitationId()
+    public async Task RejectCommand_SelectedInvitation_SendsDecision()
     {
         // Arrange
-        var client = IncomingClient();
-        using RoomInvitationsViewModel incoming = Create(client,
-            new RoomInvitationsNavigationContext(0, string.Empty));
-        incoming.IsAcceptanceAllowed = true;
-        using RoomInvitationsViewModel outgoing = Create(client,
-            new RoomInvitationsNavigationContext(42, "ROOMCODE"));
-        await CommandExecution.ExecuteAsync(incoming.RefreshCommand, null);
-        await CommandExecution.ExecuteAsync(outgoing.RefreshCommand, null);
-        incoming.SelectedInvitation = incoming.Invitations[0];
-        outgoing.SelectedInvitation = outgoing.Invitations[0];
+        StubRoomInvitationsClient client = IncomingClient();
+        using RoomInvitationsViewModel model = Create(
+            client, new RoomInvitationsNavigationContext(0));
+        model.IsAcceptanceAllowed = true;
+        model.RequestRefresh();
+        model.SelectedInvitation = model.Invitations[0];
 
         // Act
-        await CommandExecution.ExecuteAsync(incoming.RejectCommand, null);
-        await CommandExecution.ExecuteAsync(outgoing.CancelCommand, null);
+        await CommandExecution.ExecuteAsync(model.RejectCommand, null);
 
         // Assert
         Assert.IsFalse(client.Decision?.Accept);
         Assert.AreEqual(7, client.Decision?.InvitationId);
-        Assert.AreEqual(7, client.CancelledId);
     }
 
     [TestMethod]
-    public async Task SendCommand_TransportFailure_RefreshesWithoutRetryingMutation()
+    public async Task SendCommand_TransportFailure_DoesNotReplayMutation()
     {
         // Arrange
         var client = new StubRoomInvitationsClient
@@ -171,17 +179,15 @@ public sealed class RoomInvitationsViewModelTests
             SendHandler = () => Task.FromException<SendRoomInvitationResponse>(
                 new RpcException(new Status(StatusCode.DeadlineExceeded, "Timeout")))
         };
-        var context = new RoomInvitationsNavigationContext(42, "ROOMCODE");
+        var context = new RoomInvitationsNavigationContext(42);
         context.Friends.Add(new FriendItemViewModel(2, "Friend", true));
         using RoomInvitationsViewModel model = Create(client, context);
-        model.SelectedFriend = context.Friends[0];
 
         // Act
-        await CommandExecution.ExecuteAsync(model.SendCommand, null);
+        await CommandExecution.ExecuteAsync(model.SendCommand, context.Friends[0]);
 
         // Assert
         Assert.AreEqual(1, client.SendCount);
-        Assert.IsGreaterThan(0, client.ListCount);
         Assert.AreNotEqual(string.Empty, model.Message);
     }
 
@@ -189,15 +195,15 @@ public sealed class RoomInvitationsViewModelTests
     public async Task Dispose_PendingAcceptance_DoesNotNavigateAfterLateResponse()
     {
         // Arrange
-        var client = IncomingClient();
+        StubRoomInvitationsClient client = IncomingClient();
         var completion = new TaskCompletionSource<RespondRoomInvitationResponse>(
             TaskCreationOptions.RunContinuationsAsynchronously);
         client.RespondHandler = () => completion.Task;
         INavigationService navigation =
             DispatchProxy.Create<INavigationService, RecordingNavigationProxy>();
         using var model = new RoomInvitationsViewModel(navigation, client,
-            new RoomInvitationsNavigationContext(0, string.Empty)) { IsAcceptanceAllowed = true };
-        await CommandExecution.ExecuteAsync(model.RefreshCommand, null);
+            new RoomInvitationsNavigationContext(0)) { IsAcceptanceAllowed = true };
+        model.RequestRefresh();
         model.SelectedInvitation = model.Invitations[0];
         Task accepting = CommandExecution.ExecuteAsync(model.AcceptCommand, null);
 
@@ -214,27 +220,49 @@ public sealed class RoomInvitationsViewModelTests
     }
 
     [TestMethod]
-    public async Task RefreshCommand_ConcurrentNotification_IgnoresOlderSnapshot()
+    public async Task RequestRefresh_NotificationDuringLoad_ReconcilesLatestStateAutomatically()
     {
         // Arrange
-        var client = IncomingClient();
-        var older = new TaskCompletionSource<ListRoomInvitationsResponse>(
+        StubRoomInvitationsClient client = IncomingClient();
+        var completion = new TaskCompletionSource<ListRoomInvitationsResponse>(
             TaskCreationOptions.RunContinuationsAsynchronously);
-        client.ListHandler = () => older.Task;
-        using RoomInvitationsViewModel model = Create(client,
-            new RoomInvitationsNavigationContext(0, string.Empty));
-        Task refresh = CommandExecution.ExecuteAsync(model.RefreshCommand, null);
+        client.ListHandler = () => completion.Task;
+        using RoomInvitationsViewModel model = Create(
+            client, new RoomInvitationsNavigationContext(0));
+        model.RequestRefresh();
         client.ListHandler = null;
         client.ListResponse.Invitations[0].State = RoomInvitationState.Cancelled;
 
         // Act
         model.RequestRefresh();
-        older.SetResult(new ListRoomInvitationsResponse());
-        await refresh;
+        completion.SetResult(new ListRoomInvitationsResponse());
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        while (model.Invitations.Count == 0)
+        {
+            await Task.Delay(10, timeout.Token);
+        }
 
         // Assert
-        Assert.HasCount(1, model.Invitations);
         Assert.AreEqual(RoomInvitationState.Cancelled, model.Invitations[0].Invitation.State);
+        Assert.AreEqual(2, client.ListCount);
+    }
+
+    [TestMethod]
+    public void Dispose_FriendCollection_RemovesPresenceSubscriptions()
+    {
+        // Arrange
+        var context = new RoomInvitationsNavigationContext(42);
+        var friend = new FriendItemViewModel(2, "Friend", true);
+        context.Friends.Add(friend);
+        using RoomInvitationsViewModel model = Create(new StubRoomInvitationsClient(), context);
+
+        // Act
+        model.Dispose();
+        friend.IsOnline = false;
+        context.Friends.Clear();
+
+        // Assert
+        Assert.HasCount(1, model.OnlineFriends);
     }
 
     private static StubRoomInvitationsClient IncomingClient()

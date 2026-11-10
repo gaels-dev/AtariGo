@@ -3,59 +3,126 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <Style TargetType="Button" BasedOn="{StaticResource RoundedButtonStyle}">
+            <Setter Property="Background" Value="#4A90E2"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#2C2A29"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Height" Value="36"/>
+            <Setter Property="Padding" Value="14,5"/>
+        </Style>
     </UserControl.Resources>
     <StackPanel>
-        <TextBlock Text="{Binding Title}" FontSize="21" FontWeight="Bold" Margin="0,0,0,12"/>
-        <StackPanel Visibility="{Binding IsOutgoing,
-                    Converter={StaticResource BooleanToVisibilityConverter}}">
-            <TextBlock Text="{Binding FriendLabel}"/>
-            <ComboBox ItemsSource="{Binding Friends}" DisplayMemberPath="Username"
-                      SelectedItem="{Binding SelectedFriend}" IsEnabled="{Binding CanInteract}"
-                      Height="32" Margin="0,5,0,8">
-                <ComboBox.ItemContainerStyle>
-                    <Style TargetType="ComboBoxItem">
+        <TextBlock Text="{Binding Title}" FontSize="24" FontFamily="Georgia"
+                   Foreground="#2C2A29" FontWeight="Bold" Margin="0,0,0,18"/>
+        <Grid Visibility="{Binding IsOutgoing,
+                Converter={StaticResource BooleanToVisibilityConverter}}">
+            <ItemsControl x:Name="OnlineFriendsList" ItemsSource="{Binding OnlineFriends}">
+                <ItemsControl.Template>
+                    <ControlTemplate TargetType="ItemsControl">
+                        <ScrollViewer MaxHeight="300" VerticalScrollBarVisibility="Auto">
+                            <ItemsPresenter/>
+                        </ScrollViewer>
+                    </ControlTemplate>
+                </ItemsControl.Template>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border BorderBrush="#2C2A29" BorderThickness="1.5" CornerRadius="6"
+                                Padding="10" Margin="0,0,0,10">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Ellipse Width="10" Height="10" Fill="#2E7D32"
+                                         VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                <TextBlock Grid.Column="1" Text="{Binding Username}"
+                                           FontSize="14" Foreground="#2C2A29"
+                                           VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                <Button Grid.Column="2" Margin="12,0,0,0"
+                                    Content="{Binding DataContext.SendLabel,
+                                        RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                    Command="{Binding DataContext.SendCommand,
+                                        RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                    IsEnabled="{Binding DataContext.CanSend,
+                                        RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                    CommandParameter="{Binding}"/>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <TextBlock Text="{Binding EmptyFriendsLabel}" TextWrapping="Wrap"
+                       Foreground="#666666" Margin="0,10,0,18">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Visibility" Value="Collapsed"/>
                         <Style.Triggers>
-                            <DataTrigger Binding="{Binding IsOnline}" Value="False">
-                                <Setter Property="IsEnabled" Value="False"/>
+                            <DataTrigger Binding="{Binding HasItems, ElementName=OnlineFriendsList}"
+                                         Value="False">
+                                <Setter Property="Visibility" Value="Visible"/>
                             </DataTrigger>
                         </Style.Triggers>
                     </Style>
-                </ComboBox.ItemContainerStyle>
-            </ComboBox>
-            <TextBlock Text="{Binding SelectedRecipientLabel}" TextWrapping="Wrap" Margin="0,0,0,8"/>
-            <Button Content="{Binding SendLabel}" Command="{Binding SendCommand}"
-                    IsEnabled="{Binding CanSend}" Height="32" Margin="0,0,0,12"/>
+                </TextBlock.Style>
+            </TextBlock>
+        </Grid>
+        <StackPanel Visibility="{Binding IsIncoming,
+                    Converter={StaticResource BooleanToVisibilityConverter}}">
+            <ListBox x:Name="IncomingInvitationsList" ItemsSource="{Binding Invitations}"
+                     SelectedItem="{Binding SelectedInvitation}"
+                     Height="180" IsEnabled="{Binding CanInteract}"
+                     BorderBrush="#2C2A29" BorderThickness="1">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Margin="6">
+                            <TextBlock Text="{Binding PlayerName}" FontWeight="Bold" FontSize="14"/>
+                            <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                <TextBlock Text="{Binding RoomCode}" FontFamily="Consolas"
+                                           Margin="0,0,12,0"/>
+                                <TextBlock Text="{Binding StateLabel}" Foreground="#666666"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+            <TextBlock Text="{Binding EmptyInvitationsLabel}" Foreground="#666666"
+                       TextWrapping="Wrap" Margin="0,8,0,0">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding HasItems, ElementName=IncomingInvitationsList}"
+                                         Value="False">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+            <UniformGrid Columns="2" Margin="0,12,0,0">
+                <Button Content="{Binding AcceptLabel}" Command="{Binding AcceptCommand}"
+                        IsEnabled="{Binding CanRespond}" Margin="0,0,5,0"/>
+                <Button Content="{Binding RejectLabel}" Command="{Binding RejectCommand}"
+                        IsEnabled="{Binding CanRespond}" Background="#D9534F" Margin="5,0,0,0"/>
+            </UniformGrid>
         </StackPanel>
-        <ListBox ItemsSource="{Binding Invitations}" SelectedItem="{Binding SelectedInvitation}"
-                 Height="150" IsEnabled="{Binding CanInteract}">
-            <ListBox.ItemTemplate>
-                <DataTemplate>
-                    <StackPanel Orientation="Horizontal" Margin="4">
-                        <TextBlock Text="{Binding PlayerName}" FontWeight="Bold" Margin="0,0,12,0"/>
-                        <TextBlock Text="{Binding RoomCode}" FontFamily="Consolas" Margin="0,0,12,0"/>
-                        <TextBlock Text="{Binding StateLabel}"/>
-                    </StackPanel>
-                </DataTemplate>
-            </ListBox.ItemTemplate>
-        </ListBox>
-        <UniformGrid Columns="2" Margin="0,10,0,0"
-                     Visibility="{Binding IsIncoming,
-                        Converter={StaticResource BooleanToVisibilityConverter}}">
-            <Button Content="{Binding AcceptLabel}" Command="{Binding AcceptCommand}"
-                    IsEnabled="{Binding CanRespond}" Height="32" Margin="0,0,4,0"/>
-            <Button Content="{Binding RejectLabel}" Command="{Binding RejectCommand}"
-                    IsEnabled="{Binding CanRespond}" Height="32" Margin="4,0,0,0"/>
-        </UniformGrid>
-        <Button Content="{Binding CancelLabel}" Command="{Binding CancelCommand}"
-                IsEnabled="{Binding CanCancel}" Height="32" Margin="0,10,0,0"
-                Visibility="{Binding IsOutgoing,
-                    Converter={StaticResource BooleanToVisibilityConverter}}"/>
-        <TextBlock Text="{Binding Message}" TextWrapping="Wrap" Margin="0,10,0,10"/>
-        <UniformGrid Columns="2">
-            <Button Content="{Binding RefreshLabel}" Command="{Binding RefreshCommand}"
-                    IsEnabled="{Binding CanInteract}" Height="32" Margin="0,0,4,0"/>
-            <Button Content="{Binding CloseLabel}" Command="{Binding CloseCommand}"
-                    IsEnabled="{Binding CanInteract}" Height="32" Margin="4,0,0,0"/>
-        </UniformGrid>
+        <TextBlock Text="{Binding Message}" TextWrapping="Wrap"
+                   Foreground="#555555" Margin="0,12,0,12">
+            <TextBlock.Style>
+                <Style TargetType="TextBlock">
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding Message}" Value="">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </TextBlock.Style>
+        </TextBlock>
+        <Button Content="{Binding CloseLabel}" Command="{Binding CloseCommand}"
+                IsEnabled="{Binding CanInteract}" Background="#EAEAEA" Foreground="#333333" Margin="0,12,0,0"/>
     </StackPanel>
 </UserControl>

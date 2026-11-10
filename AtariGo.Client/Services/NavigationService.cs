@@ -17,14 +17,10 @@ namespace AtariGo.Client.Services
     /// </summary>
     public sealed class NavigationService : INavigationService
     {
-        public void NavigateToMainWindow(
-            bool isGuest,
-            string playerName,
-            string? sessionToken = null,
-            string? guestCredential = null)
+        public void NavigateToMainWindow(ClientSessionContext context)
         {
-            Dispatch(() => ShowMainWindow(
-                isGuest, playerName, sessionToken, guestCredential));
+            ArgumentNullException.ThrowIfNull(context);
+            Dispatch(() => ShowMainWindow(context));
         }
 
         public void RefreshLoginView()
@@ -216,19 +212,8 @@ namespace AtariGo.Client.Services
             dispatcher.BeginInvoke(action);
         }
 
-        private void ShowMainWindow(
-            bool isGuest,
-            string playerName,
-            string? sessionToken,
-            string? guestCredential)
+        private void ShowMainWindow(ClientSessionContext context)
         {
-            var context = new ClientSessionContext
-            {
-                IsGuest = isGuest,
-                PlayerName = playerName,
-                SessionToken = sessionToken,
-                GuestCredential = guestCredential
-            };
             var mainWindow = new MainWindow(new MainViewModel(context, this));
             Application.Current.MainWindow = mainWindow;
             mainWindow.Show();
@@ -295,7 +280,7 @@ namespace AtariGo.Client.Services
             if (navigationContext.IsHost)
             {
                 var invitationContext = new RoomInvitationsNavigationContext(
-                    navigationContext.Room.RoomId, navigationContext.Room.InvitationCode)
+                    navigationContext.Room.RoomId)
                 {
                     Friends = mainViewModel.Friends
                 };
@@ -306,7 +291,7 @@ namespace AtariGo.Client.Services
             }
 
             mainViewModel.CurrentViewModel = lobby;
-            _ = lobby.WatchRoomAsync(navigationContext);
+            _ = lobby.WatchRoomAsync();
         }
 
         private void ShowFriendSearch()

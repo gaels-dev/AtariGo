@@ -76,5 +76,34 @@ namespace AtariGo.Client.Tests.ViewModels
             Assert.IsFalse(((RecordingNavigationProxy)navigation).Calls
                 .Contains(nameof(INavigationService.NavigateToMainWindow)));
         }
+        [TestMethod]
+        public async Task SubmitCommand_Success_PreservesSessionContextDuringNavigation()
+        {
+            // Arrange
+            INavigationService navigation = DispatchProxy.Create<INavigationService,
+                RecordingNavigationProxy>();
+            var authentication = new StubAuthenticationClient(_ => Task.FromResult(new LoginResponse
+            {
+                Result = LoginResult.Success,
+                UserName = "Player",
+                SessionToken = "test-session"
+            }));
+            var registration = new StubRegistrationClient(_ =>
+                Task.FromResult(new RegisterAccountResponse()));
+            using var model = new LoginViewModel(navigation, authentication, registration)
+            {
+                Identifier = "Player"
+            };
+
+            // Act
+            await CommandExecution.ExecuteAsync(model.SubmitCommand, "password");
+
+            // Assert
+            var recorder = (RecordingNavigationProxy)navigation;
+            Assert.IsNotNull(recorder.SessionContext);
+            Assert.AreEqual("Player", recorder.SessionContext.PlayerName);
+            Assert.AreEqual("test-session", recorder.SessionContext.SessionToken);
+            Assert.IsFalse(recorder.SessionContext.IsGuest);
+        }
     }
 }

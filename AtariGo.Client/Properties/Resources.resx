@@ -713,7 +713,7 @@
     <value>Host</value>
   </data>
   <data name="PrivateRoom_Lbl_ActiveRules" xml:space="preserve">
-    <value>Active rules</value>
+    <value>Game configuration</value>
   </data>
   <data name="PrivateRoom_Btn_SimulateOpponent" xml:space="preserve">
     <value>Simulate Opponent</value>
@@ -847,17 +847,8 @@
   <data name="FriendRequests_Err_Unconfirmed" xml:space="preserve">
     <value>The operation could not be confirmed. Refresh the list or try again.</value>
   </data>
-  <data name="PrivateRoom_Btn_SaveConfiguration" xml:space="preserve">
-    <value>Save configuration</value>
-  </data>
-  <data name="PrivateRoom_Btn_DiscardConfiguration" xml:space="preserve">
-    <value>Discard changes</value>
-  </data>
-  <data name="PrivateRoom_Btn_RefreshConfiguration" xml:space="preserve">
-    <value>Refresh room</value>
-  </data>
   <data name="PrivateRoom_Lbl_CaptureGoal" xml:space="preserve">
-    <value>Capture goal (host only)</value>
+    <value>Capture goal</value>
   </data>
   <data name="PrivateRoom_Lbl_GameTimeSeconds" xml:space="preserve">
     <value>Game time (seconds)</value>
@@ -866,10 +857,10 @@
     <value>Turn time (seconds)</value>
   </data>
   <data name="PrivateRoom_Err_ConfigurationChanged" xml:space="preserve">
-    <value>The room changed. Review the current configuration before saving or starting.</value>
+    <value>The room changed. Review the configuration before starting.</value>
   </data>
   <data name="PrivateRoom_Err_ConfigurationUnconfirmed" xml:space="preserve">
-    <value>The update could not be confirmed. Refresh the room before continuing.</value>
+    <value>The start could not be confirmed. The room state will be recovered automatically.</value>
   </data>
   <data name="RoomInvitations_Title_Incoming" xml:space="preserve">
     <value>Room invitations</value>
@@ -881,7 +872,7 @@
     <value>Invitations ({0})</value>
   </data>
   <data name="RoomInvitations_Btn_Send" xml:space="preserve">
-    <value>Send invitation</value>
+    <value>Invite</value>
   </data>
   <data name="RoomInvitations_Btn_Accept" xml:space="preserve">
     <value>Accept</value>
@@ -889,32 +880,17 @@
   <data name="RoomInvitations_Btn_Reject" xml:space="preserve">
     <value>Reject</value>
   </data>
-  <data name="RoomInvitations_Btn_Cancel" xml:space="preserve">
-    <value>Cancel invitation</value>
-  </data>
   <data name="RoomInvitations_Btn_Close" xml:space="preserve">
     <value>Back</value>
   </data>
-  <data name="RoomInvitations_Btn_Refresh" xml:space="preserve">
-    <value>Refresh</value>
-  </data>
-  <data name="RoomInvitations_Lbl_Friend" xml:space="preserve">
-    <value>Select an online friend</value>
-  </data>
-  <data name="RoomInvitations_Lbl_Room" xml:space="preserve">
-    <value>Room</value>
-  </data>
-  <data name="RoomInvitations_Lbl_Review" xml:space="preserve">
-    <value>Recipient: {0} · Room: {1}</value>
-  </data>
   <data name="RoomInvitations_Msg_Sent" xml:space="preserve">
-    <value>Invitation registered. You may select another friend.</value>
+    <value>Invitation sent. You may invite another friend.</value>
   </data>
   <data name="RoomInvitations_Msg_Updated" xml:space="preserve">
     <value>Invitation updated.</value>
   </data>
   <data name="RoomInvitations_Err_Unconfirmed" xml:space="preserve">
-    <value>The operation could not be confirmed. Refresh before retrying.</value>
+    <value>The operation could not be confirmed. You may try again.</value>
   </data>
   <data name="RoomInvitations_Err_NotFriends" xml:space="preserve">
     <value>You are no longer friends with this player.</value>
@@ -926,7 +902,7 @@
     <value>The room is full, closed or no longer available.</value>
   </data>
   <data name="RoomInvitations_Err_InvitationUnavailable" xml:space="preserve">
-    <value>The invitation is no longer pending. Refresh the list.</value>
+    <value>The invitation is no longer pending.</value>
   </data>
   <data name="RoomInvitations_Err_AlreadyInRoom" xml:space="preserve">
     <value>Leave your current private room before accepting.</value>
@@ -954,5 +930,11 @@
   </data>
   <data name="RoomInvitations_State_Unavailable" xml:space="preserve">
     <value>Unavailable</value>
+  </data>
+  <data name="RoomInvitations_Msg_NoOnlineFriends" xml:space="preserve">
+    <value>No friends are online right now.</value>
+  </data>
+  <data name="RoomInvitations_Msg_NoInvitations" xml:space="preserve">
+    <value>You have no room invitations.</value>
   </data>
 </root>

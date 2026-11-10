@@ -47,6 +47,7 @@ namespace AtariGo.Client.ViewModels
             _playerName = DefaultPlayerName;
             _playerWins = DefaultPlayerWins;
             _isGuest = false;
+            RoomInvitations = context?.RoomInvitations;
             Friends = context?.Friends ?? new ObservableCollection<FriendItemViewModel>();
             FriendRemoval = new FriendRemovalViewModel(navigationService,
                 new FriendListNavigationContext
@@ -72,6 +73,8 @@ namespace AtariGo.Client.ViewModels
         { get; } = new();
 
         public ObservableCollection<FriendItemViewModel> Friends { get; }
+
+        public RoomInvitationsViewModel? RoomInvitations { get; }
 
         public ICollectionView FilteredFriends { get; }
 

@@ -132,14 +132,19 @@
                                 HorizontalAlignment="Center"
                                 Margin="0,0,0,5"/>
 
-                            <StackPanel Orientation="Horizontal"
-                                        HorizontalAlignment="Center">
-                                <TextBlock Text="{Binding TargetCaptures}"
-                                           FontWeight="Bold"/>
-
-                                <TextBlock
-                                    Text="{x:Static properties:Resources.PrivateRoom_Lbl_Captures}"
-                                    Margin="5,0,0,0"/>
+                            <StackPanel Visibility="{Binding IsHost,
+                                        Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <TextBlock Text="{Binding CaptureGoalLabel}" Margin="0,4,0,6"/>
+                                <ComboBox ItemsSource="{Binding CaptureGoals}"
+                                          SelectedItem="{Binding SelectedCaptureGoal, Mode=TwoWay}"
+                                          IsEnabled="{Binding CanEditConfiguration}" Height="32"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"
+                                        Visibility="{Binding IsGuest,
+                                            Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <TextBlock Text="{Binding TargetCaptures}" FontWeight="Bold"/>
+                                <TextBlock Margin="5,0,0,0"
+                                    Text="{x:Static properties:Resources.PrivateRoom_Lbl_Captures}"/>
                             </StackPanel>
                             <Grid Margin="0,10,0,0">
                                 <Grid.ColumnDefinitions>
@@ -162,38 +167,15 @@
                         </StackPanel>
                     </Border>
 
-                    <StackPanel Margin="0,0,0,15"
-                                Visibility="{Binding IsHost,
-                                    Converter={StaticResource BooleanToVisibilityConverter}}">
-                        <TextBlock Text="{Binding CaptureGoalLabel}" Margin="0,0,0,5"/>
-                        <ComboBox ItemsSource="{Binding CaptureGoals}"
-                                  SelectedItem="{Binding SelectedCaptureGoal, Mode=TwoWay}"
-                                  IsEnabled="{Binding CanEditConfiguration}"
-                                  Height="32" Margin="0,0,0,10"/>
-                        <UniformGrid Columns="2">
-                            <Button Content="{Binding SaveConfigurationLabel}"
-                                    Command="{Binding SaveConfigurationCommand}"
-                                    IsEnabled="{Binding CanSaveConfiguration}"
-                                    Height="32" Margin="0,0,5,0"/>
-                            <Button Content="{Binding DiscardConfigurationLabel}"
-                                    Command="{Binding DiscardConfigurationCommand}"
-                                    IsEnabled="{Binding CanDiscardConfiguration}"
-                                    Height="32" Margin="5,0,0,0"/>
-                        </UniformGrid>
-                    </StackPanel>
-
                     <StackPanel Margin="0,0,0,12"
                                 Visibility="{Binding IsHost,
                                     Converter={StaticResource BooleanToVisibilityConverter}}">
-                        <Button Content="{Binding RoomInvitations.Title}"
+                        <Button Style="{StaticResource RoundedButtonStyle}" Content="{Binding RoomInvitations.Title}"
                                 Command="{Binding RoomInvitations.OpenCommand}"
-                                IsEnabled="{Binding RoomInvitations.CanOpen}" Height="32"/>
+                                IsEnabled="{Binding RoomInvitations.CanOpen}" Height="38"
+                                Background="#4A90E2" Foreground="White" FontWeight="Bold"
+                                BorderBrush="#2C2A29" BorderThickness="1"/>
                     </StackPanel>
-
-                    <Button Content="{Binding RefreshConfigurationLabel}"
-                            Command="{Binding RefreshConfigurationCommand}"
-                            IsEnabled="{Binding CanRefreshConfiguration}"
-                            Height="30" Margin="0,0,0,10"/>
 
                     <TextBlock Text="{Binding ErrorMessage}"
                                Foreground="#D9534F"
@@ -201,7 +183,7 @@
                                TextAlignment="Center"
                                Margin="0,0,0,15"/>
 
-                    <Button
+                    <Button Style="{StaticResource RoundedButtonStyle}"
                         Content="{Binding StartGameLabel}"
                         Command="{Binding StartGameCommand}"
                         Height="42"
@@ -213,9 +195,10 @@
                         Visibility="{Binding IsHost,
                             Converter={StaticResource BooleanToVisibilityConverter}}"/>
 
-                    <Button
+                    <Button Style="{StaticResource RoundedButtonStyle}"
                         Content="{x:Static properties:Resources.PrivateRoom_Btn_Disband}"
                         Command="{Binding LeaveRoomCommand}"
+                        IsEnabled="{Binding CanLeaveRoom}"
                         Height="42"
                         Background="#D9534F"
                         Foreground="White"
@@ -224,9 +207,10 @@
                             Converter={
                                 StaticResource BooleanToVisibilityConverter}}"/>
 
-                    <Button
+                    <Button Style="{StaticResource RoundedButtonStyle}"
                         Content="{x:Static properties:Resources.PrivateRoom_Btn_Leave}"
                         Command="{Binding LeaveRoomCommand}"
+                        IsEnabled="{Binding CanLeaveRoom}"
                         Height="42"
                         Background="#D9534F"
                         Foreground="White"
@@ -241,7 +225,8 @@
               Background="#99000000" Panel.ZIndex="80"
               Visibility="{Binding IsOpen, FallbackValue=Collapsed,
                 Converter={StaticResource BooleanToVisibilityConverter}}">
-            <Border Width="620" Padding="24" Background="White" CornerRadius="8"
+            <Border Width="520" Padding="24" Background="White" CornerRadius="8"
+                    BorderBrush="#2C2A29" BorderThickness="1.5"
                     HorizontalAlignment="Center" VerticalAlignment="Center">
                 <views:RoomInvitationsView/>
             </Border>

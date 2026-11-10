@@ -6,10 +6,10 @@ namespace AtariGo.Client.ViewModels;
 
 public sealed class RoomInvitationItemViewModel
 {
-    public RoomInvitationItemViewModel(RoomInvitation invitation, bool incoming)
+    public RoomInvitationItemViewModel(RoomInvitation invitation)
     {
         Invitation = invitation.Clone();
-        PlayerName = incoming ? invitation.SenderName : invitation.RecipientName;
+        PlayerName = invitation.SenderName;
     }
 
     public RoomInvitation Invitation { get; }

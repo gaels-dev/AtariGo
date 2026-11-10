@@ -712,7 +712,7 @@
     <value>Host</value>
   </data>
   <data name="PrivateRoom_Lbl_ActiveRules" xml:space="preserve">
-    <value>Aktive Regeln</value>
+    <value>Spieleinstellungen</value>
   </data>
   <data name="PrivateRoom_Btn_SimulateOpponent" xml:space="preserve">
     <value>Gegner simulieren</value>
@@ -846,17 +846,8 @@
   <data name="FriendRequests_Err_Unconfirmed" xml:space="preserve">
     <value>Der Vorgang konnte nicht bestätigt werden. Aktualisiere die Liste oder versuche es erneut.</value>
   </data>
-  <data name="PrivateRoom_Btn_SaveConfiguration" xml:space="preserve">
-    <value>Konfiguration speichern</value>
-  </data>
-  <data name="PrivateRoom_Btn_DiscardConfiguration" xml:space="preserve">
-    <value>Änderungen verwerfen</value>
-  </data>
-  <data name="PrivateRoom_Btn_RefreshConfiguration" xml:space="preserve">
-    <value>Raum aktualisieren</value>
-  </data>
   <data name="PrivateRoom_Lbl_CaptureGoal" xml:space="preserve">
-    <value>Fangziel (nur Gastgeber)</value>
+    <value>Fangziel</value>
   </data>
   <data name="PrivateRoom_Lbl_GameTimeSeconds" xml:space="preserve">
     <value>Spielzeit (Sekunden)</value>
@@ -865,10 +856,10 @@
     <value>Zugzeit (Sekunden)</value>
   </data>
   <data name="PrivateRoom_Err_ConfigurationChanged" xml:space="preserve">
-    <value>Der Raum wurde geändert. Prüfe die aktuelle Konfiguration vor dem Speichern oder Starten.</value>
+    <value>Der Raum wurde geändert. Prüfe die Konfiguration vor dem Start.</value>
   </data>
   <data name="PrivateRoom_Err_ConfigurationUnconfirmed" xml:space="preserve">
-    <value>Die Änderung konnte nicht bestätigt werden. Aktualisiere den Raum, bevor du fortfährst.</value>
+    <value>Der Start konnte nicht bestätigt werden. Der Raumstatus wird automatisch wiederhergestellt.</value>
   </data>
   <data name="RoomInvitations_Title_Incoming" xml:space="preserve">
     <value>Raumeinladungen</value>
@@ -880,7 +871,7 @@
     <value>Einladungen ({0})</value>
   </data>
   <data name="RoomInvitations_Btn_Send" xml:space="preserve">
-    <value>Einladung senden</value>
+    <value>Einladen</value>
   </data>
   <data name="RoomInvitations_Btn_Accept" xml:space="preserve">
     <value>Annehmen</value>
@@ -888,32 +879,17 @@
   <data name="RoomInvitations_Btn_Reject" xml:space="preserve">
     <value>Ablehnen</value>
   </data>
-  <data name="RoomInvitations_Btn_Cancel" xml:space="preserve">
-    <value>Einladung zurückziehen</value>
-  </data>
   <data name="RoomInvitations_Btn_Close" xml:space="preserve">
     <value>Zurück</value>
   </data>
-  <data name="RoomInvitations_Btn_Refresh" xml:space="preserve">
-    <value>Aktualisieren</value>
-  </data>
-  <data name="RoomInvitations_Lbl_Friend" xml:space="preserve">
-    <value>Wähle einen Freund aus, der online ist</value>
-  </data>
-  <data name="RoomInvitations_Lbl_Room" xml:space="preserve">
-    <value>Raum</value>
-  </data>
-  <data name="RoomInvitations_Lbl_Review" xml:space="preserve">
-    <value>Empfänger: {0} · Raum: {1}</value>
-  </data>
   <data name="RoomInvitations_Msg_Sent" xml:space="preserve">
-    <value>Einladung erfasst. Du kannst einen weiteren Freund auswählen.</value>
+    <value>Einladung gesendet. Du kannst einen weiteren Freund einladen.</value>
   </data>
   <data name="RoomInvitations_Msg_Updated" xml:space="preserve">
     <value>Einladung aktualisiert.</value>
   </data>
   <data name="RoomInvitations_Err_Unconfirmed" xml:space="preserve">
-    <value>Der Vorgang konnte nicht bestätigt werden. Aktualisiere vor einem neuen Versuch.</value>
+    <value>Der Vorgang konnte nicht bestätigt werden. Du kannst es erneut versuchen.</value>
   </data>
   <data name="RoomInvitations_Err_NotFriends" xml:space="preserve">
     <value>Du bist mit diesem Spieler nicht mehr befreundet.</value>
@@ -925,7 +901,7 @@
     <value>Der Raum ist voll, geschlossen oder nicht mehr verfügbar.</value>
   </data>
   <data name="RoomInvitations_Err_InvitationUnavailable" xml:space="preserve">
-    <value>Die Einladung ist nicht mehr offen. Aktualisiere die Liste.</value>
+    <value>Die Einladung ist nicht mehr offen.</value>
   </data>
   <data name="RoomInvitations_Err_AlreadyInRoom" xml:space="preserve">
     <value>Verlasse deinen aktuellen privaten Raum, bevor du annimmst.</value>
@@ -953,5 +929,11 @@
   </data>
   <data name="RoomInvitations_State_Unavailable" xml:space="preserve">
     <value>Nicht verfügbar</value>
+  </data>
+  <data name="RoomInvitations_Msg_NoOnlineFriends" xml:space="preserve">
+    <value>Momentan sind keine Freunde online.</value>
+  </data>
+  <data name="RoomInvitations_Msg_NoInvitations" xml:space="preserve">
+    <value>Du hast keine Raumeinladungen.</value>
   </data>
 </root>

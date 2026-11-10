@@ -227,6 +227,14 @@ finaliza. Mientras la sala está en espera, su `RoomId` identifica el lobby en e
 proceso del servidor. SQL asigna su propia clave al registro histórico de sala,
 que se guarda junto con la partida.
 
+En el lobby privado, la selección de capturas permanece como borrador del anfitrión.
+Al pulsar **Iniciar partida**, el cliente confirma los cambios mediante
+`UpdateRoomConfiguration` y utiliza la versión confirmada en `StartGame`.
+Si no hay cambios, llama directamente a `StartGame`. Un conflicto o una respuesta
+no confirmada detiene el intento; no se repite automáticamente una mutación.
+`WatchRoom` mantiene la sala actualizada y recupera un snapshot completo al reconectar.
+La interfaz no requiere botones separados para guardar, descartar o actualizar.
+
 ### 4.11  RoomInvitations
 
 Responsabilidad: Invitaciones a salas (amistad, enlace o correo) y respuesta del invitado.

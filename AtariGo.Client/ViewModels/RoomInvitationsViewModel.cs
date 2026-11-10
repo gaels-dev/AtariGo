@@ -18,9 +18,11 @@ public sealed class RoomInvitationsViewModel : ViewModelBase, IDisposable
 {
     private readonly INavigationService _navigation;
     private readonly IRoomInvitationsClient _client;
-    private readonly CancellationTokenSource _lifetime = new();
+    private readonly CancellationTokenSource _lifetime = new CancellationTokenSource();
+    private readonly ObservableCollection<FriendItemViewModel> _friends;
+    private readonly HashSet<FriendItemViewModel> _observedFriends =
+        new HashSet<FriendItemViewModel>();
     private readonly int _roomId;
-    private FriendItemViewModel? _selectedFriend;
     private RoomInvitationItemViewModel? _selectedInvitation;
     private Task? _refreshTask;
     private bool _refreshRequested;
@@ -43,27 +45,23 @@ public sealed class RoomInvitationsViewModel : ViewModelBase, IDisposable
         _navigation = navigation;
         _client = client;
         _roomId = context.RoomId;
-        RoomCode = context.RoomCode;
-        Friends = context.Friends;
-        Friends.CollectionChanged += OnFriendsChanged;
+        _friends = context.Friends;
+        _friends.CollectionChanged += OnFriendsChanged;
+        TrackFriends();
         OpenCommand = new RelayCommand(Open);
         CloseCommand = new RelayCommand(Close);
         SendCommand = new AsyncRelayCommand(SendAsync, HandleMutationFailure, _lifetime.Token);
         AcceptCommand = new AsyncRelayCommand(AcceptAsync, HandleMutationFailure, _lifetime.Token);
         RejectCommand = new AsyncRelayCommand(RejectAsync, HandleMutationFailure, _lifetime.Token);
-        CancelCommand = new AsyncRelayCommand(CancelAsync, HandleMutationFailure, _lifetime.Token);
-        RefreshCommand = new AsyncRelayCommand(_ => RefreshAsync(), ShowFailure, _lifetime.Token);
     }
 
-    public ObservableCollection<FriendItemViewModel> Friends { get; }
+    public ObservableCollection<FriendItemViewModel> OnlineFriends { get; } = new();
 
     public ObservableCollection<RoomInvitationItemViewModel> Invitations { get; } = new();
 
-    public bool IsIncoming => _roomId == 0;
+    public bool IsIncoming => _roomId == RoomInvitationsNavigationContext.IncomingRoomId;
 
     public bool IsOutgoing => !IsIncoming;
-
-    public string RoomCode { get; }
 
     public string Title => Text(IsIncoming ? "Title_Incoming" : "Title_Outgoing");
 
@@ -76,18 +74,11 @@ public sealed class RoomInvitationsViewModel : ViewModelBase, IDisposable
 
     public string RejectLabel => Text("Btn_Reject");
 
-    public string CancelLabel => Text("Btn_Cancel");
-
     public string CloseLabel => Text("Btn_Close");
 
-    public string RefreshLabel => Text("Btn_Refresh");
+    public string EmptyFriendsLabel => Text("Msg_NoOnlineFriends");
 
-    public string FriendLabel => Text("Lbl_Friend");
-
-    public string RoomLabel => Text("Lbl_Room");
-
-    public string SelectedRecipientLabel => string.Format(CultureInfo.CurrentCulture,
-        Text("Lbl_Review"), SelectedFriend?.Username ?? "—", RoomCode);
+    public string EmptyInvitationsLabel => Text("Msg_NoInvitations");
 
     public string Message
     {
@@ -129,27 +120,6 @@ public sealed class RoomInvitationsViewModel : ViewModelBase, IDisposable
         }
     }
 
-    public FriendItemViewModel? SelectedFriend
-    {
-        get => _selectedFriend;
-        set
-        {
-            if (_selectedFriend is not null)
-            {
-                _selectedFriend.PropertyChanged -= OnSelectedFriendChanged;
-            }
-
-            SetProperty(ref _selectedFriend, value);
-            if (_selectedFriend is not null)
-            {
-                _selectedFriend.PropertyChanged += OnSelectedFriendChanged;
-            }
-
-            OnPropertyChanged(nameof(SelectedRecipientLabel));
-            NotifyState();
-        }
-    }
-
     public RoomInvitationItemViewModel? SelectedInvitation
     {
         get => _selectedInvitation;
@@ -162,16 +132,13 @@ public sealed class RoomInvitationsViewModel : ViewModelBase, IDisposable
 
     public bool CanInteract => !_isBusy && !_isDisposed;
 
-    public bool CanOpen => CanInteract && (!IsIncoming || IsAcceptanceAllowed);
+    public bool CanOpen => CanInteract
+        && (IsIncoming ? IsAcceptanceAllowed : IsRoomAvailable);
 
-    public bool CanSend => CanInteract && IsOutgoing && IsRoomAvailable
-        && SelectedFriend is { IsOnline: true }
-        && Friends.Contains(SelectedFriend);
+    public bool CanSend => CanInteract && IsOutgoing && IsRoomAvailable;
 
     public bool CanRespond => CanInteract && IsIncoming && IsAcceptanceAllowed
         && SelectedInvitation is { IsPending: true };
-
-    public bool CanCancel => CanInteract && IsOutgoing && SelectedInvitation is { IsPending: true };
 
     public ICommand OpenCommand { get; }
 
@@ -183,13 +150,9 @@ public sealed class RoomInvitationsViewModel : ViewModelBase, IDisposable
 
     public ICommand RejectCommand { get; }
 
-    public ICommand CancelCommand { get; }
-
-    public ICommand RefreshCommand { get; }
-
     public void RequestRefresh()
     {
-        if (_isDisposed)
+        if (_isDisposed || IsOutgoing)
         {
             return;
         }
@@ -209,12 +172,13 @@ public sealed class RoomInvitationsViewModel : ViewModelBase, IDisposable
         }
 
         _isDisposed = true;
-        Friends.CollectionChanged -= OnFriendsChanged;
-        if (_selectedFriend is not null)
+        _friends.CollectionChanged -= OnFriendsChanged;
+        foreach (FriendItemViewModel friend in _observedFriends)
         {
-            _selectedFriend.PropertyChanged -= OnSelectedFriendChanged;
+            friend.PropertyChanged -= OnFriendPresenceChanged;
         }
 
+        _observedFriends.Clear();
         _lifetime.Cancel();
         _lifetime.Dispose();
     }
@@ -231,8 +195,10 @@ public sealed class RoomInvitationsViewModel : ViewModelBase, IDisposable
 
     private void Close()
     {
-        IsOpen = false;
-        SelectedFriend = null;
+        if (CanInteract)
+        {
+            IsOpen = false;
+        }
     }
 
     private async Task RefreshQueuedAsync()
@@ -242,7 +208,7 @@ public sealed class RoomInvitationsViewModel : ViewModelBase, IDisposable
             _refreshRequested = false;
             try
             {
-                await RefreshAsync();
+                await LoadInvitationsAsync();
             }
             catch (Exception exception) when (!_isDisposed)
             {
@@ -255,7 +221,7 @@ public sealed class RoomInvitationsViewModel : ViewModelBase, IDisposable
         }
     }
 
-    private async Task RefreshAsync()
+    private async Task LoadInvitationsAsync()
     {
         int generation = ++_refreshGeneration;
         ListRoomInvitationsResponse response = await _client.ListAsync(_roomId, _lifetime.Token);
@@ -268,7 +234,7 @@ public sealed class RoomInvitationsViewModel : ViewModelBase, IDisposable
         Invitations.Clear();
         foreach (RoomInvitation invitation in response.Invitations)
         {
-            Invitations.Add(new RoomInvitationItemViewModel(invitation, IsIncoming));
+            Invitations.Add(new RoomInvitationItemViewModel(invitation));
         }
 
         SelectedInvitation = Invitations.FirstOrDefault(
@@ -279,14 +245,15 @@ public sealed class RoomInvitationsViewModel : ViewModelBase, IDisposable
 
     private async Task SendAsync(object? parameter)
     {
-        if (!CanSend)
+        if (parameter is not FriendItemViewModel friend || !CanSend
+            || !OnlineFriends.Contains(friend))
         {
             return;
         }
 
         var request = new SendRoomInvitationRequest
         {
-            RoomId = _roomId, RecipientUserId = SelectedFriend!.UserId
+            RoomId = _roomId, RecipientUserId = friend.UserId
         };
         SetBusy(true);
         try
@@ -295,7 +262,6 @@ public sealed class RoomInvitationsViewModel : ViewModelBase, IDisposable
             if (!_isDisposed)
             {
                 Message = Text("Msg_Sent");
-                await RefreshAsync();
             }
         }
         finally
@@ -333,7 +299,7 @@ public sealed class RoomInvitationsViewModel : ViewModelBase, IDisposable
             if (!_isDisposed)
             {
                 ApplyResponse(response, accept);
-                await RefreshAsync();
+                await LoadInvitationsAsync();
             }
         }
         finally
@@ -346,37 +312,13 @@ public sealed class RoomInvitationsViewModel : ViewModelBase, IDisposable
     {
         if (accepted && response.Room is not null && IsAcceptanceAllowed)
         {
-            Close();
+            IsOpen = false;
             _navigation.NavigateToPrivateRoomLobby(new PrivateRoomNavigationContext(
                 response.Room, IsHost: false));
         }
         else
         {
             Message = Text("Msg_Updated");
-        }
-    }
-
-    private async Task CancelAsync(object? parameter)
-    {
-        if (!CanCancel)
-        {
-            return;
-        }
-
-        long invitationId = SelectedInvitation!.Invitation.InvitationId;
-        SetBusy(true);
-        try
-        {
-            await _client.CancelAsync(invitationId, _lifetime.Token);
-            if (!_isDisposed)
-            {
-                Message = Text("Msg_Updated");
-                await RefreshAsync();
-            }
-        }
-        finally
-        {
-            SetBusy(false);
         }
     }
 
@@ -395,22 +337,47 @@ public sealed class RoomInvitationsViewModel : ViewModelBase, IDisposable
         OnPropertyChanged(nameof(CanOpen));
         OnPropertyChanged(nameof(CanSend));
         OnPropertyChanged(nameof(CanRespond));
-        OnPropertyChanged(nameof(CanCancel));
     }
 
     private void OnFriendsChanged(object? sender, NotifyCollectionChangedEventArgs args)
     {
-        if (SelectedFriend is not null && !Friends.Contains(SelectedFriend))
-        {
-            SelectedFriend = null;
-        }
-
-        NotifyState();
+        TrackFriends();
     }
 
-    private void OnSelectedFriendChanged(object? sender, PropertyChangedEventArgs args)
+    private void TrackFriends()
     {
-        NotifyState();
+        foreach (FriendItemViewModel friend in _observedFriends)
+        {
+            friend.PropertyChanged -= OnFriendPresenceChanged;
+        }
+
+        _observedFriends.Clear();
+        foreach (FriendItemViewModel friend in _friends)
+        {
+            if (_observedFriends.Add(friend))
+            {
+                friend.PropertyChanged += OnFriendPresenceChanged;
+            }
+        }
+
+        UpdateOnlineFriends();
+    }
+
+    private void OnFriendPresenceChanged(object? sender, PropertyChangedEventArgs args)
+    {
+        if (args.PropertyName == nameof(FriendItemViewModel.IsOnline))
+        {
+            UpdateOnlineFriends();
+        }
+    }
+
+    private void UpdateOnlineFriends()
+    {
+        OnlineFriends.Clear();
+        foreach (FriendItemViewModel friend in _friends.Where(friend => friend.IsOnline))
+        {
+            OnlineFriends.Add(friend);
+        }
     }
 
     private void HandleMutationFailure(Exception exception)

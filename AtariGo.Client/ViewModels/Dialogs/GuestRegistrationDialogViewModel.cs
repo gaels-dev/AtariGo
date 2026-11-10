@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Windows.Input;
 
 using AtariGo.Client.Commands;
+using AtariGo.Client.Models;
 using AtariGo.Client.Properties;
 using AtariGo.Client.Services;
 
@@ -93,10 +94,12 @@ public sealed class GuestRegistrationDialogViewModel : ViewModelBase, IDisposabl
         string credential = await _guestIdentityClient.CreateAsync(
             displayName,
             _lifetimeCancellation.Token);
-        _navigationService.NavigateToMainWindow(
-            isGuest: true,
-            displayName,
-            guestCredential: credential);
+        _navigationService.NavigateToMainWindow(new ClientSessionContext
+        {
+            IsGuest = true,
+            PlayerName = displayName,
+            GuestCredential = credential
+        });
     }
 
     private void HandleFailure(Exception _)

@@ -293,6 +293,7 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
@@ -331,7 +332,15 @@
                             BorderThickness="1"
                             Margin="0,0,0,12"/>
 
-                    <Border Grid.Row="3"
+                    <Button Grid.Row="3" Style="{StaticResource RoundedButtonStyle}"
+                            Content="{Binding RoomInvitations.OpenLabel}"
+                            Command="{Binding RoomInvitations.OpenCommand}"
+                            IsEnabled="{Binding RoomInvitations.CanOpen}"
+                            Height="36" Background="#4A90E2" Foreground="White"
+                            FontWeight="Bold" FontSize="12"
+                            BorderBrush="#2C2A29" BorderThickness="1" Margin="0,0,0,12"/>
+
+                    <Border Grid.Row="4"
                             BorderBrush="#2C2A29"
                             BorderThickness="1.5"
                             CornerRadius="6"
@@ -387,15 +396,21 @@
                         </TextBox>
                     </Border>
 
-                    <StackPanel Grid.Row="4">
-                        <TextBlock Text="{Binding PresenceStatus}"
+                    <Grid Grid.Row="5">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Grid.Row="0" Text="{Binding PresenceStatus}"
                                    Foreground="#666666"
                                    FontSize="11"
                                    TextWrapping="Wrap"
                                    Margin="0,0,0,6"/>
-                        <TextBlock Text="{Binding FriendRemoval.StatusMessage}"
+                        <TextBlock Grid.Row="1" Text="{Binding FriendRemoval.StatusMessage}"
                                    TextWrapping="Wrap" Foreground="#666666" Margin="0,0,0,6"/>
-                        <TextBlock Text="{Binding FriendSearchStatus}"
+                        <TextBlock Grid.Row="2" Text="{Binding FriendSearchStatus}"
                                    Foreground="#666666"
                                    FontSize="11"
                                    TextWrapping="Wrap"
@@ -414,7 +429,7 @@
                                 </Style>
                             </TextBlock.Style>
                         </TextBlock>
-                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <ScrollViewer Grid.Row="3" VerticalScrollBarVisibility="Auto">
                             <ItemsControl ItemsSource="{Binding FilteredFriends}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
@@ -428,7 +443,11 @@
                                                     <ColumnDefinition Width="*"/>
                                                     <ColumnDefinition Width="Auto"/>
                                                 </Grid.ColumnDefinitions>
-                                                <StackPanel Orientation="Horizontal">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                    </Grid.ColumnDefinitions>
                                                     <Ellipse Width="10"
                                                              Height="10"
                                                              Margin="0,0,8,0"
@@ -447,11 +466,12 @@
                                                             </Style>
                                                         </Ellipse.Style>
                                                     </Ellipse>
-                                                    <TextBlock Text="{Binding Username}"
+                                                    <TextBlock Grid.Column="1" Text="{Binding Username}"
+                                                               TextTrimming="CharacterEllipsis"
                                                                FontWeight="SemiBold"
                                                                FontSize="13"
                                                                VerticalAlignment="Center"/>
-                                                </StackPanel>
+                                                </Grid>
                                                 <StackPanel Grid.Column="1"
                                                             Orientation="Horizontal">
                                                     <Button Content="{x:Static properties:Resources.RegisterPlayerLobby_Btn_Invite}"
@@ -526,7 +546,7 @@
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
                         </ScrollViewer>
-                    </StackPanel>
+                    </Grid>
                 </Grid>
             </Border>
         </Grid>

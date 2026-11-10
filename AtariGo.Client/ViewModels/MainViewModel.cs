@@ -52,7 +52,8 @@ namespace AtariGo.Client.ViewModels
                 RoomInvitations = new RoomInvitationsViewModel(
                     _navigationService,
                     new GrpcRoomInvitationsClient(SessionToken),
-                    new RoomInvitationsNavigationContext(0, string.Empty));
+                    new RoomInvitationsNavigationContext(
+                        RoomInvitationsNavigationContext.IncomingRoomId));
             }
 
             if (_isGuest && !string.IsNullOrWhiteSpace(GuestCredential))
@@ -65,9 +66,9 @@ namespace AtariGo.Client.ViewModels
             StartRealtimeConnection();
         }
 
-        public RoomInvitationsViewModel? RoomInvitations { get; }
+        public event Action? LanguageChanged;
 
-        public bool HasRoomInvitations => RoomInvitations is not null;
+        public RoomInvitationsViewModel? RoomInvitations { get; }
 
         public ViewModelBase CurrentViewModel
         {
@@ -143,8 +144,6 @@ namespace AtariGo.Client.ViewModels
         public ObservableCollection<FriendItemViewModel> Friends { get; } =
             new();
 
-        public event Action? LanguageChanged;
-
         public void Dispose()
         {
             if (_isDisposed)
@@ -177,7 +176,8 @@ namespace AtariGo.Client.ViewModels
                 {
                     Friends = Friends,
                     SessionToken = SessionToken,
-                    SignOutAsync = SignOutAsync
+                    SignOutAsync = SignOutAsync,
+                    RoomInvitations = RoomInvitations
                 })
             {
                 PlayerName = _playerName,

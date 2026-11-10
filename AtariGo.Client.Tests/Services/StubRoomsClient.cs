@@ -17,6 +17,13 @@ internal sealed class StubRoomsClient : IRoomsClient
 
     public Func<UpdateRoomConfigurationRequest, Task<RoomSnapshot>>? UpdateHandler { get; set; }
 
+    public Func<WatchRoomRequest, CancellationToken, IAsyncEnumerable<RoomSnapshot>>?
+        WatchHandler { get; set; }
+
+    public Func<StartGameRequest, Task>? StartHandler { get; set; }
+
+    public List<string> Operations { get; } = new List<string>();
+
     public string? JoinedCode { get; private set; }
 
     public int LeftRoomId { get; private set; }
@@ -55,6 +62,7 @@ internal sealed class StubRoomsClient : IRoomsClient
         UpdateRoomConfigurationRequest request,
         CancellationToken cancellationToken)
     {
+        Operations.Add("Update");
         UpdateRequest = request;
         if (UpdateHandler is not null)
         {
@@ -69,8 +77,9 @@ internal sealed class StubRoomsClient : IRoomsClient
 
     public Task StartGameAsync(StartGameRequest request, CancellationToken cancellationToken)
     {
+        Operations.Add("Start");
         StartRequest = request;
-        return Task.CompletedTask;
+        return StartHandler is null ? Task.CompletedTask : StartHandler(request);
     }
 
     public Task LeaveRoomAsync(int roomId, CancellationToken cancellationToken)
@@ -85,6 +94,7 @@ internal sealed class StubRoomsClient : IRoomsClient
     {
         Observation = request;
         Observations.Add(request);
-        return Updates.ToAsyncEnumerable();
+        return WatchHandler is null
+            ? Updates.ToAsyncEnumerable() : WatchHandler(request, cancellationToken);
     }
 }

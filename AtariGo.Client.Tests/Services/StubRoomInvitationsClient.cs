@@ -13,8 +13,6 @@ internal sealed class StubRoomInvitationsClient : IRoomInvitationsClient
 
     public RespondRoomInvitationRequest? Decision { get; private set; }
 
-    public long? CancelledId { get; private set; }
-
     public int SendCount { get; private set; }
 
     public int ListCount { get; private set; }
@@ -52,7 +50,6 @@ internal sealed class StubRoomInvitationsClient : IRoomInvitationsClient
     public Task<CancelRoomInvitationResponse> CancelAsync(
         long invitationId, CancellationToken token)
     {
-        CancelledId = invitationId;
         return Task.FromResult(new CancelRoomInvitationResponse());
     }
 }

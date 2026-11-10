@@ -10,11 +10,7 @@ namespace AtariGo.Client.Services
     /// </summary>
     public interface INavigationService
     {
-        void NavigateToMainWindow(
-            bool isGuest,
-            string playerName,
-            string? sessionToken = null,
-            string? guestCredential = null);
+        void NavigateToMainWindow(ClientSessionContext context);
 
         void RefreshLoginView();
 
