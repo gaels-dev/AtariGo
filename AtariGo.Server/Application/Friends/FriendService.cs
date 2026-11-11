@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 
 using AtariGo.Server.Application.Sessions;
+using AtariGo.Server.Application.Social;
 using AtariGo.Server.Data;
 using AtariGo.Server.Data.Entities;
 

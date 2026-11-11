@@ -11,6 +11,7 @@ using AtariGo.Server.Application.Friendships;
 using AtariGo.Server.Application.RoomInvitations;
 using AtariGo.Server.Application.Rooms;
 using AtariGo.Server.Application.Sessions;
+using AtariGo.Server.Application.Social;
 using AtariGo.Server.Services;
 
 namespace AtariGo.Server.Tests.Friends;

@@ -19,7 +19,14 @@ internal sealed class TestGameLifecycleService : IGameLifecycleService
         RoomStartRequest request,
         CancellationToken cancellationToken)
     {
-        return _rooms.StartGameAsync(request, PersistAsync, cancellationToken);
+        cancellationToken.ThrowIfCancellationRequested();
+        RoomStartReservationResult result = _rooms.ReserveStart(request);
+        if (result.Reservation is null)
+        {
+            return Task.FromResult(new RoomOperationResult(result.Status, result.Room));
+        }
+
+        return Task.FromResult(_rooms.CompleteStart(result.Reservation, SavedGameId));
     }
 
     public Task<long> StartPublicGameAsync(
@@ -29,8 +36,4 @@ internal sealed class TestGameLifecycleService : IGameLifecycleService
         return Task.FromResult(SavedGameId);
     }
 
-    private static Task<long> PersistAsync(PrivateRoom room, CancellationToken cancellationToken)
-    {
-        return Task.FromResult(SavedGameId);
-    }
 }

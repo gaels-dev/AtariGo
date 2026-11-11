@@ -16,6 +16,7 @@ using AtariGo.Server.Application.Matchmaking;
 using AtariGo.Server.Application.RoomInvitations;
 using AtariGo.Server.Application.Rooms;
 using AtariGo.Server.Application.Sessions;
+using AtariGo.Server.Application.Social;
 using AtariGo.Server.Configuration;
 using AtariGo.Server.Data;
 using AtariGo.Server.Data.Entities;
@@ -51,7 +52,7 @@ builder.Services.AddSingleton<IRoomInvitationNotifier>(provider =>
     provider.GetRequiredService<ISessionConnectionRegistry>());
 builder.Services.AddSingleton<IRoomsService, RoomsService>();
 builder.Services.AddScoped<IRoomInvitationsService, RoomInvitationsService>();
-builder.Services.AddHostedService<RoomInvitationExpiryService>();
+builder.Services.AddHostedService<RoomStateExpiryService>();
 builder.Services.AddSingleton<ISessionConnectionRegistry, SessionConnectionRegistry>();
 builder.Services.AddSingleton<RegistrationValidator>();
 builder.Services.AddSingleton<ISessionTokenProvider, SessionTokenProvider>();

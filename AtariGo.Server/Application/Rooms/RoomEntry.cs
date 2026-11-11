@@ -10,7 +10,11 @@ internal sealed class RoomEntry
 
     public PrivateRoom Snapshot { get; private set; }
 
-    public bool IsStarting { get; set; }
+    public Guid? StartReservationId { get; set; }
+
+    public Guid? CompletedStartReservationId { get; set; }
+
+    public bool IsStarting => StartReservationId is not null;
 
     public DateTimeOffset ExpiresAt { get; }
 

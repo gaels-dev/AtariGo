@@ -1,6 +1,5 @@
-namespace AtariGo.Server.Application.Friends;
+namespace AtariGo.Server.Application.Social;
 
-// One server owns social mutations; SQL remains the persistent source of truth.
 public sealed class FriendMutationCoordinator : IDisposable
 {
     private const int MaximumConcurrentMutations = 1;

@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 
 using AtariGo.Server.Application.Friends;
 using AtariGo.Server.Application.Sessions;
+using AtariGo.Server.Application.Social;
 using AtariGo.Server.Data;
 
 namespace AtariGo.Server.Application.Friendships;

@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 
 using AtariGo.Server.Application.Friends;
 using AtariGo.Server.Application.Rooms;
+using AtariGo.Server.Application.Social;
 using AtariGo.Server.Data;
 
 namespace AtariGo.Server.Application.RoomInvitations;
@@ -9,7 +10,7 @@ namespace AtariGo.Server.Application.RoomInvitations;
 public sealed class RoomInvitationsService : IRoomInvitationsService
 {
     private readonly AtariGoDbContext _dbContext;
-    private readonly IRoomsService _rooms;
+    private readonly IRoomsService _roomsService;
     private readonly FriendMutationCoordinator _mutations;
 
     public RoomInvitationsService(
@@ -21,7 +22,7 @@ public sealed class RoomInvitationsService : IRoomInvitationsService
         ArgumentNullException.ThrowIfNull(rooms);
         ArgumentNullException.ThrowIfNull(mutations);
         _dbContext = dbContext;
-        _rooms = rooms;
+        _roomsService = rooms;
         _mutations = mutations;
     }
 
@@ -49,7 +50,7 @@ public sealed class RoomInvitationsService : IRoomInvitationsService
         }
 
         cancellationToken.ThrowIfCancellationRequested();
-        return _rooms.SendRoomInvitation(command, recipient, sender.UserId);
+        return _roomsService.SendRoomInvitation(command, recipient, sender.UserId);
     }
 
     public async Task<RoomInvitationResult> RespondAsync(
@@ -58,7 +59,7 @@ public sealed class RoomInvitationsService : IRoomInvitationsService
         CancellationToken cancellationToken)
     {
         using FriendMutationLease lease = await _mutations.EnterAsync(cancellationToken);
-        RoomInvitationEntry? invitation = _rooms.FindRoomInvitation(
+        RoomInvitationEntry? invitation = _roomsService.FindRoomInvitation(
             command.InvitationId, recipient.UserId);
         if (invitation is null)
         {
@@ -76,14 +77,19 @@ public sealed class RoomInvitationsService : IRoomInvitationsService
         }
 
         cancellationToken.ThrowIfCancellationRequested();
-        return _rooms.RespondRoomInvitation(command, recipient);
+        return _roomsService.RespondRoomInvitation(command, recipient);
     }
 
-    private Task<bool> AreFriendsAsync(int firstUserId, int secondUserId, CancellationToken token)
+    private Task<bool> AreFriendsAsync(
+        int firstUserId,
+        int secondUserId,
+        CancellationToken cancellationToken)
     {
         int lowerId = Math.Min(firstUserId, secondUserId);
         int higherId = Math.Max(firstUserId, secondUserId);
         return _dbContext.Friendships.AsNoTracking().AnyAsync(friendship =>
-            friendship.UserId == lowerId && friendship.FriendUserId == higherId, token);
+            friendship.UserId == lowerId
+            && friendship.FriendUserId == higherId,
+            cancellationToken);
     }
 }

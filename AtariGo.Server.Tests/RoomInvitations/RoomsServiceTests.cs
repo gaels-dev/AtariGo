@@ -35,7 +35,7 @@ public sealed class RoomsServiceTests
         Assert.AreEqual(first.Invitation, duplicate.Invitation);
         Assert.IsTrue(notified);
         Assert.IsNotNull(notification?.RoomInvitationsChanged);
-        Assert.HasCount(1, rooms.ListRoomInvitations(2, 0));
+        Assert.HasCount(1, rooms.ListRoomInvitations(2, null));
         Assert.HasCount(0, rooms.ListRoomInvitations(3, room.RoomId));
     }
 
@@ -156,11 +156,11 @@ public sealed class RoomsServiceTests
         Assert.AreEqual(RoomInvitationOperationStatus.PermissionDenied, stranger.Status);
         Assert.AreEqual(RoomInvitationOperationStatus.PermissionDenied, cancellation.Status);
         Assert.AreEqual(RoomInvitationStatus.Pending,
-            rooms.ListRoomInvitations(2, 0).Single().State);
+            rooms.ListRoomInvitations(2, null).Single().State);
     }
 
     [TestMethod]
-    public void ExpireRoomInvitations_ExpiredEntries_NotifiesAndEventuallyReleasesMemory()
+    public void RemoveExpiredRoomsAndInvitations_ExpiredEntries_NotifiesAndEventuallyReleasesMemory()
     {
         // Arrange
         var connections = new SessionConnectionRegistry();
@@ -173,16 +173,16 @@ public sealed class RoomsServiceTests
 
         // Act
         time.Advance(TimeSpan.FromMinutes(2));
-        rooms.ExpireRoomInvitations();
+        rooms.RemoveExpiredRoomsAndInvitations();
         bool notified = guest.OutboundEvents.Reader.TryRead(out _);
-        RoomInvitationStatus state = rooms.ListRoomInvitations(2, 0).Single().State;
+        RoomInvitationStatus state = rooms.ListRoomInvitations(2, null).Single().State;
         time.Advance(TimeSpan.FromMinutes(2));
-        rooms.ExpireRoomInvitations();
+        rooms.RemoveExpiredRoomsAndInvitations();
 
         // Assert
         Assert.IsTrue(notified);
         Assert.AreEqual(RoomInvitationStatus.Expired, state);
-        Assert.HasCount(0, rooms.ListRoomInvitations(2, 0));
+        Assert.HasCount(0, rooms.ListRoomInvitations(2, null));
     }
 
     private static SessionConnectionLease Connect(SessionConnectionRegistry registry, int userId)

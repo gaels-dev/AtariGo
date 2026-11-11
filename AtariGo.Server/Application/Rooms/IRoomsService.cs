@@ -17,7 +17,7 @@ public interface IRoomsService
     RoomInvitationResult SendRoomInvitation(
         SendRoomInvitationCommand command, LobbyParticipant recipient, int senderId);
 
-    IReadOnlyList<RoomInvitationEntry> ListRoomInvitations(int userId, int roomId);
+    IReadOnlyList<RoomInvitationEntry> ListRoomInvitations(int userId, int? roomId);
 
     RoomInvitationResult RespondRoomInvitation(
         RespondRoomInvitationCommand command, LobbyParticipant participant);
@@ -26,14 +26,15 @@ public interface IRoomsService
 
     RoomInvitationEntry? FindRoomInvitation(long invitationId, int recipientId);
 
-    void ExpireRoomInvitations();
+    void RemoveExpiredRoomsAndInvitations();
 
     RoomOperationResult LeaveRoom(int userId, int roomId);
 
-    Task<RoomOperationResult> StartGameAsync(
-        RoomStartRequest request,
-        Func<PrivateRoom, CancellationToken, Task<long>> persistGameAsync,
-        CancellationToken cancellationToken);
+    RoomStartReservationResult ReserveStart(RoomStartRequest startRequest);
+
+    RoomOperationResult CompleteStart(RoomStartReservation reservation, long gameId);
+
+    void CancelStart(RoomStartReservation reservation);
 
     IAsyncEnumerable<RoomOperationResult> WatchRoomAsync(
         RoomObservation observation,

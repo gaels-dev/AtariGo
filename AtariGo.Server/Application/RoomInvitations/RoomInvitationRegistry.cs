@@ -5,8 +5,13 @@ namespace AtariGo.Server.Application.RoomInvitations;
 // RoomsService owns this registry and calls it only while holding its room lock.
 internal sealed class RoomInvitationRegistry
 {
-    private static readonly TimeSpan s_retention = TimeSpan.FromMinutes(2);
-    private readonly Dictionary<long, RoomInvitationEntry> _entries = new();
+    private const int InvitationRetentionMinutes = 2;
+
+    private static readonly TimeSpan s_invitationRetention =
+        TimeSpan.FromMinutes(InvitationRetentionMinutes);
+
+    private readonly Dictionary<long, RoomInvitationEntry> _entries =
+        new Dictionary<long, RoomInvitationEntry>();
     private readonly IRoomInvitationNotifier _notifier;
     private readonly ILogger _logger;
     private long _lastId;
@@ -47,17 +52,19 @@ internal sealed class RoomInvitationRegistry
         return entry;
     }
 
-    public IReadOnlyList<RoomInvitationEntry> List(int userId, int roomId)
+    public IReadOnlyList<RoomInvitationEntry> List(int userId, int? roomId)
     {
-        return _entries.Values.Where(entry => roomId == 0
+        return _entries.Values.Where(entry => roomId is null
                 ? entry.Recipient.UserId == userId
-                : entry.RoomId == roomId && entry.Sender.UserId == userId)
+                : entry.RoomId == roomId.Value && entry.Sender.UserId == userId)
             .OrderByDescending(entry => entry.InvitationId).ToArray();
     }
 
-    public RoomInvitationEntry Transition(RoomInvitationEntry entry, RoomInvitationStatus state)
+    public RoomInvitationEntry Transition(
+        RoomInvitationEntry entry,
+        RoomInvitationStatus nextStatus)
     {
-        RoomInvitationEntry updated = entry with { State = state };
+        RoomInvitationEntry updated = entry with { State = nextStatus };
         _entries[entry.InvitationId] = updated;
         Notify(updated);
         return updated;
@@ -74,10 +81,10 @@ internal sealed class RoomInvitationRegistry
         }
     }
 
-    public void Expire(DateTimeOffset now)
+    public void Expire(DateTimeOffset currentTime)
     {
         RoomInvitationEntry[] expired = _entries.Values
-            .Where(entry => entry.ExpiresAt <= now).ToArray();
+            .Where(entry => entry.ExpiresAt <= currentTime).ToArray();
         foreach (RoomInvitationEntry entry in expired)
         {
             if (entry.State == RoomInvitationStatus.Pending)
@@ -85,7 +92,7 @@ internal sealed class RoomInvitationRegistry
                 Transition(entry, RoomInvitationStatus.Expired);
             }
 
-            if (entry.ExpiresAt.Add(s_retention) <= now)
+            if (entry.ExpiresAt.Add(s_invitationRetention) <= currentTime)
             {
                 _entries.Remove(entry.InvitationId);
                 Notify(entry);

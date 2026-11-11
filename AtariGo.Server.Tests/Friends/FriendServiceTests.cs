@@ -3,6 +3,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using AtariGo.Server.Application.Friends;
 using AtariGo.Server.Application.Sessions;
+using AtariGo.Server.Application.Social;
 using AtariGo.Server.Data;
 using AtariGo.Server.Tests.Rooms;
 
@@ -12,6 +13,86 @@ namespace AtariGo.Server.Tests.Friends;
 [TestCategory("Integration")]
 public sealed class FriendServiceTests
 {
+    [TestMethod]
+    public async Task SearchUsers_ValidQuery_ExcludesRelatedAccountsAndOrdersMatches()
+    {
+        // Arrange
+        await using SocialTestDatabase database = await SocialTestDatabase.CreateAsync();
+        await using AtariGoDbContext context = database.CreateContext();
+        await SeedSearchAccountsAsync(context);
+        using var mutations = new FriendMutationCoordinator();
+        FriendService service = CreateService(context, mutations);
+
+        // Act
+        IReadOnlyList<FriendAccountEntry>? results = await service.SearchUsersAsync(
+            "host", " Al ", CancellationToken.None);
+        IReadOnlyList<FriendAccountEntry>? requesterResults = await service.SearchUsersAsync(
+            "host", "Host", CancellationToken.None);
+
+        // Assert
+        Assert.IsNotNull(results);
+        CollectionAssert.AreEqual(new[] { "Alfred", "Alina" },
+            results.Select(account => account.UserName).ToArray());
+        Assert.IsNotNull(requesterResults);
+        Assert.IsEmpty(requesterResults);
+    }
+
+    [TestMethod]
+    public async Task SearchUsers_MoreThanMaximumMatches_ReturnsFirstTwentyInOrder()
+    {
+        // Arrange
+        await using SocialTestDatabase database = await SocialTestDatabase.CreateAsync();
+        await using AtariGoDbContext context = database.CreateContext();
+        await SeedSearchResultLimitAsync(context);
+        using var mutations = new FriendMutationCoordinator();
+        FriendService service = CreateService(context, mutations);
+
+        // Act
+        IReadOnlyList<FriendAccountEntry>? results = await service.SearchUsersAsync(
+            "host", "Player", CancellationToken.None);
+
+        // Assert
+        Assert.IsNotNull(results);
+        Assert.HasCount(20, results);
+        Assert.AreEqual("Player00", results[0].UserName);
+        Assert.AreEqual("Player19", results[^1].UserName);
+    }
+
+    [TestMethod]
+    public async Task SearchUsers_InvalidSession_ReturnsNull()
+    {
+        // Arrange
+        await using SocialTestDatabase database = await SocialTestDatabase.CreateAsync();
+        await using AtariGoDbContext context = database.CreateContext();
+        using var mutations = new FriendMutationCoordinator();
+        FriendService service = CreateService(context, mutations);
+
+        // Act
+        IReadOnlyList<FriendAccountEntry>? results = await service.SearchUsersAsync(
+            "invalid", "Al", CancellationToken.None);
+
+        // Assert
+        Assert.IsNull(results);
+    }
+
+    [TestMethod]
+    [DataRow("A")]
+    [DataRow("ThisQueryIsTooLong")]
+    [DataRow("  ")]
+    public async Task SearchUsers_QueryOutsideAllowedLength_ThrowsArgumentException(
+        string query)
+    {
+        // Arrange
+        await using SocialTestDatabase database = await SocialTestDatabase.CreateAsync();
+        await using AtariGoDbContext context = database.CreateContext();
+        using var mutations = new FriendMutationCoordinator();
+        FriendService service = CreateService(context, mutations);
+
+        // Act and Assert
+        await Assert.ThrowsExactlyAsync<ArgumentException>(() =>
+            service.SearchUsersAsync("host", query, CancellationToken.None));
+    }
+
     [TestMethod]
     public async Task ListFriendRequestsBySender_MultipleSenders_PagesOnlyOwnedPendingRequests()
     {
@@ -198,5 +279,37 @@ public sealed class FriendServiceTests
                 (3, 1, 3, 'Pending', '2026-01-01', NULL),
                 (4, 1, 2, 'Rejected', '2026-01-01', '2026-01-02');
             """);
+    }
+
+    private static Task<int> SeedSearchAccountsAsync(AtariGoDbContext context)
+    {
+        return context.Database.ExecuteSqlRawAsync("""
+            INSERT INTO Users VALUES
+                (4, 'Alpine', 'alpine@example.test', 'Active', '2026-01-01', NULL, 1),
+                (5, 'Alpha', 'alpha@example.test', 'Active', '2026-01-01', NULL, 1),
+                (6, 'Ally', 'ally@example.test', 'Active', '2026-01-01', NULL, 1),
+                (7, 'Alina', 'alina@example.test', 'Active', '2026-01-01', NULL, 1),
+                (8, 'Alfred', 'alfred@example.test', 'Active', '2026-01-01', NULL, 1),
+                (9, 'Alberta', 'alberta@example.test', 'Inactive', '2026-01-01', NULL, 1);
+            INSERT INTO Friendships VALUES (4, 1, '2026-01-01');
+            INSERT INTO FriendRequests VALUES
+                (1, 1, 5, 'Pending', '2026-01-01', NULL),
+                (2, 6, 1, 'Pending', '2026-01-01', NULL),
+                (3, 1, 8, 'Rejected', '2026-01-01', '2026-01-02');
+            """);
+    }
+
+    private static async Task SeedSearchResultLimitAsync(AtariGoDbContext context)
+    {
+        for (int userNumber = 0; userNumber < 25; userNumber++)
+        {
+            string userName = $"Player{userNumber:D2}";
+            int userId = userNumber + 4;
+            await context.Database.ExecuteSqlInterpolatedAsync($"""
+                INSERT INTO Users VALUES
+                    ({userId}, {userName}, {userName + "@example.test"}, 'Active',
+                     '2026-01-01', NULL, 1);
+                """);
+        }
     }
 }

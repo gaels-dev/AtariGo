@@ -6,7 +6,7 @@ namespace AtariGo.Server.Application.Games;
 public interface IGameLifecycleService
 {
     Task<RoomOperationResult> StartGameAsync(
-        RoomStartRequest request,
+        RoomStartRequest startRequest,
         CancellationToken cancellationToken);
 
     Task<long> StartPublicGameAsync(

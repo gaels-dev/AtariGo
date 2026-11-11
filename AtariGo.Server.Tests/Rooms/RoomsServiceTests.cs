@@ -14,7 +14,7 @@ public sealed class RoomsServiceTests
     private const long SavedGameId = 42;
 
     [TestMethod]
-    public async Task StartGameAsync_ConcurrentRequests_PublishesOnlyConfirmedGame()
+    public async Task ReserveStart_ConcurrentRequests_PublishesOnlyConfirmedGame()
     {
         // Arrange
         var service = new RoomsService(
@@ -23,8 +23,6 @@ public sealed class RoomsServiceTests
             NullLogger<RoomsService>.Instance);
         PrivateRoom room = CreateRoomWithOpponent(service);
         var request = new RoomStartRequest(room.RoomId, room.Version, room.Host.UserId);
-        var persist = new TaskCompletionSource<long>(
-            TaskCreationOptions.RunContinuationsAsynchronously);
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
         await using IAsyncEnumerator<RoomOperationResult> observer = service.WatchRoomAsync(
             new RoomObservation(room.Opponent!.UserId, room.RoomId, room.Version),
@@ -32,28 +30,29 @@ public sealed class RoomsServiceTests
 
         // Act
         Task<bool> nextUpdate = observer.MoveNextAsync().AsTask();
-        Task<RoomOperationResult> firstStart = service.StartGameAsync(
-            request, (_, _) => persist.Task, timeout.Token);
-        RoomOperationResult competingStart = await service.StartGameAsync(
-            request, RejectSecondWriteAsync, timeout.Token);
+        RoomStartReservation reservation = service.ReserveStart(request).Reservation!;
+        RoomStartReservationResult competingStart = service.ReserveStart(request);
         bool publishedBeforeSaving = nextUpdate.IsCompleted;
-        persist.SetResult(SavedGameId);
-        RoomOperationResult confirmed = await firstStart;
+        RoomOperationResult confirmed = service.CompleteStart(reservation, SavedGameId);
+        RoomOperationResult repeatedConfirmation = service.CompleteStart(
+            reservation, SavedGameId);
         bool received = await nextUpdate;
-        RoomOperationResult retried = await service.StartGameAsync(
-            request, RejectSecondWriteAsync, timeout.Token);
+        RoomStartReservationResult retried = service.ReserveStart(request);
 
         // Assert
         Assert.IsFalse(publishedBeforeSaving);
         Assert.AreEqual(RoomOperationStatus.StartInProgress, competingStart.Status);
         Assert.IsTrue(received);
         Assert.AreEqual(SavedGameId, confirmed.Room?.GameId);
+        Assert.AreEqual(confirmed.Room, repeatedConfirmation.Room);
+        Assert.AreEqual(RoomOperationStatus.Success, repeatedConfirmation.Status);
         Assert.AreEqual(confirmed.Room, observer.Current.Room);
         Assert.AreEqual(confirmed.Room, retried.Room);
+        Assert.IsNull(retried.Reservation);
     }
 
     [TestMethod]
-    public async Task StartGameAsync_StaleVersionOrOpponent_RejectsStart()
+    public void ReserveStart_StaleVersionOrOpponent_RejectsStart()
     {
         // Arrange
         var service = new RoomsService(
@@ -65,10 +64,8 @@ public sealed class RoomsServiceTests
         var opponent = new RoomStartRequest(room.RoomId, room.Version, room.Opponent!.UserId);
 
         // Act
-        RoomOperationResult staleStart = await service.StartGameAsync(
-            stale, RejectSecondWriteAsync, CancellationToken.None);
-        RoomOperationResult opponentStart = await service.StartGameAsync(
-            opponent, RejectSecondWriteAsync, CancellationToken.None);
+        RoomStartReservationResult staleStart = service.ReserveStart(stale);
+        RoomStartReservationResult opponentStart = service.ReserveStart(opponent);
 
         // Assert
         Assert.AreEqual(RoomOperationStatus.VersionMismatch, staleStart.Status);
@@ -76,7 +73,7 @@ public sealed class RoomsServiceTests
     }
 
     [TestMethod]
-    public async Task StartGameAsync_PersistenceFails_ReleasesReservationForRetry()
+    public void CancelStart_ReservationReleasedForRetry()
     {
         // Arrange
         var service = new RoomsService(
@@ -87,14 +84,15 @@ public sealed class RoomsServiceTests
         var request = new RoomStartRequest(room.RoomId, room.Version, room.Host.UserId);
 
         // Act
-        await Assert.ThrowsExactlyAsync<InvalidOperationException>(() =>
-            service.StartGameAsync(request, RejectSecondWriteAsync, CancellationToken.None));
-        RoomOperationResult retried = await service.StartGameAsync(
-            request, (_, _) => Task.FromResult(SavedGameId), CancellationToken.None);
+        RoomStartReservation reservation = service.ReserveStart(request).Reservation!;
+        service.CancelStart(reservation);
+        RoomStartReservationResult retried = service.ReserveStart(request);
+        RoomOperationResult confirmed = service.CompleteStart(
+            retried.Reservation!, SavedGameId);
 
         // Assert
         Assert.AreEqual(RoomOperationStatus.Success, retried.Status);
-        Assert.AreEqual(SavedGameId, retried.Room?.GameId);
+        Assert.AreEqual(SavedGameId, confirmed.Room?.GameId);
     }
 
     [TestMethod]
@@ -122,13 +120,11 @@ public sealed class RoomsServiceTests
         // Act
         RoomOperationResult updated = service.UpdateRoomConfiguration(command, room.Host.UserId);
         bool[] received = await Task.WhenAll(hostUpdate, guestUpdate);
-        RoomOperationResult started = await service.StartGameAsync(
-            new RoomStartRequest(room.RoomId, room.Version + 1, room.Host.UserId),
-            (snapshot, _) =>
-            {
-                persisted = snapshot;
-                return Task.FromResult(SavedGameId);
-            }, timeout.Token);
+        RoomStartReservation reservation = service.ReserveStart(
+            new RoomStartRequest(room.RoomId, room.Version + 1, room.Host.UserId))
+            .Reservation!;
+        persisted = reservation.Room;
+        RoomOperationResult started = service.CompleteStart(reservation, SavedGameId);
 
         // Assert
         Assert.IsTrue(received.All(value => value));
@@ -207,9 +203,8 @@ public sealed class RoomsServiceTests
         // Act
         RoomOperationResult first = service.UpdateRoomConfiguration(command, room.Host.UserId);
         RoomOperationResult stale = service.UpdateRoomConfiguration(command, room.Host.UserId);
-        RoomOperationResult start = await service.StartGameAsync(
-            new RoomStartRequest(room.RoomId, room.Version, room.Host.UserId),
-            RejectSecondWriteAsync, CancellationToken.None);
+        RoomStartReservationResult start = service.ReserveStart(
+            new RoomStartRequest(room.RoomId, room.Version, room.Host.UserId));
 
         // Assert
         Assert.AreEqual(RoomOperationStatus.Success, first.Status);
@@ -218,7 +213,7 @@ public sealed class RoomsServiceTests
     }
 
     [TestMethod]
-    public async Task UpdateRoomConfiguration_StartReservedOrCompleted_RejectsChange()
+    public void UpdateRoomConfiguration_StartReservedOrCompleted_RejectsChange()
     {
         // Arrange
         var service = new RoomsService(
@@ -226,18 +221,15 @@ public sealed class RoomsServiceTests
             new SessionConnectionRegistry(),
             NullLogger<RoomsService>.Instance);
         PrivateRoom room = CreateRoomWithOpponent(service);
-        var persist = new TaskCompletionSource<long>(
-            TaskCreationOptions.RunContinuationsAsynchronously);
         var command = new UpdateRoomConfigurationCommand(
             room.RoomId, new LobbyConfiguration(3, 600, 30), room.Version);
 
         // Act
-        Task<RoomOperationResult> starting = service.StartGameAsync(
-            new RoomStartRequest(room.RoomId, room.Version, room.Host.UserId),
-            (_, _) => persist.Task, CancellationToken.None);
+        RoomStartReservation reservation = service.ReserveStart(
+            new RoomStartRequest(room.RoomId, room.Version, room.Host.UserId))
+            .Reservation!;
         RoomOperationResult reserved = service.UpdateRoomConfiguration(command, room.Host.UserId);
-        persist.SetResult(SavedGameId);
-        RoomOperationResult started = await starting;
+        RoomOperationResult started = service.CompleteStart(reservation, SavedGameId);
         RoomOperationResult completed = service.UpdateRoomConfiguration(
             command with { ExpectedVersion = started.Room!.Version }, room.Host.UserId);
 
@@ -283,10 +275,4 @@ public sealed class RoomsServiceTests
         return joined.Room!;
     }
 
-    private static Task<long> RejectSecondWriteAsync(
-        PrivateRoom room,
-        CancellationToken cancellationToken)
-    {
-        throw new InvalidOperationException("Unexpected game persistence.");
-    }
 }

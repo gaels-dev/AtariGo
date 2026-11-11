@@ -11,11 +11,13 @@ public sealed class RoomsService : IRoomsService
     private const int IntermediateCaptureGoal = 3;
     private const int ExtendedCaptureGoal = 5;
     private const int InvitationCodeByteCount = 5;
+    private const int InvitationLifetimeMinutes = 2;
     private const int RoomLifetimeHours = 1;
 
     private static readonly TimeSpan s_roomLifetime = TimeSpan.FromHours(RoomLifetimeHours);
 
-    private static readonly TimeSpan s_invitationLifetime = TimeSpan.FromMinutes(2);
+    private static readonly TimeSpan s_invitationLifetime =
+        TimeSpan.FromMinutes(InvitationLifetimeMinutes);
 
     private readonly object _roomLock = new object();
     private readonly Dictionary<int, RoomEntry> _rooms = new Dictionary<int, RoomEntry>();
@@ -59,14 +61,26 @@ public sealed class RoomsService : IRoomsService
                 return ReuseRoom(existing.Snapshot, configuration);
             }
 
+            string invitationCode = CreateInvitationCode();
+            int roomId = checked(_lastRoomId + 1);
             var room = new PrivateRoom(
-                checked(++_lastRoomId), CreateInvitationCode(), configuration)
+                roomId, invitationCode, configuration)
             {
                 Host = host
             };
             var entry = new RoomEntry(room, _timeProvider.GetUtcNow().Add(s_roomLifetime));
-            _rooms.Add(room.RoomId, entry);
-            _codes.Add(room.InvitationCode, entry);
+            _rooms.Add(roomId, entry);
+            try
+            {
+                _codes.Add(invitationCode, entry);
+            }
+            catch
+            {
+                _rooms.Remove(roomId);
+                throw;
+            }
+
+            _lastRoomId = roomId;
             return new RoomOperationResult(RoomOperationStatus.Success, room);
         }
     }
@@ -167,7 +181,7 @@ public sealed class RoomsService : IRoomsService
         }
     }
 
-    public IReadOnlyList<RoomInvitationEntry> ListRoomInvitations(int userId, int roomId)
+    public IReadOnlyList<RoomInvitationEntry> ListRoomInvitations(int userId, int? roomId)
     {
         lock (_roomLock)
         {
@@ -258,7 +272,7 @@ public sealed class RoomsService : IRoomsService
         }
     }
 
-    public void ExpireRoomInvitations()
+    public void RemoveExpiredRoomsAndInvitations()
     {
         lock (_roomLock)
         {
@@ -300,53 +314,90 @@ public sealed class RoomsService : IRoomsService
         }
     }
 
-    public async Task<RoomOperationResult> StartGameAsync(
-        RoomStartRequest request,
-        Func<PrivateRoom, CancellationToken, Task<long>> persistGameAsync,
-        CancellationToken cancellationToken)
+    public RoomStartReservationResult ReserveStart(RoomStartRequest startRequest)
     {
-        RoomEntry entry;
-        PrivateRoom snapshot;
+        ArgumentNullException.ThrowIfNull(startRequest);
         lock (_roomLock)
         {
-            cancellationToken.ThrowIfCancellationRequested();
             RemoveExpiredRooms();
-            if (!_rooms.TryGetValue(request.RoomId, out RoomEntry? currentEntry))
+            if (!_rooms.TryGetValue(startRequest.RoomId, out RoomEntry? entry))
+            {
+                return new RoomStartReservationResult(RoomOperationStatus.NotFound);
+            }
+
+            PrivateRoom snapshot = entry.Snapshot;
+            RoomOperationStatus status = ValidateStart(startRequest, entry);
+            if (status != RoomOperationStatus.Success)
+            {
+                return new RoomStartReservationResult(status, snapshot);
+            }
+
+            if (snapshot.GameId is not null)
+            {
+                return new RoomStartReservationResult(status, snapshot);
+            }
+
+            Guid reservationId = Guid.NewGuid();
+            entry.StartReservationId = reservationId;
+            var reservation = new RoomStartReservation(reservationId, snapshot);
+            return new RoomStartReservationResult(status, snapshot, reservation);
+        }
+    }
+
+    public RoomOperationResult CompleteStart(
+        RoomStartReservation reservation,
+        long gameId)
+    {
+        ArgumentNullException.ThrowIfNull(reservation);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(gameId);
+        lock (_roomLock)
+        {
+            if (!_rooms.TryGetValue(reservation.Room.RoomId, out RoomEntry? entry))
             {
                 return new RoomOperationResult(RoomOperationStatus.NotFound);
             }
 
-            entry = currentEntry;
-            snapshot = entry.Snapshot;
-            RoomOperationStatus status = ValidateStart(request, entry);
-            if (status != RoomOperationStatus.Success || snapshot.GameId is not null)
+            PrivateRoom currentRoom = entry.Snapshot;
+            if (currentRoom.GameId == gameId
+                && entry.CompletedStartReservationId == reservation.ReservationId)
             {
-                return new RoomOperationResult(status, snapshot);
+                return new RoomOperationResult(RoomOperationStatus.Success, currentRoom);
             }
 
-            entry.IsStarting = true;
-            _invitations.Invalidate(snapshot.RoomId);
-        }
-
-        try
-        {
-            // Once reserved, the start must resolve even if the caller disconnects.
-            long gameId = await persistGameAsync(snapshot, CancellationToken.None);
-            lock (_roomLock)
+            if (entry.StartReservationId != reservation.ReservationId
+                || currentRoom != reservation.Room)
             {
-                entry.Publish(snapshot with { GameId = gameId, Version = snapshot.Version + 1 });
-                return new RoomOperationResult(RoomOperationStatus.Success, entry.Snapshot);
+                return new RoomOperationResult(RoomOperationStatus.StartInProgress, currentRoom);
             }
-        }
-        finally
-        {
-            lock (_roomLock)
+
+            PrivateRoom startedRoom = currentRoom with
             {
-                entry.IsStarting = false;
-                if (entry.Snapshot.GameId is null && entry.ExpiresAt <= _timeProvider.GetUtcNow())
-                {
-                    CloseRoom(entry);
-                }
+                GameId = gameId,
+                Version = currentRoom.Version + 1
+            };
+            _invitations.Invalidate(currentRoom.RoomId);
+            entry.CompletedStartReservationId = reservation.ReservationId;
+            entry.StartReservationId = null;
+            entry.Publish(startedRoom);
+            return new RoomOperationResult(RoomOperationStatus.Success, startedRoom);
+        }
+    }
+
+    public void CancelStart(RoomStartReservation reservation)
+    {
+        ArgumentNullException.ThrowIfNull(reservation);
+        lock (_roomLock)
+        {
+            if (!_rooms.TryGetValue(reservation.Room.RoomId, out RoomEntry? entry)
+                || entry.StartReservationId != reservation.ReservationId)
+            {
+                return;
+            }
+
+            entry.StartReservationId = null;
+            if (entry.ExpiresAt <= _timeProvider.GetUtcNow())
+            {
+                CloseRoom(entry);
             }
         }
     }

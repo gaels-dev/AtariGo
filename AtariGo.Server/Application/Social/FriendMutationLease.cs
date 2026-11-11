@@ -1,4 +1,4 @@
-namespace AtariGo.Server.Application.Friends;
+namespace AtariGo.Server.Application.Social;
 
 public sealed class FriendMutationLease : IDisposable
 {

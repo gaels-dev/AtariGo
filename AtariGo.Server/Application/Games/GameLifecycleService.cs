@@ -28,11 +28,60 @@ public sealed class GameLifecycleService : IGameLifecycleService
         _timeProvider = timeProvider;
     }
 
-    public Task<RoomOperationResult> StartGameAsync(
-        RoomStartRequest request,
+    public async Task<RoomOperationResult> StartGameAsync(
+        RoomStartRequest startRequest,
         CancellationToken cancellationToken)
     {
-        return _roomsService.StartGameAsync(request, PersistGameAsync, cancellationToken);
+        cancellationToken.ThrowIfCancellationRequested();
+        RoomStartReservationResult result = _roomsService.ReserveStart(startRequest);
+        if (result.Status != RoomOperationStatus.Success)
+        {
+            return new RoomOperationResult(result.Status, result.Room);
+        }
+
+        if (result.Reservation is null)
+        {
+            return new RoomOperationResult(RoomOperationStatus.Success, result.Room);
+        }
+
+        long gameId;
+        try
+        {
+            gameId = await PersistGameAsync(result.Reservation.Room, CancellationToken.None);
+        }
+        catch
+        {
+            _dbContext.ChangeTracker.Clear();
+            _roomsService.CancelStart(result.Reservation);
+            throw;
+        }
+
+        RoomOperationResult completed = CompleteStartWithRetry(
+            result.Reservation, gameId);
+        if (completed.Status != RoomOperationStatus.Success)
+        {
+            throw new InvalidOperationException(
+                "The persisted game could not be confirmed in its reserved room.");
+        }
+
+        return completed;
+    }
+
+    private RoomOperationResult CompleteStartWithRetry(
+        RoomStartReservation reservation,
+        long gameId)
+    {
+        RoomOperationResult completed;
+        try
+        {
+            completed = _roomsService.CompleteStart(reservation, gameId);
+        }
+        catch (InvalidOperationException)
+        {
+            completed = _roomsService.CompleteStart(reservation, gameId);
+        }
+
+        return completed;
     }
 
     public async Task<long> StartPublicGameAsync(

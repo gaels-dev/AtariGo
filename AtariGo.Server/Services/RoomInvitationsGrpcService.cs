@@ -9,9 +9,11 @@ namespace AtariGo.Server.Services;
 
 public sealed class RoomInvitationsGrpcService : RoomInvitations.RoomInvitationsBase
 {
+    private const int InboxRoomId = 0;
+
     private readonly ISessionService _sessions;
-    private readonly IRoomInvitationsService _invitations;
-    private readonly IRoomsService _rooms;
+    private readonly IRoomInvitationsService _roomInvitationsService;
+    private readonly IRoomsService _roomsService;
     private readonly ILogger<RoomInvitationsGrpcService> _logger;
 
     public RoomInvitationsGrpcService(
@@ -25,8 +27,8 @@ public sealed class RoomInvitationsGrpcService : RoomInvitations.RoomInvitations
         ArgumentNullException.ThrowIfNull(rooms);
         ArgumentNullException.ThrowIfNull(logger);
         _sessions = sessions;
-        _invitations = invitations;
-        _rooms = rooms;
+        _roomInvitationsService = invitations;
+        _roomsService = rooms;
         _logger = logger;
     }
 
@@ -79,9 +81,9 @@ public sealed class RoomInvitationsGrpcService : RoomInvitations.RoomInvitations
         };
     }
 
-    private static RoomInvitationState MapState(RoomInvitationStatus state)
+    private static RoomInvitationState MapState(RoomInvitationStatus invitationStatus)
     {
-        return state switch
+        return invitationStatus switch
         {
             RoomInvitationStatus.Pending => RoomInvitationState.Pending,
             RoomInvitationStatus.Accepted => RoomInvitationState.Accepted,
@@ -97,7 +99,7 @@ public sealed class RoomInvitationsGrpcService : RoomInvitations.RoomInvitations
     {
         LobbyParticipant sender = await AuthenticateAsync(context);
         var command = new SendRoomInvitationCommand(request.RoomId, request.RecipientUserId);
-        RoomInvitationResult result = await _invitations.SendAsync(
+        RoomInvitationResult result = await _roomInvitationsService.SendAsync(
             command, sender, context.CancellationToken);
         return new SendRoomInvitationResponse
         {
@@ -110,7 +112,8 @@ public sealed class RoomInvitationsGrpcService : RoomInvitations.RoomInvitations
     {
         LobbyParticipant user = await AuthenticateAsync(context);
         var response = new ListRoomInvitationsResponse();
-        response.Invitations.AddRange(_rooms.ListRoomInvitations(user.UserId, request.RoomId)
+        int? roomId = request.RoomId == InboxRoomId ? null : request.RoomId;
+        response.Invitations.AddRange(_roomsService.ListRoomInvitations(user.UserId, roomId)
             .Select(MapInvitation));
         return response;
     }
@@ -120,7 +123,7 @@ public sealed class RoomInvitationsGrpcService : RoomInvitations.RoomInvitations
     {
         LobbyParticipant recipient = await AuthenticateAsync(context);
         var command = new RespondRoomInvitationCommand(request.InvitationId, request.Accept);
-        RoomInvitationResult result = await _invitations.RespondAsync(
+        RoomInvitationResult result = await _roomInvitationsService.RespondAsync(
             command, recipient, context.CancellationToken);
         var response = new RespondRoomInvitationResponse
         {
@@ -138,7 +141,7 @@ public sealed class RoomInvitationsGrpcService : RoomInvitations.RoomInvitations
         CancelRoomInvitationRequest request, ServerCallContext context)
     {
         LobbyParticipant sender = await AuthenticateAsync(context);
-        RoomInvitationResult result = _rooms.CancelRoomInvitation(
+        RoomInvitationResult result = _roomsService.CancelRoomInvitation(
             request.InvitationId, sender.UserId);
         return new CancelRoomInvitationResponse
         {
