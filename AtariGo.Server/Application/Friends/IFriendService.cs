@@ -12,12 +12,12 @@ public interface IFriendService
         long requestId,
         CancellationToken cancellationToken);
 
-    Task<IReadOnlyList<FriendAccountEntry>?> SearchUsersAsync(
+    Task<IReadOnlyList<FriendCandidateEntry>?> SearchUsersAsync(
         string sessionToken,
         string query,
         CancellationToken cancellationToken);
 
-    Task<FriendRequestResult?> SendFriendRequestAsync(
+    Task<SendFriendRequestResult?> SendFriendRequestAsync(
         string sessionToken,
         int recipientUserId,
         CancellationToken cancellationToken);

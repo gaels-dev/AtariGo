@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 
-using AtariGo.Server.Application.Friends;
 using AtariGo.Server.Application.Sessions;
 using AtariGo.Server.Application.Social;
 using AtariGo.Server.Data;
@@ -46,9 +45,11 @@ public sealed class FriendshipsService : IFriendshipsService
             return null;
         }
 
-        if (friendUserId <= 0 || friendUserId == identity.UserId)
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(friendUserId);
+        if (friendUserId == identity.UserId)
         {
-            throw new ArgumentException("Invalid friend identifier.", nameof(friendUserId));
+            throw new ArgumentException(
+                "A user cannot remove themselves as a friend.", nameof(friendUserId));
         }
 
         using FriendMutationLease lease = await _mutations.EnterAsync(cancellationToken);
@@ -62,8 +63,16 @@ public sealed class FriendshipsService : IFriendshipsService
         _logger.LogInformation(
             "Friendship removal for users {UserId} and {FriendUserId}: {Removed}.",
             identity.UserId, friendUserId, removed > 0);
-        return removed > 0
-            ? RemoveFriendshipResult.Removed
-            : RemoveFriendshipResult.AlreadyAbsent;
+        RemoveFriendshipResult removalResult;
+        if (removed > 0)
+        {
+            removalResult = RemoveFriendshipResult.Removed;
+        }
+        else
+        {
+            removalResult = RemoveFriendshipResult.NotFriends;
+        }
+
+        return removalResult;
     }
 }

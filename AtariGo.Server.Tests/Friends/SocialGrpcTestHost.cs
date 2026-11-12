@@ -32,7 +32,9 @@ internal sealed class SocialGrpcTestHost : IAsyncDisposable
 
     public SocialTestDatabase Database { get; }
 
-    public static async Task<SocialGrpcTestHost> StartAsync()
+    public static async Task<SocialGrpcTestHost> StartAsync(
+        IFriendService? friendService = null,
+        IFriendshipsService? friendshipsService = null)
     {
         SocialTestDatabase database = await SocialTestDatabase.CreateAsync();
         WebApplicationBuilder builder = WebApplication.CreateBuilder();
@@ -44,7 +46,15 @@ internal sealed class SocialGrpcTestHost : IAsyncDisposable
         builder.Services.AddScoped(_ => database.CreateContext());
         builder.Services.AddScoped<ISessionService, SocialTestSessionService>();
         builder.Services.AddScoped<IFriendService, FriendService>();
+        if (friendService is not null)
+        {
+            builder.Services.AddSingleton(friendService);
+        }
         builder.Services.AddScoped<IFriendshipsService, FriendshipsService>();
+        if (friendshipsService is not null)
+        {
+            builder.Services.AddSingleton(friendshipsService);
+        }
         builder.Services.AddSingleton<ISessionConnectionRegistry, SessionConnectionRegistry>();
         builder.Services.AddSingleton<IRoomInvitationNotifier>(provider =>
             provider.GetRequiredService<ISessionConnectionRegistry>());

@@ -1,3 +1,7 @@
+using System.Data.Common;
+
+using Microsoft.EntityFrameworkCore;
+
 using Grpc.Core;
 
 using AtariGo.Contracts;
@@ -21,10 +25,10 @@ public sealed class FriendDirectoryGrpcService : FriendDirectory.FriendDirectory
     }
 
     private static SearchUsersResponse CreateSearchResponse(
-        IReadOnlyList<FriendAccountEntry> users)
+        IReadOnlyList<FriendCandidateEntry> users)
     {
         var response = new SearchUsersResponse();
-        foreach (FriendAccountEntry user in users)
+        foreach (FriendCandidateEntry user in users)
         {
             response.Users.Add(new FriendAccount
             {
@@ -37,19 +41,19 @@ public sealed class FriendDirectoryGrpcService : FriendDirectory.FriendDirectory
     }
 
     private static FriendRequestStatus MapStatus(
-        FriendRequestResult result)
+        SendFriendRequestResult result)
     {
         return result switch
         {
-            FriendRequestResult.Sent =>
+            SendFriendRequestResult.Sent =>
                 FriendRequestStatus.Sent,
-            FriendRequestResult.AlreadyFriends =>
+            SendFriendRequestResult.AlreadyFriends =>
                 FriendRequestStatus.AlreadyFriends,
-            FriendRequestResult.AlreadyPending =>
+            SendFriendRequestResult.AlreadyPending =>
                 FriendRequestStatus.AlreadyPending,
-            FriendRequestResult.UserNotFound =>
+            SendFriendRequestResult.UserNotFound =>
                 FriendRequestStatus.UserNotFound,
-            FriendRequestResult.CannotRequestSelf =>
+            SendFriendRequestResult.CannotRequestSelf =>
                 FriendRequestStatus.CannotRequestSelf,
             _ => FriendRequestStatus.Unspecified
         };
@@ -81,23 +85,80 @@ public sealed class FriendDirectoryGrpcService : FriendDirectory.FriendDirectory
             "The session is invalid or expired."));
     }
 
-    public override async Task<SearchUsersResponse> SearchUsers(
-        SearchUsersRequest request,
-        ServerCallContext context)
+    private static StatusCode GetDatabaseFailureStatus(DbException? databaseFailure)
     {
-        IReadOnlyList<FriendAccountEntry>? users;
+        StatusCode status = StatusCode.Internal;
+        if (databaseFailure is not null && databaseFailure.IsTransient)
+        {
+            status = StatusCode.Unavailable;
+        }
+
+        return status;
+    }
+
+    private async Task<TResult> ExecuteFriendOperationAsync<TResult>(
+        string operationName,
+        Func<Task<TResult>> operation)
+    {
+        TResult result;
         try
         {
-            users = await _friendService.SearchUsersAsync(
-                SessionRequestAuthentication.GetSessionToken(context),
-                request.Query,
-                context.CancellationToken);
+            result = await operation();
         }
-        catch (ArgumentException exception)
+        catch (DbUpdateConcurrencyException exception)
         {
+            throw CreatePersistenceFailure(operationName, StatusCode.Aborted,
+                exception.GetType().Name);
+        }
+        catch (DbUpdateException exception)
+        {
+            throw CreatePersistenceFailure(operationName,
+                GetDatabaseFailureStatus(exception.InnerException as DbException),
+                exception.GetType().Name);
+        }
+        catch (DbException exception)
+        {
+            throw CreatePersistenceFailure(operationName, GetDatabaseFailureStatus(exception),
+                exception.GetType().Name);
+        }
+
+        return result;
+    }
+
+    private RpcException CreatePersistenceFailure(
+        string operationName,
+        StatusCode status,
+        string errorType)
+    {
+        _logger.LogError("Friend operation {Operation} failed with {ErrorType}: {Status}.",
+            operationName, errorType, status);
+        string message = "The friend operation could not be completed or confirmed.";
+        if (status == StatusCode.Aborted)
+        {
+            message = "The friend data changed during the operation.";
+        }
+
+        return new RpcException(new Status(status, message));
+    }
+
+    public override async Task<SearchUsersResponse> SearchUsers(
+        SearchUsersRequest searchUsersRequest,
+        ServerCallContext context)
+    {
+        string token = SessionRequestAuthentication.GetSessionToken(context);
+        IReadOnlyList<FriendCandidateEntry>? users;
+        try
+        {
+            users = await ExecuteFriendOperationAsync(nameof(IFriendService.SearchUsersAsync),
+                () => _friendService.SearchUsersAsync(
+                    token, searchUsersRequest.Query, context.CancellationToken));
+        }
+        catch (ArgumentException exception) when (exception.ParamName == "query")
+        {
+            _logger.LogWarning("Friend search rejected invalid search text.");
             throw new RpcException(new Status(
                 StatusCode.InvalidArgument,
-                exception.Message));
+                "The search text is invalid."));
         }
 
         if (users is null)
@@ -109,14 +170,14 @@ public sealed class FriendDirectoryGrpcService : FriendDirectory.FriendDirectory
     }
 
     public override async Task<SendFriendRequestResponse> SendFriendRequest(
-        SendFriendRequestRequest request,
+        SendFriendRequestRequest sendFriendRequest,
         ServerCallContext context)
     {
-        FriendRequestResult? result =
-            await _friendService.SendFriendRequestAsync(
-                SessionRequestAuthentication.GetSessionToken(context),
-                request.RecipientUserId,
-                context.CancellationToken);
+        string token = SessionRequestAuthentication.GetSessionToken(context);
+        SendFriendRequestResult? result = await ExecuteFriendOperationAsync(
+            nameof(IFriendService.SendFriendRequestAsync),
+            () => _friendService.SendFriendRequestAsync(
+                token, sendFriendRequest.RecipientUserId, context.CancellationToken));
 
         if (result is null)
         {
@@ -132,13 +193,13 @@ public sealed class FriendDirectoryGrpcService : FriendDirectory.FriendDirectory
 
     public override async Task<GetIncomingFriendRequestsResponse>
         GetIncomingFriendRequests(
-            GetIncomingFriendRequestsRequest request,
+            GetIncomingFriendRequestsRequest incomingFriendRequestsQuery,
             ServerCallContext context)
     {
-        IReadOnlyList<IncomingFriendRequestEntry>? requests =
-            await _friendService.GetIncomingFriendRequestsAsync(
-                SessionRequestAuthentication.GetSessionToken(context),
-                context.CancellationToken);
+        string token = SessionRequestAuthentication.GetSessionToken(context);
+        IReadOnlyList<IncomingFriendRequestEntry>? requests = await ExecuteFriendOperationAsync(
+            nameof(IFriendService.GetIncomingFriendRequestsAsync),
+            () => _friendService.GetIncomingFriendRequestsAsync(token, context.CancellationToken));
 
         if (requests is null)
         {
@@ -161,23 +222,29 @@ public sealed class FriendDirectoryGrpcService : FriendDirectory.FriendDirectory
 
     public override async Task<RespondToFriendRequestResponse>
         RespondToFriendRequest(
-            RespondToFriendRequestRequest request,
+            RespondToFriendRequestRequest friendRequestResponse,
             ServerCallContext context)
     {
-        if (request.RequestId <= 0)
+        var command = new RespondToFriendRequestCommand(
+            SessionRequestAuthentication.GetSessionToken(context),
+            friendRequestResponse.RequestId,
+            friendRequestResponse.Accept);
+        FriendRequestResponseResult? result;
+        try
         {
+            result = await ExecuteFriendOperationAsync(
+                nameof(IFriendService.RespondToFriendRequestAsync),
+                () => _friendService.RespondToFriendRequestAsync(
+                    command, context.CancellationToken));
+        }
+        catch (ArgumentOutOfRangeException exception)
+            when (exception.ParamName == "command.RequestId")
+        {
+            _logger.LogWarning("Friend response rejected a nonpositive identifier.");
             throw new RpcException(new Status(
                 StatusCode.InvalidArgument,
                 "The friend request identifier must be positive."));
         }
-
-        FriendRequestResponseResult? result =
-            await _friendService.RespondToFriendRequestAsync(
-                new RespondToFriendRequestCommand(
-                    SessionRequestAuthentication.GetSessionToken(context),
-                    request.RequestId,
-                    request.Accept),
-                context.CancellationToken);
 
         if (result is null)
         {
@@ -185,7 +252,7 @@ public sealed class FriendDirectoryGrpcService : FriendDirectory.FriendDirectory
         }
 
         _logger.LogInformation("Friend request {RequestId} response: {Status}.",
-            request.RequestId, result.Value);
+            friendRequestResponse.RequestId, result.Value);
         return new RespondToFriendRequestResponse
         {
             Status = MapResponseStatus(result.Value)
@@ -193,20 +260,22 @@ public sealed class FriendDirectoryGrpcService : FriendDirectory.FriendDirectory
     }
 
     public override async Task<ListFriendRequestsBySenderResponse> ListFriendRequestsBySender(
-        ListFriendRequestsBySenderRequest request,
+        ListFriendRequestsBySenderRequest sentFriendRequestsQuery,
         ServerCallContext context)
     {
         string token = SessionRequestAuthentication.GetSessionToken(context);
-        if (request.Filter != FriendRequestFilter.Unspecified
-            && request.Filter != FriendRequestFilter.Pending)
+        if (sentFriendRequestsQuery.Filter != FriendRequestFilter.Unspecified
+            && sentFriendRequestsQuery.Filter != FriendRequestFilter.Pending)
         {
             throw new RpcException(new Status(
                 StatusCode.InvalidArgument, "Only pending requests can be listed."));
         }
 
-        SentFriendRequestsQuery query = FriendRequestPageTokens.Parse(request.Page);
-        SentFriendRequestsPage? page = await _friendService.ListFriendRequestsBySenderAsync(
-            token, query, context.CancellationToken);
+        SentFriendRequestsQuery query = FriendRequestPageTokens.Parse(sentFriendRequestsQuery.Page);
+        SentFriendRequestsPage? page = await ExecuteFriendOperationAsync(
+            nameof(IFriendService.ListFriendRequestsBySenderAsync),
+            () => _friendService.ListFriendRequestsBySenderAsync(
+                token, query, context.CancellationToken));
         if (page is null)
         {
             throw CreateUnauthenticatedException();
@@ -230,30 +299,37 @@ public sealed class FriendDirectoryGrpcService : FriendDirectory.FriendDirectory
     }
 
     public override async Task<CancelFriendRequestResponse> CancelFriendRequest(
-        CancelFriendRequestRequest request,
+        CancelFriendRequestRequest cancelFriendRequest,
         ServerCallContext context)
     {
         string token = SessionRequestAuthentication.GetSessionToken(context);
-        if (request.RequestId <= 0)
+        if (cancelFriendRequest.RequestId <= 0)
         {
             throw new RpcException(new Status(
                 StatusCode.InvalidArgument, "The friend request identifier must be positive."));
         }
 
-        CancelFriendRequestResult? result = await _friendService.CancelFriendRequestAsync(
-            token, request.RequestId, context.CancellationToken);
+        CancelFriendRequestResult? result = await ExecuteFriendOperationAsync(
+            nameof(IFriendService.CancelFriendRequestAsync),
+            () => _friendService.CancelFriendRequestAsync(
+                token, cancelFriendRequest.RequestId, context.CancellationToken));
         if (result is null)
         {
             throw CreateUnauthenticatedException();
         }
 
         _logger.LogInformation("Friend request {RequestId} cancellation: {Status}.",
-            request.RequestId, result.Value);
-        return new CancelFriendRequestResponse
+            cancelFriendRequest.RequestId, result.Value);
+        CancelFriendRequestStatus status;
+        if (result == CancelFriendRequestResult.Cancelled)
         {
-            Status = result == CancelFriendRequestResult.Cancelled
-                ? CancelFriendRequestStatus.Cancelled
-                : CancelFriendRequestStatus.NoLongerPending
-        };
+            status = CancelFriendRequestStatus.Cancelled;
+        }
+        else
+        {
+            status = CancelFriendRequestStatus.NoLongerPending;
+        }
+
+        return new CancelFriendRequestResponse { Status = status };
     }
 }

@@ -24,9 +24,9 @@ public sealed class FriendServiceTests
         FriendService service = CreateService(context, mutations);
 
         // Act
-        IReadOnlyList<FriendAccountEntry>? results = await service.SearchUsersAsync(
+        IReadOnlyList<FriendCandidateEntry>? results = await service.SearchUsersAsync(
             "host", " Al ", CancellationToken.None);
-        IReadOnlyList<FriendAccountEntry>? requesterResults = await service.SearchUsersAsync(
+        IReadOnlyList<FriendCandidateEntry>? requesterResults = await service.SearchUsersAsync(
             "host", "Host", CancellationToken.None);
 
         // Assert
@@ -48,7 +48,7 @@ public sealed class FriendServiceTests
         FriendService service = CreateService(context, mutations);
 
         // Act
-        IReadOnlyList<FriendAccountEntry>? results = await service.SearchUsersAsync(
+        IReadOnlyList<FriendCandidateEntry>? results = await service.SearchUsersAsync(
             "host", "Player", CancellationToken.None);
 
         // Assert
@@ -68,7 +68,7 @@ public sealed class FriendServiceTests
         FriendService service = CreateService(context, mutations);
 
         // Act
-        IReadOnlyList<FriendAccountEntry>? results = await service.SearchUsersAsync(
+        IReadOnlyList<FriendCandidateEntry>? results = await service.SearchUsersAsync(
             "invalid", "Al", CancellationToken.None);
 
         // Assert
@@ -202,17 +202,17 @@ public sealed class FriendServiceTests
         FriendService second = CreateService(secondContext, mutations);
 
         // Act
-        Task<FriendRequestResult?> send = first.SendFriendRequestAsync(
+        Task<SendFriendRequestResult?> send = first.SendFriendRequestAsync(
             "host", 2, CancellationToken.None);
-        Task<FriendRequestResult?> crossed = second.SendFriendRequestAsync(
+        Task<SendFriendRequestResult?> crossed = second.SendFriendRequestAsync(
             "guest", 1, CancellationToken.None);
         held.Dispose();
-        FriendRequestResult?[] results = await Task.WhenAll(send, crossed);
+        SendFriendRequestResult?[] results = await Task.WhenAll(send, crossed);
 
         // Assert
-        CollectionAssert.AreEquivalent(new FriendRequestResult?[]
+        CollectionAssert.AreEquivalent(new SendFriendRequestResult?[]
         {
-            FriendRequestResult.Sent, FriendRequestResult.AlreadyPending
+            SendFriendRequestResult.Sent, SendFriendRequestResult.AlreadyPending
         }, results);
         Assert.AreEqual(1, await firstContext.FriendRequests.CountAsync());
     }
@@ -262,6 +262,121 @@ public sealed class FriendServiceTests
         Assert.AreEqual(4, await context.FriendRequests.CountAsync());
     }
 
+    [TestMethod]
+    [DataRow(0L)]
+    [DataRow(-1L)]
+    public async Task RespondToFriendRequest_InvalidIdentifier_RejectsWithoutChanges(long requestId)
+    {
+        // Arrange
+        await using SocialTestDatabase database = await SocialTestDatabase.CreateAsync();
+        await using AtariGoDbContext context = database.CreateContext();
+        await SeedRequestsAsync(context);
+        using var mutations = new FriendMutationCoordinator();
+        FriendService service = CreateService(context, mutations);
+        var command = new RespondToFriendRequestCommand("guest", requestId, true);
+
+        // Act
+        ArgumentOutOfRangeException failure =
+            await Assert.ThrowsExactlyAsync<ArgumentOutOfRangeException>(() =>
+                service.RespondToFriendRequestAsync(command, CancellationToken.None));
+
+        // Assert
+        Assert.AreEqual(requestId, failure.ActualValue);
+        Assert.AreEqual(4, await context.FriendRequests.CountAsync());
+        Assert.IsFalse(await context.Friendships.AnyAsync());
+    }
+
+    [TestMethod]
+    [DataRow(true)]
+    [DataRow(false)]
+    public async Task RespondToFriendRequest_SaveFails_RollsBackAcceptance(
+        bool failFriendshipInsert)
+    {
+        // Arrange
+        await using SocialTestDatabase database = await SocialTestDatabase.CreateAsync();
+        await using AtariGoDbContext context = database.CreateContext();
+        await SeedRequestsAsync(context);
+        await InstallAcceptanceFailureAsync(context, failFriendshipInsert);
+        using var mutations = new FriendMutationCoordinator();
+        FriendService service = CreateService(context, mutations);
+        var command = new RespondToFriendRequestCommand("guest", 1, true);
+
+        // Act
+        DbUpdateException failure = await Assert.ThrowsExactlyAsync<DbUpdateException>(() =>
+            service.RespondToFriendRequestAsync(command, CancellationToken.None));
+
+        // Assert
+        Assert.IsNotNull(failure.InnerException);
+        StringAssert.Contains(failure.InnerException.Message, "rejected by the test.");
+        await using AtariGoDbContext verificationContext = database.CreateContext();
+        Assert.AreEqual(4, await verificationContext.FriendRequests.CountAsync());
+        Assert.IsTrue(await verificationContext.FriendRequests.AnyAsync(
+            request => request.FriendRequestId == 1 && request.State == "Pending"));
+        Assert.IsFalse(await verificationContext.Friendships.AnyAsync());
+    }
+
+    [TestMethod]
+    [DataRow(true, false, FriendRequestResponseResult.Accepted)]
+    [DataRow(false, false, FriendRequestResponseResult.Rejected)]
+    [DataRow(true, true, FriendRequestResponseResult.AlreadyFriends)]
+    public async Task RespondToFriendRequest_ValidDecision_CompletesRequest(
+        bool accept,
+        bool alreadyFriends,
+        FriendRequestResponseResult expectedResult)
+    {
+        // Arrange
+        await using SocialTestDatabase database = await SocialTestDatabase.CreateAsync();
+        await using AtariGoDbContext context = database.CreateContext();
+        await SeedRequestsAsync(context);
+        if (alreadyFriends)
+        {
+            await context.Database.ExecuteSqlRawAsync(
+                "INSERT INTO Friendships VALUES (1, 2, '2026-01-01');");
+        }
+
+        using var mutations = new FriendMutationCoordinator();
+        FriendService service = CreateService(context, mutations);
+        var command = new RespondToFriendRequestCommand("guest", 1, accept);
+
+        // Act
+        FriendRequestResponseResult? result = await service.RespondToFriendRequestAsync(
+            command, CancellationToken.None);
+
+        // Assert
+        Assert.AreEqual(expectedResult, result);
+        Assert.IsFalse(await context.FriendRequests.AnyAsync(
+            request => request.FriendRequestId == 1));
+        Assert.AreEqual(3, await context.FriendRequests.CountAsync());
+        Assert.AreEqual(accept, await context.Friendships.AnyAsync());
+    }
+
+    [TestMethod]
+    [DataRow(1, SendFriendRequestResult.CannotRequestSelf)]
+    [DataRow(999, SendFriendRequestResult.UserNotFound)]
+    [DataRow(2, SendFriendRequestResult.AlreadyFriends)]
+    [DataRow(3, SendFriendRequestResult.AlreadyPending)]
+    public async Task SendFriendRequest_Rejected_PreservesExistingData(
+        int recipientUserId, SendFriendRequestResult expectedResult)
+    {
+        // Arrange
+        await using SocialTestDatabase database = await SocialTestDatabase.CreateAsync();
+        await using AtariGoDbContext context = database.CreateContext();
+        await SeedRequestsAsync(context);
+        await context.Database.ExecuteSqlRawAsync(
+            "INSERT INTO Friendships VALUES (1, 2, '2026-01-01');");
+        using var mutations = new FriendMutationCoordinator();
+        FriendService service = CreateService(context, mutations);
+
+        // Act
+        SendFriendRequestResult? result = await service.SendFriendRequestAsync(
+            "host", recipientUserId, CancellationToken.None);
+
+        // Assert
+        Assert.AreEqual(expectedResult, result);
+        Assert.AreEqual(4, await context.FriendRequests.CountAsync());
+        Assert.AreEqual(1, await context.Friendships.CountAsync());
+    }
+
     private static FriendService CreateService(
         AtariGoDbContext context,
         FriendMutationCoordinator mutations)
@@ -279,6 +394,24 @@ public sealed class FriendServiceTests
                 (3, 1, 3, 'Pending', '2026-01-01', NULL),
                 (4, 1, 2, 'Rejected', '2026-01-01', '2026-01-02');
             """);
+    }
+
+    private static Task<int> InstallAcceptanceFailureAsync(
+        AtariGoDbContext context,
+        bool failFriendshipInsert)
+    {
+        string triggerSql = failFriendshipInsert ? """
+            CREATE TRIGGER RejectFriendshipInsert BEFORE INSERT ON Friendships
+            BEGIN
+                SELECT RAISE(ABORT, 'Friendship insert rejected by the test.');
+            END;
+            """ : """
+            CREATE TRIGGER RejectRequestDeletion BEFORE DELETE ON FriendRequests
+            BEGIN
+                SELECT RAISE(ABORT, 'Request deletion rejected by the test.');
+            END;
+            """;
+        return context.Database.ExecuteSqlRawAsync(triggerSql);
     }
 
     private static Task<int> SeedSearchAccountsAsync(AtariGoDbContext context)

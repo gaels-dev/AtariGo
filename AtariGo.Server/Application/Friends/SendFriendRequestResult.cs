@@ -1,6 +1,6 @@
 namespace AtariGo.Server.Application.Friends;
 
-public enum FriendRequestResult
+public enum SendFriendRequestResult
 {
     Sent,
     AlreadyFriends,

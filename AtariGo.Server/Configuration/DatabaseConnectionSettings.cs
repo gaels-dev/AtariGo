@@ -1,8 +1,4 @@
-using System;
-
 using Microsoft.Data.SqlClient;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 
 namespace AtariGo.Server.Configuration
 {
@@ -19,7 +15,6 @@ namespace AtariGo.Server.Configuration
             }
             catch (InvalidOperationException exception)
             {
-                // Only the sanitized outer message is safe for operator logs.
                 logger.LogError("Server configuration is invalid: {ConfigurationError}",
                     exception.Message);
                 isValid = false;
@@ -59,7 +54,6 @@ namespace AtariGo.Server.Configuration
             }
             catch (ArgumentException exception)
             {
-                // Parser messages may contain fragments of the secret connection string.
                 throw new InvalidOperationException(
                     "The SQL Server connection string is invalid. "
                         + "Review the private configuration; its value has not been logged.",

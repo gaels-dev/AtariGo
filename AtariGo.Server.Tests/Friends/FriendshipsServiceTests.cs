@@ -40,7 +40,7 @@ public sealed class FriendshipsServiceTests
 
         // Assert
         Assert.AreEqual(RemoveFriendshipResult.Removed, result);
-        Assert.AreEqual(RemoveFriendshipResult.AlreadyAbsent, repeated);
+        Assert.AreEqual(RemoveFriendshipResult.NotFriends, repeated);
         Assert.AreEqual(1, await context.Friendships.CountAsync());
         Assert.IsTrue(await context.Friendships.AnyAsync(pair => pair.FriendUserId == 3));
         Assert.HasCount(0, host.ConnectionInfo.Friends);
@@ -72,10 +72,11 @@ public sealed class FriendshipsServiceTests
     }
 
     [TestMethod]
-    [DataRow(0)]
-    [DataRow(-1)]
-    [DataRow(1)]
-    public async Task RemoveFriendship_InvalidTarget_RejectsWithoutDeleting(int friendUserId)
+    [DataRow(0, typeof(ArgumentOutOfRangeException))]
+    [DataRow(-1, typeof(ArgumentOutOfRangeException))]
+    [DataRow(1, typeof(ArgumentException))]
+    public async Task RemoveFriendship_InvalidTarget_RejectsWithoutDeleting(
+        int friendUserId, Type expectedExceptionType)
     {
         // Arrange
         await using SocialTestDatabase database = await SocialTestDatabase.CreateAsync();
@@ -90,7 +91,9 @@ public sealed class FriendshipsServiceTests
             "host", friendUserId, CancellationToken.None);
 
         // Assert
-        await Assert.ThrowsAsync<ArgumentException>(() => operation);
+        ArgumentException failure = await Assert.ThrowsAsync<ArgumentException>(() => operation);
+        Assert.AreEqual(expectedExceptionType, failure.GetType());
+        Assert.AreEqual("friendUserId", failure.ParamName);
         Assert.AreEqual(2, await context.Friendships.CountAsync());
     }
 

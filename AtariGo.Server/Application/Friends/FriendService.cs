@@ -45,7 +45,7 @@ public sealed class FriendService : IFriendService
         _timeProvider = timeProvider;
     }
 
-    public async Task<IReadOnlyList<FriendAccountEntry>?> SearchUsersAsync(
+    public async Task<IReadOnlyList<FriendCandidateEntry>?> SearchUsersAsync(
         string sessionToken,
         string query,
         CancellationToken cancellationToken)
@@ -66,7 +66,7 @@ public sealed class FriendService : IFriendService
             cancellationToken);
     }
 
-    public async Task<FriendRequestResult?> SendFriendRequestAsync(
+    public async Task<SendFriendRequestResult?> SendFriendRequestAsync(
         string sessionToken,
         int recipientUserId,
         CancellationToken cancellationToken)
@@ -82,15 +82,15 @@ public sealed class FriendService : IFriendService
         }
 
         using FriendMutationLease lease = await _mutations.EnterAsync(cancellationToken);
-        FriendRequestResult? validationResult =
-            await ValidateFriendRequestAsync(
+        SendFriendRequestResult? rejection =
+            await FindFriendRequestRejectionAsync(
                 requesterId.Value,
                 recipientUserId,
                 cancellationToken);
 
-        if (validationResult is not null)
+        if (rejection is not null)
         {
-            return validationResult;
+            return rejection;
         }
 
         _dbContext.FriendRequests.Add(new FriendRequest
@@ -102,7 +102,7 @@ public sealed class FriendService : IFriendService
         });
 
         await _dbContext.SaveChangesAsync(cancellationToken);
-        return FriendRequestResult.Sent;
+        return SendFriendRequestResult.Sent;
     }
 
     public async Task<IReadOnlyList<IncomingFriendRequestEntry>?>
@@ -129,8 +129,8 @@ public sealed class FriendService : IFriendService
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(command);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(command.RequestId);
 
-        DateTime now = _timeProvider.GetUtcNow().UtcDateTime;
         int? recipientId = await FindActiveUserIdAsync(
             command.SessionToken,
             cancellationToken);
@@ -141,14 +141,8 @@ public sealed class FriendService : IFriendService
         }
 
         using FriendMutationLease lease = await _mutations.EnterAsync(cancellationToken);
-        var decision = new FriendRequestDecision
-        {
-            RecipientUserId = recipientId.Value,
-            RequestId = command.RequestId,
-            Accept = command.Accept,
-            RecordedAt = now
-        };
-        return await ApplyFriendRequestResponseAsync(decision, cancellationToken);
+        return await ApplyFriendRequestResponseAsync(
+            command, recipientId.Value, cancellationToken);
     }
 
     public async Task<SentFriendRequestsPage?> ListFriendRequestsBySenderAsync(
@@ -171,13 +165,15 @@ public sealed class FriendService : IFriendService
 
         List<OutgoingFriendRequestEntry> requests = await _dbContext.FriendRequests
             .AsNoTracking()
-            .Where(request => request.RequesterId == identity.UserId
-                && request.State == PendingRequestState
-                && request.FriendRequestId > query.AfterRequestId)
-            .OrderBy(request => request.FriendRequestId)
+            .Where(friendRequest => friendRequest.RequesterId == identity.UserId
+                && friendRequest.State == PendingRequestState
+                && friendRequest.FriendRequestId > query.AfterRequestId)
+            .OrderBy(friendRequest => friendRequest.FriendRequestId)
             .Take(query.PageSize + 1)
-            .Select(request => new OutgoingFriendRequestEntry(
-                request.FriendRequestId, request.RecipientId, request.Recipient.UserName))
+            .Select(friendRequest => new OutgoingFriendRequestEntry(
+                friendRequest.FriendRequestId,
+                friendRequest.RecipientId,
+                friendRequest.Recipient.UserName))
             .ToListAsync(cancellationToken);
         long? nextRequestId = null;
         if (requests.Count > query.PageSize)
@@ -208,13 +204,21 @@ public sealed class FriendService : IFriendService
 
         using FriendMutationLease lease = await _mutations.EnterAsync(cancellationToken);
         int removed = await _dbContext.FriendRequests
-            .Where(request => request.FriendRequestId == requestId
-                && request.RequesterId == identity.UserId
-                && request.State == PendingRequestState)
+            .Where(friendRequest => friendRequest.FriendRequestId == requestId
+                && friendRequest.RequesterId == identity.UserId
+                && friendRequest.State == PendingRequestState)
             .ExecuteDeleteAsync(cancellationToken);
-        return removed > 0
-            ? CancelFriendRequestResult.Cancelled
-            : CancelFriendRequestResult.NoLongerPending;
+        CancelFriendRequestResult result;
+        if (removed > 0)
+        {
+            result = CancelFriendRequestResult.Cancelled;
+        }
+        else
+        {
+            result = CancelFriendRequestResult.NoLongerPending;
+        }
+
+        return result;
     }
 
     private static string NormalizeQuery(string query)
@@ -241,7 +245,7 @@ public sealed class FriendService : IFriendService
         return identity?.UserId;
     }
 
-    private Task<List<FriendAccountEntry>> FindMatchingUsersAsync(
+    private Task<List<FriendCandidateEntry>> FindMatchingUsersAsync(
         int requesterId,
         string query,
         CancellationToken cancellationToken)
@@ -256,15 +260,15 @@ public sealed class FriendService : IFriendService
                      && friendship.FriendUserId == user.UserId)
                     || (friendship.UserId == user.UserId
                         && friendship.FriendUserId == requesterId))
-                && !_dbContext.FriendRequests.Any(request =>
-                    request.State == PendingRequestState
-                    && ((request.RequesterId == requesterId
-                         && request.RecipientId == user.UserId)
-                        || (request.RequesterId == user.UserId
-                            && request.RecipientId == requesterId))))
+                && !_dbContext.FriendRequests.Any(friendRequest =>
+                    friendRequest.State == PendingRequestState
+                    && ((friendRequest.RequesterId == requesterId
+                         && friendRequest.RecipientId == user.UserId)
+                        || (friendRequest.RequesterId == user.UserId
+                            && friendRequest.RecipientId == requesterId))))
             .OrderBy(user => user.UserName)
             .Take(MaximumSearchResults)
-            .Select(user => new FriendAccountEntry(
+            .Select(user => new FriendCandidateEntry(
                 user.UserId,
                 user.UserName))
             .ToListAsync(cancellationToken);
@@ -277,91 +281,102 @@ public sealed class FriendService : IFriendService
     {
         return _dbContext.FriendRequests
             .AsNoTracking()
-            .Where(request => request.RecipientId == recipientId
-                && request.State == PendingRequestState)
-            .OrderByDescending(request => request.RequestedAt)
-            .Select(request => new IncomingFriendRequestEntry(
-                request.FriendRequestId,
-                request.RequesterId,
-                request.Requester.UserName))
+            .Where(friendRequest => friendRequest.RecipientId == recipientId
+                && friendRequest.State == PendingRequestState)
+            .OrderByDescending(friendRequest => friendRequest.RequestedAt)
+            .Select(friendRequest => new IncomingFriendRequestEntry(
+                friendRequest.FriendRequestId,
+                friendRequest.RequesterId,
+                friendRequest.Requester.UserName))
             .ToListAsync(cancellationToken);
     }
 
     private async Task<FriendRequestResponseResult> ApplyFriendRequestResponseAsync(
-        FriendRequestDecision decision,
+        RespondToFriendRequestCommand command,
+        int recipientUserId,
         CancellationToken cancellationToken)
     {
         await using IDbContextTransaction transaction = await _dbContext.Database
             .BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
 
-        FriendRequest? request = await FindRequestAsync(decision.RequestId, cancellationToken);
-        if (request is null || request.RecipientId != decision.RecipientUserId)
+        FriendRequest? friendRequest = await FindFriendRequestAsync(
+            command.RequestId, cancellationToken);
+        FriendRequestResponseResult result;
+        if (friendRequest is null || friendRequest.RecipientId != recipientUserId)
         {
-            return FriendRequestResponseResult.NotFound;
+            result = FriendRequestResponseResult.NotFound;
         }
-
-        if (decision.Accept
-            && request.Requester.State != DatabaseValues.AccountStates.Active)
+        else if (command.Accept
+            && friendRequest.Requester.State != DatabaseValues.AccountStates.Active)
         {
-            return FriendRequestResponseResult.NotFound;
+            result = FriendRequestResponseResult.NotFound;
         }
-
-        if (request.State != PendingRequestState)
+        else if (friendRequest.State != PendingRequestState)
         {
-            return FriendRequestResponseResult.AlreadyProcessed;
+            result = FriendRequestResponseResult.AlreadyProcessed;
         }
-
-        FriendRequestResponseResult result = await SaveFriendRequestResponseAsync(
-            request,
-            decision,
-            cancellationToken);
-        await transaction.CommitAsync(cancellationToken);
-        if (result == FriendRequestResponseResult.Accepted)
+        else
         {
-            _connectionRegistry.AddFriendship(
-                new SessionIdentity(request.RequesterId, request.Requester.UserName),
-                new SessionIdentity(request.RecipientId, request.Recipient.UserName));
+            result = await CompleteFriendRequestAsync(
+                friendRequest, command.Accept, cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+            if (result == FriendRequestResponseResult.Accepted)
+            {
+                _connectionRegistry.AddFriendship(
+                    new SessionIdentity(
+                        friendRequest.RequesterId, friendRequest.Requester.UserName),
+                    new SessionIdentity(
+                        friendRequest.RecipientId, friendRequest.Recipient.UserName));
+            }
         }
 
         return result;
     }
 
-    private Task<FriendRequest?> FindRequestAsync(
+    private Task<FriendRequest?> FindFriendRequestAsync(
         long requestId,
         CancellationToken cancellationToken)
     {
         return _dbContext.FriendRequests
-            .Include(request => request.Requester)
-            .Include(request => request.Recipient)
+            .Include(friendRequest => friendRequest.Requester)
+            .Include(friendRequest => friendRequest.Recipient)
             .SingleOrDefaultAsync(
-                request => request.FriendRequestId == requestId,
+                friendRequest => friendRequest.FriendRequestId == requestId,
                 cancellationToken);
     }
 
-    private async Task<FriendRequestResponseResult> SaveFriendRequestResponseAsync(
-        FriendRequest request,
-        FriendRequestDecision decision,
+    private async Task<FriendRequestResponseResult> CompleteFriendRequestAsync(
+        FriendRequest friendRequest,
+        bool accept,
         CancellationToken cancellationToken)
     {
-        bool alreadyFriends = decision.Accept && await AreFriendsAsync(
-            request.RequesterId,
-            decision.RecipientUserId,
+        bool alreadyFriends = accept && await AreFriendsAsync(
+            friendRequest.RequesterId,
+            friendRequest.RecipientId,
             cancellationToken);
-        if (decision.Accept && !alreadyFriends)
+        if (accept && !alreadyFriends)
         {
-            AddFriendship(request.RequesterId, decision.RecipientUserId, decision.RecordedAt);
+            DateTime createdAt = _timeProvider.GetUtcNow().UtcDateTime;
+            AddFriendship(friendRequest.RequesterId, friendRequest.RecipientId, createdAt);
         }
 
-        _dbContext.FriendRequests.Remove(request);
+        _dbContext.FriendRequests.Remove(friendRequest);
         await _dbContext.SaveChangesAsync(cancellationToken);
+        FriendRequestResponseResult result;
         if (alreadyFriends)
         {
-            return FriendRequestResponseResult.AlreadyFriends;
+            result = FriendRequestResponseResult.AlreadyFriends;
+        }
+        else if (accept)
+        {
+            result = FriendRequestResponseResult.Accepted;
+        }
+        else
+        {
+            result = FriendRequestResponseResult.Rejected;
         }
 
-        return decision.Accept
-            ? FriendRequestResponseResult.Accepted
-            : FriendRequestResponseResult.Rejected;
+        return result;
     }
 
     private void AddFriendship(
@@ -377,43 +392,39 @@ public sealed class FriendService : IFriendService
         });
     }
 
-    private async Task<FriendRequestResult?> ValidateFriendRequestAsync(
+    private async Task<SendFriendRequestResult?> FindFriendRequestRejectionAsync(
         int requesterId,
         int recipientUserId,
         CancellationToken cancellationToken)
     {
+        SendFriendRequestResult? rejection = null;
         if (requesterId == recipientUserId)
         {
-            return FriendRequestResult.CannotRequestSelf;
+            rejection = SendFriendRequestResult.CannotRequestSelf;
         }
-
-        bool recipientExists = await _dbContext.Users
-            .AnyAsync(user => user.UserId == recipientUserId
+        else if (!await _dbContext.Users.AnyAsync(
+                user => user.UserId == recipientUserId
                 && user.State == DatabaseValues.AccountStates.Active,
-                cancellationToken);
-
-        if (!recipientExists)
+                cancellationToken))
         {
-            return FriendRequestResult.UserNotFound;
+            rejection = SendFriendRequestResult.UserNotFound;
         }
-
-        if (await AreFriendsAsync(
+        else if (await AreFriendsAsync(
                 requesterId,
                 recipientUserId,
                 cancellationToken))
         {
-            return FriendRequestResult.AlreadyFriends;
+            rejection = SendFriendRequestResult.AlreadyFriends;
         }
-
-        if (await HasPendingRequestAsync(
+        else if (await HasPendingRequestAsync(
                 requesterId,
                 recipientUserId,
                 cancellationToken))
         {
-            return FriendRequestResult.AlreadyPending;
+            rejection = SendFriendRequestResult.AlreadyPending;
         }
 
-        return null;
+        return rejection;
     }
 
     private Task<bool> AreFriendsAsync(
@@ -435,12 +446,12 @@ public sealed class FriendService : IFriendService
         int recipientUserId,
         CancellationToken cancellationToken)
     {
-        return _dbContext.FriendRequests.AnyAsync(request =>
-            request.State == PendingRequestState
-            && ((request.RequesterId == requesterId
-                 && request.RecipientId == recipientUserId)
-                || (request.RequesterId == recipientUserId
-                    && request.RecipientId == requesterId)),
+        return _dbContext.FriendRequests.AnyAsync(friendRequest =>
+            friendRequest.State == PendingRequestState
+            && ((friendRequest.RequesterId == requesterId
+                 && friendRequest.RecipientId == recipientUserId)
+                || (friendRequest.RequesterId == recipientUserId
+                    && friendRequest.RecipientId == requesterId)),
             cancellationToken);
     }
 }

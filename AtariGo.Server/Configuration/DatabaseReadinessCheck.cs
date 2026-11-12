@@ -1,8 +1,4 @@
-using System;
 using System.Data.Common;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
@@ -61,7 +57,6 @@ namespace AtariGo.Server.Configuration
                 .Distinct()
                 .Select(column => sqlHelper.DelimitIdentifier(column)));
 
-            // TOP (0) validates mapped columns and SELECT access without fetching records.
             await using DbCommand command = _dbContext.Database.GetDbConnection().CreateCommand();
             command.CommandTimeout = CommandTimeoutSeconds;
             command.CommandText = $"SELECT TOP ({SchemaProbeRowLimit}) {columns} FROM "
