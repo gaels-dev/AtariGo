@@ -39,7 +39,15 @@ public sealed class GameSessionCatalog : IGameSessionCatalog
 
         GamePlayer opponent = game.GamePlayers.First(
             gamePlayer => gamePlayer.GamePlayerId != player.GamePlayerId);
-        return CreateDefinition(game, player, opponent);
+        if (game.BoardStateJson is null)
+        {
+            return null;
+        }
+        return CreateDefinition(game, player, opponent) with
+        {
+            Progress = GamePersistenceService.Read(game),
+            Version = game.StateVersion
+        };
     }
 
     private Task<Game?> FindActiveGameAsync(
@@ -52,8 +60,7 @@ public sealed class GameSessionCatalog : IGameSessionCatalog
             .Include(game => game.GamePlayers)
                 .ThenInclude(gamePlayer => gamePlayer.User)
             .SingleOrDefaultAsync(
-                game => game.GameId == gameId
-                    && game.State == DatabaseValues.GameStates.InProgress,
+                game => game.GameId == gameId,
                 cancellationToken);
     }
 

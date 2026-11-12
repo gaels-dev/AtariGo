@@ -17,25 +17,25 @@ public sealed class GameSessionGrpcService : GameSession.GameSessionBase
     private const string GuestCredentialHeader = "x-guest-credential";
 
     private readonly IGameSessionCatalog _gameSessionCatalog;
-    private readonly IGameSessionRegistry _gameSessionRegistry;
+    private readonly GameCoordinator _coordinator;
     private readonly IGuestIdentityRegistry _guestIdentityRegistry;
     private readonly ISessionService _sessionService;
     private readonly ILogger<GameSessionGrpcService> _logger;
 
     public GameSessionGrpcService(
         IGameSessionCatalog gameSessionCatalog,
-        IGameSessionRegistry gameSessionRegistry,
+        GameCoordinator gameCoordinator,
         IGuestIdentityRegistry guestIdentityRegistry,
         ISessionService sessionService,
         ILogger<GameSessionGrpcService> logger)
     {
         ArgumentNullException.ThrowIfNull(gameSessionCatalog);
-        ArgumentNullException.ThrowIfNull(gameSessionRegistry);
+        ArgumentNullException.ThrowIfNull(gameCoordinator);
         ArgumentNullException.ThrowIfNull(guestIdentityRegistry);
         ArgumentNullException.ThrowIfNull(sessionService);
         ArgumentNullException.ThrowIfNull(logger);
         _gameSessionCatalog = gameSessionCatalog;
-        _gameSessionRegistry = gameSessionRegistry;
+        _coordinator = gameCoordinator;
         _guestIdentityRegistry = guestIdentityRegistry;
         _sessionService = sessionService;
         _logger = logger;
@@ -49,21 +49,17 @@ public sealed class GameSessionGrpcService : GameSession.GameSessionBase
         GameSessionConnection? connection = null;
         try
         {
-            GameSessionClientEvent joinEvent = await ReadJoinEventAsync(
-                requestStream,
-                context.CancellationToken);
-            GameSessionPlayerRequest playerRequest = await IdentifyPlayerAsync(
-                joinEvent.JoinGame.GameId,
-                context);
-            GameSessionDefinition definition = await FindGameAsync(
-                playerRequest,
-                context.CancellationToken);
-            connection = _gameSessionRegistry.Connect(definition);
+            connection = await OpenConnectionAsync(requestStream, context);
             GameSessionStreamContext streamContext = new GameSessionStreamContext(
                 requestStream,
                 responseStream,
                 context.CancellationToken);
             await RunDuplexStreamAsync(streamContext, connection);
+            if (connection.IsReplaced)
+            {
+                throw new RpcException(new Status(StatusCode.AlreadyExists,
+                    "This player opened a newer game connection."));
+            }
         }
         catch (OperationCanceledException)
             when (context.CancellationToken.IsCancellationRequested)
@@ -88,6 +84,13 @@ public sealed class GameSessionGrpcService : GameSession.GameSessionBase
                 "Game session transport closed by client. GameId: {GameId}",
                 connection?.GameId);
         }
+        catch (Microsoft.EntityFrameworkCore.DbUpdateException exception)
+        {
+            _logger.LogError(exception, "Game persistence failed. GameId: {GameId}",
+                connection?.GameId);
+            throw new RpcException(new Status(StatusCode.Unavailable,
+                "The game action could not be confirmed. Reconnect to recover its result."));
+        }
         catch (SqlException exception)
         {
             _logger.LogError(
@@ -102,9 +105,20 @@ public sealed class GameSessionGrpcService : GameSession.GameSessionBase
         {
             if (connection is not null)
             {
-                _gameSessionRegistry.Disconnect(connection);
+                _coordinator.Disconnect(connection);
             }
         }
+    }
+
+    private async Task<GameSessionConnection> OpenConnectionAsync(
+        IAsyncStreamReader<GameSessionClientEvent> requestStream, ServerCallContext context)
+    {
+        GameSessionClientEvent joinEvent = await ReadJoinEventAsync(
+            requestStream, context.CancellationToken);
+        GameSessionPlayerRequest request = await IdentifyPlayerAsync(joinEvent.JoinGame.GameId,
+            context);
+        GameSessionDefinition definition = await FindGameAsync(request, context.CancellationToken);
+        return await _coordinator.ConnectAsync(definition, context.CancellationToken);
     }
 
     private static async Task<GameSessionClientEvent> ReadJoinEventAsync(
@@ -206,7 +220,7 @@ public sealed class GameSessionGrpcService : GameSession.GameSessionBase
         using CancellationTokenSource streamCancellation =
             CancellationTokenSource.CreateLinkedTokenSource(
                 streamContext.CancellationToken);
-        Task receiveTask = ReceiveChatMessagesAsync(
+        Task receiveTask = ReceiveClientEventsAsync(
             streamContext.RequestStream,
             connection,
             streamCancellation.Token);
@@ -244,7 +258,7 @@ public sealed class GameSessionGrpcService : GameSession.GameSessionBase
         }
     }
 
-    private async Task ReceiveChatMessagesAsync(
+    private async Task ReceiveClientEventsAsync(
         IAsyncStreamReader<GameSessionClientEvent> requestStream,
         GameSessionConnection connection,
         CancellationToken cancellationToken)
@@ -255,16 +269,40 @@ public sealed class GameSessionGrpcService : GameSession.GameSessionBase
             if (clientEvent.EventCase
                 == GameSessionClientEvent.EventOneofCase.SendChatMessage)
             {
-                _gameSessionRegistry.PublishChatMessage(
+                _coordinator.PublishChatMessage(
                     connection,
                     clientEvent.SendChatMessage.Text);
                 continue;
             }
 
-            throw new RpcException(new Status(
-                StatusCode.InvalidArgument,
-                "Only chat messages are accepted after joining the game."));
+            GameActionCommand command = MapAction(clientEvent);
+            await _coordinator.ProcessAsync(connection, command, cancellationToken);
         }
+    }
+
+    private static GameActionCommand MapAction(GameSessionClientEvent clientEvent)
+    {
+        if (clientEvent.EventCase == GameSessionClientEvent.EventOneofCase.SubmitMove)
+        {
+            SubmitGameMove move = clientEvent.SubmitMove;
+            return new GameActionCommand
+            {
+                ActionId = move.ActionId,
+                ExpectedVersion = move.ExpectedVersion,
+                Row = move.Row,
+                Column = move.Column
+            };
+        }
+        if (clientEvent.EventCase == GameSessionClientEvent.EventOneofCase.Surrender)
+        {
+            return new GameActionCommand
+            {
+                ActionId = clientEvent.Surrender.ActionId,
+                IsSurrender = true
+            };
+        }
+        throw new RpcException(new Status(StatusCode.InvalidArgument,
+            "The game action is unsupported."));
     }
 
     private static async Task SendSessionEventsAsync(
@@ -305,6 +343,20 @@ public sealed class GameSessionGrpcService : GameSession.GameSessionBase
 
     private static GameSessionServerEvent MapDelivery(GameSessionDelivery delivery)
     {
+        if (delivery.ActionResult is GameActionResult action)
+        {
+            return new GameSessionServerEvent
+            {
+                ActionResult = new GameActionResponse
+                {
+                    ActionId = action.ActionId,
+                    IsAccepted = action.IsAccepted,
+                    Rejection = action.Rejection,
+                    Version = action.Version
+                }
+            };
+        }
+
         if (delivery.Snapshot is not null)
         {
             return new GameSessionServerEvent
@@ -346,7 +398,6 @@ public sealed class GameSessionGrpcService : GameSession.GameSessionBase
             GameId = snapshot.GameId,
             BoardSize = snapshot.BoardSize,
             CaptureGoal = snapshot.CaptureGoal,
-            GameTimeSeconds = snapshot.GameTimeSeconds,
             TurnTimeSeconds = snapshot.TurnTimeSeconds,
             PlayerName = snapshot.Player.DisplayName,
             PlayerStoneColor = snapshot.Player.StoneColor,
@@ -368,6 +419,7 @@ public sealed class GameSessionGrpcService : GameSession.GameSessionBase
                 snapshot.Player.PlayerKey));
         }
 
+        GameSessionGameplayMapping.Apply(responseSnapshot, snapshot, snapshot.ServerTimeUtc);
         return responseSnapshot;
     }
 

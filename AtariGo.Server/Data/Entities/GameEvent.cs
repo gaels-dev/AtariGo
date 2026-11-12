@@ -5,6 +5,12 @@ namespace AtariGo.Server.Data.Entities;
 
 public partial class GameEvent
 {
+    public string? ActionId { get; set; }
+
+    public string? ActionRequestJson { get; set; }
+
+    public string? ActionResultJson { get; set; }
+
     public long GameEventId { get; set; }
 
     public long GameId { get; set; }

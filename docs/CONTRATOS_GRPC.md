@@ -470,3 +470,90 @@ Los siguientes límites son importantes para una arquitectura completa, pero no 
 | AtariGoDbContext (existe) | Persistencia EF Core de entidades relacionales. | Dependencia interna del servidor; sin generación de contratos de BD. |
 | INavigationService (existe) | Cambiar CurrentViewModel, abrir diálogos y ventanas. | Navegación local de escritorio; no usa la red. |
 | ICommand, RelayCommand, AsyncRelayCommand (existen) | Acciones enlazadas a controles WPF. | Parte de MVVM; no forman parte de un .proto. |
+
+
+## Jugabilidad implementada mediante GameSession
+
+El contrato efectivo de la partida está en `AtariGo.Contracts/Protos/game_session.proto`.
+Las tablas anteriores de GameMoves, GameState y GameChat describen la separación conceptual
+prevista; no se han creado esos tres servicios de transporte. Sus responsabilidades se
+implementan mediante `GameSession.Connect` y servicios internos separados.
+
+- El primer mensaje es `JoinGame`, autenticado con token de sesión o credencial de invitado.
+  El servidor comprueba que la identidad pertenece a uno de los dos participantes persistidos.
+- Después admite `SubmitGameMove`, `SurrenderGame` y `SendChatMessage`.
+- Cada movimiento incluye coordenadas de base cero, `expected_version` y `action_id`
+  (GUID en formato `N`). La identidad y el color se obtienen de la conexión autenticada.
+- El servidor publica snapshots completos de las 81 intersecciones, versión, turno,
+  capturas, última jugada, relojes, estado, ganador y motivo de finalización.
+- `GameActionResponse` confirma o rechaza la acción por su identificador. Un rechazo normal
+  no cierra el stream ni cambia por sí mismo la versión del tablero. Si entretanto vence
+  el turno, esa transición sí se persiste e incrementa la versión. Reenviar la misma acción recupera
+  su respuesta persistida; reutilizar el identificador con otros datos devuelve `ActionConflict`.
+- El cliente confirma las piedras al recibir el estado oficial y conserva una acción pendiente
+  durante la reconexión. El transporte serializa las escrituras de chat y jugadas.
+- La conexión más reciente reemplaza la anterior del mismo participante. El stream anterior
+  termina con `AlreadyExists` y su cliente deja de reconectar automáticamente.
+
+### Reglas y relojes
+
+Tablero 9 × 9; negro comienza; adyacencia ortogonal; captura de grupos sin libertades;
+prohibición de suicidio y repetición de cualquier posición anterior del tablero
+(superko posicional). Se retiran las capturas antes de comprobar suicidio.
+Se gana al alcanzar o superar el objetivo configurado de piedras capturadas.
+No se implementa pase voluntario ni derrota por quedarse sin movimientos legales.
+La rendición asigna victoria al contrario y resultado `Surrendered` al jugador que se rinde.
+
+Cada jugador dispone de su propio reloj, reiniciado al intervalo completo de
+`TurnTimeSeconds` cada vez que comienza su turno. Solo corre el reloj activo; no se acumula
+el sobrante. El vencimiento cede el turno sin colocar piedras ni provocar derrota.
+No existe un límite global de partida; `game_time_seconds` queda como compatibilidad histórica.
+Los pases automáticos incrementan el número de turno y no añaden posiciones al historial de superko.
+Dos vencimientos consecutivos no terminan la partida.
+
+Los relojes comienzan cuando ambos participantes conectan. Si no lo hacen dentro de
+120 segundos desde la creación, se cancela la partida sin ganador. Después del inicio,
+los relojes siguen corriendo durante desconexiones y caídas del servidor; al recuperarse
+se calculan los turnos vencidos a partir del plazo persistido. El servidor controla los
+vencimientos; los relojes WPF son únicamente su representación visual.
+
+Para una acción nueva, el servidor consulta primero el estado y su posible recibo previo.
+Después toma una sola hora UTC de decisión y comprueba vencimientos y reglas sin esperas
+asíncronas entre ambos pasos. Si el turno venció durante las consultas, rechaza la jugada
+como `StaleVersion` y guarda el avance del reloj junto con ese rechazo en una sola operación.
+Esto también aplica si vencieron varios turnos y vuelve a tocarle al mismo color.
+Una jugada válida fija el siguiente vencimiento desde la hora de decisión. Un reintento
+recupera el recibo original y actualiza los vencimientos pendientes sin aplicar otra vez la jugada.
+
+El cliente usa `server_time_unix_milliseconds` y `turn_ends_at_unix_milliseconds`,
+ya presentes en el snapshot. Estima inicialmente el tránsito como la mitad del tiempo
+desde el inicio de la conexión hasta recibir el primer snapshot. A partir de esa referencia,
+descuenta tiempo con un reloj monotónico, independiente de la hora local de Windows.
+Un snapshot atrasado no retrocede la estimación de hora del servidor ni reinicia el contador.
+Cada reconexión recalibra la referencia; el reloj inactivo conserva su intervalo completo.
+La estimación inicial incluye procesamiento y posibles asimetrías de red, por lo que el
+contador visual no garantiza precisión exacta de red ni decide cambios de turno.
+
+### Persistencia y límites
+
+`AtariGo.GameLogic` contiene el motor sin dependencias de transporte, WPF ni SQL.
+El coordinador del servidor serializa operaciones por partida mediante semáforos de tamaño
+acotado y usa un contexto EF independiente por operación. SQL guarda el tablero, la versión
+y el vencimiento en `Games`, los movimientos en `Moves` y las solicitudes/respuestas en
+`GameEvents`, antes de que se publique la transición. Los relojes tienen supervisión
+independiente de las conexiones. El caché de sesiones sin conexiones expira tras una hora;
+el estado oficial permanece en SQL y se recupera al conectar. `Games.State` determina el
+estado de la partida y se usa junto a `TurnDeadlineUtc` para buscar vencimientos. El índice
+único de `GameEvents` por partida, participante y `ActionId` reconoce los reintentos sin
+crear otro evento. Los rechazos se registran como `ActionRejected`; solo una transición
+del estado oficial cambia su versión, incluido un vencimiento detectado al rechazar una jugada.
+No se requieren tablas adicionales para la jugabilidad.
+
+Los scripts de creación y actualización, instrucciones y verificaciones están en
+`scripts/database/`. La persistencia no guarda credenciales de invitado: el registro existente
+de identidades de invitados sigue siendo de memoria. Una interrupción del stream permite
+reconectar al invitado; reiniciar el proceso servidor invalida esas credenciales. Las partidas
+y recibos quedan persistidos, pero recuperar el acceso del invitado tras ese reinicio requiere
+una futura identidad duradera. Los tokens registrados conservan su validación existente en SQL.
+La interfaz de retorno no incluye una lista de partidas en curso ni restauración tras cerrar
+el proceso cliente; la reconexión automática pertenece al tablero actualmente abierto.

@@ -17,6 +17,12 @@ public sealed class GameEntityConfiguration : IEntityTypeConfiguration<Game>
             .IsUnique()
             .HasFilter("([RoomId] IS NOT NULL)");
 
+        entity.HasIndex(game => new { game.State, game.TurnDeadlineUtc },
+            "IX_Games_State_TurnDeadline");
+        entity.Property(game => game.StateVersion).IsConcurrencyToken()
+            .HasDefaultValue(0L, "DF_Games_StateVersion");
+        entity.Property(game => game.TurnDeadlineUtc).HasPrecision(3);
+
         entity.Property(game => game.GameId).ValueGeneratedOnAdd();
         entity.Property(game => game.EndReason)
             .HasMaxLength(30)

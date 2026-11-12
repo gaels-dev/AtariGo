@@ -16,6 +16,14 @@ public sealed class GameEventEntityConfiguration : IEntityTypeConfiguration<Game
             gameEvent.GameEventId
         }, "IX_GameEvents_Game_Created");
 
+        entity.HasIndex(gameEvent => new
+        {
+            gameEvent.GameId,
+            gameEvent.GamePlayerId,
+            gameEvent.ActionId
+        }, "UX_GameEvents_Player_Action").IsUnique().HasFilter("[ActionId] IS NOT NULL");
+        entity.Property(gameEvent => gameEvent.ActionId).HasMaxLength(64).IsUnicode(false);
+
         entity.Property(gameEvent => gameEvent.CreatedAt)
             .HasPrecision(0)
             .HasDefaultValueSql("(sysutcdatetime())", "DF_GameEvents_CreatedAt");

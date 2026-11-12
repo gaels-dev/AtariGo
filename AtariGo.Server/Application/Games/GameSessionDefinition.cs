@@ -2,6 +2,10 @@ namespace AtariGo.Server.Application.Games;
 
 public sealed record GameSessionDefinition
 {
+    public GameRuntimeState? Progress { get; init; }
+
+    public long Version { get; init; }
+
     public long GameId { get; init; }
 
     public int CaptureGoal { get; init; }

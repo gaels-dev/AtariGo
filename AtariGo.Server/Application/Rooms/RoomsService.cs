@@ -625,7 +625,7 @@ public sealed class RoomsService : IRoomsService
         return configuration.CaptureGoal is
             (DefaultCaptureGoal or IntermediateCaptureGoal or ExtendedCaptureGoal)
             && configuration.TurnTimeSeconds > 0
-            && configuration.GameTimeSeconds >= configuration.TurnTimeSeconds;
+            && configuration.GameTimeSeconds >= 0;
     }
 
     private static bool IsMember(PrivateRoom room, int userId)

@@ -11,7 +11,7 @@ namespace AtariGo.Client.ViewModels
 {
     public class CreatePrivateRoomViewModel : ViewModelBase, IDisposable
     {
-        private const int DefaultGameTimeSeconds = 600;
+        private const int DefaultGameTimeSeconds = 0;
         private const int DefaultTurnTimeSeconds = 30;
 
         private readonly INavigationService _navigationService;

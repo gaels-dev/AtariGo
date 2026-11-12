@@ -937,4 +937,25 @@
   <data name="RoomInvitations_Msg_NoInvitations" xml:space="preserve">
     <value>You have no room invitations.</value>
   </data>
+  <data name="GameBoard_Clock_Black" xml:space="preserve"><value>Black</value></data>
+  <data name="GameBoard_Clock_White" xml:space="preserve"><value>White</value></data>
+  <data name="GameBoard_Action_Pending" xml:space="preserve"><value>Confirming action…</value></data>
+  <data name="GameBoard_Action_Recovering" xml:space="preserve"><value>Reconnecting and recovering the game…</value></data>
+  <data name="GameBoard_Action_Finished" xml:space="preserve"><value>The game has ended.</value></data>
+  <data name="GameBoard_Action_Waiting" xml:space="preserve"><value>Waiting for both players.</value></data>
+  <data name="GameBoard_Action_StaleVersion" xml:space="preserve"><value>The turn or board changed. Try again.</value></data>
+  <data name="GameBoard_Action_NotYourTurn" xml:space="preserve"><value>It is not your turn.</value></data>
+  <data name="GameBoard_Action_OutOfBounds" xml:space="preserve"><value>That intersection is outside the board.</value></data>
+  <data name="GameBoard_Action_Occupied" xml:space="preserve"><value>That intersection is occupied.</value></data>
+  <data name="GameBoard_Action_Suicide" xml:space="preserve"><value>That move has no liberties.</value></data>
+  <data name="GameBoard_Action_Repetition" xml:space="preserve"><value>Repeating a previous board position is forbidden.</value></data>
+  <data name="GameBoard_Action_InvalidAction" xml:space="preserve"><value>The action is invalid.</value></data>
+  <data name="GameBoard_Action_ActionConflict" xml:space="preserve"><value>This action ID was already used for another request.</value></data>
+  <data name="GameBoard_Result_Cancelled" xml:space="preserve"><value>Game cancelled: a player did not connect in time.</value></data>
+  <data name="GameBoard_Result_Won" xml:space="preserve"><value>You won!</value></data>
+  <data name="GameBoard_Result_Lost" xml:space="preserve"><value>You lost.</value></data>
+  <data name="GameBoard_Result_CaptureGoal" xml:space="preserve"><value>Capture goal reached.</value></data>
+  <data name="GameBoard_Result_Surrender" xml:space="preserve"><value>The game ended by resignation.</value></data>
+  <data name="GameBoard_Button_ReturnToMenu" xml:space="preserve"><value>Return to menu</value></data>
+  <data name="GameBoard_Lbl_CapturesStatus" xml:space="preserve"><value>Captures · Black: {0} · White: {1} · Goal: {2}</value></data>
 </root>

@@ -5,6 +5,12 @@ namespace AtariGo.Server.Data.Entities;
 
 public partial class Game
 {
+    public string? BoardStateJson { get; set; }
+
+    public long StateVersion { get; set; }
+
+    public DateTime? TurnDeadlineUtc { get; set; }
+
     public long GameId { get; set; }
 
     public int? RoomId { get; set; }

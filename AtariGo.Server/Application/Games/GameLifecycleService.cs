@@ -99,16 +99,15 @@ public sealed class GameLifecycleService : IGameLifecycleService
         };
         game.GamePlayers.Add(CreateGamePlayer(
             request.BlackPlayer,
-            DatabaseValues.StoneColors.Black,
             HostTurnOrder,
             now));
         game.GamePlayers.Add(CreateGamePlayer(
             request.WhitePlayer,
-            DatabaseValues.StoneColors.White,
             OpponentTurnOrder,
             now));
 
         _dbContext.Games.Add(game);
+        GamePersistenceService.Initialize(game, game.GameConfiguration.CaptureGoal, now);
         await _dbContext.SaveChangesAsync(cancellationToken);
         return game.GameId;
     }
@@ -151,6 +150,7 @@ public sealed class GameLifecycleService : IGameLifecycleService
         });
 
         _dbContext.Games.Add(game);
+        GamePersistenceService.Initialize(game, game.GameConfiguration.CaptureGoal, now);
         await _dbContext.SaveChangesAsync(cancellationToken);
         return game.GameId;
     }
@@ -167,7 +167,6 @@ public sealed class GameLifecycleService : IGameLifecycleService
 
     private static GamePlayer CreateGamePlayer(
         MatchmakingPlayer player,
-        string stoneColor,
         byte turnOrder,
         DateTime joinedAt)
     {
@@ -176,7 +175,8 @@ public sealed class GameLifecycleService : IGameLifecycleService
             UserId = player.UserId,
             GuestName = player.GuestName,
             GuestIdentityId = player.GuestIdentityId,
-            StoneColor = stoneColor,
+            StoneColor = turnOrder == HostTurnOrder
+                ? DatabaseValues.StoneColors.Black : DatabaseValues.StoneColors.White,
             TurnOrder = turnOrder,
             JoinedAt = joinedAt
         };

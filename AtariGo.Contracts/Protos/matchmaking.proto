@@ -55,6 +55,7 @@ message PublicGameStarted {
   string opponent_name = 2;
   string stone_color = 3;
   int32 capture_goal = 4;
+  // Legacy compatibility field; ignored by gameplay.
   int32 game_time_seconds = 5;
   int32 turn_time_seconds = 6;
 }

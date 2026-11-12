@@ -11,6 +11,8 @@ public interface IGameSessionStream : IAsyncDisposable
     IAsyncEnumerable<GameSessionServerEvent> ReadEventsAsync(
         CancellationToken cancellationToken);
 
+    Task SendEventAsync(GameSessionClientEvent clientEvent, CancellationToken cancellationToken);
+
     Task SendChatMessageAsync(
         string text,
         CancellationToken cancellationToken);

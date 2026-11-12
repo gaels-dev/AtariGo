@@ -936,4 +936,25 @@
   <data name="RoomInvitations_Msg_NoInvitations" xml:space="preserve">
     <value>Du hast keine Raumeinladungen.</value>
   </data>
+  <data name="GameBoard_Clock_Black" xml:space="preserve"><value>Schwarz</value></data>
+  <data name="GameBoard_Clock_White" xml:space="preserve"><value>Weiß</value></data>
+  <data name="GameBoard_Action_Pending" xml:space="preserve"><value>Aktion wird bestätigt…</value></data>
+  <data name="GameBoard_Action_Recovering" xml:space="preserve"><value>Verbindung und Partie werden wiederhergestellt…</value></data>
+  <data name="GameBoard_Action_Finished" xml:space="preserve"><value>Die Partie ist beendet.</value></data>
+  <data name="GameBoard_Action_Waiting" xml:space="preserve"><value>Warten auf beide Spieler.</value></data>
+  <data name="GameBoard_Action_StaleVersion" xml:space="preserve"><value>Zug oder Brett geändert. Bitte erneut versuchen.</value></data>
+  <data name="GameBoard_Action_NotYourTurn" xml:space="preserve"><value>Du bist nicht am Zug.</value></data>
+  <data name="GameBoard_Action_OutOfBounds" xml:space="preserve"><value>Dieser Punkt liegt außerhalb des Bretts.</value></data>
+  <data name="GameBoard_Action_Occupied" xml:space="preserve"><value>Dieser Punkt ist besetzt.</value></data>
+  <data name="GameBoard_Action_Suicide" xml:space="preserve"><value>Dieser Zug hat keine Freiheiten.</value></data>
+  <data name="GameBoard_Action_Repetition" xml:space="preserve"><value>Eine frühere Brettstellung darf nicht wiederholt werden.</value></data>
+  <data name="GameBoard_Action_InvalidAction" xml:space="preserve"><value>Die Aktion ist ungültig.</value></data>
+  <data name="GameBoard_Action_ActionConflict" xml:space="preserve"><value>Diese Aktions-ID wurde bereits für eine andere Anfrage verwendet.</value></data>
+  <data name="GameBoard_Result_Cancelled" xml:space="preserve"><value>Partie abgebrochen: Ein Spieler hat sich nicht rechtzeitig verbunden.</value></data>
+  <data name="GameBoard_Result_Won" xml:space="preserve"><value>Du hast gewonnen!</value></data>
+  <data name="GameBoard_Result_Lost" xml:space="preserve"><value>Du hast verloren.</value></data>
+  <data name="GameBoard_Result_CaptureGoal" xml:space="preserve"><value>Das Fangziel wurde erreicht.</value></data>
+  <data name="GameBoard_Result_Surrender" xml:space="preserve"><value>Die Partie endete durch Aufgabe.</value></data>
+  <data name="GameBoard_Button_ReturnToMenu" xml:space="preserve"><value>Zurück zum Menü</value></data>
+  <data name="GameBoard_Lbl_CapturesStatus" xml:space="preserve"><value>Gefangene · Schwarz: {0} · Weiß: {1} · Ziel: {2}</value></data>
 </root>

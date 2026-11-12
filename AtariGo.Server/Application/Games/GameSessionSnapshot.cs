@@ -5,6 +5,12 @@ namespace AtariGo.Server.Application.Games;
 
 public sealed record GameSessionSnapshot
 {
+    public GameRuntimeState? Progress { get; init; }
+
+    public DateTime ServerTimeUtc { get; init; }
+
+    public long Version { get; init; }
+
     public long GameId { get; init; }
 
     public int BoardSize { get; init; }

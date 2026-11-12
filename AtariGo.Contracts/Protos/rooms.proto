@@ -58,6 +58,7 @@ message RoomSnapshot {
 
 message RoomConfiguration {
   int32 capture_goal = 1;
+  // Legacy compatibility field; ignored by gameplay.
   int32 game_time_seconds = 2;
   int32 turn_time_seconds = 3;
 }

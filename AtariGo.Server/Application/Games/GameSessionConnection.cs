@@ -15,6 +15,8 @@ public sealed class GameSessionConnection
         EventWriter = events.Writer;
     }
 
+    public bool IsReplaced { get; internal set; }
+
     public long GameId { get; }
 
     public string PlayerKey { get; }

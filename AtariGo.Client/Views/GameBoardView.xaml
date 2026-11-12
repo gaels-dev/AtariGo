@@ -110,6 +110,7 @@
                 <Button Grid.Column="2"
                         Style="{StaticResource ActionButtonStyle}"
                         Command="{Binding SurrenderCommand}"
+                        IsEnabled="{Binding CanSurrender}"
                         Background="#EAEAEA"
                         Foreground="#333333"
                         BorderBrush="#CCCCCC"
@@ -159,7 +160,16 @@
             </Grid>
         </Border>
 
-        <Grid Grid.Row="1" Grid.Column="0" Margin="24">
+        <StackPanel Grid.Row="1" Grid.Column="0" VerticalAlignment="Top"
+                    HorizontalAlignment="Center" Orientation="Horizontal" Panel.ZIndex="1">
+            <TextBlock Text="{Binding BlackTimeLabel}" Margin="0,0,6,0"/>
+            <TextBlock Text="{Binding BlackTimeRemaining}" FontWeight="Bold" Margin="0,0,20,0"/>
+            <TextBlock Text="{Binding WhiteTimeLabel}" Margin="0,0,6,0"/>
+            <TextBlock Text="{Binding WhiteTimeRemaining}" FontWeight="Bold"/>
+        </StackPanel>
+        <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding CapturesStatus}"
+                   HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,20,0,0"/>
+        <Grid Grid.Row="1" Grid.Column="0" Margin="24,48,24,24">
             <Grid.RowDefinitions>
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="Auto"/>
@@ -179,7 +189,7 @@
                                           Opacity="0.3"
                                           Color="#2C2A29"/>
                     </Border.Effect>
-                    <ItemsControl ItemsSource="{Binding Cells}">
+                    <ItemsControl ItemsSource="{Binding Cells}" IsEnabled="{Binding IsMyTurn}">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
                                 <UniformGrid Rows="9" Columns="9"/>
@@ -230,7 +240,14 @@
                                         </Ellipse.Style>
                                     </Ellipse>
 
-                                    <Button Command="{Binding CellClickCommand}"
+                                    <Ellipse Width="9" Height="9" Fill="#D24B40" Stroke="White"
+                                             StrokeThickness="1" Panel.ZIndex="2"
+                                             IsHitTestVisible="False"
+                                             Visibility="{Binding IsLastMove,
+                                                 Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                    <Button Command="{Binding DataContext.PlaceStoneCommand,
+                                                         RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                            CommandParameter="{Binding}"
                                             Background="Transparent"
                                             BorderThickness="0"
                                             Panel.ZIndex="3"
@@ -243,14 +260,17 @@
                 </Border>
             </Viewbox>
 
-            <TextBlock Grid.Row="1"
-                       Text="{Binding BoardStatusMessage}"
-                       HorizontalAlignment="Center"
-                       Margin="0,16,0,0"
-                       FontSize="16"
-                       FontWeight="Bold"
-                       FontFamily="Georgia"
-                       Foreground="#2C2A29"/>
+            <StackPanel Grid.Row="1" Margin="0,12,0,0">
+                <TextBlock Text="{Binding BoardStatusMessage}"
+                           HorizontalAlignment="Center" TextWrapping="Wrap"
+                           FontSize="16" FontWeight="Bold" Foreground="#2C2A29"/>
+                <TextBlock Text="{Binding ActionStatusMessage}"
+                           HorizontalAlignment="Center" TextWrapping="Wrap"
+                           Foreground="#9B2C2C" Margin="0,4,0,0"/>
+                <Button Content="{Binding ReturnToMenuLabel}" Command="{Binding LeaveGameCommand}"
+                        Style="{StaticResource ActionButtonStyle}"
+                        HorizontalAlignment="Center" Margin="0,8,0,0"/>
+            </StackPanel>
         </Grid>
 
         <Border Grid.Row="1" Grid.Column="1"

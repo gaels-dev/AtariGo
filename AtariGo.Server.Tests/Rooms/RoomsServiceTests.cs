@@ -163,7 +163,7 @@ public sealed class RoomsServiceTests
     [TestMethod]
     [DataRow(2, 600, 30)]
     [DataRow(3, 600, 0)]
-    [DataRow(3, 20, 30)]
+    [DataRow(3, -1, 30)]
     public void UpdateRoomConfiguration_InvalidValues_PreservesVersion(
         int captureGoal, int gameSeconds, int turnSeconds)
     {
@@ -186,6 +186,25 @@ public sealed class RoomsServiceTests
         // Assert
         Assert.AreEqual(RoomOperationStatus.InvalidConfiguration, result.Status);
         Assert.AreEqual(room, current.Room);
+    }
+
+    [TestMethod]
+    [DataRow(0)]
+    [DataRow(20)]
+    public void UpdateRoomConfiguration_IndependentTurnClock_AcceptsWithoutSharedTime(
+        int legacySeconds)
+    {
+        // Arrange
+        var service = new RoomsService(TimeProvider.System, new SessionConnectionRegistry(),
+            NullLogger<RoomsService>.Instance);
+        PrivateRoom room = CreateRoomWithOpponent(service);
+        var command = new UpdateRoomConfigurationCommand(room.RoomId,
+            new LobbyConfiguration(3, legacySeconds, 30), room.Version);
+        // Act
+        RoomOperationResult result = service.UpdateRoomConfiguration(command, room.Host.UserId);
+        // Assert
+        Assert.AreEqual(RoomOperationStatus.Success, result.Status);
+        Assert.AreEqual(30, result.Room!.Configuration.TurnTimeSeconds);
     }
 
     [TestMethod]

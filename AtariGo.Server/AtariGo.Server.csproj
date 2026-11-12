@@ -23,6 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\AtariGo.GameLogic\AtariGo.GameLogic.csproj" />
     <ProjectReference Include="..\AtariGo.Contracts\AtariGo.Contracts.csproj" />
   </ItemGroup>
 

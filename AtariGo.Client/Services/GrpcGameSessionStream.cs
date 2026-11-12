@@ -11,6 +11,7 @@ namespace AtariGo.Client.Services;
 
 public sealed class GrpcGameSessionStream : IGameSessionStream
 {
+    private readonly SemaphoreSlim _writeGate = new SemaphoreSlim(1, 1);
     private readonly AsyncDuplexStreamingCall<GameSessionClientEvent,
         GameSessionServerEvent> _call;
 
@@ -40,7 +41,22 @@ public sealed class GrpcGameSessionStream : IGameSessionStream
         {
             SendChatMessage = new SendChatMessage { Text = text }
         };
-        return _call.RequestStream.WriteAsync(clientEvent);
+        return SendEventAsync(clientEvent, cancellationToken);
+    }
+
+    public async Task SendEventAsync(GameSessionClientEvent clientEvent,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(clientEvent);
+        await _writeGate.WaitAsync(cancellationToken);
+        try
+        {
+            await _call.RequestStream.WriteAsync(clientEvent, cancellationToken);
+        }
+        finally
+        {
+            _writeGate.Release();
+        }
     }
 
     public ValueTask DisposeAsync()
