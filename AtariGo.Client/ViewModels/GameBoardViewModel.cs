@@ -117,7 +117,7 @@ namespace AtariGo.Client.ViewModels
             }
         }
 
-        public bool IsMyTurn => _isPlaying && _currentTurn == _myColor
+        public bool IsMyTurn => !_isDisposed && _isPlaying && _currentTurn == _myColor
             && _gameSessionStream is not null && _pendingGameAction is null;
 
         public string TurnStatusMessage => IsMyTurn
@@ -301,9 +301,9 @@ namespace AtariGo.Client.ViewModels
                 return;
             }
 
-            foreach (var c in Cells)
+            foreach (BoardCellViewModel boardCell in Cells)
             {
-                c.IsLastMove = false;
+                boardCell.IsLastMove = false;
             }
 
             cell.Stone = CurrentTurn;
@@ -338,20 +338,40 @@ namespace AtariGo.Client.ViewModels
 
         private void PromptSurrender()
         {
+            ShowSurrenderConfirmation(false);
+        }
+
+        private void ShowSurrenderConfirmation(bool returnToMenu)
+        {
+            if (!CanSurrender)
+            {
+                return;
+            }
             var dialog = new ConfirmActionDialogViewModel(
                 Properties.Resources.GameBoard_Surrender_Title,
                 Properties.Resources.GameBoard_Surrender_Message,
                 Properties.Resources.GameBoard_Surrender_Confirm);
 
-            dialog.DialogClosed += result =>
-            {
-                if (result == true)
-                {
-                    SubmitSurrenderCommand.Execute(null);
-                }
-            };
+            dialog.DialogClosed += result => ConfirmSurrender(result, returnToMenu);
 
             _navigationService.OpenDialog(dialog);
+        }
+
+        private void ConfirmSurrender(bool? confirmed, bool returnToMenu)
+        {
+            if (confirmed != true || _isDisposed)
+            {
+                return;
+            }
+            if (returnToMenu && (_isFinished || _hasPermanentSessionFailure))
+            {
+                ReturnToMainMenu();
+            }
+            else if (CanSurrender)
+            {
+                _returnToMenuAfterSurrender = returnToMenu;
+                SubmitSurrenderCommand.Execute(null);
+            }
         }
 
         private void PromptReportPlayer()
@@ -364,8 +384,11 @@ namespace AtariGo.Client.ViewModels
         {
             if (_gameSessionClient is null)
             {
+                _hasPermanentSessionFailure = true;
                 SessionStatusMessage = GetLocalizedMessage(
-                    "GameBoard_Status_ConnectionFailed");
+                    "GameBoard_Status_ConnectionFailed") + " "
+                    + GetLocalizedMessage("GameBoard_Connection_Closed");
+                NotifyGameplayAvailability();
                 return;
             }
 

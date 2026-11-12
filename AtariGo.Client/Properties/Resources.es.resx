@@ -957,4 +957,6 @@
   <data name="GameBoard_Result_Surrender" xml:space="preserve"><value>La partida terminó por rendición.</value></data>
   <data name="GameBoard_Button_ReturnToMenu" xml:space="preserve"><value>Volver al menú</value></data>
   <data name="GameBoard_Lbl_CapturesStatus" xml:space="preserve"><value>Capturas · Negras: {0} · Blancas: {1} · Objetivo: {2}</value></data>
+  <data name="GameBoard_Connection_Closed" xml:space="preserve"><value>Esta conexión de partida no puede continuar. Puedes volver al menú; esto no confirma una rendición.</value></data>
+  <data name="GameBoard_Connection_Replaced" xml:space="preserve"><value>La partida está abierta en otra conexión. Puedes volver al menú sin afectar esa conexión.</value></data>
 </root>

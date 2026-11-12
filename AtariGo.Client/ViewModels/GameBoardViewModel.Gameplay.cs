@@ -27,6 +27,8 @@ public partial class GameBoardViewModel
     private long _gameVersion = -1;
     private bool _isPlaying;
     private bool _isFinished;
+    private bool _hasPermanentSessionFailure;
+    private bool _returnToMenuAfterSurrender;
     private long _blackClockMilliseconds;
     private long _whiteClockMilliseconds;
     private long _clockReceivedTimestamp;
@@ -35,21 +37,33 @@ public partial class GameBoardViewModel
     private string _actionStatusMessage = string.Empty;
 
     public ICommand PlaceStoneCommand { get; private set; } = null!;
+
     public ICommand SubmitSurrenderCommand { get; private set; } = null!;
+
     public string ActionStatusMessage
     {
         get => _actionStatusMessage;
         private set => SetProperty(ref _actionStatusMessage, value);
     }
-    public bool CanSurrender => !_isFinished && _gameSessionStream is not null
-        && _pendingGameAction is null;
+
+    public bool CanSurrender => !_isDisposed && !_isFinished && !_hasPermanentSessionFailure
+        && _gameSessionStream is not null && _pendingGameAction is null;
+
+    public bool CanLeaveGame => !_isDisposed && (!GameId.HasValue || _isFinished
+        || _hasPermanentSessionFailure || CanSurrender);
+
     public string CapturesStatus => string.Format(CultureInfo.CurrentCulture,
         GetLocalizedMessage("GameBoard_Lbl_CapturesStatus"),
         BlackCaptures, WhiteCaptures, TargetCaptures);
+
     public string ReturnToMenuLabel => GetLocalizedMessage("GameBoard_Button_ReturnToMenu");
+
     public string BlackTimeLabel => GetLocalizedMessage("GameBoard_Clock_Black");
+
     public string WhiteTimeLabel => GetLocalizedMessage("GameBoard_Clock_White");
+
     public string BlackTimeRemaining => FormatClock(_blackClockMilliseconds, StoneColor.Black);
+
     public string WhiteTimeRemaining => FormatClock(_whiteClockMilliseconds, StoneColor.White);
 
     private void InitializeGameplay()
@@ -85,8 +99,7 @@ public partial class GameBoardViewModel
 
     private async Task SurrenderAsync()
     {
-        if (_isFinished || GameId is null || _gameSessionStream is null
-            || _pendingGameAction is not null)
+        if (!CanSurrender || GameId is null)
         {
             return;
         }
@@ -99,8 +112,7 @@ public partial class GameBoardViewModel
 
     private async Task SendPendingActionAsync(CancellationToken cancellationToken)
     {
-        OnPropertyChanged(nameof(IsMyTurn));
-        OnPropertyChanged(nameof(CanSurrender));
+        NotifyGameplayAvailability();
         if (_pendingGameAction is not null && _gameSessionStream is not null)
         {
             ActionStatusMessage = GetLocalizedMessage("GameBoard_Action_Pending");
@@ -116,11 +128,17 @@ public partial class GameBoardViewModel
         {
             return;
         }
+        bool shouldReturn = _returnToMenuAfterSurrender
+            && _pendingGameAction?.Surrender is not null && result.IsAccepted;
         _pendingGameAction = null;
+        _returnToMenuAfterSurrender = false;
         ActionStatusMessage = result.IsAccepted ? string.Empty
             : GetLocalizedMessage("GameBoard_Action_" + result.Rejection);
-        OnPropertyChanged(nameof(IsMyTurn));
-        OnPropertyChanged(nameof(CanSurrender));
+        NotifyGameplayAvailability();
+        if (shouldReturn)
+        {
+            ReturnToMainMenu();
+        }
     }
 
     private void ApplyGameplaySnapshot(GameSessionSnapshot snapshot)
@@ -136,8 +154,7 @@ public partial class GameBoardViewModel
         BlackCaptures = snapshot.BlackCaptures;
         WhiteCaptures = snapshot.WhiteCaptures;
         SessionStatusMessage = GetGameplayStatus(snapshot);
-        OnPropertyChanged(nameof(IsMyTurn));
-        OnPropertyChanged(nameof(CanSurrender));
+        NotifyGameplayAvailability();
         OnPropertyChanged(nameof(TurnStatusMessage));
         OnPropertyChanged(nameof(CapturesStatus));
         RefreshClockLabels();
@@ -202,20 +219,48 @@ public partial class GameBoardViewModel
 
     private void PromptLeaveGame()
     {
-        if (GameId.HasValue && !_isFinished)
+        if (_isDisposed)
         {
-            PromptSurrender();
+            return;
+        }
+        if (!GameId.HasValue || _isFinished || _hasPermanentSessionFailure)
+        {
+            ReturnToMainMenu();
         }
         else
         {
-            _navigationService.NavigateToMainMenu();
+            ShowSurrenderConfirmation(true);
         }
+    }
+
+    private void ReturnToMainMenu()
+    {
+        if (_isDisposed)
+        {
+            return;
+        }
+        Dispose();
+        _navigationService.NavigateToMainMenu();
+    }
+
+    private void NotifyGameplayAvailability()
+    {
+        OnPropertyChanged(nameof(IsMyTurn));
+        OnPropertyChanged(nameof(CanSurrender));
+        OnPropertyChanged(nameof(CanLeaveGame));
     }
 
     private void HandleGameplayFailure(Exception exception)
     {
         Trace.TraceWarning("Gameplay send failed: {0}.", exception.GetType().Name);
-        ActionStatusMessage = GetLocalizedMessage("GameBoard_Action_Recovering");
+        if (exception is RpcException failure && IsPermanentSessionFailure(failure.StatusCode))
+        {
+            CloseGameSession(failure);
+        }
+        else
+        {
+            ActionStatusMessage = GetLocalizedMessage("GameBoard_Action_Recovering");
+        }
         // Keep the same action ID: the next connection recovers its durable receipt.
         _sessionAttemptCancellation?.Cancel();
     }
@@ -264,13 +309,13 @@ public partial class GameBoardViewModel
         }
         catch (RpcException exception)
         {
-            SessionStatusMessage = GrpcFailureMessages.GetMessage(exception);
-            if (exception.StatusCode == StatusCode.Unauthenticated
-                || exception.StatusCode == StatusCode.PermissionDenied
-                || exception.StatusCode == StatusCode.InvalidArgument
-                || exception.StatusCode == StatusCode.AlreadyExists)
+            if (IsPermanentSessionFailure(exception.StatusCode))
             {
-                return false;
+                CloseGameSession(exception);
+            }
+            else
+            {
+                SessionStatusMessage = GrpcFailureMessages.GetMessage(exception);
             }
         }
         catch (IOException exception)
@@ -281,11 +326,31 @@ public partial class GameBoardViewModel
         {
             _gameSessionStream = null;
             _sessionAttemptCancellation = null;
-            IsChatEnabled = false;
-            OnPropertyChanged(nameof(IsMyTurn));
-            OnPropertyChanged(nameof(CanSurrender));
+            if (!_isDisposed)
+            {
+                IsChatEnabled = false;
+                NotifyGameplayAvailability();
+            }
         }
-        return !cancellationToken.IsCancellationRequested;
+        return !cancellationToken.IsCancellationRequested && !_hasPermanentSessionFailure;
+    }
+
+    private static bool IsPermanentSessionFailure(StatusCode status)
+    {
+        return status is StatusCode.Unauthenticated or StatusCode.PermissionDenied
+            or StatusCode.InvalidArgument or StatusCode.AlreadyExists;
+    }
+
+    private void CloseGameSession(RpcException exception)
+    {
+        _hasPermanentSessionFailure = true;
+        _returnToMenuAfterSurrender = false;
+        ActionStatusMessage = string.Empty;
+        SessionStatusMessage = exception.StatusCode == StatusCode.AlreadyExists
+            ? GetLocalizedMessage("GameBoard_Connection_Replaced")
+            : GrpcFailureMessages.GetMessage(exception) + " "
+                + GetLocalizedMessage("GameBoard_Connection_Closed");
+        NotifyGameplayAvailability();
     }
 
     private async Task ReadSessionEventsAsync(long gameId, CancellationToken cancellationToken)

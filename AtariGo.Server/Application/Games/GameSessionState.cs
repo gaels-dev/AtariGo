@@ -35,6 +35,9 @@ internal sealed class GameSessionState
     public HashSet<string> ConnectedPlayerHistory { get; } =
         new HashSet<string>(StringComparer.Ordinal);
 
+    public List<GameSessionChatMessage> ChatHistory { get; } =
+        new List<GameSessionChatMessage>();
+
     public GameSessionParticipant? FindParticipant(string playerKey)
     {
         if (Definition.Player.PlayerKey == playerKey)
@@ -119,9 +122,6 @@ internal sealed class GameSessionState
             Cells = CreateBoard()
         };
     }
-
-    public List<GameSessionChatMessage> ChatHistory { get; } =
-        new List<GameSessionChatMessage>();
 
     public GameSessionChatMessage CreateChatMessage(
         string senderPlayerKey,

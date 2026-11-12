@@ -8,7 +8,9 @@ internal sealed class GameActionLookupInterceptor : DbCommandInterceptor
 {
     public Action? LookupCallback { get; set; }
 
-    public override ValueTask<InterceptionResult<DbDataReader>> ReaderExecutingAsync(
+    public Func<Task>? LookupAsyncCallback { get; set; }
+
+    public override async ValueTask<InterceptionResult<DbDataReader>> ReaderExecutingAsync(
         DbCommand command, CommandEventData eventData,
         InterceptionResult<DbDataReader> result, CancellationToken cancellationToken = default)
     {
@@ -17,7 +19,13 @@ internal sealed class GameActionLookupInterceptor : DbCommandInterceptor
             Action? callback = LookupCallback;
             LookupCallback = null;
             callback?.Invoke();
+            Func<Task>? asyncCallback = LookupAsyncCallback;
+            LookupAsyncCallback = null;
+            if (asyncCallback is not null)
+            {
+                await asyncCallback();
+            }
         }
-        return ValueTask.FromResult(result);
+        return result;
     }
 }

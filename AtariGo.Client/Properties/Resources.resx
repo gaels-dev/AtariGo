@@ -958,4 +958,6 @@
   <data name="GameBoard_Result_Surrender" xml:space="preserve"><value>The game ended by resignation.</value></data>
   <data name="GameBoard_Button_ReturnToMenu" xml:space="preserve"><value>Return to menu</value></data>
   <data name="GameBoard_Lbl_CapturesStatus" xml:space="preserve"><value>Captures · Black: {0} · White: {1} · Goal: {2}</value></data>
+  <data name="GameBoard_Connection_Closed" xml:space="preserve"><value>This game connection cannot continue. You can return to the menu; this does not confirm a surrender.</value></data>
+  <data name="GameBoard_Connection_Replaced" xml:space="preserve"><value>This game is open in another connection. You can return to the menu without affecting that connection.</value></data>
 </root>

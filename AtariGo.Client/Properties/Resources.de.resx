@@ -957,4 +957,6 @@
   <data name="GameBoard_Result_Surrender" xml:space="preserve"><value>Die Partie endete durch Aufgabe.</value></data>
   <data name="GameBoard_Button_ReturnToMenu" xml:space="preserve"><value>Zurück zum Menü</value></data>
   <data name="GameBoard_Lbl_CapturesStatus" xml:space="preserve"><value>Gefangene · Schwarz: {0} · Weiß: {1} · Ziel: {2}</value></data>
+  <data name="GameBoard_Connection_Closed" xml:space="preserve"><value>Diese Spielverbindung kann nicht fortgesetzt werden. Du kannst zum Menü zurückkehren; dies bestätigt keine Aufgabe.</value></data>
+  <data name="GameBoard_Connection_Replaced" xml:space="preserve"><value>Das Spiel ist in einer anderen Verbindung geöffnet. Du kannst zum Menü zurückkehren, ohne diese Verbindung zu beeinflussen.</value></data>
 </root>

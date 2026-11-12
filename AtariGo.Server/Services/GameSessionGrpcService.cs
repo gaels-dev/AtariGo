@@ -1,10 +1,12 @@
-using Grpc.Core;
 using Microsoft.Data.SqlClient;
+
+using Grpc.Core;
 
 using AtariGo.Contracts;
 using AtariGo.Server.Application.Games;
 using AtariGo.Server.Application.Matchmaking;
 using AtariGo.Server.Application.Sessions;
+
 using SessionSnapshotModel = AtariGo.Server.Application.Games.GameSessionSnapshot;
 using ProtoSessionSnapshot = AtariGo.Contracts.GameSessionSnapshot;
 using ProtoChatRejectionReason = AtariGo.Contracts.ChatMessageRejectionReason;
@@ -39,75 +41,6 @@ public sealed class GameSessionGrpcService : GameSession.GameSessionBase
         _guestIdentityRegistry = guestIdentityRegistry;
         _sessionService = sessionService;
         _logger = logger;
-    }
-
-    public override async Task Connect(
-        IAsyncStreamReader<GameSessionClientEvent> requestStream,
-        IServerStreamWriter<GameSessionServerEvent> responseStream,
-        ServerCallContext context)
-    {
-        GameSessionConnection? connection = null;
-        try
-        {
-            connection = await OpenConnectionAsync(requestStream, context);
-            GameSessionStreamContext streamContext = new GameSessionStreamContext(
-                requestStream,
-                responseStream,
-                context.CancellationToken);
-            await RunDuplexStreamAsync(streamContext, connection);
-            if (connection.IsReplaced)
-            {
-                throw new RpcException(new Status(StatusCode.AlreadyExists,
-                    "This player opened a newer game connection."));
-            }
-        }
-        catch (OperationCanceledException)
-            when (context.CancellationToken.IsCancellationRequested)
-        {
-            _logger.LogInformation(
-                "Game session stream closed by client. GameId: {GameId}",
-                connection?.GameId);
-        }
-        catch (RpcException exception)
-            when (context.CancellationToken.IsCancellationRequested
-                && exception.StatusCode == StatusCode.Cancelled)
-        {
-            _logger.LogInformation(
-                "Game session RPC cancelled by client. GameId: {GameId}",
-                connection?.GameId);
-        }
-        catch (IOException exception)
-            when (context.CancellationToken.IsCancellationRequested)
-        {
-            _logger.LogInformation(
-                exception,
-                "Game session transport closed by client. GameId: {GameId}",
-                connection?.GameId);
-        }
-        catch (Microsoft.EntityFrameworkCore.DbUpdateException exception)
-        {
-            _logger.LogError(exception, "Game persistence failed. GameId: {GameId}",
-                connection?.GameId);
-            throw new RpcException(new Status(StatusCode.Unavailable,
-                "The game action could not be confirmed. Reconnect to recover its result."));
-        }
-        catch (SqlException exception)
-        {
-            _logger.LogError(
-                exception,
-                "Database access failed while connecting to game {GameId}.",
-                connection?.GameId);
-            throw new RpcException(new Status(
-                StatusCode.Unavailable,
-                "The game session is temporarily unavailable."));
-        }
-        finally
-        {
-            if (connection is not null)
-            {
-                _coordinator.Disconnect(connection);
-            }
-        }
     }
 
     private async Task<GameSessionConnection> OpenConnectionAsync(
@@ -229,7 +162,6 @@ public sealed class GameSessionGrpcService : GameSession.GameSessionBase
             streamContext.ResponseStream,
             streamCancellation.Token);
         Task completedTask = await Task.WhenAny(receiveTask, sendTask);
-        streamCancellation.Cancel();
         Task remainingTask = ReferenceEquals(completedTask, receiveTask)
             ? sendTask
             : receiveTask;
@@ -237,23 +169,12 @@ public sealed class GameSessionGrpcService : GameSession.GameSessionBase
         {
             await completedTask;
         }
-        catch (OperationCanceledException)
-            when (streamCancellation.IsCancellationRequested)
-        {
-        }
-        catch (RpcException exception)
-            when (streamCancellation.IsCancellationRequested
-                && exception.StatusCode == StatusCode.Cancelled)
-        {
-        }
-        catch (IOException)
-            when (streamCancellation.IsCancellationRequested)
-        {
-        }
         finally
         {
+            streamCancellation.Cancel();
             await ObserveCancelledTaskAsync(
                 remainingTask,
+                completedTask,
                 streamCancellation.Token);
         }
     }
@@ -318,8 +239,9 @@ public sealed class GameSessionGrpcService : GameSession.GameSessionBase
         }
     }
 
-    private static async Task ObserveCancelledTaskAsync(
+    private async Task ObserveCancelledTaskAsync(
         Task task,
+        Task completedTask,
         CancellationToken cancellationToken)
     {
         try
@@ -329,15 +251,19 @@ public sealed class GameSessionGrpcService : GameSession.GameSessionBase
         catch (OperationCanceledException)
             when (cancellationToken.IsCancellationRequested)
         {
+            _logger.LogDebug("The paired game stream task stopped after cancellation.");
         }
         catch (RpcException exception)
             when (cancellationToken.IsCancellationRequested
                 && exception.StatusCode == StatusCode.Cancelled)
         {
+            _logger.LogDebug("The paired game RPC stopped after cancellation.");
         }
-        catch (IOException)
-            when (cancellationToken.IsCancellationRequested)
+        catch (Exception exception) when (completedTask.IsFaulted)
         {
+            // Preserve the first failure while observing a second failure during cleanup.
+            _logger.LogWarning("The paired game stream also failed with {ErrorType}.",
+                exception.GetType().Name);
         }
     }
 
@@ -470,5 +396,81 @@ public sealed class GameSessionGrpcService : GameSession.GameSessionBase
         }
 
         return GameStoneState.Empty;
+    }
+
+    public override async Task Connect(
+        IAsyncStreamReader<GameSessionClientEvent> requestStream,
+        IServerStreamWriter<GameSessionServerEvent> responseStream,
+        ServerCallContext context)
+    {
+        GameSessionConnection? connection = null;
+        try
+        {
+            connection = await OpenConnectionAsync(requestStream, context);
+            GameSessionStreamContext streamContext = new GameSessionStreamContext(
+                requestStream,
+                responseStream,
+                context.CancellationToken);
+            await RunDuplexStreamAsync(streamContext, connection);
+            if (connection.IsReplaced)
+            {
+                throw new RpcException(new Status(StatusCode.AlreadyExists,
+                    "This player opened a newer game connection."));
+            }
+        }
+        catch (OperationCanceledException)
+            when (context.CancellationToken.IsCancellationRequested)
+        {
+            _logger.LogInformation(
+                "Game session stream closed by client. GameId: {GameId}",
+                connection?.GameId);
+        }
+        catch (RpcException exception)
+            when (context.CancellationToken.IsCancellationRequested
+                && exception.StatusCode == StatusCode.Cancelled)
+        {
+            _logger.LogInformation(
+                "Game session RPC cancelled by client. GameId: {GameId}",
+                connection?.GameId);
+        }
+        catch (IOException exception)
+            when (context.CancellationToken.IsCancellationRequested)
+        {
+            _logger.LogInformation(
+                exception,
+                "Game session transport closed by client. GameId: {GameId}",
+                connection?.GameId);
+        }
+        catch (IOException exception)
+        {
+            _logger.LogWarning("Game transport failed with {ErrorType}. GameId: {GameId}",
+                exception.GetType().Name, connection?.GameId);
+            throw new RpcException(new Status(StatusCode.Unavailable,
+                "The game connection was interrupted. Reconnect to recover its result."));
+        }
+        catch (Microsoft.EntityFrameworkCore.DbUpdateException exception)
+        {
+            _logger.LogError(exception, "Game persistence failed. GameId: {GameId}",
+                connection?.GameId);
+            throw new RpcException(new Status(StatusCode.Unavailable,
+                "The game action could not be confirmed. Reconnect to recover its result."));
+        }
+        catch (SqlException exception)
+        {
+            _logger.LogError(
+                exception,
+                "Database access failed while connecting to game {GameId}.",
+                connection?.GameId);
+            throw new RpcException(new Status(
+                StatusCode.Unavailable,
+                "The game session is temporarily unavailable."));
+        }
+        finally
+        {
+            if (connection is not null)
+            {
+                _coordinator.Disconnect(connection);
+            }
+        }
     }
 }

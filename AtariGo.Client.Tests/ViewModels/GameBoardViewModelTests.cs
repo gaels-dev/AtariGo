@@ -2,10 +2,13 @@ using System.Reflection;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
+using Grpc.Core;
+
 using AtariGo.Client.Models;
 using AtariGo.Client.Services;
 using AtariGo.Client.Tests.Services;
 using AtariGo.Client.ViewModels;
+using AtariGo.Client.ViewModels.Dialogs;
 using AtariGo.Contracts;
 
 namespace AtariGo.Client.Tests.ViewModels;
@@ -104,14 +107,285 @@ public sealed class GameBoardViewModelTests
         snapshot.TurnEndsAtUnixMilliseconds = 99999;
         // Act
         stream.Publish(new GameSessionServerEvent { Snapshot = snapshot });
-        await WaitUntilAsync(() => model.CurrentTurn == StoneColor.White);
+        await WaitUntilAsync(() => model.WhiteTimeRemaining == "00:00");
         // Assert
         Assert.AreEqual("00:00", model.WhiteTimeRemaining);
         Assert.AreEqual("00:30", model.BlackTimeRemaining);
     }
 
+    [TestMethod]
+    [DataRow(StatusCode.Unauthenticated)]
+    [DataRow(StatusCode.PermissionDenied)]
+    [DataRow(StatusCode.InvalidArgument)]
+    [DataRow(StatusCode.AlreadyExists)]
+    public async Task LeaveGameCommand_PermanentFailure_ReturnsWithoutSurrender(StatusCode status)
+    {
+        // Arrange
+        StubGameSessionStream stream = new StubGameSessionStream();
+        INavigationService navigation = DispatchProxy.Create<INavigationService,
+            RecordingNavigationProxy>();
+        RecordingNavigationProxy recorded = (RecordingNavigationProxy)navigation;
+        using GameBoardViewModel model = CreateModel(stream, navigation: navigation);
+        await WaitUntilAsync(() => model.IsMyTurn);
+        // Act
+        stream.Fail(new RpcException(new Status(status, "Simulated permanent failure.")));
+        await WaitUntilAsync(() => stream.IsDisposed && model.CanLeaveGame);
+        model.LeaveGameCommand.Execute(null);
+        model.LeaveGameCommand.Execute(null);
+        // Assert
+        Assert.AreEqual(1, recorded.Calls.Count(
+            call => call == nameof(INavigationService.NavigateToMainMenu)));
+        Assert.IsNull(recorded.OpenedDialog);
+        Assert.AreEqual(0, stream.Sent.Count);
+        Assert.IsFalse(model.IsMyTurn);
+        Assert.IsFalse(model.CanSurrender);
+    }
+
+    [TestMethod]
+    public void LeaveGameCommand_InitialConnectionRejected_StopsRetryingAndAllowsExit()
+    {
+        // Arrange
+        StubGameSessionClient client = new StubGameSessionClient
+        {
+            ConnectFailure = new RpcException(new Status(StatusCode.PermissionDenied, "Denied."))
+        };
+        INavigationService navigation = DispatchProxy.Create<INavigationService,
+            RecordingNavigationProxy>();
+        using GameBoardViewModel model = OpenModel(client, navigation);
+        // Act
+        model.LeaveGameCommand.Execute(null);
+        // Assert
+        Assert.AreEqual(1, client.ConnectCount);
+        Assert.IsTrue(((RecordingNavigationProxy)navigation).Calls.Contains(
+            nameof(INavigationService.NavigateToMainMenu)));
+    }
+
+    [TestMethod]
+    public async Task LeaveGameCommand_ActiveGame_WaitsForAcceptedSurrenderAndStopsStream()
+    {
+        // Arrange
+        StubGameSessionStream stream = new StubGameSessionStream();
+        INavigationService navigation = DispatchProxy.Create<INavigationService,
+            RecordingNavigationProxy>();
+        RecordingNavigationProxy recorded = (RecordingNavigationProxy)navigation;
+        using GameBoardViewModel model = CreateModel(stream, navigation: navigation);
+        await WaitUntilAsync(() => model.IsMyTurn);
+        // Act
+        model.LeaveGameCommand.Execute(null);
+        ConfirmActionDialogViewModel dialog = (ConfirmActionDialogViewModel)recorded.OpenedDialog!;
+        dialog.ConfirmCommand.Execute(null);
+        await WaitUntilAsync(() => stream.Sent.Count == 1);
+        bool navigatedBeforeConfirmation = recorded.Calls.Contains(
+            nameof(INavigationService.NavigateToMainMenu));
+        stream.Publish(AcceptSurrender(stream));
+        await WaitUntilAsync(() => stream.IsDisposed);
+        // Assert
+        Assert.IsFalse(navigatedBeforeConfirmation);
+        Assert.IsTrue(recorded.Calls.Contains(nameof(INavigationService.NavigateToMainMenu)));
+        Assert.IsTrue(stream.ReadCancellation.IsCancellationRequested);
+        Assert.IsFalse(model.CanLeaveGame);
+    }
+
+    [TestMethod]
+    public async Task SurrenderCommand_ConfirmedAndAccepted_KeepsResultScreenOpen()
+    {
+        // Arrange
+        StubGameSessionStream stream = new StubGameSessionStream();
+        INavigationService navigation = DispatchProxy.Create<INavigationService,
+            RecordingNavigationProxy>();
+        RecordingNavigationProxy recorded = (RecordingNavigationProxy)navigation;
+        using GameBoardViewModel model = CreateModel(stream, navigation: navigation);
+        await WaitUntilAsync(() => model.IsMyTurn);
+        // Act
+        model.SurrenderCommand.Execute(null);
+        recorded.OpenedDialog!.Close(true);
+        await WaitUntilAsync(() => stream.Sent.Count == 1);
+        stream.Publish(FinishedGame());
+        stream.Publish(AcceptSurrender(stream));
+        await WaitUntilAsync(() => model.ActionStatusMessage.Length == 0 && model.CanLeaveGame);
+        // Assert
+        Assert.IsFalse(recorded.Calls.Contains(nameof(INavigationService.NavigateToMainMenu)));
+        Assert.IsFalse(model.CanSurrender);
+        Assert.IsFalse(stream.IsDisposed);
+    }
+
+    [TestMethod]
+    public async Task LeaveGameCommand_ConfirmationCancelled_DoesNotSendOrNavigate()
+    {
+        // Arrange
+        StubGameSessionStream stream = new StubGameSessionStream();
+        INavigationService navigation = DispatchProxy.Create<INavigationService,
+            RecordingNavigationProxy>();
+        RecordingNavigationProxy recorded = (RecordingNavigationProxy)navigation;
+        using GameBoardViewModel model = CreateModel(stream, navigation: navigation);
+        await WaitUntilAsync(() => model.IsMyTurn);
+        // Act
+        model.LeaveGameCommand.Execute(null);
+        recorded.OpenedDialog!.Close(false);
+        // Assert
+        Assert.AreEqual(0, stream.Sent.Count);
+        Assert.IsFalse(recorded.Calls.Contains(nameof(INavigationService.NavigateToMainMenu)));
+        Assert.IsTrue(model.CanSurrender);
+    }
+
+    [TestMethod]
+    public async Task LeaveGameCommand_RejectedSurrender_StaysOnBoardAndAllowsRetry()
+    {
+        // Arrange
+        StubGameSessionStream stream = new StubGameSessionStream();
+        INavigationService navigation = DispatchProxy.Create<INavigationService,
+            RecordingNavigationProxy>();
+        RecordingNavigationProxy recorded = (RecordingNavigationProxy)navigation;
+        using GameBoardViewModel model = CreateModel(stream, navigation: navigation);
+        await WaitUntilAsync(() => model.IsMyTurn);
+        model.LeaveGameCommand.Execute(null);
+        recorded.OpenedDialog!.Close(true);
+        await WaitUntilAsync(() => stream.Sent.Count == 1);
+        GameSessionServerEvent rejected = AcceptSurrender(stream);
+        rejected.ActionResult.IsAccepted = false;
+        rejected.ActionResult.Rejection = "InvalidAction";
+        // Act
+        stream.Publish(rejected);
+        await WaitUntilAsync(() => model.CanSurrender);
+        // Assert
+        Assert.IsFalse(recorded.Calls.Contains(nameof(INavigationService.NavigateToMainMenu)));
+        Assert.IsFalse(string.IsNullOrEmpty(model.ActionStatusMessage));
+        Assert.IsTrue(model.CanLeaveGame);
+    }
+
+    [TestMethod]
+    public async Task LeaveGameCommand_FinalSnapshot_ReturnsWithoutAnotherAction()
+    {
+        // Arrange
+        StubGameSessionStream stream = new StubGameSessionStream();
+        INavigationService navigation = DispatchProxy.Create<INavigationService,
+            RecordingNavigationProxy>();
+        using GameBoardViewModel model = CreateModel(stream, navigation: navigation);
+        await WaitUntilAsync(() => model.IsMyTurn);
+        // Act
+        stream.Publish(FinishedGame());
+        await WaitUntilAsync(() => model.CanLeaveGame && !model.CanSurrender);
+        model.LeaveGameCommand.Execute(null);
+        // Assert
+        Assert.IsTrue(((RecordingNavigationProxy)navigation).Calls.Contains(
+            nameof(INavigationService.NavigateToMainMenu)));
+        Assert.AreEqual(0, stream.Sent.Count);
+    }
+
+    [TestMethod]
+    public async Task LeaveGameCommand_SurrenderSendFails_ReusesActionAndExitsAfterRecovery()
+    {
+        // Arrange
+        StubGameSessionStream first = new StubGameSessionStream { FailSend = true };
+        StubGameSessionStream second = new StubGameSessionStream();
+        INavigationService navigation = DispatchProxy.Create<INavigationService,
+            RecordingNavigationProxy>();
+        RecordingNavigationProxy recorded = (RecordingNavigationProxy)navigation;
+        using GameBoardViewModel model = CreateModel(first, second, navigation);
+        await WaitUntilAsync(() => model.IsMyTurn);
+        // Act
+        model.LeaveGameCommand.Execute(null);
+        recorded.OpenedDialog!.Close(true);
+        await WaitUntilAsync(() => first.IsDisposed);
+        bool couldLeaveWhileRecovering = model.CanLeaveGame;
+        await WaitUntilAsync(() => second.Sent.Count == 1);
+        second.Publish(AcceptSurrender(second));
+        await WaitUntilAsync(() => second.IsDisposed);
+        // Assert
+        Assert.IsFalse(couldLeaveWhileRecovering);
+        Assert.AreEqual(first.Sent.Single().Surrender.ActionId,
+            second.Sent.Single().Surrender.ActionId);
+        Assert.IsTrue(recorded.Calls.Contains(nameof(INavigationService.NavigateToMainMenu)));
+    }
+
+    [TestMethod]
+    public async Task LeaveGameCommand_PendingMoveAndPermanentFailure_ExitsWithoutSurrender()
+    {
+        // Arrange
+        StubGameSessionStream stream = new StubGameSessionStream();
+        INavigationService navigation = DispatchProxy.Create<INavigationService,
+            RecordingNavigationProxy>();
+        using GameBoardViewModel model = CreateModel(stream, navigation: navigation);
+        await WaitUntilAsync(() => model.IsMyTurn);
+        await CommandExecution.ExecuteAsync(model.PlaceStoneCommand, model.Cells[0]);
+        // Act
+        stream.Fail(new RpcException(new Status(StatusCode.AlreadyExists, "Connection replaced.")));
+        await WaitUntilAsync(() => stream.IsDisposed && model.CanLeaveGame);
+        model.LeaveGameCommand.Execute(null);
+        // Assert
+        Assert.IsTrue(((RecordingNavigationProxy)navigation).Calls.Contains(
+            nameof(INavigationService.NavigateToMainMenu)));
+        Assert.IsNotNull(stream.Sent.Single().SubmitMove);
+        Assert.AreEqual(StoneColor.None, model.Cells[0].Stone);
+    }
+
+    [TestMethod]
+    public async Task LeaveGameCommand_PermanentSendFailure_ExitsWithoutResendingSurrender()
+    {
+        // Arrange
+        StubGameSessionStream stream = new StubGameSessionStream
+        {
+            SendFailure = new RpcException(new Status(StatusCode.PermissionDenied,
+                "Access denied."))
+        };
+        INavigationService navigation = DispatchProxy.Create<INavigationService,
+            RecordingNavigationProxy>();
+        RecordingNavigationProxy recorded = (RecordingNavigationProxy)navigation;
+        using GameBoardViewModel model = CreateModel(stream, navigation: navigation);
+        await WaitUntilAsync(() => model.IsMyTurn);
+        // Act
+        model.LeaveGameCommand.Execute(null);
+        recorded.OpenedDialog!.Close(true);
+        await WaitUntilAsync(() => stream.IsDisposed && model.CanLeaveGame);
+        bool navigatedBeforeExit = recorded.Calls.Contains(
+            nameof(INavigationService.NavigateToMainMenu));
+        model.LeaveGameCommand.Execute(null);
+        // Assert
+        Assert.IsFalse(navigatedBeforeExit);
+        Assert.IsTrue(recorded.Calls.Contains(nameof(INavigationService.NavigateToMainMenu)));
+        Assert.AreEqual(1, stream.Sent.Count);
+        Assert.IsNotNull(stream.Sent.Single().Surrender);
+    }
+
+    [TestMethod]
+    public void LeaveGameCommand_MissingSessionClient_AllowsLocalExit()
+    {
+        // Arrange
+        INavigationService navigation = DispatchProxy.Create<INavigationService,
+            RecordingNavigationProxy>();
+        using GameBoardViewModel model = OpenModel(null, navigation);
+        bool couldLeave = model.CanLeaveGame;
+        // Act
+        model.LeaveGameCommand.Execute(null);
+        // Assert
+        Assert.IsTrue(couldLeave);
+        Assert.IsTrue(((RecordingNavigationProxy)navigation).Calls.Contains(
+            nameof(INavigationService.NavigateToMainMenu)));
+    }
+
+    private static GameSessionServerEvent AcceptSurrender(StubGameSessionStream stream)
+    {
+        return new GameSessionServerEvent
+        {
+            ActionResult = new GameActionResponse
+            {
+                ActionId = stream.Sent.Single().Surrender.ActionId,
+                IsAccepted = true
+            }
+        };
+    }
+
+    private static GameSessionServerEvent FinishedGame()
+    {
+        GameSessionSnapshot snapshot = Snapshot(2);
+        snapshot.Status = "Completed";
+        snapshot.Winner = GameStoneState.White;
+        snapshot.EndReason = "Surrender";
+        return new GameSessionServerEvent { Snapshot = snapshot };
+    }
+
     private static GameBoardViewModel CreateModel(StubGameSessionStream first,
-        StubGameSessionStream? second = null)
+        StubGameSessionStream? second = null, INavigationService? navigation = null)
     {
         StubGameSessionClient client = new StubGameSessionClient();
         client.Streams.Enqueue(first);
@@ -121,8 +395,13 @@ public sealed class GameBoardViewModelTests
             client.Streams.Enqueue(second);
             second.Publish(new GameSessionServerEvent { Snapshot = Snapshot(2) });
         }
-        INavigationService navigation = DispatchProxy.Create<INavigationService,
-            RecordingNavigationProxy>();
+        navigation ??= DispatchProxy.Create<INavigationService, RecordingNavigationProxy>();
+        return OpenModel(client, navigation);
+    }
+
+    private static GameBoardViewModel OpenModel(IGameSessionClient? client,
+        INavigationService navigation)
+    {
         GameBoardViewModel model = new GameBoardViewModel(navigation,
             new GameBoardViewModelContext(client, true, "Black"));
         model.OpenPublicGame(new PublicMatchNavigationContext(new PublicGameStarted

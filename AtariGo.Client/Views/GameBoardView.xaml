@@ -268,6 +268,7 @@
                            HorizontalAlignment="Center" TextWrapping="Wrap"
                            Foreground="#9B2C2C" Margin="0,4,0,0"/>
                 <Button Content="{Binding ReturnToMenuLabel}" Command="{Binding LeaveGameCommand}"
+                        IsEnabled="{Binding CanLeaveGame}"
                         Style="{StaticResource ActionButtonStyle}"
                         HorizontalAlignment="Center" Margin="0,8,0,0"/>
             </StackPanel>

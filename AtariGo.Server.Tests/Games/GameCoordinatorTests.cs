@@ -168,19 +168,43 @@ public sealed class GameCoordinatorTests
     public async Task ProcessAsync_ConcurrentSameTurn_OnlyOneMoveIsAccepted()
     {
         // Arrange
-        await using GameplayTestDatabase database = await GameplayTestDatabase.CreateAsync();
+        GameActionLookupInterceptor interceptor = new GameActionLookupInterceptor();
+        await using GameplayTestDatabase database = await GameplayTestDatabase.CreateAsync(
+            interceptor);
         GameSessionConnection black = await database.ConnectAsync("Black");
         await database.ConnectAsync("White");
         GameActionCommand first = await database.CreateMoveAsync(new BoardPosition(0, 0));
         GameActionCommand second = await database.CreateMoveAsync(new BoardPosition(0, 1));
+        TaskCompletionSource entered = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource release = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        interceptor.LookupAsyncCallback = () => PauseLookupAsync(entered, release.Task);
         // Act
-        await Task.WhenAll(database.Coordinator.ProcessAsync(black, first, CancellationToken.None),
-            database.Coordinator.ProcessAsync(black, second, CancellationToken.None));
+        Task firstRequest = database.Coordinator.ProcessAsync(black, first, CancellationToken.None);
+        bool bothPending;
+        try
+        {
+            await entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            Task secondRequest = database.Coordinator.ProcessAsync(black, second,
+                CancellationToken.None);
+            bothPending = !firstRequest.IsCompleted && !secondRequest.IsCompleted;
+            release.SetResult();
+            await Task.WhenAll(firstRequest, secondRequest).WaitAsync(TimeSpan.FromSeconds(5));
+        }
+        finally
+        {
+            release.TrySetResult();
+        }
         GameActionResult firstResult = await ReadResultAsync(black);
         GameActionResult secondResult = await ReadResultAsync(black);
         // Assert
+        Assert.IsTrue(bothPending);
         Assert.IsTrue(firstResult.IsAccepted);
         Assert.IsFalse(secondResult.IsAccepted);
+        using AtariGoDbContext context = database.CreateContext();
+        Assert.AreEqual(1, await context.Moves.CountAsync());
+        Assert.AreEqual(first.ExpectedVersion + 1, (await database.ReadAsync()).StateVersion);
     }
 
     [TestMethod]
@@ -276,6 +300,12 @@ public sealed class GameCoordinatorTests
         Assert.AreEqual(3, state.Board.TurnNumber);
         Assert.AreEqual(1, await context.Moves.CountAsync());
         Assert.AreEqual(1, await context.GameEvents.CountAsync(entry => entry.ActionId != null));
+    }
+
+    private static async Task PauseLookupAsync(TaskCompletionSource entered, Task release)
+    {
+        entered.SetResult();
+        await release.WaitAsync(TimeSpan.FromSeconds(5));
     }
 
     private static async Task PlayAsync(GameplayTestDatabase database,

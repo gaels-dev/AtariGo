@@ -495,6 +495,27 @@ implementan mediante `GameSession.Connect` y servicios internos separados.
 - La conexión más reciente reemplaza la anterior del mismo participante. El stream anterior
   termina con `AlreadyExists` y su cliente deja de reconectar automáticamente.
 
+### Salida y recuperación del tablero
+
+El cierre definitivo de una conexión es independiente del resultado de la partida.
+Ante `Unauthenticated`, `PermissionDenied`, `InvalidArgument` o `AlreadyExists`, el cliente
+deja de reconectar, muestra el motivo y permite volver al menú sin enviar una rendición.
+`AlreadyExists` informa que existe una conexión más reciente y no afecta a esa conexión.
+Salir de la pantalla en estos casos no confirma derrota, victoria ni aceptación de una acción
+pendiente: el estado oficial permanece en el servidor.
+
+Los fallos temporales mantienen la reconexión y el identificador de la acción pendiente.
+Durante la recuperación o mientras se confirma una acción, la salida que requiere rendición
+queda deshabilitada. Con conexión disponible, «Volver al menú» pide confirmar la rendición
+y navega después de recibir su respuesta aceptada. «Rendirse» conserva la pantalla del resultado.
+Una partida terminada o cancelada permite volver directamente al menú.
+Al salir se libera el tablero y se cancelan su lectura, reintentos y temporizador.
+
+El servidor cancela la tarea emparejada al terminar una de las direcciones del dúplex.
+Observa sus cancelaciones esperadas y conserva el fallo original si también falla la limpieza.
+Un fallo de transporte real se comunica como `Unavailable` para permitir la recuperación;
+no se convierte por sí mismo en un resultado de partida.
+
 ### Reglas y relojes
 
 Tablero 9 × 9; negro comienza; adyacencia ortogonal; captura de grupos sin libertades;
