@@ -6,7 +6,7 @@ namespace AtariGo.Server.Application.Games;
 
 public sealed class GameClockService : BackgroundService
 {
-    private const int PollMilliseconds = 250;
+    private const int PollMilliseconds = 1000;
     private const int BatchSize = 100;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly GameCoordinator _coordinator;
