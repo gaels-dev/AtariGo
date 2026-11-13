@@ -1,0 +1,232 @@
+<UserControl x:Class="AtariGo.Client.Views.PrivateRoomLobbyView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:properties="clr-namespace:AtariGo.Client.Properties"
+             xmlns:views="clr-namespace:AtariGo.Client.Views"
+             mc:Ignorable="d"
+             d:DesignHeight="700"
+             d:DesignWidth="1000"
+             Background="#E5D8C5">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter
+            x:Key="BooleanToVisibilityConverter"/>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0"
+                Background="#2C2A29"
+                Padding="25,15">
+            <TextBlock Text="ATARI GO"
+                       FontSize="20"
+                       FontWeight="Bold"
+                       FontFamily="Georgia"
+                       Foreground="White"/>
+        </Border>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled">
+            <Border Width="520"
+                    Padding="25"
+                    Background="White"
+                    BorderBrush="#2C2A29"
+                    BorderThickness="1.5"
+                    CornerRadius="8"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center">
+
+                <StackPanel>
+                    <TextBlock
+                        Text="{x:Static properties:Resources.PrivateRoom_Lbl_Title}"
+                        FontSize="28"
+                        FontWeight="Bold"
+                        FontFamily="Georgia"
+                        Foreground="#2C2A29"
+                        HorizontalAlignment="Center"
+                        Margin="0,0,0,20"/>
+
+                    <TextBlock
+                        Text="{x:Static properties:Resources.PrivateRoom_Lbl_InvitationCode}"
+                        FontWeight="Bold"
+                        HorizontalAlignment="Center"/>
+
+                    <TextBlock Text="{Binding RoomCode}"
+                               FontSize="30"
+                               FontWeight="Bold"
+                               FontFamily="Consolas"
+                               Foreground="#4A90E2"
+                               HorizontalAlignment="Center"
+                               Margin="0,5,0,15"/>
+
+                    <Grid Margin="0,0,0,15">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="80"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0">
+                            <TextBlock
+                                Text="{x:Static properties:Resources.PrivateRoom_Lbl_YouHost}"
+                                FontSize="17"
+                                FontWeight="Bold"
+                                HorizontalAlignment="Center"
+                                Visibility="{Binding IsHost,
+                                    Converter={
+                                        StaticResource BooleanToVisibilityConverter}}"/>
+
+                            <TextBlock
+                                Text="{Binding OpponentName}"
+                                FontSize="17"
+                                FontWeight="Bold"
+                                HorizontalAlignment="Center"
+                                Visibility="{Binding IsGuest,
+                                    Converter={
+                                        StaticResource BooleanToVisibilityConverter}}"/>
+                        </StackPanel>
+
+                        <TextBlock Grid.Column="1"
+                                   Text="VS"
+                                   FontSize="20"
+                                   FontWeight="Bold"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"/>
+
+                        <StackPanel Grid.Column="2">
+                            <TextBlock
+                                Text="{Binding OpponentName}"
+                                FontSize="17"
+                                FontWeight="Bold"
+                                HorizontalAlignment="Center"
+                                Visibility="{Binding IsHost,
+                                    Converter={
+                                        StaticResource BooleanToVisibilityConverter}}"/>
+
+                            <TextBlock
+                                Text="{x:Static properties:Resources.PrivateRoom_Lbl_YouGuest}"
+                                FontSize="17"
+                                FontWeight="Bold"
+                                HorizontalAlignment="Center"
+                                Visibility="{Binding IsGuest,
+                                    Converter={
+                                        StaticResource BooleanToVisibilityConverter}}"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <Border Background="#F5F1EA"
+                            BorderBrush="#2C2A29"
+                            BorderThickness="1"
+                            Padding="15"
+                            Margin="0,0,0,20">
+                        <StackPanel>
+                            <TextBlock
+                                Text="{x:Static properties:Resources.PrivateRoom_Lbl_ActiveRules}"
+                                FontWeight="Bold"
+                                HorizontalAlignment="Center"
+                                Margin="0,0,0,5"/>
+
+                            <StackPanel Visibility="{Binding IsHost,
+                                        Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <TextBlock Text="{Binding CaptureGoalLabel}" Margin="0,4,0,6"/>
+                                <ComboBox ItemsSource="{Binding CaptureGoals}"
+                                          SelectedItem="{Binding SelectedCaptureGoal, Mode=TwoWay}"
+                                          IsEnabled="{Binding CanEditConfiguration}" Height="32"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"
+                                        Visibility="{Binding IsGuest,
+                                            Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <TextBlock Text="{Binding TargetCaptures}" FontWeight="Bold"/>
+                                <TextBlock Margin="5,0,0,0"
+                                    Text="{x:Static properties:Resources.PrivateRoom_Lbl_Captures}"/>
+                            </StackPanel>
+                            <Grid Margin="0,10,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <TextBlock Grid.Row="1" Text="{Binding TurnTimeLabel}"
+                                           Margin="0,5,0,0"/>
+                                <TextBlock Grid.Row="1" Grid.Column="1"
+                                           Text="{Binding TurnTimeSeconds}"
+                                           FontWeight="Bold" Margin="10,5,0,0"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <StackPanel Margin="0,0,0,12"
+                                Visibility="{Binding IsHost,
+                                    Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <Button Style="{StaticResource RoundedButtonStyle}" Content="{Binding RoomInvitations.Title}"
+                                Command="{Binding RoomInvitations.OpenCommand}"
+                                IsEnabled="{Binding RoomInvitations.CanOpen}" Height="38"
+                                Background="#4A90E2" Foreground="White" FontWeight="Bold"
+                                BorderBrush="#2C2A29" BorderThickness="1"/>
+                    </StackPanel>
+
+                    <TextBlock Text="{Binding ErrorMessage}"
+                               Foreground="#D9534F"
+                               TextWrapping="Wrap"
+                               TextAlignment="Center"
+                               Margin="0,0,0,15"/>
+
+                    <Button Style="{StaticResource RoundedButtonStyle}"
+                        Content="{Binding StartGameLabel}"
+                        Command="{Binding StartGameCommand}"
+                        Height="42"
+                        Background="#4A90E2"
+                        Foreground="White"
+                        FontWeight="Bold"
+                        Margin="0,0,0,10"
+                        IsEnabled="{Binding CanStartGame}"
+                        Visibility="{Binding IsHost,
+                            Converter={StaticResource BooleanToVisibilityConverter}}"/>
+
+                    <Button Style="{StaticResource RoundedButtonStyle}"
+                        Content="{x:Static properties:Resources.PrivateRoom_Btn_Disband}"
+                        Command="{Binding LeaveRoomCommand}"
+                        IsEnabled="{Binding CanLeaveRoom}"
+                        Height="42"
+                        Background="#D9534F"
+                        Foreground="White"
+                        FontWeight="Bold"
+                        Visibility="{Binding IsHost,
+                            Converter={
+                                StaticResource BooleanToVisibilityConverter}}"/>
+
+                    <Button Style="{StaticResource RoundedButtonStyle}"
+                        Content="{x:Static properties:Resources.PrivateRoom_Btn_Leave}"
+                        Command="{Binding LeaveRoomCommand}"
+                        IsEnabled="{Binding CanLeaveRoom}"
+                        Height="42"
+                        Background="#D9534F"
+                        Foreground="White"
+                        FontWeight="Bold"
+                        Visibility="{Binding IsGuest,
+                            Converter={
+                                StaticResource BooleanToVisibilityConverter}}"/>
+                </StackPanel>
+            </Border>
+        </ScrollViewer>
+        <Grid Grid.RowSpan="2" DataContext="{Binding RoomInvitations}"
+              Background="#99000000" Panel.ZIndex="80"
+              Visibility="{Binding IsOpen, FallbackValue=Collapsed,
+                Converter={StaticResource BooleanToVisibilityConverter}}">
+            <Border Width="520" Padding="24" Background="White" CornerRadius="8"
+                    BorderBrush="#2C2A29" BorderThickness="1.5"
+                    HorizontalAlignment="Center" VerticalAlignment="Center">
+                <views:RoomInvitationsView/>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

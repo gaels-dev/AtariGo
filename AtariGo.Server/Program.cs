@@ -1,14 +1,93 @@
+
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+
+using AtariGo.GameLogic.Rules;
+using AtariGo.Server.Application.Authentication;
+using AtariGo.Server.Application.Friends;
+using AtariGo.Server.Application.Friendships;
+using AtariGo.Server.Application.Games;
+using AtariGo.Server.Application.Leaderboard;
+using AtariGo.Server.Application.Matchmaking;
+using AtariGo.Server.Application.RoomInvitations;
+using AtariGo.Server.Application.Rooms;
+using AtariGo.Server.Application.Sessions;
+using AtariGo.Server.Application.Social;
+using AtariGo.Server.Configuration;
+using AtariGo.Server.Data;
+using AtariGo.Server.Data.Entities;
+using AtariGo.Server.Security;
 using AtariGo.Server.Services;
 
-var builder = WebApplication.CreateBuilder(args);
+string[] hostArguments = args
+    .Where(argument => argument != DatabaseReadinessCommand.CommandLineSwitch)
+    .ToArray();
+WebApplicationBuilder builder = WebApplication.CreateBuilder(hostArguments);
 
-// Add services to the container.
+string? connectionString = builder.Configuration.GetConnectionString(
+    DatabaseConnectionSettings.ConnectionName);
+
+builder.Services.AddDbContext<AtariGoDbContext>(options =>
+    options.UseSqlServer(connectionString));
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddScoped<DatabaseReadinessCheck>();
+
+builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
+builder.Services.AddScoped<IFriendService, FriendService>();
+builder.Services.AddScoped<IFriendshipsService, FriendshipsService>();
+builder.Services.AddSingleton<FriendMutationCoordinator>();
+builder.Services.AddScoped<IRegistrationService, RegistrationService>();
+builder.Services.AddScoped<ILeaderboardService, LeaderboardService>();
+builder.Services.AddScoped<ISessionService, SessionService>();
+builder.Services.AddScoped<IGameLifecycleService, GameLifecycleService>();
+builder.Services.AddSingleton<GameRulesEngine>();
+builder.Services.AddScoped<GamePersistenceService>();
+builder.Services.AddScoped<GameActionProcessor>();
+builder.Services.AddSingleton<GameCoordinator>();
+builder.Services.AddHostedService<GameClockService>();
+builder.Services.AddScoped<IGameSessionCatalog, GameSessionCatalog>();
+builder.Services.AddSingleton<IGameSessionRegistry, GameSessionRegistry>();
+builder.Services.AddSingleton<IGuestIdentityRegistry, GuestIdentityRegistry>();
+builder.Services.AddSingleton<InMemoryPublicMatchmakingQueue>();
+builder.Services.AddSingleton<IRoomInvitationNotifier>(provider =>
+    provider.GetRequiredService<ISessionConnectionRegistry>());
+builder.Services.AddSingleton<IRoomsService, RoomsService>();
+builder.Services.AddScoped<IRoomInvitationsService, RoomInvitationsService>();
+builder.Services.AddHostedService<RoomStateExpiryService>();
+builder.Services.AddSingleton<ISessionConnectionRegistry, SessionConnectionRegistry>();
+builder.Services.AddSingleton<RegistrationValidator>();
+builder.Services.AddSingleton<ISessionTokenProvider, SessionTokenProvider>();
+builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
+
 builder.Services.AddGrpc();
 
-var app = builder.Build();
+await using WebApplication app = builder.Build();
 
-// Configure the HTTP request pipeline.
-app.MapGrpcService<GreeterService>();
-app.MapGet("/", () => "Communication with gRPC endpoints must be made through a gRPC client. To learn how to create a client, visit: https://go.microsoft.com/fwlink/?linkid=2086909");
+if (!DatabaseConnectionSettings.Validate(app.Configuration, app.Logger))
+{
+    Environment.ExitCode = DatabaseReadinessCommand.FailureExitCode;
+    return;
+}
 
-app.Run();
+app.MapGrpcService<AuthenticationGrpcService>();
+app.MapGrpcService<FriendDirectoryGrpcService>();
+app.MapGrpcService<FriendshipsGrpcService>();
+app.MapGrpcService<RegistrationGrpcService>();
+app.MapGrpcService<LeaderboardGrpcService>();
+app.MapGrpcService<SessionGrpcService>();
+app.MapGrpcService<RoomsGrpcService>();
+app.MapGrpcService<RoomInvitationsGrpcService>();
+app.MapGrpcService<GameLifecycleGrpcService>();
+app.MapGrpcService<GameSessionGrpcService>();
+app.MapGrpcService<MatchmakingGrpcService>();
+app.MapGet("/", () =>
+    "Communication with gRPC endpoints must be made through a gRPC client.");
+
+if (args.Contains(DatabaseReadinessCommand.CommandLineSwitch, StringComparer.Ordinal))
+{
+    Environment.ExitCode = await DatabaseReadinessCommand.RunAsync(app.Services, app.Logger);
+}
+else
+{
+    await app.RunAsync();
+}

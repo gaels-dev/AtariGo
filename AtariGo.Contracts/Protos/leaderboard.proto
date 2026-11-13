@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+option csharp_namespace = "AtariGo.Contracts";
+
+package atarigo.leaderboard.v1;
+
+service Leaderboard {
+  rpc GetTopPlayers (GetTopPlayersRequest) returns (GetTopPlayersResponse);
+}
+
+message GetTopPlayersRequest {
+  int32 limit = 1;
+}
+
+message GetTopPlayersResponse {
+  repeated LeaderboardEntry entries = 1;
+}
+
+message LeaderboardEntry {
+  int32 position = 1;
+  string user_name = 2;
+  int32 wins = 3;
+}

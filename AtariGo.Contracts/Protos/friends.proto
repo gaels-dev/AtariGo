@@ -1,0 +1,116 @@
+syntax = "proto3";
+
+option csharp_namespace = "AtariGo.Contracts";
+
+package atarigo.friends.v1;
+
+service FriendDirectory {
+  rpc ListFriendRequestsBySender (ListFriendRequestsBySenderRequest) returns (ListFriendRequestsBySenderResponse);
+  rpc CancelFriendRequest (CancelFriendRequestRequest) returns (CancelFriendRequestResponse);
+  rpc SearchUsers (SearchUsersRequest) returns (SearchUsersResponse);
+  rpc SendFriendRequest (SendFriendRequestRequest) returns (SendFriendRequestResponse);
+  rpc GetIncomingFriendRequests (GetIncomingFriendRequestsRequest) returns (GetIncomingFriendRequestsResponse);
+  rpc RespondToFriendRequest (RespondToFriendRequestRequest) returns (RespondToFriendRequestResponse);
+}
+
+message SearchUsersRequest {
+  string query = 1;
+}
+
+message SearchUsersResponse {
+  repeated FriendAccount users = 1;
+}
+
+message FriendAccount {
+  int32 user_id = 1;
+  string user_name = 2;
+}
+
+message SendFriendRequestRequest {
+  int32 recipient_user_id = 1;
+}
+
+message SendFriendRequestResponse {
+  FriendRequestStatus status = 1;
+}
+
+message GetIncomingFriendRequestsRequest {
+}
+
+message GetIncomingFriendRequestsResponse {
+  repeated IncomingFriendRequest requests = 1;
+}
+
+message IncomingFriendRequest {
+  int64 request_id = 1;
+  int32 requester_user_id = 2;
+  string requester_user_name = 3;
+}
+
+message RespondToFriendRequestRequest {
+  int64 request_id = 1;
+  bool accept = 2;
+}
+
+message RespondToFriendRequestResponse {
+  FriendRequestResponseStatus status = 1;
+}
+
+enum FriendRequestStatus {
+  FRIEND_REQUEST_STATUS_UNSPECIFIED = 0;
+  FRIEND_REQUEST_STATUS_SENT = 1;
+  FRIEND_REQUEST_STATUS_ALREADY_FRIENDS = 2;
+  FRIEND_REQUEST_STATUS_ALREADY_PENDING = 3;
+  FRIEND_REQUEST_STATUS_USER_NOT_FOUND = 4;
+  FRIEND_REQUEST_STATUS_CANNOT_REQUEST_SELF = 5;
+}
+
+enum FriendRequestResponseStatus {
+  FRIEND_REQUEST_RESPONSE_STATUS_UNSPECIFIED = 0;
+  FRIEND_REQUEST_RESPONSE_STATUS_ACCEPTED = 1;
+  FRIEND_REQUEST_RESPONSE_STATUS_REJECTED = 2;
+  FRIEND_REQUEST_RESPONSE_STATUS_ALREADY_FRIENDS = 3;
+  FRIEND_REQUEST_RESPONSE_STATUS_NOT_FOUND = 4;
+  FRIEND_REQUEST_RESPONSE_STATUS_ALREADY_PROCESSED = 5;
+}
+
+// Only pending requests are retained by the current request workflow.
+enum FriendRequestFilter {
+  FRIEND_REQUEST_FILTER_UNSPECIFIED = 0;
+  FRIEND_REQUEST_FILTER_PENDING = 1;
+}
+
+message PageRequest {
+  int32 page_size = 1;
+  string page_token = 2;
+}
+
+message ListFriendRequestsBySenderRequest {
+  FriendRequestFilter filter = 1;
+  PageRequest page = 2;
+}
+
+message ListFriendRequestsBySenderResponse {
+  repeated OutgoingFriendRequest requests = 1;
+  string next_page_token = 2;
+}
+
+message OutgoingFriendRequest {
+  int64 request_id = 1;
+  int32 recipient_user_id = 2;
+  string recipient_user_name = 3;
+}
+
+message CancelFriendRequestRequest {
+  int64 request_id = 1;
+}
+
+message CancelFriendRequestResponse {
+  CancelFriendRequestStatus status = 1;
+}
+
+enum CancelFriendRequestStatus {
+  CANCEL_FRIEND_REQUEST_STATUS_UNSPECIFIED = 0;
+  CANCEL_FRIEND_REQUEST_STATUS_CANCELLED = 1;
+  CANCEL_FRIEND_REQUEST_STATUS_NO_LONGER_PENDING = 2;
+}

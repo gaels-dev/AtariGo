@@ -1,101 +1,903 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
-	<!-- 
-		Microsoft ResX Schema
-
-		Version 1.3
-
-		The primary goals of this format is to allow a simple XML format 
-		that is mostly human readable. The generation and parsing of the 
-		various data types are done through the TypeConverter classes 
-		associated with the data types.
-
-		Example:
-
-		... ado.net/XML headers & schema ...
-		<resheader name="resmimetype">text/microsoft-resx</resheader>
-		<resheader name="version">1.3</resheader>
-		<resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
-		<resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
-		<data name="Name1">this is my long string</data>
-		<data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
-		<data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
-			[base64 mime encoded serialized .NET Framework object]
-		</data>
-		<data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
-			[base64 mime encoded string representing a byte array form of the .NET Framework object]
-		</data>
-
-		There are any number of "resheader" rows that contain simple 
-		name/value pairs.
-
-		Each data row contains a name, and value. The row also contains a 
-		type or mimetype. Type corresponds to a .NET class that support 
-		text/value conversion through the TypeConverter architecture. 
-		Classes that don't support this are serialized and stored with the 
-		mimetype set.
-
-		The mimetype is used for serialized objects, and tells the 
-		ResXResourceReader how to depersist the object. This is currently not 
-		extensible. For a given mimetype the value must be set accordingly:
-
-		Note - application/x-microsoft.net.object.binary.base64 is the format 
-		that the ResXResourceWriter will generate, however the reader can 
-		read any of the formats listed below.
-
-		mimetype: application/x-microsoft.net.object.binary.base64
-		value   : The object must be serialized with 
-			: System.Serialization.Formatters.Binary.BinaryFormatter
-			: and then encoded with base64 encoding.
-
-		mimetype: application/x-microsoft.net.object.soap.base64
-		value   : The object must be serialized with 
-			: System.Runtime.Serialization.Formatters.Soap.SoapFormatter
-			: and then encoded with base64 encoding.
-
-		mimetype: application/x-microsoft.net.object.bytearray.base64
-		value   : The object must be serialized into a byte array 
-			: using a System.ComponentModel.TypeConverter
-			: and then encoded with base64 encoding.
-	-->
-	
-	<xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
-		<xsd:element name="root" msdata:IsDataSet="true">
-			<xsd:complexType>
-				<xsd:choice maxOccurs="unbounded">
-					<xsd:element name="data">
-						<xsd:complexType>
-							<xsd:sequence>
-								<xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
-								<xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
-							</xsd:sequence>
-							<xsd:attribute name="name" type="xsd:string" msdata:Ordinal="1" />
-							<xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
-							<xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
-						</xsd:complexType>
-					</xsd:element>
-					<xsd:element name="resheader">
-						<xsd:complexType>
-							<xsd:sequence>
-								<xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
-							</xsd:sequence>
-							<xsd:attribute name="name" type="xsd:string" use="required" />
-						</xsd:complexType>
-					</xsd:element>
-				</xsd:choice>
-			</xsd:complexType>
-		</xsd:element>
-	</xsd:schema>
-	<resheader name="resmimetype">
-		<value>text/microsoft-resx</value>
-	</resheader>
-	<resheader name="version">
-		<value>1.3</value>
-	</resheader>
-	<resheader name="reader">
-		<value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.3500.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-	</resheader>
-	<resheader name="writer">
-		<value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.3500.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-	</resheader>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Lang_Btn_Accept" xml:space="preserve">
+    <value>Akzeptieren</value>
+  </data>
+  <data name="Lang_Btn_Cancel" xml:space="preserve">
+    <value>Abbrechen</value>
+  </data>
+  <data name="Lang_Modal_Title" xml:space="preserve">
+    <value>Sprache auswählen</value>
+  </data>
+  <data name="Login_Btn_Exit" xml:space="preserve">
+    <value>Beenden</value>
+  </data>
+  <data name="Login_Btn_Guest" xml:space="preserve">
+    <value>Als Gast spielen</value>
+  </data>
+  <data name="Login_Btn_LanguageLabel" xml:space="preserve">
+    <value>Sprache</value>
+  </data>
+  <data name="Login_Btn_Submit" xml:space="preserve">
+    <value>Anmelden</value>
+  </data>
+  <data name="Login_Lbl_Email" xml:space="preserve">
+    <value>Benutzername oder E-Mail</value>
+  </data>
+  <data name="Login_Lbl_Password" xml:space="preserve">
+    <value>Passwort</value>
+  </data>
+  <data name="Login_Lbl_Title" xml:space="preserve">
+    <value>Anmelden</value>
+  </data>
+  <data name="Login_Lnk_ForgotPassword" xml:space="preserve">
+    <value>Passwort vergessen?</value>
+  </data>
+  <data name="Login_Lnk_Register" xml:space="preserve">
+    <value>Noch kein Konto? Registrieren</value>
+  </data>
+  <data name="Login_Tip_ChangeLanguage" xml:space="preserve">
+    <value>Sprache ändern</value>
+  </data>
+  <data name="Login_Txt_EmailPlaceholder" xml:space="preserve">
+    <value>benutzer@mail.com</value>
+  </data>
+  <data name="Login_Txt_PasswordPlaceholder" xml:space="preserve">
+    <value>........</value>
+  </data>
+  <data name="RegisterPlayerLobby_Lbl_Welcome" xml:space="preserve">
+    <value>HAUPTLOBBY - Willkommen </value>
+  </data>
+  <data name="RegisterPlayerLobby_Lbl_YourProfile" xml:space="preserve">
+    <value>Dein Profil</value>
+  </data>
+  <data name="RegisterPlayerLobby_Lbl_Victories" xml:space="preserve">
+    <value>Siege: </value>
+  </data>
+  <data name="RegisterPlayerLobby_Btn_Customize" xml:space="preserve">
+    <value>Anpassen</value>
+  </data>
+  <data name="RegisterPlayerLobby_Lbl_TopGlobal" xml:space="preserve">
+    <value>🏆 Globale Spitze</value>
+  </data>
+  <data name="RegisterPlayerLobby_Lbl_WinsHeader" xml:space="preserve">
+    <value>Siege</value>
+  </data>
+  <data name="Leaderboard_Col_Rank" xml:space="preserve">
+    <value>Rang</value>
+  </data>
+  <data name="Leaderboard_Col_Player" xml:space="preserve">
+    <value>Spieler</value>
+  </data>
+  <data name="Leaderboard_Btn_Refresh" xml:space="preserve">
+    <value>Aktualisieren</value>
+  </data>
+  <data name="Leaderboard_Msg_Loading" xml:space="preserve">
+    <value>Punktzahlen werden geladen...</value>
+  </data>
+  <data name="Leaderboard_Msg_Empty" xml:space="preserve">
+    <value>Noch keine Punktzahlen verfügbar.</value>
+  </data>
+  <data name="Leaderboard_Msg_Error" xml:space="preserve">
+    <value>Punktzahlen konnten nicht geladen werden. Bitte erneut versuchen.</value>
+  </data>
+  <data name="RegisterPlayerLobby_Lbl_WhatToDo" xml:space="preserve">
+    <value>Was möchtest du tun?</value>
+  </data>
+  <data name="RegisterPlayerLobby_Btn_PlayMultiplayer" xml:space="preserve">
+    <value>Mehrspieler spielen</value>
+  </data>
+  <data name="RegisterPlayerLobby_Btn_CreatePrivateRoom" xml:space="preserve">
+    <value>Privaten Raum erstellen</value>
+  </data>
+  <data name="RegisterPlayerLobby_Btn_JoinWithCode" xml:space="preserve">
+    <value>Mit Code beitreten</value>
+  </data>
+  <data name="RegisterPlayerLobby_Btn_Options" xml:space="preserve">
+    <value>Optionen</value>
+  </data>
+  <data name="RegisterPlayerLobby_Btn_SignOut" xml:space="preserve">
+    <value>Abmelden</value>
+  </data>
+  <data name="RegisterPlayerLobby_Lbl_FriendsList" xml:space="preserve">
+    <value>👥 Freundesliste</value>
+  </data>
+  <data name="RegisterPlayerLobby_Btn_AddFriend" xml:space="preserve">
+    <value>+ Neuen Freund hinzufügen</value>
+  </data>
+  <data name="RegisterPlayerLobby_Txt_SearchFriendPlaceholder" xml:space="preserve">
+    <value>Freund suchen...</value>
+  </data>
+  <data name="RegisterPlayerLobby_Btn_Invite" xml:space="preserve">
+    <value>Einladen</value>
+  </data>
+  <data name="RegisterPlayerLobby_Btn_Email" xml:space="preserve">
+    <value>E-Mail ✉</value>
+  </data>
+  <data name="SearchingOpponent_Lbl_SearchingOpponent" xml:space="preserve">
+    <value>GEGNER WIRD GESUCHT</value>
+  </data>
+  <data name="SearchingOpponent_Lbl_You" xml:space="preserve">
+    <value>Du</value>
+  </data>
+  <data name="SearchingOpponent_Lbl_Searching" xml:space="preserve">
+    <value>Suchen...</value>
+  </data>
+  <data name="SearchingOpponent_Lbl_MatchFound" xml:space="preserve">
+    <value>Gegner gefunden. Das Spiel beginnt gleich.</value>
+  </data>
+  <data name="SearchingOpponent_Lbl_Countdown" xml:space="preserve">
+    <value>Start in {0} Sekunden</value>
+  </data>
+  <data name="SearchingOpponent_Msg_OpponentDisconnected" xml:space="preserve">
+    <value>Dein Gegner hat die Verbindung getrennt. Suche nach einem anderen Spieler...</value>
+  </data>
+  <data name="SearchingOpponent_Err_ConnectionClosed" xml:space="preserve">
+    <value>Die Verbindung zur Spielersuche wurde unerwartet getrennt.</value>
+  </data>
+  <data name="SearchingOpponent_Btn_Cancel" xml:space="preserve">
+    <value>Abbrechen</value>
+  </data>
+  <data name="SearchingOpponent_Btn_SimulateMatch" xml:space="preserve">
+    <value>Gefundenes Spiel simulieren</value>
+  </data>
+  <data name="GameBoard_Btn_Report" xml:space="preserve">
+    <value>Melden</value>
+  </data>
+  <data name="GameBoard_Btn_Surrender" xml:space="preserve">
+    <value>Aufgeben</value>
+  </data>
+  <data name="GameBoard_Lbl_You" xml:space="preserve">
+    <value>DU</value>
+  </data>
+  <data name="GameBoard_Lbl_Opponent" xml:space="preserve">
+    <value>Gegner</value>
+  </data>
+  <data name="GameBoard_Lbl_White" xml:space="preserve">
+    <value>Weiß</value>
+  </data>
+  <data name="GameBoard_Lbl_Black" xml:space="preserve">
+    <value>Schwarz</value>
+  </data>
+  <data name="GameBoard_Status_YourTurn" xml:space="preserve">
+    <value>Du bist dran! Klicke auf einen Schnittpunkt</value>
+  </data>
+  <data name="GameBoard_Status_OpponentTurn" xml:space="preserve">
+    <value>Gegner ist am Zug! Warten auf Spielzug...</value>
+  </data>
+  <data name="GameBoard_Status_Connecting" xml:space="preserve">
+    <value>Verbindung zur Spielsitzung wird hergestellt...</value>
+  </data>
+  <data name="GameBoard_Status_WaitingOpponent" xml:space="preserve">
+    <value>Warten auf die Verbindung des Gegners...</value>
+  </data>
+  <data name="GameBoard_Status_BothConnected" xml:space="preserve">
+    <value>Beide Spieler sind verbunden.</value>
+  </data>
+  <data name="GameBoard_Status_OpponentDisconnected" xml:space="preserve">
+    <value>Der Gegner wurde getrennt. Warten auf die erneute Verbindung...</value>
+  </data>
+  <data name="GameBoard_Status_ConnectionFailed" xml:space="preserve">
+    <value>Verbindung zur Spielsitzung fehlgeschlagen.</value>
+  </data>
+  <data name="GameBoard_Status_InvalidSnapshot" xml:space="preserve">
+    <value>Der Server hat einen ungültigen Spielstatus zurückgegeben.</value>
+  </data>
+  <data name="GameBoard_Lbl_ChatUnavailable" xml:space="preserve">
+    <value>Der Spielchat ist noch nicht verfügbar.</value>
+  </data>
+  <data name="GameBoard_Chat_Err_Empty" xml:space="preserve">
+    <value>Gib vor dem Senden eine Nachricht ein.</value>
+  </data>
+  <data name="GameBoard_Chat_Err_TooLong" xml:space="preserve">
+    <value>Die Nachricht überschreitet die zulässige Länge.</value>
+  </data>
+  <data name="GameBoard_Chat_Err_SendFailed" xml:space="preserve">
+    <value>Nachricht konnte nicht gesendet werden. Prüfe die Verbindung und versuche es erneut.</value>
+  </data>
+  <data name="GameBoard_Lbl_ChatTitle" xml:space="preserve">
+    <value>Spiel-Chat</value>
+  </data>
+  <data name="GameBoard_Lbl_System" xml:space="preserve">
+    <value>System</value>
+  </data>
+  <data name="GameBoard_Chat_GameStarted" xml:space="preserve">
+    <value>Das Spiel hat begonnen.</value>
+  </data>
+  <data name="GameBoard_Chat_GoodLuck" xml:space="preserve">
+    <value>Viel Glück!</value>
+  </data>
+  <data name="GameBoard_Lbl_ChatDisabledGuest" xml:space="preserve">
+    <value>Chat ist für Gäste nicht verfügbar.</value>
+  </data>
+  <data name="GameBoard_Txt_ChatPlaceholder" xml:space="preserve">
+    <value>Schreibe eine Nachricht...</value>
+  </data>
+  <data name="JoinPrivateRoom_Lbl_Title" xml:space="preserve">
+    <value>Privatem Raum beitreten</value>
+  </data>
+  <data name="JoinPrivateRoom_Err_EmptyCode" xml:space="preserve">
+    <value>Gib einen Raumcode ein.</value>
+  </data>
+  <data name="JoinPrivateRoom_Btn_Join" xml:space="preserve">
+    <value>Beitreten</value>
+  </data>
+  <data name="JoinPrivateRoom_Btn_Cancel" xml:space="preserve">
+    <value>Abbrechen</value>
+  </data>
+  <data name="JoinPrivateRoom_Lbl_Code" xml:space="preserve">
+    <value>Raumcode (z. B. XK92P)</value>
+  </data>
+  <data name="Options_Lbl_Title" xml:space="preserve">
+    <value>Optionen</value>
+  </data>
+  <data name="Options_Lbl_BackgroundMusic" xml:space="preserve">
+    <value>Hintergrundmusik</value>
+  </data>
+  <data name="Options_Lbl_SoundEffects" xml:space="preserve">
+    <value>Soundeffekte</value>
+  </data>
+  <data name="Options_Lbl_Language" xml:space="preserve">
+    <value>Sprache:</value>
+  </data>
+  <data name="Options_Lbl_AppVersion" xml:space="preserve">
+    <value>Atari Go Mehrspieler v1.0</value>
+  </data>
+  <data name="Options_Btn_SaveAndClose" xml:space="preserve">
+    <value>Speichern und Schließen</value>
+  </data>
+  <data name="ReportPlayer_Lbl_Title" xml:space="preserve">
+    <value>Spieler melden</value>
+  </data>
+  <data name="ReportPlayer_Lbl_PlayerFormat" xml:space="preserve">
+    <value>Spieler: </value>
+  </data>
+  <data name="ReportPlayer_Lbl_Reason" xml:space="preserve">
+    <value>Verstoßgrund</value>
+  </data>
+  <data name="ReportPlayer_Lbl_Details" xml:space="preserve">
+    <value>Zusätzliche Details (Optional)</value>
+  </data>
+  <data name="ReportPlayer_Btn_Cancel" xml:space="preserve">
+    <value>Abbrechen</value>
+  </data>
+  <data name="ReportPlayer_Btn_Submit" xml:space="preserve">
+    <value>Meldung senden</value>
+  </data>
+  <data name="ReportPlayer_Reason_OffensiveLanguage" xml:space="preserve">
+    <value>Beleidigende Sprache</value>
+  </data>
+  <data name="ReportPlayer_Reason_Cheating" xml:space="preserve">
+    <value>Betrug oder Hacking</value>
+  </data>
+  <data name="ReportPlayer_Reason_Unsportsmanlike" xml:space="preserve">
+    <value>Unsportliches Verhalten</value>
+  </data>
+  <data name="ReportPlayer_Reason_Other" xml:space="preserve">
+    <value>Sonstiges</value>
+  </data>
+  <data name="ConfirmAction_Btn_Cancel" xml:space="preserve">
+    <value>Abbrechen</value>
+  </data>
+  <data name="ConfirmAction_Btn_Confirm" xml:space="preserve">
+    <value>Bestätigen</value>
+  </data>
+  <data name="GameBoard_Surrender_Title" xml:space="preserve">
+    <value>Spiel aufgeben</value>
+  </data>
+  <data name="GameBoard_Surrender_Message" xml:space="preserve">
+    <value>Bist du sicher, dass du dieses Spiel aufgeben möchtest?</value>
+  </data>
+  <data name="GameBoard_Surrender_Confirm" xml:space="preserve">
+    <value>Aufgeben</value>
+  </data>
+  <data name="Verification_Lbl_Title" xml:space="preserve">
+    <value>Bestätigung erforderlich</value>
+  </data>
+  <data name="Verification_Lbl_Description" xml:space="preserve">
+    <value>Gib einen beliebigen Text ein. Der Code wird vorerst nicht überprüft.</value>
+  </data>
+  <data name="Verification_Btn_Confirm" xml:space="preserve">
+    <value>Konto bestätigen</value>
+  </data>
+  <data name="Verification_Btn_Cancel" xml:space="preserve">
+    <value>Abbrechen</value>
+  </data>
+  <data name="Verification_Err_EmptyCode" xml:space="preserve">
+    <value>Der Bestätigungscode darf nicht leer sein.</value>
+  </data>
+  <data name="Register_Lbl_Title" xml:space="preserve">
+    <value>Benutzerregistrierung</value>
+  </data>
+  <data name="Register_Lbl_Username" xml:space="preserve">
+    <value>Benutzername</value>
+  </data>
+  <data name="Register_Lbl_Email" xml:space="preserve">
+    <value>E-Mail-Adresse</value>
+  </data>
+  <data name="Register_Lbl_Password" xml:space="preserve">
+    <value>Passwort (Mind. 8 Zeichen, 1 Großbuchstabe)</value>
+  </data>
+  <data name="Register_Btn_Register" xml:space="preserve">
+    <value>Registrieren</value>
+  </data>
+  <data name="Register_Btn_Back" xml:space="preserve">
+    <value>Zurück</value>
+  </data>
+  <data name="Register_Err_EmptyFields" xml:space="preserve">
+    <value>Fülle alle Pflichtfelder aus.</value>
+  </data>
+  <data name="Register_Lbl_ConfirmPassword" xml:space="preserve">
+    <value>Passwort bestätigen</value>
+  </data>
+  <data name="Register_Err_InvalidEmail" xml:space="preserve">
+    <value>Gib eine gültige E-Mail-Adresse ein.</value>
+  </data>
+  <data name="Register_Err_PasswordPolicy" xml:space="preserve">
+    <value>Das Passwort benötigt mindestens 8 Zeichen und einen Großbuchstaben.</value>
+  </data>
+  <data name="Register_Err_PasswordMismatch" xml:space="preserve">
+    <value>Die Passwörter stimmen nicht überein.</value>
+  </data>
+  <data name="Register_Err_Generic" xml:space="preserve">
+    <value>Die Registrierung konnte nicht abgeschlossen werden. Prüfe die Angaben und versuche es erneut.</value>
+  </data>
+  <data name="Register_Err_ReservedUsername" xml:space="preserve">
+    <value>Der Name „Guest“ und Namen mit dem Präfix „Guest-“ sind Gästen vorbehalten.</value>
+  </data>
+  <data name="RegistrationResult_Msg_Success" xml:space="preserve">
+    <value>Benutzer erfolgreich registriert.</value>
+  </data>
+  <data name="RegistrationResult_Msg_Error" xml:space="preserve">
+    <value>Bei der Registrierung ist ein Fehler aufgetreten. Bitte versuche es erneut.</value>
+  </data>
+  <data name="RegistrationResult_Btn_Close" xml:space="preserve">
+    <value>Schließen</value>
+  </data>
+  <data name="RegistrationResult_Msg_UsernameTaken" xml:space="preserve">
+    <value>Dieser Benutzername ist bereits vergeben.</value>
+  </data>
+  <data name="RegistrationResult_Msg_EmailTaken" xml:space="preserve">
+    <value>Diese E-Mail-Adresse wird bereits verwendet.</value>
+  </data>
+  <data name="NewPassword_Lbl_Title" xml:space="preserve">
+    <value>Passwort ändern</value>
+  </data>
+  <data name="NewPassword_Lbl_NewPassword" xml:space="preserve">
+    <value>Neues Passwort</value>
+  </data>
+  <data name="NewPassword_Lbl_ConfirmPassword" xml:space="preserve">
+    <value>Passwort bestätigen</value>
+  </data>
+  <data name="NewPassword_Btn_ConfirmChange" xml:space="preserve">
+    <value>Änderung bestätigen</value>
+  </data>
+  <data name="NewPassword_Btn_Cancel" xml:space="preserve">
+    <value>Abbrechen</value>
+  </data>
+  <data name="NewPassword_Err_Empty" xml:space="preserve">
+    <value>Die Passwörter dürfen nicht leer sein.</value>
+  </data>
+  <data name="NewPassword_Err_Mismatch" xml:space="preserve">
+    <value>Die Passwörter stimmen nicht überein.</value>
+  </data>
+  <data name="ForgotVerification_Lbl_Title" xml:space="preserve">
+    <value>Bestätigung erforderlich</value>
+  </data>
+  <data name="ForgotVerification_Lbl_Description" xml:space="preserve">
+    <value>Wir haben einen 6-stelligen Code an Ihre E-Mail gesendet, um Ihr Passwort zu ändern.</value>
+  </data>
+  <data name="ForgotVerification_Btn_Cancel" xml:space="preserve">
+    <value>Abbrechen</value>
+  </data>
+  <data name="ForgotVerification_Btn_Confirm" xml:space="preserve">
+    <value>Bestätigen</value>
+  </data>
+  <data name="ForgotVerification_Err_EmptyCode" xml:space="preserve">
+    <value>Der Bestätigungscode darf nicht leer sein.</value>
+  </data>
+  <data name="ForgotPassword_Lbl_Title" xml:space="preserve">
+    <value>Passwort wiederherstellen</value>
+  </data>
+  <data name="ForgotPassword_Lbl_EmailOrUsername" xml:space="preserve">
+    <value>E-Mail oder Benutzername</value>
+  </data>
+  <data name="ForgotPassword_Btn_Accept" xml:space="preserve">
+    <value>Akzeptieren</value>
+  </data>
+  <data name="FriendSearch_Lbl_Title" xml:space="preserve">
+    <value>Freunde suchen</value>
+  </data>
+  <data name="FriendSearch_Btn_Search" xml:space="preserve">
+    <value>Suchen</value>
+  </data>
+  <data name="FriendSearch_Btn_Back" xml:space="preserve">
+    <value>Zurück</value>
+  </data>
+  <data name="FriendSearch_Err_EmptySearch" xml:space="preserve">
+    <value>Gib einen Benutzernamen ein.</value>
+  </data>
+  <data name="FriendSearch_Msg_RequestSent" xml:space="preserve">
+    <value>Freundschaftsanfrage gesendet.</value>
+  </data>
+  <data name="FriendRequests_Btn_Manage" xml:space="preserve">
+    <value>Offene Anfragen</value>
+  </data>
+  <data name="FriendRequests_Lbl_Title" xml:space="preserve">
+    <value>Freundschaftsanfragen</value>
+  </data>
+  <data name="FriendRequests_Btn_Refresh" xml:space="preserve">
+    <value>Aktualisieren</value>
+  </data>
+  <data name="FriendRequests_Btn_Accept" xml:space="preserve">
+    <value>Annehmen</value>
+  </data>
+  <data name="FriendRequests_Btn_Reject" xml:space="preserve">
+    <value>Ablehnen</value>
+  </data>
+  <data name="FriendRequests_Msg_Loading" xml:space="preserve">
+    <value>Anfragen werden geladen...</value>
+  </data>
+  <data name="FriendRequests_Msg_Empty" xml:space="preserve">
+    <value>Du hast keine offenen Anfragen.</value>
+  </data>
+  <data name="FriendRequests_Msg_Accepted" xml:space="preserve">
+    <value>Anfrage angenommen. Der Benutzer wurde zu deiner Freundesliste hinzugefügt.</value>
+  </data>
+  <data name="FriendRequests_Msg_Rejected" xml:space="preserve">
+    <value>Anfrage abgelehnt.</value>
+  </data>
+  <data name="FriendRequests_Msg_AlreadyFriends" xml:space="preserve">
+    <value>Dieser Benutzer ist bereits in deiner Freundesliste.</value>
+  </data>
+  <data name="FriendRequests_Msg_Stale" xml:space="preserve">
+    <value>Die Anfrage ist nicht mehr offen.</value>
+  </data>
+  <data name="FriendRequests_Err_Service" xml:space="preserve">
+    <value>Anfragen konnten nicht verarbeitet werden. Bitte versuche es erneut.</value>
+  </data>
+  <data name="FriendRequests_Err_SessionExpired" xml:space="preserve">
+    <value>Deine Sitzung ist abgelaufen. Bitte melde dich erneut an.</value>
+  </data>
+  <data name="FriendSearch_Err_MinLength" xml:space="preserve">
+    <value>Gib mindestens 2 Zeichen für die Suche ein.</value>
+  </data>
+  <data name="FriendSearch_Err_InvalidLength" xml:space="preserve">
+    <value>Die Suche darf höchstens 15 Zeichen enthalten.</value>
+  </data>
+  <data name="FriendSearch_Msg_Searching" xml:space="preserve">
+    <value>Benutzer werden gesucht...</value>
+  </data>
+  <data name="FriendSearch_Msg_NoResults" xml:space="preserve">
+    <value>Es wurden keine verfügbaren Benutzer gefunden.</value>
+  </data>
+  <data name="FriendSearch_Err_Service" xml:space="preserve">
+    <value>Die Suche konnte nicht abgeschlossen werden. Bitte versuche es erneut.</value>
+  </data>
+  <data name="FriendSearch_Err_SessionExpired" xml:space="preserve">
+    <value>Deine Sitzung ist abgelaufen. Bitte melde dich erneut an.</value>
+  </data>
+  <data name="FriendSearch_Msg_AlreadyFriends" xml:space="preserve">
+    <value>Dieser Benutzer ist bereits in deiner Freundesliste.</value>
+  </data>
+  <data name="FriendSearch_Msg_AlreadyPending" xml:space="preserve">
+    <value>Zwischen euch besteht bereits eine offene Anfrage.</value>
+  </data>
+  <data name="FriendSearch_Msg_UserNotFound" xml:space="preserve">
+    <value>Dieser Benutzer ist nicht mehr verfügbar.</value>
+  </data>
+  <data name="FriendSearch_Err_CannotRequestSelf" xml:space="preserve">
+    <value>Du kannst dir selbst keine Freundschaftsanfrage senden.</value>
+  </data>
+  <data name="FriendList_Lbl_Title" xml:space="preserve">
+    <value>Freunde</value>
+  </data>
+  <data name="FriendList_Btn_Remove" xml:space="preserve">
+    <value>Entfernen</value>
+  </data>
+  <data name="FriendList_Btn_Back" xml:space="preserve">
+    <value>Zurück</value>
+  </data>
+  <data name="FriendList_Msg_Offline" xml:space="preserve">
+    <value>Dieser Freund ist offline.</value>
+  </data>
+  <data name="FriendList_Msg_InvitationSent" xml:space="preserve">
+    <value>Einladung gesendet.</value>
+  </data>
+  <data name="FriendList_Msg_Removed" xml:space="preserve">
+    <value>Freund entfernt.</value>
+  </data>
+  <data name="FriendList_Btn_Invite" xml:space="preserve">
+    <value>Einladen</value>
+  </data>
+  <data name="FriendList_Lbl_Friend" xml:space="preserve">
+    <value>Freund</value>
+  </data>
+  <data name="FriendList_Msg_NoMatches" xml:space="preserve">
+    <value>Keine Freunde entsprechen der Suche.</value>
+  </data>
+  <data name="FriendSearch_Btn_Add" xml:space="preserve">
+    <value>Freund hinzufügen</value>
+  </data>
+  <data name="FriendSearch_Btn_Pending" xml:space="preserve">
+    <value>Ausstehend</value>
+  </data>
+  <data name="FriendSearch_Btn_AlreadyFriends" xml:space="preserve">
+    <value>Freund</value>
+  </data>
+  <data name="ForgotPassword_Btn_Cancel" xml:space="preserve">
+    <value>Abbrechen</value>
+  </data>
+  <data name="ForgotPassword_Err_Empty" xml:space="preserve">
+    <value>E-Mail oder Benutzername darf nicht leer sein.</value>
+  </data>
+  <data name="Login_Err_Required" xml:space="preserve">
+    <value>Gib deinen Benutzernamen oder deine E-Mail-Adresse und dein Passwort ein.</value>
+  </data>
+  <data name="Login_Err_UserNotFound" xml:space="preserve">
+    <value>Für diesen Benutzernamen oder diese E-Mail-Adresse wurde kein Konto gefunden.</value>
+  </data>
+  <data name="Login_Err_IncorrectPassword" xml:space="preserve">
+    <value>Das Passwort ist falsch.</value>
+  </data>
+  <data name="Login_Err_AccountRestricted" xml:space="preserve">
+    <value>Der Kontostatus erlaubt keine Anmeldung.</value>
+  </data>
+  <data name="Login_Err_ServiceUnavailable" xml:space="preserve">
+    <value>Die Anmeldung konnte nicht abgeschlossen werden. Prüfe die Serververbindung und versuche es erneut.</value>
+  </data>
+  <data name="Login_Msg_Success" xml:space="preserve">
+    <value>Die Anmeldung war erfolgreich.</value>
+  </data>
+  <data name="ProfileCustomization_Lbl_Title" xml:space="preserve">
+    <value>Profil anpassen</value>
+  </data>
+  <data name="ProfileCustomization_Lbl_SelectAvatar" xml:space="preserve">
+    <value>Avatar auswählen:</value>
+  </data>
+  <data name="ProfileCustomization_Lbl_Username" xml:space="preserve">
+    <value>Benutzername</value>
+  </data>
+  <data name="ProfileCustomization_Lbl_Email" xml:space="preserve">
+    <value>E-Mail</value>
+  </data>
+  <data name="ProfileCustomization_Btn_Update" xml:space="preserve">
+    <value>Aktualisieren</value>
+  </data>
+  <data name="ProfileCustomization_Btn_ChangePassword" xml:space="preserve">
+    <value>Passwort ändern</value>
+  </data>
+  <data name="ProfileCustomization_Btn_Close" xml:space="preserve">
+    <value>Schließen</value>
+  </data>
+  <data name="ProfileCustomization_Msg_Updated" xml:space="preserve">
+    <value>Profil erfolgreich aktualisiert.</value>
+  </data>
+  <data name="PrivateRoom_Lbl_Title" xml:space="preserve">
+    <value>Privater Raum</value>
+  </data>
+  <data name="PrivateRoom_Lbl_InvitationCode" xml:space="preserve">
+    <value>Einladungscode</value>
+  </data>
+  <data name="PrivateRoom_Lbl_Captures" xml:space="preserve">
+    <value>Steine zum Fangen</value>
+  </data>
+  <data name="PrivateRoom_Btn_InviteFriends" xml:space="preserve">
+    <value>Freunde einladen</value>
+  </data>
+  <data name="PrivateRoom_Btn_Leave" xml:space="preserve">
+    <value>Verlassen</value>
+  </data>
+  <data name="PrivateRoom_Lbl_YouHost" xml:space="preserve">
+    <value>Du (Host)</value>
+  </data>
+  <data name="PrivateRoom_Lbl_Host" xml:space="preserve">
+    <value>Host</value>
+  </data>
+  <data name="PrivateRoom_Lbl_ActiveRules" xml:space="preserve">
+    <value>Spieleinstellungen</value>
+  </data>
+  <data name="PrivateRoom_Btn_SimulateOpponent" xml:space="preserve">
+    <value>Gegner simulieren</value>
+  </data>
+  <data name="PrivateRoom_Btn_Disband" xml:space="preserve">
+    <value>Raum auflösen</value>
+  </data>
+  <data name="PrivateRoom_Lbl_YouGuest" xml:space="preserve">
+    <value>Du (Gast)</value>
+  </data>
+  <data name="CreatePrivateRoom_Btn_Cancel" xml:space="preserve">
+    <value>Abbrechen</value>
+  </data>
+  <data name="CreatePrivateRoom_Btn_Create" xml:space="preserve">
+    <value>Raum erstellen</value>
+  </data>
+  <data name="CreatePrivateRoom_Lbl_CaptureGoal" xml:space="preserve">
+    <value>Steine zum Gewinnen:</value>
+  </data>
+  <data name="CreatePrivateRoom_Lbl_Title" xml:space="preserve">
+    <value>Privaten Raum erstellen</value>
+  </data>
+  <data name="FriendSearch_Lbl_Search" xml:space="preserve">
+    <value>Benutzername</value>
+  </data>
+  <data name="Presence_Msg_Empty" xml:space="preserve">
+    <value>Du hast noch keine Freunde hinzugefügt.</value>
+  </data>
+  <data name="Presence_Msg_Unavailable" xml:space="preserve">
+    <value>Der Verbindungsstatus konnte nicht aktualisiert werden.</value>
+  </data>
+  <data name="Session_Msg_LogoutFailed" xml:space="preserve">
+    <value>Die Sitzung konnte nicht auf dem Server beendet werden. Prüfe die Verbindung und versuche es erneut.</value>
+  </data>
+  <data name="GuestRegistration_Err_Connection" xml:space="preserve">
+    <value>Der Gastzugang konnte nicht gestartet werden. Prüfe deine Verbindung und versuche es erneut.</value>
+  </data>
+  <data name="GuestRegistration_Title" xml:space="preserve">
+    <value>Gastregistrierung</value>
+  </data>
+  <data name="GuestRegistration_Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="GuestRegistration_NamePlaceholder" xml:space="preserve">
+    <value>Beispiel: AtariMaster</value>
+  </data>
+  <data name="GuestRegistration_Enter" xml:space="preserve">
+    <value>Weiter</value>
+  </data>
+  <data name="GuestRegistration_Back" xml:space="preserve">
+    <value>Zurück</value>
+  </data>
+  <data name="GuestRegistration_Required" xml:space="preserve">
+    <value>Gib einen Namen ein, um fortzufahren.</value>
+  </data>
+  <data name="GuestRegistration_NameTooLong" xml:space="preserve">
+    <value>Der Name darf höchstens 15 Zeichen lang sein.</value>
+  </data>
+  <data name="GuestLobby_Title" xml:space="preserve">
+    <value>Was möchtest du tun?</value>
+  </data>
+  <data name="Connection_Title_ConfigurationError" xml:space="preserve">
+    <value>Verbindungseinstellungen des Servers</value>
+  </data>
+  <data name="Connection_Err_InvalidAddress" xml:space="preserve">
+    <value>Die Serveradresse ist ungültig. Setze ATARI_GO_GRPC_SERVER_ADDRESS auf eine HTTPS-Adresse wie https://servername:7061, ohne Anmeldedaten, Pfade oder Parameter. Verwende den tatsächlichen Namen oder die IP-Adresse des Servers statt 0.0.0.0 und starte die Anwendung neu.</value>
+  </data>
+  <data name="Connection_Err_Cancelled" xml:space="preserve">
+    <value>Die Anfrage wurde vor dem Empfang einer Antwort abgebrochen.</value>
+  </data>
+  <data name="Connection_Err_RequestFailed" xml:space="preserve">
+    <value>Die Anfrage konnte nicht abgeschlossen werden. Versuche es erneut und informiere bei weiteren Fehlern den Serverbetreiber.</value>
+  </data>
+  <data name="Connection_Err_SessionExpired" xml:space="preserve">
+    <value>Deine Sitzung ist nicht mehr gültig. Melde dich erneut an.</value>
+  </data>
+  <data name="Connection_Err_Timeout" xml:space="preserve">
+    <value>Der Server hat nicht innerhalb von 10 Sekunden geantwortet. Prüfe deine Verbindung und versuche es erneut.</value>
+  </data>
+  <data name="Connection_Err_Unavailable" xml:space="preserve">
+    <value>Die Verbindung zum Server ist fehlgeschlagen. Prüfe das Netzwerk, die Serveradresse und das Vertrauen des Zertifikats.</value>
+  </data>
+  <data name="Registration_Err_Unconfirmed" xml:space="preserve">
+    <value>Wir konnten nicht bestätigen, ob dein Konto erstellt wurde. Versuche dich anzumelden, bevor du die Registrierung erneut sendest. Das Schließen dieses Dialogs macht eine bereits verarbeitete Registrierung nicht rückgängig.</value>
+  </data>
+  <data name="JoinPrivateRoom_Err_UnknownCode" xml:space="preserve">
+    <value>Der Raumcode ist ungültig oder abgelaufen.</value>
+  </data>
+  <data name="JoinPrivateRoom_Err_Full" xml:space="preserve">
+    <value>Der Raum ist voll.</value>
+  </data>
+  <data name="PrivateRoom_Btn_StartGame" xml:space="preserve">
+    <value>Partie starten</value>
+  </data>
+  <data name="GameBoard_Lbl_GameIdentifier" xml:space="preserve">
+    <value>Partie Nr. {0}</value>
+  </data>
+  <data name="FriendList_Lbl_RemoveTitle" xml:space="preserve">
+    <value>Freund entfernen</value>
+  </data>
+  <data name="FriendList_Msg_ConfirmRemove" xml:space="preserve">
+    <value>{0} aus deiner Freundesliste entfernen?</value>
+  </data>
+  <data name="FriendList_Msg_Removing" xml:space="preserve">
+    <value>Freund wird entfernt…</value>
+  </data>
+  <data name="FriendList_Err_Unconfirmed" xml:space="preserve">
+    <value>Das Entfernen konnte nicht bestätigt werden. Prüfe deine Verbindung und versuche es erneut.</value>
+  </data>
+  <data name="FriendRequests_Tab_Incoming" xml:space="preserve">
+    <value>Empfangen</value>
+  </data>
+  <data name="FriendRequests_Tab_Sent" xml:space="preserve">
+    <value>Gesendet</value>
+  </data>
+  <data name="FriendRequests_Btn_Cancel" xml:space="preserve">
+    <value>Anfrage zurückziehen</value>
+  </data>
+  <data name="FriendRequests_Btn_More" xml:space="preserve">
+    <value>Mehr laden</value>
+  </data>
+  <data name="FriendRequests_Msg_SentEmpty" xml:space="preserve">
+    <value>Du hast keine ausstehenden gesendeten Anfragen.</value>
+  </data>
+  <data name="FriendRequests_Msg_Cancelled" xml:space="preserve">
+    <value>Freundschaftsanfrage zurückgezogen.</value>
+  </data>
+  <data name="FriendRequests_Msg_NoLongerPending" xml:space="preserve">
+    <value>Diese Anfrage ist nicht mehr ausstehend. Aktualisiere die Liste.</value>
+  </data>
+  <data name="FriendRequests_Err_Unconfirmed" xml:space="preserve">
+    <value>Der Vorgang konnte nicht bestätigt werden. Aktualisiere die Liste oder versuche es erneut.</value>
+  </data>
+  <data name="PrivateRoom_Lbl_CaptureGoal" xml:space="preserve">
+    <value>Fangziel</value>
+  </data>
+  <data name="PrivateRoom_Lbl_GameTimeSeconds" xml:space="preserve">
+    <value>Spielzeit (Sekunden)</value>
+  </data>
+  <data name="PrivateRoom_Lbl_TurnTimeSeconds" xml:space="preserve">
+    <value>Zugzeit (Sekunden)</value>
+  </data>
+  <data name="PrivateRoom_Err_ConfigurationChanged" xml:space="preserve">
+    <value>Der Raum wurde geändert. Prüfe die Konfiguration vor dem Start.</value>
+  </data>
+  <data name="PrivateRoom_Err_ConfigurationUnconfirmed" xml:space="preserve">
+    <value>Der Start konnte nicht bestätigt werden. Der Raumstatus wird automatisch wiederhergestellt.</value>
+  </data>
+  <data name="RoomInvitations_Title_Incoming" xml:space="preserve">
+    <value>Raumeinladungen</value>
+  </data>
+  <data name="RoomInvitations_Title_Outgoing" xml:space="preserve">
+    <value>Freund einladen</value>
+  </data>
+  <data name="RoomInvitations_Btn_Open" xml:space="preserve">
+    <value>Einladungen ({0})</value>
+  </data>
+  <data name="RoomInvitations_Btn_Send" xml:space="preserve">
+    <value>Einladen</value>
+  </data>
+  <data name="RoomInvitations_Btn_Accept" xml:space="preserve">
+    <value>Annehmen</value>
+  </data>
+  <data name="RoomInvitations_Btn_Reject" xml:space="preserve">
+    <value>Ablehnen</value>
+  </data>
+  <data name="RoomInvitations_Btn_Close" xml:space="preserve">
+    <value>Zurück</value>
+  </data>
+  <data name="RoomInvitations_Msg_Sent" xml:space="preserve">
+    <value>Einladung gesendet. Du kannst einen weiteren Freund einladen.</value>
+  </data>
+  <data name="RoomInvitations_Msg_Updated" xml:space="preserve">
+    <value>Einladung aktualisiert.</value>
+  </data>
+  <data name="RoomInvitations_Err_Unconfirmed" xml:space="preserve">
+    <value>Der Vorgang konnte nicht bestätigt werden. Du kannst es erneut versuchen.</value>
+  </data>
+  <data name="RoomInvitations_Err_NotFriends" xml:space="preserve">
+    <value>Du bist mit diesem Spieler nicht mehr befreundet.</value>
+  </data>
+  <data name="RoomInvitations_Err_RecipientOffline" xml:space="preserve">
+    <value>Der Empfänger ist nicht mehr online.</value>
+  </data>
+  <data name="RoomInvitations_Err_RoomUnavailable" xml:space="preserve">
+    <value>Der Raum ist voll, geschlossen oder nicht mehr verfügbar.</value>
+  </data>
+  <data name="RoomInvitations_Err_InvitationUnavailable" xml:space="preserve">
+    <value>Die Einladung ist nicht mehr offen.</value>
+  </data>
+  <data name="RoomInvitations_Err_AlreadyInRoom" xml:space="preserve">
+    <value>Verlasse deinen aktuellen privaten Raum, bevor du annimmst.</value>
+  </data>
+  <data name="RoomInvitations_Err_PermissionDenied" xml:space="preserve">
+    <value>Du darfst diese Einladungsaktion nicht ausführen.</value>
+  </data>
+  <data name="RoomInvitations_Err_NotFound" xml:space="preserve">
+    <value>Die Einladung ist nicht mehr verfügbar.</value>
+  </data>
+  <data name="RoomInvitations_State_Pending" xml:space="preserve">
+    <value>Offen</value>
+  </data>
+  <data name="RoomInvitations_State_Accepted" xml:space="preserve">
+    <value>Angenommen</value>
+  </data>
+  <data name="RoomInvitations_State_Rejected" xml:space="preserve">
+    <value>Abgelehnt</value>
+  </data>
+  <data name="RoomInvitations_State_Cancelled" xml:space="preserve">
+    <value>Zurückgezogen</value>
+  </data>
+  <data name="RoomInvitations_State_Expired" xml:space="preserve">
+    <value>Abgelaufen</value>
+  </data>
+  <data name="RoomInvitations_State_Unavailable" xml:space="preserve">
+    <value>Nicht verfügbar</value>
+  </data>
+  <data name="RoomInvitations_Msg_NoOnlineFriends" xml:space="preserve">
+    <value>Momentan sind keine Freunde online.</value>
+  </data>
+  <data name="RoomInvitations_Msg_NoInvitations" xml:space="preserve">
+    <value>Du hast keine Raumeinladungen.</value>
+  </data>
+  <data name="GameBoard_Clock_Black" xml:space="preserve"><value>Schwarz</value></data>
+  <data name="GameBoard_Clock_White" xml:space="preserve"><value>Weiß</value></data>
+  <data name="GameBoard_Action_Pending" xml:space="preserve"><value>Aktion wird bestätigt…</value></data>
+  <data name="GameBoard_Action_Recovering" xml:space="preserve"><value>Verbindung und Partie werden wiederhergestellt…</value></data>
+  <data name="GameBoard_Action_Finished" xml:space="preserve"><value>Die Partie ist beendet.</value></data>
+  <data name="GameBoard_Action_Waiting" xml:space="preserve"><value>Warten auf beide Spieler.</value></data>
+  <data name="GameBoard_Action_StaleVersion" xml:space="preserve"><value>Zug oder Brett geändert. Bitte erneut versuchen.</value></data>
+  <data name="GameBoard_Action_NotYourTurn" xml:space="preserve"><value>Du bist nicht am Zug.</value></data>
+  <data name="GameBoard_Action_OutOfBounds" xml:space="preserve"><value>Dieser Punkt liegt außerhalb des Bretts.</value></data>
+  <data name="GameBoard_Action_Occupied" xml:space="preserve"><value>Dieser Punkt ist besetzt.</value></data>
+  <data name="GameBoard_Action_Suicide" xml:space="preserve"><value>Dieser Zug hat keine Freiheiten.</value></data>
+  <data name="GameBoard_Action_Repetition" xml:space="preserve"><value>Eine frühere Brettstellung darf nicht wiederholt werden.</value></data>
+  <data name="GameBoard_Action_InvalidAction" xml:space="preserve"><value>Die Aktion ist ungültig.</value></data>
+  <data name="GameBoard_Action_ActionConflict" xml:space="preserve"><value>Diese Aktions-ID wurde bereits für eine andere Anfrage verwendet.</value></data>
+  <data name="GameBoard_Result_Cancelled" xml:space="preserve"><value>Partie abgebrochen: Ein Spieler hat sich nicht rechtzeitig verbunden.</value></data>
+  <data name="GameBoard_Result_Won" xml:space="preserve"><value>Du hast gewonnen!</value></data>
+  <data name="GameBoard_Result_Lost" xml:space="preserve"><value>Du hast verloren.</value></data>
+  <data name="GameBoard_Result_CaptureGoal" xml:space="preserve"><value>Das Fangziel wurde erreicht.</value></data>
+  <data name="GameBoard_Result_Surrender" xml:space="preserve"><value>Die Partie endete durch Aufgabe.</value></data>
+  <data name="GameBoard_Button_ReturnToMenu" xml:space="preserve"><value>Zurück zum Menü</value></data>
+  <data name="GameBoard_Lbl_CapturesStatus" xml:space="preserve"><value>Gefangene · Schwarz: {0} · Weiß: {1} · Ziel: {2}</value></data>
+  <data name="GameBoard_Connection_Closed" xml:space="preserve"><value>Diese Spielverbindung kann nicht fortgesetzt werden. Du kannst zum Menü zurückkehren; dies bestätigt keine Aufgabe.</value></data>
+  <data name="GameBoard_Connection_Replaced" xml:space="preserve"><value>Das Spiel ist in einer anderen Verbindung geöffnet. Du kannst zum Menü zurückkehren, ohne diese Verbindung zu beeinflussen.</value></data>
 </root>

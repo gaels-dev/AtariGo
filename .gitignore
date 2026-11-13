@@ -28,3 +28,28 @@ x86/
 Thumbs.db
 ehthumbs.db
 Desktop.ini
+
+output
+
+# TLS private keys and generated certificate artifacts
+*.pfx
+*.p12
+*.key
+*.pem
+*.cer
+*.crt
+
+# Local server configuration and secrets
+secrets.json
+configuration.local.json
+appsettings.Local.json
+appsettings.*.local.json
+.env
+.env.*
+!.env.example
+
+# Local working reports and chat notes
+/AUDITORIA_CODIGO.md
+/CAMBIOS_ESTANDAR.md
+/PROPUESTAS_ESTANDAR.md
+/docs/local/

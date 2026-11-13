@@ -1,0 +1,87 @@
+syntax = "proto3";
+
+option csharp_namespace = "AtariGo.Contracts";
+
+package atarigo.rooms.v1;
+
+service Rooms {
+  rpc CreatePrivateRoom (CreatePrivateRoomRequest) returns (CreatePrivateRoomResponse);
+  rpc UpdateRoomConfiguration (UpdateRoomConfigurationRequest)
+      returns (UpdateRoomConfigurationResponse);
+  rpc JoinRoom (JoinRoomRequest) returns (JoinRoomResponse);
+  rpc LeaveRoom (LeaveRoomRequest) returns (LeaveRoomResponse);
+  rpc WatchRoom (WatchRoomRequest) returns (stream RoomSnapshot);
+}
+
+message CreatePrivateRoomRequest {
+  RoomConfiguration configuration = 1;
+}
+
+message CreatePrivateRoomResponse {
+  RoomSnapshot room = 1;
+}
+
+message JoinRoomRequest {
+  oneof locator {
+    int32 room_id = 1;
+    string invitation_code = 2;
+  }
+}
+
+message JoinRoomResponse {
+  RoomSnapshot room = 1;
+  RoomParticipant assigned_participant = 2;
+}
+
+message LeaveRoomRequest {
+  int32 room_id = 1;
+}
+
+message LeaveRoomResponse {
+  RoomSnapshot updated_room = 1;
+}
+
+message WatchRoomRequest {
+  int32 room_id = 1;
+  optional int32 from_version = 2;
+}
+
+message RoomSnapshot {
+  int32 room_id = 1;
+  string invitation_code = 2;
+  RoomConfiguration configuration = 3;
+  repeated RoomParticipant participants = 4;
+  int32 version = 5;
+  RoomState state = 6;
+  int64 game_id = 7;
+}
+
+message RoomConfiguration {
+  int32 capture_goal = 1;
+  // Legacy compatibility field; ignored by gameplay.
+  int32 game_time_seconds = 2;
+  int32 turn_time_seconds = 3;
+}
+
+message RoomParticipant {
+  int32 user_id = 1;
+  string user_name = 2;
+  bool is_host = 3;
+}
+
+enum RoomState {
+  ROOM_STATE_UNSPECIFIED = 0;
+  ROOM_STATE_WAITING = 1;
+  ROOM_STATE_CLOSED = 2;
+  ROOM_STATE_STARTED = 3;
+}
+
+message UpdateRoomConfigurationRequest {
+  int32 room_id = 1;
+  RoomConfiguration configuration = 2;
+  int32 expected_version = 3;
+}
+
+message UpdateRoomConfigurationResponse {
+  RoomSnapshot room = 1;
+}

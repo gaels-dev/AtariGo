@@ -1,0 +1,61 @@
+syntax = "proto3";
+
+option csharp_namespace = "AtariGo.Contracts";
+
+package atarigo.matchmaking.v1;
+
+service Matchmaking {
+  rpc CreateGuestIdentity (CreateGuestIdentityRequest)
+      returns (CreateGuestIdentityResponse);
+  rpc RevokeGuestIdentity (RevokeGuestIdentityRequest)
+      returns (RevokeGuestIdentityResponse);
+  rpc SearchPublicMatch (SearchPublicMatchRequest)
+      returns (stream MatchmakingEvent);
+}
+
+message CreateGuestIdentityRequest {
+  string display_name = 1;
+}
+
+message CreateGuestIdentityResponse {
+  string credential = 1;
+}
+
+message RevokeGuestIdentityRequest {
+}
+
+message RevokeGuestIdentityResponse {
+}
+
+message SearchPublicMatchRequest {
+}
+
+message MatchmakingEvent {
+  oneof event {
+    SearchQueued search_queued = 1;
+    MatchCountdownStarted match_countdown_started = 2;
+    MatchCountdownCancelled match_countdown_cancelled = 3;
+    PublicGameStarted public_game_started = 4;
+  }
+}
+
+message SearchQueued {
+}
+
+message MatchCountdownStarted {
+  string opponent_name = 1;
+  int64 countdown_ends_at_unix_milliseconds = 2;
+}
+
+message MatchCountdownCancelled {
+}
+
+message PublicGameStarted {
+  int64 game_id = 1;
+  string opponent_name = 2;
+  string stone_color = 3;
+  int32 capture_goal = 4;
+  // Legacy compatibility field; ignored by gameplay.
+  int32 game_time_seconds = 5;
+  int32 turn_time_seconds = 6;
+}

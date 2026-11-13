@@ -1,0 +1,551 @@
+<UserControl x:Class="AtariGo.Client.Views.RegisterPlayerLobbyView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:properties="clr-namespace:AtariGo.Client.Properties"
+             mc:Ignorable="d"
+             d:DesignHeight="700" d:DesignWidth="1000"
+             Background="#E5D8C5">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Background="#2C2A29" Padding="25,15">
+            <Grid>
+                <TextBlock Text="ATARI GO"
+                           FontSize="20"
+                           FontWeight="Bold"
+                           FontFamily="Georgia"
+                           Foreground="White"
+                           HorizontalAlignment="Left"
+                           VerticalAlignment="Center"/>
+                <TextBlock VerticalAlignment="Center"
+                           HorizontalAlignment="Right"
+                           FontSize="14"
+                           FontWeight="SemiBold"
+                           Foreground="White">
+                    <Run Text="{x:Static properties:Resources.RegisterPlayerLobby_Lbl_Welcome}"/>
+                    <Run Text="{Binding PlayerName, Mode=OneWay}"/>
+                </TextBlock>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="1" Margin="20,15">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="260"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="280"/>
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Column="0" Margin="0,5,10,0" VerticalAlignment="Top">
+                <Border Background="White"
+                        BorderBrush="#2C2A29"
+                        BorderThickness="1.5"
+                        CornerRadius="8"
+                        Padding="15"
+                        Margin="0,0,0,15">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                            <Grid Width="45" Height="45" Margin="0,0,12,0">
+                                <Ellipse Fill="#E0D7C6"
+                                         Stroke="#2C2A29"
+                                         StrokeThickness="1.5"/>
+                                <TextBlock Text="👤"
+                                           FontSize="22"
+                                           Foreground="#4A90E2"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"/>
+                            </Grid>
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock
+                                    Text="{x:Static
+                                        properties:Resources.RegisterPlayerLobby_Lbl_YourProfile}"
+                                    FontWeight="Bold"
+                                    FontSize="15"
+                                    Foreground="#2C2A29"/>
+                                <TextBlock FontWeight="SemiBold"
+                                           FontSize="13"
+                                           Foreground="#2E7D32">
+                                    <Run Text="{x:Static
+                                        properties:Resources.RegisterPlayerLobby_Lbl_Victories}"/>
+                                    <Run Text="{Binding PlayerWins, Mode=OneWay}"/>
+                                </TextBlock>
+                            </StackPanel>
+                        </StackPanel>
+                        <Button Style="{StaticResource RoundedButtonStyle}"
+                                Content="{x:Static
+                                    properties:Resources.RegisterPlayerLobby_Btn_Customize}"
+                                Command="{Binding CustomizeProfileCommand}"
+                                Height="35"
+                                Background="#EAEAEA"
+                                Foreground="#333333"
+                                FontWeight="Bold"
+                                FontSize="13"
+                                BorderBrush="#2C2A29"
+                                BorderThickness="1"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Background="White"
+                        BorderBrush="#2C2A29"
+                        BorderThickness="1.5"
+                        CornerRadius="8"
+                        Padding="15">
+                    <StackPanel>
+                        <Grid Margin="0,0,0,8">
+                            <TextBlock
+                                Text="{x:Static
+                                    properties:Resources.RegisterPlayerLobby_Lbl_TopGlobal}"
+                                FontWeight="Bold"
+                                FontSize="14"
+                                Foreground="#2C2A29"
+                                HorizontalAlignment="Left"/>
+                            <Button Content="{Binding RefreshLabel}"
+                                    Command="{Binding RefreshLeaderboardCommand}"
+                                    IsEnabled="{Binding IsRefreshEnabled}"
+                                    HorizontalAlignment="Right"
+                                    Padding="5,1"
+                                    FontSize="11"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    Foreground="#1976D2"/>
+                        </Grid>
+                        <Grid Margin="0,0,0,4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="32"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="55"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="{Binding RankHeader}"
+                                       FontSize="10"
+                                       FontWeight="Bold"
+                                       Foreground="#666666"/>
+                            <TextBlock Grid.Column="1"
+                                       Text="{Binding PlayerHeader}"
+                                       FontSize="10"
+                                       FontWeight="Bold"
+                                       Foreground="#666666"/>
+                            <TextBlock Grid.Column="2"
+                                       Text="{Binding WinsHeader}"
+                                       FontSize="10"
+                                       FontWeight="Bold"
+                                       Foreground="#666666"
+                                       HorizontalAlignment="Right"/>
+                        </Grid>
+                        <ScrollViewer Height="145"
+                                      VerticalScrollBarVisibility="Auto"
+                                      HorizontalScrollBarVisibility="Disabled">
+                            <ItemsControl ItemsSource="{Binding LeaderboardEntries}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="0,3">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="32"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="55"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="{Binding Position}"
+                                                       FontSize="12"
+                                                       Foreground="#666666"/>
+                                            <TextBlock Grid.Column="1"
+                                                       Text="{Binding UserName}"
+                                                       FontSize="12"
+                                                       TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock Grid.Column="2"
+                                                       Text="{Binding Wins}"
+                                                       FontSize="12"
+                                                       FontWeight="Bold"
+                                                       Foreground="#1976D2"
+                                                       HorizontalAlignment="Right"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                        <TextBlock Text="{Binding LeaderboardStatus}"
+                                   FontSize="11"
+                                   Foreground="#666666"
+                                   TextWrapping="Wrap"
+                                   Margin="0,5,0,0"
+                                   HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <Rectangle Grid.Column="1"
+                       Width="1.5"
+                       Fill="#C4B59D"
+                       Margin="10,0"/>
+
+            <Border Grid.Column="2"
+                    Background="#E5D8C5"
+                    Padding="15"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Center">
+                <StackPanel Width="320">
+                    <TextBlock
+                        Text="{x:Static properties:Resources.RegisterPlayerLobby_Lbl_WhatToDo}"
+                        FontSize="25"
+                        FontWeight="Bold"
+                        FontFamily="Georgia"
+                        Foreground="#2C2A29"
+                        HorizontalAlignment="Center"
+                        Margin="0,0,0,25"/>
+
+                    <Button Style="{StaticResource RoundedButtonStyle}"
+                            Content="{x:Static
+                                properties:Resources.RegisterPlayerLobby_Btn_PlayMultiplayer}"
+                            Command="{Binding PlayMultiplayerCommand}"
+                            Height="45"
+                            Background="#4A90E2"
+                            Foreground="White"
+                            FontWeight="Bold"
+                            FontSize="14"
+                            BorderBrush="#2C2A29"
+                            BorderThickness="1"
+                            Margin="0,0,0,12"/>
+
+                    <Grid Margin="0,0,0,12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Button Grid.Column="0"
+                                Style="{StaticResource RoundedButtonStyle}"
+                                Content="{x:Static
+                                    properties:Resources.RegisterPlayerLobby_Btn_CreatePrivateRoom}"
+                                Command="{Binding CreatePrivateRoomCommand}"
+                                Height="45"
+                                Background="#4A90E2"
+                                Foreground="White"
+                                FontWeight="Bold"
+                                FontSize="12"
+                                BorderBrush="#2C2A29"
+                                BorderThickness="1"
+                                Margin="0,0,6,0"/>
+
+                        <Button Grid.Column="1"
+                                Style="{StaticResource RoundedButtonStyle}"
+                                Content="{x:Static
+                                    properties:Resources.RegisterPlayerLobby_Btn_JoinWithCode}"
+                                Command="{Binding JoinWithCodeCommand}"
+                                Height="45"
+                                Background="#8C939A"
+                                Foreground="White"
+                                FontWeight="Bold"
+                                FontSize="12"
+                                BorderBrush="#2C2A29"
+                                BorderThickness="1"
+                                Margin="6,0,0,0"/>
+                    </Grid>
+
+                    <Button Style="{StaticResource RoundedButtonStyle}"
+                            Content="{x:Static properties:Resources.RegisterPlayerLobby_Btn_Options}"
+                            Command="{Binding OptionsCommand}"
+                            Height="42"
+                            Background="#DCDCDC"
+                            Foreground="#2C2A29"
+                            FontWeight="Bold"
+                            FontSize="14"
+                            BorderBrush="#2C2A29"
+                            Margin="0,0,0,12"/>
+
+                    <Button Style="{StaticResource RoundedButtonStyle}"
+                            Content="{x:Static properties:Resources.RegisterPlayerLobby_Btn_SignOut}"
+                            Command="{Binding SignOutCommand}"
+                            Height="42"
+                            Background="#D9534F"
+                            Foreground="White"
+                            FontWeight="Bold"
+                            FontSize="14"
+                            BorderBrush="#B52B27"
+                            BorderThickness="1"/>
+                </StackPanel>
+            </Border>
+
+            <Rectangle Grid.Column="3"
+                       Width="1.5"
+                       Fill="#C4B59D"
+                       Margin="10,0"/>
+
+            <Border Grid.Column="4"
+                    Background="White"
+                    BorderBrush="#2C2A29"
+                    BorderThickness="1.5"
+                    CornerRadius="8"
+                    Padding="15"
+                    Margin="10,5,0,0"
+                    VerticalAlignment="Top"
+                    Height="480">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0"
+                               Text="{x:Static
+                                   properties:Resources.RegisterPlayerLobby_Lbl_FriendsList}"
+                               FontWeight="Bold"
+                               FontSize="15"
+                               Foreground="#2C2A29"
+                               Margin="0,0,0,12"/>
+
+                    <Button Grid.Row="1"
+                            Style="{StaticResource RoundedButtonStyle}"
+                            Content="{x:Static
+                                properties:Resources.RegisterPlayerLobby_Btn_AddFriend}"
+                            Command="{Binding AddFriendCommand}"
+                            Height="36"
+                            Background="#EAEAEA"
+                            Foreground="#333333"
+                            FontWeight="Bold"
+                            FontSize="12"
+                            BorderBrush="#2C2A29"
+                            BorderThickness="1"
+                            Margin="0,0,0,12"/>
+
+                    <Button Grid.Row="2"
+                            Style="{StaticResource RoundedButtonStyle}"
+                            Content="{Binding ManageFriendRequestsLabel}"
+                            Command="{Binding ManageFriendRequestsCommand}"
+                            Height="36"
+                            Background="#4A90E2"
+                            Foreground="White"
+                            FontWeight="Bold"
+                            FontSize="12"
+                            BorderBrush="#2C2A29"
+                            BorderThickness="1"
+                            Margin="0,0,0,12"/>
+
+                    <Button Grid.Row="3" Style="{StaticResource RoundedButtonStyle}"
+                            Content="{Binding RoomInvitations.OpenLabel}"
+                            Command="{Binding RoomInvitations.OpenCommand}"
+                            IsEnabled="{Binding RoomInvitations.CanOpen}"
+                            Height="36" Background="#4A90E2" Foreground="White"
+                            FontWeight="Bold" FontSize="12"
+                            BorderBrush="#2C2A29" BorderThickness="1" Margin="0,0,0,12"/>
+
+                    <Border Grid.Row="4"
+                            BorderBrush="#2C2A29"
+                            BorderThickness="1.5"
+                            CornerRadius="6"
+                            Padding="10,6"
+                            Margin="0,0,0,12">
+                        <TextBox Text="{Binding FriendSearchText,
+                                        UpdateSourceTrigger=PropertyChanged}"
+                                 MaxLength="15"
+                                 BorderThickness="0"
+                                 Background="Transparent"
+                                 FontSize="12">
+                            <TextBox.Style>
+                                <Style TargetType="TextBox">
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="TextBox">
+                                                <Grid>
+                                                    <TextBlock Foreground="#999999"
+                                                               FontSize="12"
+                                                               VerticalAlignment="Center"
+                                                               IsHitTestVisible="False">
+                    <TextBlock.Text>
+                        <x:Static
+                            Member="properties:Resources.RegisterPlayerLobby_Txt_SearchFriendPlaceholder"/>
+                    </TextBlock.Text>
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Visibility"
+                                                                        Value="Collapsed"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Value=""
+                                                                        Binding="{Binding
+                                                                            Text,
+                                                                            RelativeSource={
+                                                                            RelativeSource
+                                                                            TemplatedParent}}">
+                                                                        <Setter
+                                                                            Property="Visibility"
+                                                                            Value="Visible"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                    <ScrollViewer x:Name="PART_ContentHost"
+                                                                  VerticalAlignment="Center"/>
+                                                </Grid>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </TextBox.Style>
+                        </TextBox>
+                    </Border>
+
+                    <Grid Grid.Row="5">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Grid.Row="0" Text="{Binding PresenceStatus}"
+                                   Foreground="#666666"
+                                   FontSize="11"
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,6"/>
+                        <TextBlock Grid.Row="1" Text="{Binding FriendRemoval.StatusMessage}"
+                                   TextWrapping="Wrap" Foreground="#666666" Margin="0,0,0,6"/>
+                        <TextBlock Grid.Row="2" Text="{Binding FriendSearchStatus}"
+                                   Foreground="#666666"
+                                   FontSize="11"
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,6">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility"
+                                            Value="Visible"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding FriendSearchStatus}"
+                                                     Value="">
+                                            <Setter Property="Visibility"
+                                                    Value="Collapsed"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                        <ScrollViewer Grid.Row="3" VerticalScrollBarVisibility="Auto">
+                            <ItemsControl ItemsSource="{Binding FilteredFriends}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border BorderBrush="#2C2A29"
+                                                BorderThickness="1.5"
+                                                CornerRadius="6"
+                                                Padding="10,8"
+                                                Margin="0,0,0,8">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <Ellipse Width="10"
+                                                             Height="10"
+                                                             Margin="0,0,8,0"
+                                                             VerticalAlignment="Center">
+                                                        <Ellipse.Style>
+                                                            <Style TargetType="Ellipse">
+                                                                <Setter Property="Fill"
+                                                                        Value="#888888"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding IsOnline}"
+                                                                                 Value="True">
+                                                                        <Setter Property="Fill"
+                                                                                Value="#2E7D32"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </Ellipse.Style>
+                                                    </Ellipse>
+                                                    <TextBlock Grid.Column="1" Text="{Binding Username}"
+                                                               TextTrimming="CharacterEllipsis"
+                                                               FontWeight="SemiBold"
+                                                               FontSize="13"
+                                                               VerticalAlignment="Center"/>
+                                                </Grid>
+                                                <StackPanel Grid.Column="1"
+                                                            Orientation="Horizontal">
+                                                    <Button Content="{x:Static properties:Resources.RegisterPlayerLobby_Btn_Invite}"
+                                                            Command="{Binding DataContext.InviteFriendCommand,
+                                                                RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                            CommandParameter="{Binding}"
+                                                            IsEnabled="False"
+                                                            Width="58"
+                                                            Height="26"
+                                                            FontSize="11"
+                                                            FontWeight="SemiBold"
+                                                            Margin="0,0,6,0"
+                                                            Background="#4A90E2"
+                                                            Foreground="White"
+                                                            BorderThickness="0">
+                                                        <Button.Style>
+                                                            <Style TargetType="Button"
+                                                                   BasedOn="{StaticResource RoundedButtonStyle}">
+                                                                <Setter Property="Visibility"
+                                                                        Value="Visible"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding IsOnline}"
+                                                                                 Value="False">
+                                                                        <Setter Property="Visibility"
+                                                                                Value="Collapsed"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </Button.Style>
+                                                    </Button>
+                                                    <Button Content="{x:Static properties:Resources.RegisterPlayerLobby_Btn_Email}"
+                                                            IsEnabled="False"
+                                                            Width="58"
+                                                            Height="26"
+                                                            FontSize="10"
+                                                            FontWeight="SemiBold"
+                                                            Margin="0,0,6,0"
+                                                            Background="#EAEAEA"
+                                                            Foreground="#333333"
+                                                            BorderThickness="0">
+                                                        <Button.Style>
+                                                            <Style TargetType="Button"
+                                                                   BasedOn="{StaticResource RoundedButtonStyle}">
+                                                                <Setter Property="Visibility"
+                                                                        Value="Collapsed"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding IsOnline}"
+                                                                                 Value="False">
+                                                                        <Setter Property="Visibility"
+                                                                                Value="Visible"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </Button.Style>
+                                                    </Button>
+                                                    <Button Style="{StaticResource RoundedButtonStyle}"
+                                                            Content="X"
+                                                            Command="{Binding DataContext.RemoveFriendCommand,
+                                                                RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                            CommandParameter="{Binding}"
+                                                            Width="26"
+                                                            Height="26"
+                                                            FontSize="11"
+                                                            FontWeight="Bold"
+                                                            Background="#D9534F"
+                                                            Foreground="White"
+                                                            BorderThickness="0"/>
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Grid>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

@@ -1,0 +1,21 @@
+syntax = "proto3";
+option csharp_namespace = "AtariGo.Contracts";
+package atarigo.friendships.v1;
+
+service Friendships {
+  rpc RemoveFriendship (RemoveFriendshipRequest) returns (RemoveFriendshipResponse);
+}
+
+message RemoveFriendshipRequest {
+  int32 friend_user_id = 1;
+}
+
+message RemoveFriendshipResponse {
+  RemoveFriendshipStatus status = 1;
+}
+
+enum RemoveFriendshipStatus {
+  REMOVE_FRIENDSHIP_STATUS_UNSPECIFIED = 0;
+  REMOVE_FRIENDSHIP_STATUS_REMOVED = 1;
+  REMOVE_FRIENDSHIP_STATUS_ALREADY_ABSENT = 2;
+}

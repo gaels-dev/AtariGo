@@ -1,0 +1,115 @@
+syntax = "proto3";
+
+option csharp_namespace = "AtariGo.Contracts";
+
+package atarigo.gamesession.v1;
+
+service GameSession {
+  rpc Connect (stream GameSessionClientEvent) returns (stream GameSessionServerEvent);
+}
+
+message GameSessionClientEvent {
+  oneof event {
+    JoinGame join_game = 1;
+    SendChatMessage send_chat_message = 2;
+    SubmitGameMove submit_move = 3;
+    SurrenderGame surrender = 4;
+  }
+}
+
+message JoinGame {
+  int64 game_id = 1;
+}
+
+message SendChatMessage {
+  string text = 1;
+}
+
+message GameSessionServerEvent {
+  oneof event {
+    GameSessionSnapshot snapshot = 1;
+    GameChatMessage chat_message = 2;
+    ChatMessageRejected chat_message_rejected = 3;
+    GameActionResponse action_result = 4;
+  }
+}
+
+message GameSessionSnapshot {
+  int64 game_id = 1;
+  int32 board_size = 2;
+  int32 capture_goal = 3;
+  int32 game_time_seconds = 4 [deprecated = true];
+  int32 turn_time_seconds = 5;
+  string player_name = 6;
+  string player_stone_color = 7;
+  string opponent_name = 8;
+  string opponent_stone_color = 9;
+  bool opponent_connected = 10;
+  repeated GameBoardCell cells = 11;
+  bool opponent_disconnected = 12;
+  repeated GameChatMessage chat_history = 13;
+  int32 maximum_chat_message_length = 14;
+  int64 version = 15;
+  string status = 16;
+  GameStoneState current_turn = 17;
+  int32 black_captures = 18;
+  int32 white_captures = 19;
+  int64 black_remaining_milliseconds = 20;
+  int64 white_remaining_milliseconds = 21;
+  int64 turn_ends_at_unix_milliseconds = 22;
+  GameStoneState winner = 23;
+  string end_reason = 24;
+  bool has_last_move = 25;
+  int32 last_move_row = 26;
+  int32 last_move_column = 27;
+  int32 turn_number = 28;
+  int64 server_time_unix_milliseconds = 29;
+}
+
+message GameChatMessage {
+  string sender_name = 1;
+  string text = 2;
+  int64 sent_at_unix_milliseconds = 3;
+  bool is_sender = 4;
+}
+
+message ChatMessageRejected {
+  ChatMessageRejectionReason reason = 1;
+}
+
+enum ChatMessageRejectionReason {
+  CHAT_MESSAGE_REJECTION_REASON_UNSPECIFIED = 0;
+  CHAT_MESSAGE_REJECTION_REASON_EMPTY = 1;
+  CHAT_MESSAGE_REJECTION_REASON_TOO_LONG = 2;
+}
+
+message GameBoardCell {
+  int32 row = 1;
+  int32 column = 2;
+  GameStoneState stone = 3;
+}
+
+enum GameStoneState {
+  GAME_STONE_STATE_UNSPECIFIED = 0;
+  GAME_STONE_STATE_EMPTY = 1;
+  GAME_STONE_STATE_BLACK = 2;
+  GAME_STONE_STATE_WHITE = 3;
+}
+
+message SubmitGameMove {
+  string action_id = 1;
+  int64 expected_version = 2;
+  int32 row = 3;
+  int32 column = 4;
+}
+
+message SurrenderGame {
+  string action_id = 1;
+}
+
+message GameActionResponse {
+  string action_id = 1;
+  bool is_accepted = 2;
+  string rejection = 3;
+  int64 version = 4;
+}
