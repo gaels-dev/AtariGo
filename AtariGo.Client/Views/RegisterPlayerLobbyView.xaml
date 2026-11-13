@@ -43,7 +43,6 @@
                 <ColumnDefinition Width="280"/>
             </Grid.ColumnDefinitions>
 
-            <!-- SECTION 1 -->
             <StackPanel Grid.Column="0" Margin="0,5,10,0" VerticalAlignment="Top">
                 <Border Background="White"
                         BorderBrush="#2C2A29"
@@ -184,7 +183,6 @@
                        Fill="#C4B59D"
                        Margin="10,0"/>
 
-            <!-- SECTION 2 -->
             <Border Grid.Column="2"
                     Background="#E5D8C5"
                     Padding="15"
@@ -277,7 +275,6 @@
                        Fill="#C4B59D"
                        Margin="10,0"/>
 
-            <!-- SECTION 3 -->
             <Border Grid.Column="4"
                     Background="White"
                     BorderBrush="#2C2A29"

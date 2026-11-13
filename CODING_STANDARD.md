@@ -380,14 +380,14 @@ public const int MAX_INVENTORY_SLOTS = 20;
 
 ### 2.11 Campos estáticos
 
-A pesar de que C# no obliga a usar  el prefijo "s_", los campos estáticos deben nombrarse utilizando camelCase prefijados obligatoriamente con s_ para distinguirlos visualmente de los campos de instancia y variables locales.
+Los campos estáticos deben nombrarse utilizando camelCase sin prefijo. Está prohibido utilizar el prefijo `s_` en el código del proyecto.
 
 **Correcto**
 
 ```csharp
 public class PlayerManager
 {
-    private static int s_activePlayersCount;
+    private static int activePlayersCount;
 }
 ```
 
@@ -396,7 +396,7 @@ public class PlayerManager
 ```csharp
 public class PlayerManager
 {
-    private static int activePlayersCount;
+    private static int s_activePlayersCount;
 }
 ```
 
@@ -504,14 +504,14 @@ namespace AtariGo.Core.AI
     public class EnemyAI
     {
         public const int MaxHealth = 100;
-        private static int s_enemyCount;
+        private static int enemyCount;
         public bool IsActive;
         protected bool isAlerted;
         private float _speed;
 
         static EnemyAI()
         {
-            s_enemyCount = 0;
+            enemyCount = 0;
         }
 
         public EnemyAI()
@@ -602,11 +602,11 @@ namespace AtariGo.Core.AI
         }
         static EnemyAI()
         {
-            s_enemyCount = 0;
+            enemyCount = 0;
         }
         protected bool isAlerted;
         public const int MaxHealth = 100;
-        private static int s_enemyCount;
+        private static int enemyCount;
     }
 }
 ```
@@ -2189,7 +2189,7 @@ se conservan cuando el nombre forma parte de un contrato externo.
 | Parámetro genérico descriptivo | `T` más nombre | `TResponse` |
 | Constante de cualquier visibilidad | PascalCase sin prefijo | `MaximumSearchLength` |
 | Campo con `[ThreadStatic]` | `t_camelCase` | `t_currentContext` |
-| Campo estático no constante, incluido readonly | `s_camelCase` | `s_sessionLifetime` |
+| Campo estático no constante, incluido readonly | camelCase sin prefijo | `sessionLifetime` |
 | Campo privado o interno de instancia | `_camelCase` | `_friendClient` |
 | Campo protegido de instancia | camelCase sin prefijo | `isInitialized` |
 | Campo público de instancia | PascalCase | `MoveSpeed` |
@@ -2201,7 +2201,7 @@ se conservan cuando el nombre forma parte de un contrato externo.
 | Clase de pruebas | Tipo probado más `Tests` | `GrpcCallPolicyTests` |
 
 Prioridad para campos: `const`, después `[ThreadStatic]`, después `static` y después
-visibilidad de instancia. No se aplican simultáneamente `_` y `s_`. Una variable local
+visibilidad de instancia. El prefijo `s_` está prohibido. Una variable local
 que recibe un delegado no obtiene automáticamente el sufijo `Callback`.
 
 ### 10.2 Vistas ViewModels y comandos

@@ -1,6 +1,5 @@
 using System.Reflection;
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using AtariGo.Client.Services;
 using AtariGo.Client.Tests.Services;

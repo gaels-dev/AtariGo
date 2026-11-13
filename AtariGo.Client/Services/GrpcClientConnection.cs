@@ -1,4 +1,3 @@
-using System;
 
 using Grpc.Core;
 using Grpc.Net.Client;
@@ -8,7 +7,7 @@ namespace AtariGo.Client.Services
     /// <summary>Owns the reusable transport shared by the application's gRPC adapters.</summary>
     public sealed class GrpcClientConnection : IDisposable
     {
-        private static readonly Lazy<GrpcClientConnection> s_sharedConnection =
+        private static readonly Lazy<GrpcClientConnection> sharedConnection =
             new Lazy<GrpcClientConnection>(
                 () => new GrpcClientConnection(GrpcClientSettings.ServerAddress));
 
@@ -34,7 +33,7 @@ namespace AtariGo.Client.Services
         {
             get
             {
-                return s_sharedConnection.Value;
+                return sharedConnection.Value;
             }
         }
 

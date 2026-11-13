@@ -1,11 +1,8 @@
-using System.IO;
 
-using Microsoft.Extensions.Logging;
 
 using Grpc.Core;
 
 using AtariGo.Contracts;
-using AtariGo.Server.Application.Friends;
 using AtariGo.Server.Application.Sessions;
 using AtariGo.Server.Application.Social;
 

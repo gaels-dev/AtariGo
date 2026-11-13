@@ -1,6 +1,5 @@
 using Microsoft.Extensions.Logging.Abstractions;
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using AtariGo.Server.Application.Rooms;
 using AtariGo.Server.Application.Sessions;

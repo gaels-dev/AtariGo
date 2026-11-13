@@ -1,5 +1,3 @@
-using System;
-using System.Threading.Tasks;
 using System.Windows.Input;
 
 namespace AtariGo.Client.Tests.Services

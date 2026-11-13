@@ -15,7 +15,7 @@ namespace AtariGo.Client.ViewModels;
 public sealed class PrivateRoomLobbyViewModel : ViewModelBase, IDisposable
 {
     private const string WaitingOpponentName = "?";
-    private static readonly TimeSpan s_reconnectDelay = TimeSpan.FromSeconds(1);
+    private static readonly TimeSpan reconnectDelay = TimeSpan.FromSeconds(1);
 
     private readonly INavigationService _navigationService;
     private readonly IRoomsClient _roomsClient;
@@ -172,7 +172,7 @@ public sealed class PrivateRoomLobbyViewModel : ViewModelBase, IDisposable
                     }
 
                     NotifyConfigurationState();
-                    await Task.Delay(s_reconnectDelay, cancellationToken);
+                    await Task.Delay(reconnectDelay, cancellationToken);
                     fullSnapshot = true;
                 }
             }

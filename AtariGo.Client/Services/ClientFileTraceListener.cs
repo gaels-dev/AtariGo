@@ -1,4 +1,3 @@
-using System;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
@@ -9,7 +8,7 @@ public sealed class ClientFileTraceListener : TextWriterTraceListener
 {
     private const int DisplayOffsetHours = -6;
 
-    private static readonly TimeSpan s_displayOffset = TimeSpan.FromHours(DisplayOffsetHours);
+    private static readonly TimeSpan displayOffset = TimeSpan.FromHours(DisplayOffsetHours);
 
     private bool _hasWriteFailure;
 
@@ -27,7 +26,7 @@ public sealed class ClientFileTraceListener : TextWriterTraceListener
 
         try
         {
-            DateTimeOffset timestamp = DateTimeOffset.UtcNow.ToOffset(s_displayOffset);
+            DateTimeOffset timestamp = DateTimeOffset.UtcNow.ToOffset(displayOffset);
             base.WriteLine($"{timestamp:O} {eventType}: {message}");
             Flush();
         }

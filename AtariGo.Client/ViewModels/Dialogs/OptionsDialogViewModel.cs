@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-using System.Threading;
 using System.Windows.Input;
 
 using AtariGo.Client.Commands;

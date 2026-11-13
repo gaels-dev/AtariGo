@@ -7,7 +7,7 @@ internal sealed class RoomInvitationRegistry
 {
     private const int InvitationRetentionMinutes = 2;
 
-    private static readonly TimeSpan s_invitationRetention =
+    private static readonly TimeSpan invitationRetention =
         TimeSpan.FromMinutes(InvitationRetentionMinutes);
 
     private readonly Dictionary<long, RoomInvitationEntry> _entries =
@@ -92,7 +92,7 @@ internal sealed class RoomInvitationRegistry
                 Transition(entry, RoomInvitationStatus.Expired);
             }
 
-            if (entry.ExpiresAt.Add(s_invitationRetention) <= currentTime)
+            if (entry.ExpiresAt.Add(invitationRetention) <= currentTime)
             {
                 _entries.Remove(entry.InvitationId);
                 Notify(entry);

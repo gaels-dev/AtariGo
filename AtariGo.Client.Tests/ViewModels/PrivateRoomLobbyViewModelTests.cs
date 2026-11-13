@@ -1,7 +1,6 @@
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Grpc.Core;
 

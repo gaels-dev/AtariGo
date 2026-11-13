@@ -4,7 +4,7 @@ public sealed class RoomStateExpiryService : BackgroundService
 {
     private const int ExpiryCheckIntervalSeconds = 1;
 
-    private static readonly TimeSpan s_expiryCheckInterval =
+    private static readonly TimeSpan expiryCheckInterval =
         TimeSpan.FromSeconds(ExpiryCheckIntervalSeconds);
 
     private readonly IRoomsService _roomsService;
@@ -26,7 +26,7 @@ public sealed class RoomStateExpiryService : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        using var timer = new PeriodicTimer(s_expiryCheckInterval, _timeProvider);
+        using var timer = new PeriodicTimer(expiryCheckInterval, _timeProvider);
         try
         {
             while (await timer.WaitForNextTickAsync(stoppingToken))

@@ -1,11 +1,6 @@
-using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 
 using Grpc.Core;
 using Grpc.Core.Interceptors;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using AtariGo.Client.Services;
 

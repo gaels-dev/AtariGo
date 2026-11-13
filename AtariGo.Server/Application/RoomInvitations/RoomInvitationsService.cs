@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 
-using AtariGo.Server.Application.Friends;
 using AtariGo.Server.Application.Rooms;
 using AtariGo.Server.Application.Social;
 using AtariGo.Server.Data;

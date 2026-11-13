@@ -7,7 +7,7 @@ public sealed class GuestIdentityRegistry : IGuestIdentityRegistry
 {
     private const int CredentialByteLength = 32;
     private const int MaximumDisplayNameLength = 100;
-    private static readonly TimeSpan s_identityLifetime = TimeSpan.FromHours(1);
+    private static readonly TimeSpan identityLifetime = TimeSpan.FromHours(1);
 
     private readonly object _sync = new object();
     private readonly Dictionary<string, GuestIdentity> _identities =
@@ -31,7 +31,7 @@ public sealed class GuestIdentityRegistry : IGuestIdentityRegistry
         GuestIdentity identity = new GuestIdentity(
             Guid.NewGuid(),
             displayName,
-            _timeProvider.GetUtcNow().Add(s_identityLifetime));
+            _timeProvider.GetUtcNow().Add(identityLifetime));
         string credential = CreateCredential(identity);
         return new IssuedGuestIdentity(credential, identity);
     }
@@ -59,7 +59,7 @@ public sealed class GuestIdentityRegistry : IGuestIdentityRegistry
 
             GuestIdentity renewedIdentity = identity with
             {
-                ExpiresAt = _timeProvider.GetUtcNow().Add(s_identityLifetime)
+                ExpiresAt = _timeProvider.GetUtcNow().Add(identityLifetime)
             };
             _identities[credentialHash] = renewedIdentity;
             return renewedIdentity;

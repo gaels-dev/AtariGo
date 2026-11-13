@@ -8,7 +8,7 @@ namespace AtariGo.Server.Application.Sessions;
 
 public sealed class SessionService : ISessionService
 {
-    private static readonly TimeSpan s_sessionIdleLifetime =
+    private static readonly TimeSpan sessionIdleLifetime =
         TimeSpan.FromHours(1);
 
     private readonly AtariGoDbContext _dbContext;
@@ -157,7 +157,7 @@ public sealed class SessionService : ISessionService
     private void ExtendSession(Session session, DateTime now)
     {
         session.LastActivityAt = now;
-        session.ExpiresAt = now.Add(s_sessionIdleLifetime);
+        session.ExpiresAt = now.Add(sessionIdleLifetime);
     }
 
     private async Task<IReadOnlyList<FriendPresenceEntry>> FindFriendsAsync(

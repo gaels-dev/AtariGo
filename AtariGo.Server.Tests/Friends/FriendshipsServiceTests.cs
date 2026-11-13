@@ -1,9 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using AtariGo.Contracts;
-using AtariGo.Server.Application.Friends;
 using AtariGo.Server.Application.Friendships;
 using AtariGo.Server.Application.Sessions;
 using AtariGo.Server.Application.Social;

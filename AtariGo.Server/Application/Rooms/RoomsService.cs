@@ -14,9 +14,9 @@ public sealed class RoomsService : IRoomsService
     private const int InvitationLifetimeMinutes = 2;
     private const int RoomLifetimeHours = 1;
 
-    private static readonly TimeSpan s_roomLifetime = TimeSpan.FromHours(RoomLifetimeHours);
+    private static readonly TimeSpan roomLifetime = TimeSpan.FromHours(RoomLifetimeHours);
 
-    private static readonly TimeSpan s_invitationLifetime =
+    private static readonly TimeSpan invitationLifetime =
         TimeSpan.FromMinutes(InvitationLifetimeMinutes);
 
     private readonly object _roomLock = new object();
@@ -68,7 +68,7 @@ public sealed class RoomsService : IRoomsService
             {
                 Host = host
             };
-            var entry = new RoomEntry(room, _timeProvider.GetUtcNow().Add(s_roomLifetime));
+            var entry = new RoomEntry(room, _timeProvider.GetUtcNow().Add(roomLifetime));
             _rooms.Add(roomId, entry);
             try
             {
@@ -169,7 +169,7 @@ public sealed class RoomsService : IRoomsService
                 return new RoomInvitationResult(RoomInvitationOperationStatus.RecipientOffline);
             }
 
-            DateTimeOffset expiresAt = _timeProvider.GetUtcNow().Add(s_invitationLifetime);
+            DateTimeOffset expiresAt = _timeProvider.GetUtcNow().Add(invitationLifetime);
             if (expiresAt > room.ExpiresAt)
             {
                 expiresAt = room.ExpiresAt;

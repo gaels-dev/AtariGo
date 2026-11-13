@@ -1,8 +1,5 @@
-using System;
 using System.Diagnostics;
 using System.Globalization;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Windows.Input;
 using System.Windows.Threading;
 
@@ -18,7 +15,7 @@ namespace AtariGo.Client.ViewModels;
 
 public sealed class SearchingOpponentViewModel : ViewModelBase, IDisposable
 {
-    private static readonly TimeSpan s_countdownRefreshInterval =
+    private static readonly TimeSpan countdownRefreshInterval =
         TimeSpan.FromSeconds(1);
 
     private readonly INavigationService _navigationService;
@@ -206,7 +203,7 @@ public sealed class SearchingOpponentViewModel : ViewModelBase, IDisposable
             countdown.CountdownEndsAtUnixMilliseconds);
         DispatcherTimer countdownTimer = new DispatcherTimer
         {
-            Interval = s_countdownRefreshInterval
+            Interval = countdownRefreshInterval
         };
         countdownTimer.Tick += OnCountdownTimerTick;
         _countdownTimer = countdownTimer;

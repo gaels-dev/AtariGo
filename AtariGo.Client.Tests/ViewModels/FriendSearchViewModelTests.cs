@@ -1,7 +1,5 @@
 using System.Reflection;
-using System.Threading.Tasks;
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using AtariGo.Client.Services;
 using AtariGo.Client.Tests.Services;

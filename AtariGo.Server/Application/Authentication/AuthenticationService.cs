@@ -9,7 +9,7 @@ namespace AtariGo.Server.Application.Authentication;
 
 public sealed class AuthenticationService : IAuthenticationService
 {
-    private static readonly TimeSpan s_sessionLifetime = TimeSpan.FromHours(1);
+    private static readonly TimeSpan sessionLifetime = TimeSpan.FromHours(1);
     private readonly AtariGoDbContext _dbContext;
     private readonly IPasswordHasher<User> _passwordHasher;
     private readonly ISessionTokenProvider _sessionTokenProvider;
@@ -141,7 +141,7 @@ public sealed class AuthenticationService : IAuthenticationService
             SessionTokenHash = token.Hash,
             StartedAt = now,
             LastActivityAt = now,
-            ExpiresAt = now.Add(s_sessionLifetime),
+            ExpiresAt = now.Add(sessionLifetime),
             State = DatabaseValues.SessionStates.Active
         });
 

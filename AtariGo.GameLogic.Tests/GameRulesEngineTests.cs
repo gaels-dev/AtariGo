@@ -1,4 +1,3 @@
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using AtariGo.GameLogic.Actions;
 using AtariGo.GameLogic.Models;

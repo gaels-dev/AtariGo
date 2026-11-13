@@ -1,8 +1,5 @@
-using System;
 using System.Diagnostics;
 using System.Globalization;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Windows.Input;
 
 using Grpc.Core;
@@ -18,7 +15,7 @@ namespace AtariGo.Client.ViewModels
 {
     public class LoginViewModel : ViewModelBase, IDisposable
     {
-        private static readonly TimeSpan s_loginSuccessMessageDelay =
+        private static readonly TimeSpan loginSuccessMessageDelay =
             TimeSpan.FromSeconds(1);
 
         private readonly INavigationService _navigationService;
@@ -267,7 +264,7 @@ namespace AtariGo.Client.ViewModels
 
             if (response.Result == LoginResult.Success)
             {
-                await Task.Delay(s_loginSuccessMessageDelay, cancellationToken);
+                await Task.Delay(loginSuccessMessageDelay, cancellationToken);
                 cancellationToken.ThrowIfCancellationRequested();
                 _navigationService.NavigateToMainWindow(new ClientSessionContext
                 {

@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using AtariGo.Server.Application.Friends;
 using AtariGo.Server.Application.Sessions;

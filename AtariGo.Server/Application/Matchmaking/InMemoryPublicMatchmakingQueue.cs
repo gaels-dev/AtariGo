@@ -5,7 +5,7 @@ namespace AtariGo.Server.Application.Matchmaking;
 
 public sealed class InMemoryPublicMatchmakingQueue
 {
-    private static readonly TimeSpan s_countdownDuration =
+    private static readonly TimeSpan countdownDuration =
         TimeSpan.FromSeconds(PublicGameRules.CountdownSeconds);
 
     private readonly object _sync = new object();
@@ -127,7 +127,7 @@ public sealed class InMemoryPublicMatchmakingQueue
         whiteTicket.QueueNode = null;
 
         DateTimeOffset countdownEndsAt = _timeProvider.GetUtcNow()
-            .Add(s_countdownDuration);
+            .Add(countdownDuration);
         var match = new PublicMatchState(
             Guid.NewGuid(), blackTicket, whiteTicket, countdownEndsAt);
         blackTicket.Match = match;

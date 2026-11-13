@@ -1,4 +1,3 @@
-using System;
 
 namespace AtariGo.Server.Application.Games;
 

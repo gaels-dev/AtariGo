@@ -6,9 +6,9 @@ namespace AtariGo.Client.Services;
 
 public sealed class GrpcSessionClient : ISessionClient
 {
-    private static readonly TimeSpan s_initialReconnectDelay =
+    private static readonly TimeSpan initialReconnectDelay =
         TimeSpan.FromSeconds(1);
-    private static readonly TimeSpan s_maximumReconnectDelay =
+    private static readonly TimeSpan maximumReconnectDelay =
         TimeSpan.FromSeconds(5);
     private const int ReconnectDelayMultiplier = 2;
 
@@ -34,7 +34,7 @@ public sealed class GrpcSessionClient : ISessionClient
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(callbacks);
-        TimeSpan reconnectDelay = s_initialReconnectDelay;
+        TimeSpan reconnectDelay = initialReconnectDelay;
 
         try
         {
@@ -134,8 +134,8 @@ public sealed class GrpcSessionClient : ISessionClient
     {
         TimeSpan nextDelay = TimeSpan.FromTicks(
             currentDelay.Ticks * ReconnectDelayMultiplier);
-        return nextDelay <= s_maximumReconnectDelay
+        return nextDelay <= maximumReconnectDelay
             ? nextDelay
-            : s_maximumReconnectDelay;
+            : maximumReconnectDelay;
     }
 }

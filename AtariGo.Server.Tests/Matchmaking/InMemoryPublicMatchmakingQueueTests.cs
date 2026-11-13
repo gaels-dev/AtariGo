@@ -1,4 +1,3 @@
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using AtariGo.Contracts;
 using AtariGo.Server.Application.Matchmaking;

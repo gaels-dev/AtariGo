@@ -2,7 +2,6 @@ using System.Globalization;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using AtariGo.Client.Models;
 using AtariGo.Client.Properties;
@@ -18,7 +17,7 @@ namespace AtariGo.Client.Tests.ViewModels;
 public sealed class SearchingOpponentViewModelTests
 {
     private const int TestTimeoutSeconds = 5;
-    private static readonly TimeSpan s_testCountdownDuration = TimeSpan.FromMinutes(1);
+    private static readonly TimeSpan testCountdownDuration = TimeSpan.FromMinutes(1);
 
     [TestMethod]
     public async Task SearchTask_CancelledMatch_ContinuesReadingStreamImmediately()
@@ -26,7 +25,7 @@ public sealed class SearchingOpponentViewModelTests
         INavigationService navigation =
             DispatchProxy.Create<INavigationService, RecordingNavigationProxy>();
         CancelledMatchmakingClient matchmakingClient = new CancelledMatchmakingClient(
-            s_testCountdownDuration);
+            testCountdownDuration);
         using SearchingOpponentViewModel viewModel = new SearchingOpponentViewModel(
             navigation,
             matchmakingClient,

@@ -1,11 +1,6 @@
-using System;
-using System.Linq;
 
-using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 
 using AtariGo.GameLogic.Rules;
 using AtariGo.Server.Application.Authentication;
