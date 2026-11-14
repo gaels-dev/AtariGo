@@ -11,16 +11,21 @@
              Background="#F0EBE3">
 
     <UserControl.Resources>
-        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="../Models/GameBoardVisuals.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
 
-        <Style x:Key="ActionButtonStyle"
-               TargetType="Button"
-               BasedOn="{StaticResource RoundedButtonStyle}">
-            <Setter Property="Height" Value="36"/>
-            <Setter Property="Padding" Value="16,0"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="FontSize" Value="13"/>
-        </Style>
+            <Style x:Key="ActionButtonStyle"
+                   TargetType="Button"
+                   BasedOn="{StaticResource RoundedButtonStyle}">
+                <Setter Property="Height" Value="36"/>
+                <Setter Property="Padding" Value="16,0"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+                <Setter Property="FontSize" Value="13"/>
+            </Style>
+        </ResourceDictionary>
     </UserControl.Resources>
 
     <Grid>
@@ -59,24 +64,22 @@
                         Padding="14,6"
                         Margin="0,0,12,0">
                     <StackPanel Orientation="Horizontal">
-                        <Ellipse Width="16" Height="16"
-                                 Margin="0,0,8,0"
-                                 VerticalAlignment="Center">
-                            <Ellipse.Style>
-                                <Style TargetType="Ellipse">
-                                    <Setter Property="Fill" Value="#1A1A1A"/>
-                                    <Setter Property="Stroke" Value="#333333"/>
-                                    <Setter Property="StrokeThickness" Value="1.5"/>
+                        <Image Width="20" Height="22" Margin="0,0,8,0"
+                               VerticalAlignment="Center" RenderOptions.EdgeMode="Aliased">
+                            <Image.Style>
+                                <Style TargetType="Image">
+                                    <Setter Property="Source"
+                                            Value="{StaticResource BlackPixelStone}"/>
                                     <Style.Triggers>
-                                        <DataTrigger
-                                            Binding="{Binding MyColor}"
-                                            Value="{x:Static models:StoneColor.White}">
-                                            <Setter Property="Fill" Value="White"/>
+                                        <DataTrigger Binding="{Binding MyColor}"
+                                                     Value="{x:Static models:StoneColor.White}">
+                                            <Setter Property="Source"
+                                                    Value="{StaticResource WhitePixelStone}"/>
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
-                            </Ellipse.Style>
-                        </Ellipse>
+                            </Image.Style>
+                        </Image>
                         <TextBlock VerticalAlignment="Center"
                                    FontWeight="Bold"
                                    FontSize="13"
@@ -128,24 +131,22 @@
                         Background="White"
                         Padding="14,6">
                     <StackPanel Orientation="Horizontal">
-                        <Ellipse Width="16" Height="16"
-                                 Margin="0,0,8,0"
-                                 VerticalAlignment="Center">
-                            <Ellipse.Style>
-                                <Style TargetType="Ellipse">
-                                    <Setter Property="Fill" Value="White"/>
-                                    <Setter Property="Stroke" Value="#333333"/>
-                                    <Setter Property="StrokeThickness" Value="1.5"/>
+                        <Image Width="20" Height="22" Margin="0,0,8,0"
+                               VerticalAlignment="Center" RenderOptions.EdgeMode="Aliased">
+                            <Image.Style>
+                                <Style TargetType="Image">
+                                    <Setter Property="Source"
+                                            Value="{StaticResource WhitePixelStone}"/>
                                     <Style.Triggers>
-                                        <DataTrigger
-                                            Binding="{Binding MyColor}"
-                                            Value="{x:Static models:StoneColor.White}">
-                                            <Setter Property="Fill" Value="#1A1A1A"/>
+                                        <DataTrigger Binding="{Binding MyColor}"
+                                                     Value="{x:Static models:StoneColor.White}">
+                                            <Setter Property="Source"
+                                                    Value="{StaticResource BlackPixelStone}"/>
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
-                            </Ellipse.Style>
-                        </Ellipse>
+                            </Image.Style>
+                        </Image>
                         <TextBlock VerticalAlignment="Center"
                                    FontWeight="Bold"
                                    FontSize="13"
@@ -176,20 +177,32 @@
             </Grid.RowDefinitions>
 
             <Viewbox Grid.Row="0" Stretch="Uniform">
-                <Border Background="#E5A65D"
-                        BorderBrush="#2C2A29"
-                        BorderThickness="3"
-                        CornerRadius="4"
-                        Padding="24"
-                        Width="500"
-                        Height="500">
-                    <Border.Effect>
-                        <DropShadowEffect BlurRadius="15"
-                                          ShadowDepth="5"
-                                          Opacity="0.3"
-                                          Color="#2C2A29"/>
-                    </Border.Effect>
-                    <ItemsControl ItemsSource="{Binding Cells}" IsEnabled="{Binding IsMyTurn}">
+                <Grid Width="520" Height="540" UseLayoutRounding="True"
+                      SnapsToDevicePixels="True">
+                    <Border Width="500" Height="518" Background="#3F291C"
+                            HorizontalAlignment="Left" VerticalAlignment="Top"
+                            Margin="8,12,0,0" IsHitTestVisible="False">
+                        <Border.Effect>
+                            <DropShadowEffect BlurRadius="18" ShadowDepth="5"
+                                              Opacity="0.28" Color="#322319"/>
+                        </Border.Effect>
+                    </Border>
+                    <Border Width="500" Height="518" Background="#75502B"
+                            BorderBrush="#51351D" BorderThickness="2"
+                            HorizontalAlignment="Left" VerticalAlignment="Top"
+                            IsHitTestVisible="False"/>
+                    <Rectangle Width="496" Height="4" Fill="#AE7B40"
+                               HorizontalAlignment="Left" VerticalAlignment="Top"
+                               Margin="2,501,0,0" IsHitTestVisible="False"/>
+                    <Rectangle Width="496" Height="3" Fill="#5F3E22"
+                               HorizontalAlignment="Left" VerticalAlignment="Top"
+                               Margin="2,513,0,0" IsHitTestVisible="False"/>
+                    <Image Source="{StaticResource WoodenBoardSurface}" Width="500" Height="500"
+                           HorizontalAlignment="Left" VerticalAlignment="Top"
+                           RenderOptions.EdgeMode="Aliased" IsHitTestVisible="False"/>
+                    <ItemsControl ItemsSource="{Binding Cells}" IsEnabled="{Binding IsMyTurn}"
+                                  Width="450" Height="450" Margin="25,25,0,0"
+                                  HorizontalAlignment="Left" VerticalAlignment="Top">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
                                 <UniformGrid Rows="9" Columns="9"/>
@@ -197,67 +210,102 @@
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate DataType="{x:Type vm:BoardCellViewModel}">
-                                <Grid Background="Transparent">
-                                    <Rectangle Height="2"
-                                               Fill="#2C2A29"
-                                               HorizontalAlignment="Stretch"
-                                               VerticalAlignment="Center"/>
-                                    <Rectangle Width="2"
-                                               Fill="#2C2A29"
-                                               HorizontalAlignment="Center"
-                                               VerticalAlignment="Stretch"/>
-
-                                    <Ellipse Width="42" Height="42"
-                                             Panel.ZIndex="2"
-                                             HorizontalAlignment="Center"
-                                             VerticalAlignment="Center">
-                                        <Ellipse.Style>
-                                            <Style TargetType="Ellipse">
+                                <Grid x:Name="CellSurface" Background="Transparent">
+                                    <Image Width="48" Height="50" Opacity="0.5"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                                           RenderOptions.EdgeMode="Aliased"
+                                           IsHitTestVisible="False" Panel.ZIndex="1">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                <Setter Property="Source"
+                                                    Value="{StaticResource BlackPixelStone}"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Value="{x:Static
+                                                        models:StoneColor.White}">
+                                                        <DataTrigger.Binding>
+                                                            <Binding Path="DataContext.MyColor"
+                                                                RelativeSource="{RelativeSource
+                                                                    AncestorType=ItemsControl}"/>
+                                                        </DataTrigger.Binding>
+                                                        <Setter Property="Source"
+                                                            Value="{StaticResource
+                                                                WhitePixelStone}"/>
+                                                    </DataTrigger>
+                                                    <MultiDataTrigger>
+                                                        <MultiDataTrigger.Conditions>
+                                                            <Condition Binding="{Binding Stone}"
+                                                                Value="{x:Static
+                                                                    models:StoneColor.None}"/>
+                                                            <Condition Value="True"
+                                                                Binding="{Binding IsMouseOver,
+                                                                    ElementName=CellSurface}"/>
+                                                            <Condition Value="True"
+                                                                Binding="{Binding IsEnabled,
+                                                                    ElementName=CellSurface}"/>
+                                                        </MultiDataTrigger.Conditions>
+                                                        <Setter Property="Visibility"
+                                                                Value="Visible"/>
+                                                    </MultiDataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                    <Image Width="48" Height="50" Panel.ZIndex="2"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                                           RenderOptions.EdgeMode="Aliased"
+                                           IsHitTestVisible="False">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
                                                 <Setter Property="Visibility" Value="Collapsed"/>
                                                 <Style.Triggers>
-                                                    <DataTrigger
-                                                        Binding="{Binding Stone}"
+                                                    <DataTrigger Binding="{Binding Stone}"
                                                         Value="{x:Static models:StoneColor.Black}">
                                                         <Setter Property="Visibility"
                                                                 Value="Visible"/>
-                                                        <Setter Property="Fill" Value="#1A1A1A"/>
-                                                        <Setter Property="Stroke" Value="#000000"/>
-                                                        <Setter Property="StrokeThickness"
-                                                                Value="1"/>
+                                                        <Setter Property="Source"
+                                                            Value="{StaticResource
+                                                                BlackPixelStone}"/>
                                                     </DataTrigger>
-                                                    <DataTrigger
-                                                        Binding="{Binding Stone}"
+                                                    <DataTrigger Binding="{Binding Stone}"
                                                         Value="{x:Static models:StoneColor.White}">
                                                         <Setter Property="Visibility"
                                                                 Value="Visible"/>
-                                                        <Setter Property="Fill" Value="White"/>
-                                                        <Setter Property="Stroke" Value="#888888"/>
-                                                        <Setter Property="StrokeThickness"
-                                                                Value="1.5"/>
+                                                        <Setter Property="Source"
+                                                            Value="{StaticResource
+                                                                WhitePixelStone}"/>
                                                     </DataTrigger>
                                                 </Style.Triggers>
                                             </Style>
-                                        </Ellipse.Style>
-                                    </Ellipse>
-
-                                    <Ellipse Width="9" Height="9" Fill="#D24B40" Stroke="White"
-                                             StrokeThickness="1" Panel.ZIndex="2"
-                                             IsHitTestVisible="False"
-                                             Visibility="{Binding IsLastMove,
-                                                 Converter={StaticResource BooleanToVisibilityConverter}}"/>
-                                    <Button Command="{Binding DataContext.PlaceStoneCommand,
-                                                         RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                            CommandParameter="{Binding}"
-                                            Background="Transparent"
-                                            BorderThickness="0"
-                                            Panel.ZIndex="3"
-                                            Opacity="0"
-                                            Cursor="Hand"/>
+                                        </Image.Style>
+                                    </Image>
+                                    <Border Width="6" Height="6" Background="#C35043"
+                                            BorderBrush="#FFF4DF" BorderThickness="1"
+                                            HorizontalAlignment="Center" VerticalAlignment="Center"
+                                            Margin="0,0,0,4" Panel.ZIndex="2"
+                                            IsHitTestVisible="False">
+                                        <Border.Visibility>
+                                            <Binding Path="IsLastMove"
+                                                Converter="{StaticResource
+                                                    BooleanToVisibilityConverter}"/>
+                                        </Border.Visibility>
+                                    </Border>
+                                    <Button CommandParameter="{Binding}"
+                                            Background="Transparent" BorderThickness="0"
+                                            Panel.ZIndex="3" Opacity="0" Cursor="Hand">
+                                        <Button.Command>
+                                            <Binding Path="DataContext.PlaceStoneCommand">
+                                                <Binding.RelativeSource>
+                                                    <RelativeSource AncestorType="ItemsControl"/>
+                                                </Binding.RelativeSource>
+                                            </Binding>
+                                        </Button.Command>
+                                    </Button>
                                 </Grid>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
-                </Border>
+                </Grid>
             </Viewbox>
 
             <StackPanel Grid.Row="1" Margin="0,12,0,0">

@@ -5,7 +5,6 @@ namespace AtariGo.Server.Application.Games;
 
 public sealed class GameCoordinator : IDisposable
 {
-    // Fixed stripes bound memory while serializing every operation for a given game.
     private const int GateCount = 128;
     private const int MaximumActionIdLength = 64;
     private readonly SemaphoreSlim[] _gates = Enumerable.Range(0, GateCount)
@@ -168,7 +167,6 @@ public sealed class GameCoordinator : IDisposable
     private GameActionResult EvaluateAction(GameActionContext context,
         GameActionProcessor processor)
     {
-        // Decide after all reads without awaiting between the timestamp and rules.
         context.Now = _timeProvider.GetUtcNow().UtcDateTime;
         GameRuntimeState current = context.Runtime;
         context.Runtime = GameClock.Advance(current, context.Now,
@@ -230,7 +228,6 @@ public sealed class GameCoordinator : IDisposable
         {
             game.FinishedAt = _timeProvider.GetUtcNow().UtcDateTime;
         }
-        // Once accepted for processing, persist independently of a lost client connection.
         await store.SaveAsync(game, runtime, CancellationToken.None);
         _registry.PublishProgress(game.GameId, runtime, game.StateVersion);
     }
