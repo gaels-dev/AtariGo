@@ -9,6 +9,12 @@ namespace AtariGo.Client.Services;
 public sealed class GrpcGameSessionStream : IGameSessionStream
 {
     private readonly SemaphoreSlim _writeGate = new SemaphoreSlim(1, 1);
+    private readonly object _lifetimeSync = new object();
+    private readonly TaskCompletionSource _disposalCompletion = new TaskCompletionSource(
+        TaskCreationOptions.RunContinuationsAsynchronously);
+    private int _pendingSends;
+    private bool _isDisposed;
+    private bool _isTransportClosed;
     private readonly AsyncDuplexStreamingCall<GameSessionClientEvent,
         GameSessionServerEvent> _call;
 
@@ -45,20 +51,80 @@ public sealed class GrpcGameSessionStream : IGameSessionStream
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(clientEvent);
-        await _writeGate.WaitAsync(cancellationToken);
+        await EnterWriteAsync(cancellationToken);
         try
         {
+            lock (_lifetimeSync)
+            {
+                ObjectDisposedException.ThrowIf(_isDisposed, this);
+            }
             await _call.RequestStream.WriteAsync(clientEvent, cancellationToken);
         }
         finally
         {
             _writeGate.Release();
+            FinishSend();
         }
     }
 
     public ValueTask DisposeAsync()
     {
-        _call.Dispose();
-        return ValueTask.CompletedTask;
+        lock (_lifetimeSync)
+        {
+            if (_isDisposed)
+            {
+                return new ValueTask(_disposalCompletion.Task);
+            }
+            _isDisposed = true;
+        }
+        try
+        {
+            _call.Dispose();
+        }
+        finally
+        {
+            lock (_lifetimeSync)
+            {
+                _isTransportClosed = true;
+                TryFinishDisposal();
+            }
+        }
+        return new ValueTask(_disposalCompletion.Task);
+    }
+
+    private async Task EnterWriteAsync(CancellationToken cancellationToken)
+    {
+        lock (_lifetimeSync)
+        {
+            ObjectDisposedException.ThrowIf(_isDisposed, this);
+            _pendingSends++;
+        }
+        try
+        {
+            await _writeGate.WaitAsync(cancellationToken);
+        }
+        catch
+        {
+            FinishSend();
+            throw;
+        }
+    }
+
+    private void FinishSend()
+    {
+        lock (_lifetimeSync)
+        {
+            _pendingSends--;
+            TryFinishDisposal();
+        }
+    }
+
+    private void TryFinishDisposal()
+    {
+        if (_isTransportClosed && _pendingSends == 0 && !_disposalCompletion.Task.IsCompleted)
+        {
+            _writeGate.Dispose();
+            _disposalCompletion.SetResult();
+        }
     }
 }

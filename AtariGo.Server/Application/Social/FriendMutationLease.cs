@@ -2,15 +2,15 @@ namespace AtariGo.Server.Application.Social;
 
 public sealed class FriendMutationLease : IDisposable
 {
-    private SemaphoreSlim? _gate;
+    private FriendMutationCoordinator? _owner;
 
-    internal FriendMutationLease(SemaphoreSlim gate)
+    internal FriendMutationLease(FriendMutationCoordinator owner)
     {
-        _gate = gate;
+        _owner = owner;
     }
 
     public void Dispose()
     {
-        Interlocked.Exchange(ref _gate, null)?.Release();
+        Interlocked.Exchange(ref _owner, null)?.Exit();
     }
 }

@@ -14,6 +14,13 @@ excepciones, comentarios y pruebas. No los sustituyas por tus convenciones prede
 Las instrucciones explícitas del usuario tienen precedencia; explica las contradicciones
 relevantes y no inventes restricciones o excepciones silenciosas.
 
+## Comentarios en código
+
+Está prohibido añadir comentarios al código fuera de los proyectos de pruebas.
+Si un comentario específico resulta importante, solicitar autorización explícita al usuario
+antes de añadirlo. Los comentarios de pruebas, incluidos Arrange, Act y Assert, sí están
+permitidos y siguen el estándar. Esta regla no exige eliminar los comentarios existentes.
+
 ## Explicaciones al responsable del proyecto
 
 Explica en español qué cambiaste, por qué y cómo funciona. Usa lenguaje claro, enlaces a los

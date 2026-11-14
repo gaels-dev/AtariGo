@@ -3,7 +3,7 @@ using AtariGo.Server.Data.Entities;
 
 namespace AtariGo.Server.Application.Games;
 
-public sealed class GameCoordinator : IDisposable
+public sealed class GameCoordinator : IDisposable, IAsyncDisposable
 {
     private const int GateCount = 128;
     private const int MaximumActionIdLength = 64;
@@ -12,6 +12,11 @@ public sealed class GameCoordinator : IDisposable
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly IGameSessionRegistry _registry;
     private readonly TimeProvider _timeProvider;
+    private readonly object _lifetimeSync = new object();
+    private readonly TaskCompletionSource _disposalCompletion = new TaskCompletionSource(
+        TaskCreationOptions.RunContinuationsAsynchronously);
+    private int _pendingOperations;
+    private bool _isDisposed;
 
     public GameCoordinator(IServiceScopeFactory scopeFactory,
         IGameSessionRegistry registry, TimeProvider timeProvider)
@@ -25,7 +30,7 @@ public sealed class GameCoordinator : IDisposable
         CancellationToken cancellationToken)
     {
         SemaphoreSlim gate = GetGate(definition.GameId);
-        await gate.WaitAsync(cancellationToken);
+        await EnterAsync(gate, cancellationToken);
         try
         {
             using IServiceScope scope = _scopeFactory.CreateScope();
@@ -51,7 +56,7 @@ public sealed class GameCoordinator : IDisposable
         }
         finally
         {
-            gate.Release();
+            Exit(gate);
         }
     }
 
@@ -59,7 +64,7 @@ public sealed class GameCoordinator : IDisposable
         GameActionCommand command, CancellationToken cancellationToken)
     {
         SemaphoreSlim gate = GetGate(connection.GameId);
-        await gate.WaitAsync(cancellationToken);
+        await EnterAsync(gate, cancellationToken);
         try
         {
             if (!_registry.IsCurrent(connection))
@@ -72,14 +77,14 @@ public sealed class GameCoordinator : IDisposable
         }
         finally
         {
-            gate.Release();
+            Exit(gate);
         }
     }
 
     public async Task AdvanceAsync(long gameId, CancellationToken cancellationToken)
     {
         SemaphoreSlim gate = GetGate(gameId);
-        await gate.WaitAsync(cancellationToken);
+        await EnterAsync(gate, cancellationToken);
         try
         {
             using IServiceScope scope = _scopeFactory.CreateScope();
@@ -90,7 +95,7 @@ public sealed class GameCoordinator : IDisposable
         }
         finally
         {
-            gate.Release();
+            Exit(gate);
         }
     }
 
@@ -107,9 +112,61 @@ public sealed class GameCoordinator : IDisposable
 
     public void Dispose()
     {
-        foreach (SemaphoreSlim gate in _gates)
+        lock (_lifetimeSync)
         {
-            gate.Dispose();
+            _isDisposed = true;
+            TryFinishDisposal();
+        }
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        Dispose();
+        return new ValueTask(_disposalCompletion.Task);
+    }
+
+    private async Task EnterAsync(SemaphoreSlim gate, CancellationToken cancellationToken)
+    {
+        lock (_lifetimeSync)
+        {
+            ObjectDisposedException.ThrowIf(_isDisposed, this);
+            _pendingOperations++;
+        }
+        try
+        {
+            await gate.WaitAsync(cancellationToken);
+        }
+        catch
+        {
+            FinishOperation();
+            throw;
+        }
+    }
+
+    private void Exit(SemaphoreSlim gate)
+    {
+        gate.Release();
+        FinishOperation();
+    }
+
+    private void FinishOperation()
+    {
+        lock (_lifetimeSync)
+        {
+            _pendingOperations--;
+            TryFinishDisposal();
+        }
+    }
+
+    private void TryFinishDisposal()
+    {
+        if (_isDisposed && _pendingOperations == 0 && !_disposalCompletion.Task.IsCompleted)
+        {
+            foreach (SemaphoreSlim gate in _gates)
+            {
+                gate.Dispose();
+            }
+            _disposalCompletion.SetResult();
         }
     }
 

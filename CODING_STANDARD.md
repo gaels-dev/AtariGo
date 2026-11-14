@@ -4,9 +4,11 @@ Este documento es la referencia vigente para escribir y revisar el código del p
 Aplica al trabajo de los integrantes del equipo y de los asistentes de programación.
 Su objetivo es mantener código consistente, comprensible y fácil de mantener.
 
-- Versión: 1.2 en Markdown.
-- Última revisión: 2026-11-02.
+- Versión: 1.4 consolidada en Markdown.
+- Última revisión: 2026-11-14.
 - Documento de origen: `SOFTWARE CODING AND DEVELOPMENT STANDARD.docx`.
+- Consolidación: versión Markdown 1.2 del repositorio y PDF `EstandarV1.4.pdf`,
+  revisión 2026-11-06, conservando las decisiones posteriores adoptadas en el proyecto.
 - Autores del documento de origen: Morales Baizabal Emiliano y Amores Rivas Gael Sameí.
 - Contexto académico: Tecnologías para la Construcción de Software, Ingeniería de Software, equipo 2.
 
@@ -61,7 +63,12 @@ Su objetivo es mantener código consistente, comprensible y fácil de mantener.
   - [4.4 Responsabilidades del cliente WPF](#seccion-4-4)
   - [4.5 Configuración de persistencia](#seccion-4-5)
   - [4.6 Autoridad del servidor y concurrencia](#seccion-4-6)
+  - [4.7 Contratos y comunicación gRPC](#seccion-4-7)
+  - [4.8 Semáforos asíncronos y escritura de streams](#seccion-4-8)
 - [5 Prácticas Específicas de Videojuegos](#seccion-5)
+  - [5.1 Estado de la partida](#seccion-5-1)
+  - [5.2 Consistencia entre jugadores](#seccion-5-2)
+  - [5.3 Pruebas de reglas del juego](#seccion-5-3)
 - [6 Manejo de Errores y Excepciones](#seccion-6)
   - [6.1 Manejo General de Excepciones](#seccion-6-1)
   - [6.2 Tipos de Excepciones](#seccion-6-2)
@@ -73,6 +80,7 @@ Su objetivo es mantener código consistente, comprensible y fácil de mantener.
   - [6.8 Prácticas Prohibidas de Manejo de Excepciones](#seccion-6-8)
   - [6.9 Manejo y Retorno de Valores Nulos](#seccion-6-9)
   - [6.10 Uso de Bitácoras y Logs](#seccion-6-10)
+  - [6.11 Cláusulas de guarda y validación de precondiciones](#seccion-6-11)
 - [7 Comentarios](#seccion-7)
   - [7.1 Principios para la Documentación del Código](#seccion-7-1)
   - [7.2 Comentarios de Una Línea](#seccion-7-2)
@@ -91,10 +99,17 @@ Su objetivo es mantener código consistente, comprensible y fácil de mantener.
   - [9.3 Pruebas de Integración](#seccion-9-3)
   - [9.4 Estructura Arrange-Act-Assert](#seccion-9-4)
   - [9.5 Categorías de pruebas](#seccion-9-5)
+  - [9.6 Criterios y casos de prueba](#seccion-9-6)
 - [10 Prefijos Permitidos y Abreviaciones](#seccion-10)
 - [11 Declaración de Uso de I.A](#seccion-11)
 - [12 Referencias](#seccion-12)
 - [13 Mantenimiento del estándar y trabajo con Codex](#seccion-13)
+  - [13.4 Pendientes de evolución del estándar](#seccion-13-4)
+- [14 Seguridad y protección de información](#seccion-14)
+  - [14.1 Configuración y secretos](#seccion-14-1)
+  - [14.2 Contraseñas y tokens](#seccion-14-2)
+  - [14.3 Transporte y certificados](#seccion-14-3)
+  - [14.4 Validación y mensajes al usuario](#seccion-14-4)
 
 <a id="seccion-1"></a>
 
@@ -140,7 +155,8 @@ no se duplican como listas manuales dentro del estándar.
 
 ### 1.4 Idioma y Localización
 
-El código y los comentarios estarán escritos completamente en inglés.
+El código fuente, los identificadores y los comentarios estarán escritos en inglés.
+La documentación del proyecto podrá escribirse en español.
 
 El sistema permitirá que el usuario pueda elegir el idioma de los mensajes al jugador y la interfaz de usuario entre las siguientes opciones:
 
@@ -154,6 +170,33 @@ El sistema solo requerirá del huso horario para generar logs y reportes de chat
 
 Los textos de interfaz pertenecen a recursos localizados. No se traducen nombres de tipos,
 propiedades o claves de recursos para cambiar el idioma mostrado al jugador.
+
+Los textos visibles para el jugador deberán almacenarse en los recursos localizados del
+cliente. No se deberán escribir directamente en las vistas, los ViewModels ni los servicios
+los mensajes que deban presentarse en varios idiomas.
+
+La cultura inicial de la interfaz se determinará a partir de la cultura configurada en el
+sistema operativo. El cliente utilizará los recursos disponibles para esa cultura. Si no
+existe una traducción específica, se utilizarán los recursos neutrales `Resources.resx`.
+
+Cuando se cambie el idioma durante la ejecución, ese cambio se aplicará a la sesión actual
+y no se guardará en la base de datos mientras el proyecto no defina expresamente una
+preferencia persistente.
+
+Los nombres de operaciones tampoco se traducirán. Las claves de recursos deberán
+conservarse entre las culturas soportadas; solo se traducirán sus valores.
+
+**Correcto**
+
+```csharp
+string message = Resources.Login_Err_IncorrectPassword;
+```
+
+**Incorrecto**
+
+```csharp
+string message = "El usuario o la contraseña son incorrectos.";
+```
 
 El desplazamiento UTC-6 anterior se aplica a la presentación de logs y reportes de chat.
 Los instantes de sesiones, expiraciones y persistencia se calculan en UTC. No se compara
@@ -1176,12 +1219,11 @@ Debe evitarse el uso de múltiples declaraciones return dentro de un método a m
 ```csharp
 public bool ValidateConnection(string token)
 {
-    bool isValid = false;
-    if (!string.IsNullOrEmpty(token))
+    if (string.IsNullOrEmpty(token))
     {
-        isValid = TokenService.Verify(token);
+        return false;
     }
-    return isValid;
+    return TokenService.Verify(token);
 }
 ```
 
@@ -1194,14 +1236,11 @@ public bool ValidateConnection(string token)
     {
         return false;
     }
-    else
+    if (TokenService.Verify(token))
     {
-        if (TokenService.Verify(token))
-        {
-            return true;
-        }
-        return false;
+        return true;
     }
+    return false;
 }
 ```
 
@@ -1209,6 +1248,10 @@ Una cláusula de guarda comprueba una precondición y termina antes del flujo pr
 pueden existir varias guardas consecutivas. No se fuerza una variable mutable ni anidamiento
 adicional solo para evitar esas salidas. Los retornos de una lambda o función local se
 evalúan dentro de esa función y no como salidas del método que la contiene.
+
+La cláusula de guarda debe comprobar una precondición al inicio del método y terminar el
+flujo cuando no se cumple. No se añadirán retornos dentro de ramas anidadas si una expresión
+de retorno sencilla mantiene claro el resultado.
 
 <a id="seccion-3-14"></a>
 
@@ -1362,6 +1405,59 @@ y descarte de respuestas tardías. La navegación libera ViewModels que implemen
 `IDisposable`. Los callbacks extensos se convierten en métodos con nombre. Los datos
 necesarios para una operación se agrupan por significado, no como una bolsa de servicios.
 
+Cada vista deberá tener un `DataContext` definido de forma clara. La vista presentará los
+datos mediante bindings y comandos; el ViewModel no buscará controles visuales ni modificará
+directamente sus propiedades.
+
+Las propiedades del ViewModel que cambien después de mostrarse la vista deberán notificar
+esos cambios mediante `INotifyPropertyChanged` o una clase base que implemente ese
+mecanismo. Las colecciones que cambien durante la ejecución deberán utilizar una colección
+observable cuando la vista necesite reflejar los cambios en sus elementos.
+
+Las acciones iniciadas por el usuario deberán enlazarse preferentemente a comandos. Los
+comandos síncronos se utilizarán para acciones breves que no realicen operaciones de entrada
+y salida. Para operaciones asíncronas se utilizarán comandos que permitan esperar la tarea,
+evitar ejecuciones simultáneas cuando corresponda y exponer su estado de ejecución.
+
+El code-behind se reservará para operaciones que dependan de características específicas
+de WPF y que no puedan expresarse razonablemente mediante bindings o comandos. La lógica de
+negocio, el acceso a datos y las llamadas de red no deberán implementarse en el code-behind.
+
+Las actualizaciones de propiedades enlazadas a la interfaz deberán realizarse en el hilo
+de interfaz de usuario. Cuando una operación asíncrona termine después de que la vista
+propietaria haya sido cerrada o reemplazada, el resultado no deberá actualizar esa vista.
+
+**Correcto**
+
+```csharp
+public ICommand SearchCommand { get; }
+
+public string SearchText
+{
+    get
+    {
+        return _searchText;
+    }
+    set
+    {
+        if (_searchText != value)
+        {
+            _searchText = value;
+            OnPropertyChanged();
+        }
+    }
+}
+```
+
+**Incorrecto**
+
+```csharp
+private void SearchButton_Click(object sender, RoutedEventArgs e)
+{
+    ResultsList.ItemsSource = Database.Search(SearchTextBox.Text);
+}
+```
+
 <a id="seccion-4-5"></a>
 
 ### 4.5 Configuración de persistencia
@@ -1369,6 +1465,43 @@ necesarios para una operación se agrupan por significado, no como una bolsa de 
 La configuración de EF Core se mantiene en clases `IEntityTypeConfiguration<T>` por entidad.
 Mover un mapeo exige comprobar que el modelo relacional conserve tablas, columnas, índices
 y relaciones. La organización de estos archivos no implica ejecutar migraciones.
+
+El acceso a SQL Server y a `DbContext` corresponderá al servidor. El cliente WPF no deberá
+incluir cadenas de conexión, credenciales ni acceso directo a la base de datos.
+
+Las consultas deberán seleccionar los datos que requiere la operación y evitar cargar
+entidades o relaciones que no sean necesarias. Se deberá elegir conscientemente si una
+consulta modifica entidades rastreadas o solo lee datos. Las operaciones de escritura
+deberán guardar los cambios en el límite correspondiente al caso de uso.
+
+Cuando una operación incluya varios cambios que deban considerarse una sola unidad, se
+deberá evaluar si requiere una transacción. Las transacciones no se añadirán por rutina a
+consultas independientes.
+
+La configuración del modelo deberá mantener las restricciones definidas para la base de
+datos, como claves, índices, relaciones, tamaños y restricciones de unicidad. Los cambios
+de esquema deberán acompañarse de un procedimiento reproducible de actualización. No se
+asumirá que modificar una entidad o su configuración actualiza automáticamente una base de
+datos existente.
+
+**Correcto**
+
+```csharp
+User? user = await dbContext.Users
+    .AsNoTracking()
+    .FirstOrDefaultAsync(
+        currentUser => currentUser.UserId == userId,
+        cancellationToken);
+```
+
+**Incorrecto**
+
+```csharp
+List<User> users = await dbContext.Users
+    .ToListAsync(cancellationToken);
+User? user = users.FirstOrDefault(
+    currentUser => currentUser.UserId == userId);
+```
 
 <a id="seccion-4-6"></a>
 
@@ -1391,13 +1524,283 @@ persistencia, se publica después de confirmarla en la base de datos.
 No se comparte una instancia de `DbContext` entre operaciones concurrentes. Las
 esperas de red se realizan fuera de la sección crítica que protege el estado en memoria.
 
+<a id="seccion-4-7"></a>
+
+### 4.7 Contratos y comunicación gRPC
+
+Los archivos `.proto` definirán el contrato de comunicación entre cliente y servidor. Los
+mensajes representarán los datos intercambiados y las operaciones representarán acciones o
+consultas claramente identificadas.
+
+Los contratos serán independientes de las clases internas de aplicación, del modelo de EF
+Core y de los ViewModels. Los servicios gRPC actuarán como adaptadores de transporte:
+recibirán el mensaje, invocarán la operación correspondiente y traducirán su respuesta al
+contrato gRPC.
+
+Los cambios a un contrato deberán considerar su compatibilidad con los clientes que todavía
+puedan utilizar versiones anteriores. No se reutilizarán números de campos Protobuf
+eliminados. Los campos que ya no se utilicen deberán reservarse cuando sea necesario
+mantener la compatibilidad.
+
+Los errores previstos deberán comunicarse mediante estados gRPC y mensajes controlados. No
+se enviarán al cliente mensajes internos de excepciones, consultas SQL, rutas locales ni
+detalles de configuración. Las excepciones inesperadas deberán registrarse en el servidor
+con contexto seguro y transformarse en una respuesta adecuada en el límite de transporte.
+
+En el cliente, el adaptador gRPC traducirá los estados conocidos a resultados de aplicación;
+los ViewModels no deberán depender directamente de excepciones de transporte.
+
+Las llamadas que puedan tardar deberán utilizar cancelación y plazos cuando la operación
+lo permita. El cliente deberá distinguir entre una respuesta de negocio, una cancelación y
+un fallo de transporte. Una cancelación local o un plazo agotado no demuestran que el
+servidor haya revertido una operación que ya comenzó.
+
+Los canales gRPC se reutilizarán durante la vida del proceso cliente. Los metadatos de
+autenticación se añadirán desde el servicio responsable de la comunicación, no desde las
+vistas.
+
+Las operaciones que cambien datos no deberán repetirse automáticamente salvo que su diseño
+garantice idempotencia. Las operaciones de consulta podrán reintentarse solo cuando la
+política de comunicación lo permita.
+
+**Correcto**
+
+```csharp
+try
+{
+    LoginResponse response = await _client.LoginAsync(
+        request,
+        cancellationToken: cancellationToken).ResponseAsync;
+}
+catch (RpcException exception)
+    when (exception.StatusCode == StatusCode.Unauthenticated)
+{
+    return AuthenticationResult.InvalidCredentials;
+}
+```
+
+**Incorrecto**
+
+```csharp
+try
+{
+    LoginResponse response = await _client.LoginAsync(request).ResponseAsync;
+}
+catch (Exception exception)
+{
+    ShowMessage(exception.ToString());
+}
+```
+
+<a id="seccion-4-8"></a>
+
+### 4.8 Semáforos asíncronos y escritura de streams
+
+Cuando varias operaciones asíncronas puedan acceder al mismo recurso que exige exclusión
+mutua, se utilizará `SemaphoreSlim` o una única tarea propietaria que serialice ese acceso.
+El mecanismo elegido deberá identificar qué recurso protege y qué operaciones lo comparten.
+
+**Declaración del semáforo**
+
+Para un semáforo de exclusión mutua propiedad de una instancia, utilizar un campo privado
+de solo lectura (`private readonly`), con nombre `_camelCase` que describa su función. En
+este patrón se escribirá el tipo explícito tanto en la declaración como en el constructor:
+
+```csharp
+private readonly SemaphoreSlim _writeGate = new SemaphoreSlim(1, 1);
+```
+
+`private` limita el acceso al propietario; `readonly` impide sustituir la referencia después
+de inicializarla, pero no vuelve inmutable el semáforo. `_writeGate` describe la operación
+protegida y cumple 2.7. La escritura `new SemaphoreSlim(1, 1)` hace explícitos el mecanismo y
+su capacidad; usarla aquí es una convención de legibilidad del proyecto. C# también permite
+`new(1, 1)` cuando el tipo se conoce por el contexto, pero no es la forma elegida para este
+patrón.
+
+El primer `1` es la cantidad inicial de permisos y el segundo es la cantidad máxima. El par
+`(1, 1)` expresa exclusión mutua y capacidad disponible al iniciar; no representa un plazo ni
+una regla del juego. No omitir el máximo ni aumentar la capacidad cuando el recurso solo
+admite una operación a la vez.
+
+Todas las operaciones que accedan al recurso protegido deberán utilizar la misma instancia
+del semáforo. No crear un semáforo nuevo por llamada ni un semáforo estático global para
+recursos independientes. Si el semáforo pertenece a un servicio compartido, mantener la
+asignación estable al recurso que protege.
+
+**Adquisición y liberación**
+
+En código asíncrono, adquirir el permiso con `await WaitAsync(cancellationToken)`. El `try`
+deberá comenzar inmediatamente después de adquirirlo y su `finally` deberá ejecutar
+`Release()` exactamente una vez por adquisición exitosa. Las llaves y la indentación
+siguen 3.2 y 3.4.
+
+**Correcto**
+
+```csharp
+public async Task SendEventAsync(GameSessionClientEvent clientEvent,
+    CancellationToken cancellationToken)
+{
+    ArgumentNullException.ThrowIfNull(clientEvent);
+    await _writeGate.WaitAsync(cancellationToken);
+    try
+    {
+        await _call.RequestStream.WriteAsync(clientEvent, cancellationToken);
+    }
+    finally
+    {
+        _writeGate.Release();
+    }
+}
+```
+
+Las precondiciones se validan antes de adquirir el permiso. `WaitAsync` queda fuera del
+`try`: si la espera se cancela antes de obtenerlo, no se entra al bloque y no se libera un
+permiso ajeno. Si la operación protegida falla, se cancela o retorna, el `finally` devuelve
+el permiso. Si se utiliza una sobrecarga de espera con tiempo límite que devuelve `bool`,
+solo entrar a la sección protegida y ejecutar `Release()` cuando devuelva `true`.
+
+**Incorrecto**
+
+```csharp
+await _writeGate.WaitAsync(cancellationToken);
+await _call.RequestStream.WriteAsync(clientEvent, cancellationToken);
+_writeGate.Release();
+```
+
+En el ejemplo incorrecto, una excepción durante el envío impide devolver el permiso y puede
+dejar esperando a los demás envíos. Tampoco colocar `WaitAsync` dentro de un `try` cuyo
+`finally` libere incondicionalmente: una cancelación durante la adquisición ejecutaría una
+liberación sin permiso adquirido.
+
+Se permite encapsular el permiso en un objeto `IDisposable`, como `FriendMutationLease`,
+consumido mediante `using`: el compilador garantiza el `finally` de liberación. El objeto
+devuelve el permiso una sola vez, incluso si se llama a `Dispose()` repetidamente; no es
+propietario del semáforo ni lo destruye. Su referencia al propietario puede ser mutable para
+transferirla atómicamente al liberar el permiso. La cancelación previa a la adquisición no
+crea un permiso que deba devolverse.
+
+No usar `.Wait()` ni bloquear una tarea para adquirir el permiso en un flujo asíncrono. No
+usar `await` dentro de `lock`; `lock` se reserva a secciones síncronas breves. No volver a
+adquirir el mismo semáforo de capacidad uno desde una operación que ya conserva su permiso.
+
+**Aplicación en la jugabilidad**
+
+En `GrpcGameSessionStream`, el semáforo pertenece a la conexión y abarca toda la espera de
+`WriteAsync`. Jugadas, rendición y chat utilizan el mismo camino de envío. Solo puede haber
+una escritura pendiente por stream gRPC; liberar el permiso antes de esperar la escritura
+permitiría solapar envíos. No depender de un orden FIFO del semáforo para validar turnos.
+
+En `GameCoordinator`, las operaciones sobre una misma partida seleccionan el mismo semáforo
+antes de cargar, validar y persistir su transición. El conjunto fijo de semáforos y su
+asignación por `GameId` limitan la cantidad de objetos de sincronización; dos partidas pueden
+compartir un semáforo y esperar entre sí. Esta protección se limita al proceso del servidor
+y no sustituye los controles de concurrencia y unicidad de la base de datos.
+
+La serialización de una transición puede abarcar operaciones asíncronas de persistencia
+necesarias para mantenerla consistente. Los `lock` breves que protegen estructuras en memoria
+no incluyen escritura de red. En el envío del servidor, `GameSessionGrpcService` consume la
+cola de eventos desde una única tarea y espera cada escritura antes de iniciar la siguiente;
+ese stream no necesita otro semáforo mientras conserve un único escritor.
+
+`Release()` devuelve un permiso; `Dispose()` termina la vida del semáforo. El propietario
+deberá coordinar su cierre según 6.7 y ejecutar `Dispose()` cuando las operaciones que lo
+utilizan hayan terminado, sin competir con esperas, escrituras o liberaciones pendientes.
+
+El cierre rechaza nuevas entradas y registra tanto las operaciones activas como las que
+ya esperan un permiso. Una espera cancelada deja de contar sin ejecutar `Release()`. Cada
+operación admitida deja de contar después de devolver su permiso. Si el cierre síncrono
+comienza con operaciones pendientes, difiere la destrucción hasta que termine la última;
+el cierre mediante `IAsyncDisposable` espera esa finalización sin bloquear el hilo. El cierre
+repetido no vuelve a destruir los recursos. En conexiones gRPC se cierra la llamada para
+interrumpir el transporte antes de esperar que terminen sus envíos.
+
 <a id="seccion-5"></a>
 
 ## 5 Prácticas Específicas de Videojuegos
 
-———— Esta sección se verá más adelante ————
+<a id="seccion-5-1"></a>
 
-Apartado reservado para futuras reglas del motor para el juego y el desarrollo de gameplay
+### 5.1 Estado de la partida
+
+El estado de una partida deberá tener una representación definida y validable. Las reglas
+para colocar fichas, cambiar turnos, determinar capturas y reconocer el fin de la partida
+deberán implementarse en componentes de dominio identificables y verificables.
+
+La validación de una jugada no deberá depender exclusivamente de la interfaz. El servidor
+será responsable de validar las acciones recibidas de un cliente antes de aceptar un cambio
+de estado compartido.
+
+Las vistas podrán representar el estado de la partida, pero no serán la fuente autoritativa
+de las reglas ni del resultado.
+
+**Correcto**
+
+```csharp
+MoveValidationResult result = gameRules.ValidateMove(
+    currentGameState,
+    requestedMove);
+```
+
+**Incorrecto**
+
+```csharp
+private void BoardCell_Click(object sender, RoutedEventArgs e)
+{
+    if (BoardGrid.SelectedItem == null)
+    {
+        return;
+    }
+    SaveMoveDirectlyToDatabase();
+}
+```
+
+<a id="seccion-5-2"></a>
+
+### 5.2 Consistencia entre jugadores
+
+Cuando una partida se comunique por red, el servidor deberá conservar la autoridad sobre
+el estado aceptado de la partida. El cliente enviará acciones y actualizará su presentación
+a partir de respuestas o eventos recibidos del servidor.
+
+Los mensajes de red deberán permitir identificar la partida y el estado al que pertenecen.
+El servidor deberá rechazar acciones que no correspondan al jugador, turno o estado actual.
+
+La reconexión de un jugador deberá recuperar el estado vigente desde la autoridad definida
+para la partida. No se deberá asumir que el estado local del cliente sigue siendo válido
+después de una desconexión.
+
+Los tiempos de espera para una desconexión y sus consecuencias deberán ser reglas de
+dominio configurables y documentadas, no valores literales distribuidos por el código.
+
+**Correcto**
+
+```csharp
+if (move.GameId != gameState.GameId
+    || move.PlayerId != gameState.CurrentPlayerId)
+{
+    return MoveValidationResult.Rejected;
+}
+```
+
+**Incorrecto**
+
+```csharp
+if (playerName == "Player1")
+{
+    AcceptMove();
+}
+```
+
+<a id="seccion-5-3"></a>
+
+### 5.3 Pruebas de reglas del juego
+
+Cada regla implementada deberá contar con pruebas que cubran los resultados válidos y los
+casos límite relevantes. Las pruebas deberán incluir, cuando aplique, movimientos fuera
+del tablero, posiciones ocupadas, cambio de turno, capturas y condiciones de finalización.
+
+Las pruebas deberán validar el estado resultante y no depender de elementos visuales para
+determinar si una regla del juego se cumplió.
 
 <a id="seccion-6"></a>
 
@@ -1832,6 +2235,68 @@ la misma excepción en cada capa. La cancelación solicitada es un resultado esp
 registra como error. Si se registra una excepción completa, revisar que no exponga datos
 sensibles; se puede registrar tipo, código y contexto saneado en su lugar.
 
+<a id="seccion-6-11"></a>
+
+### 6.11 Cláusulas de guarda y validación de precondiciones
+
+Los constructores y métodos públicos deberán validar sus precondiciones antes de utilizar
+los parámetros, modificar el estado del objeto o iniciar operaciones externas. Si una entrada
+no cumple el contrato, la ejecución deberá detenerse mediante una excepción específica.
+
+- Utilizar el tipo de excepción adecuado, como `ArgumentNullException`, `ArgumentException`
+  o `ArgumentOutOfRangeException`.
+- Validar únicamente las condiciones definidas por el contrato. No rechazar un parámetro
+  nullable u opcional cuando la operación permita que no tenga valor.
+- En constructores que deleguen en otro mediante `: this(...)`, centralizar las validaciones
+  en el constructor que realiza la inicialización. El constructor delegador puede limitarse
+  a reenviar los parámetros.
+- No repetir validaciones en métodos privados cuando el método público que los invoca ya
+  garantice esas condiciones, salvo que el método privado tenga un contrato independiente.
+- En operaciones de dominio y servicios gRPC, representar los errores según el contrato de
+  la operación. No propagar directamente excepciones de argumentos de .NET al cliente si
+  corresponde devolver un resultado o un estado gRPC, como `InvalidArgument`.
+
+**Correcto**
+
+```csharp
+public GrpcMatchmakingClient(
+    string? sessionToken,
+    string? guestCredential,
+    CallInvoker callInvoker)
+{
+    ArgumentNullException.ThrowIfNull(callInvoker);
+    if (!string.IsNullOrWhiteSpace(sessionToken)
+        && !string.IsNullOrWhiteSpace(guestCredential))
+    {
+        throw new ArgumentException(
+            "Only one matchmaking credential can be configured.");
+    }
+    _sessionToken = sessionToken;
+    _guestCredential = guestCredential;
+    _client = new Matchmaking.MatchmakingClient(callInvoker);
+}
+```
+
+**Incorrecto**
+
+```csharp
+public GrpcMatchmakingClient(
+    string? sessionToken,
+    string? guestCredential,
+    CallInvoker callInvoker)
+{
+    _client = new Matchmaking.MatchmakingClient(callInvoker);
+    _sessionToken = sessionToken;
+    _guestCredential = guestCredential;
+    if (!string.IsNullOrWhiteSpace(sessionToken)
+        && !string.IsNullOrWhiteSpace(guestCredential))
+    {
+        throw new ArgumentException(
+            "Only one matchmaking credential can be configured.");
+    }
+}
+```
+
 <a id="seccion-7"></a>
 
 ## 7 Comentarios
@@ -2092,7 +2557,20 @@ específica. No hacer commit ni push sin que el usuario lo solicite para la tare
 
 ### 8.2 Estrategia de Ramificación
 
-Pendiente de definición. No se establece todavía una convención obligatoria.
+La rama `main` representará las versiones estables del proyecto. La rama `develop` será
+la rama de integración del trabajo en curso.
+
+Los cambios se desarrollarán en ramas de trabajo creadas a partir de `develop`. Al terminar,
+se integrarán en `develop` después de revisar los cambios y ejecutar las verificaciones
+pertinentes. La publicación de una versión estable se realizará mediante la integración del
+estado aprobado de `develop` en `main`.
+
+No se deberán integrar directamente cambios incompletos en `main`. Los conflictos deberán
+resolverse revisando el comportamiento afectado; no se deberán descartar cambios de otros
+integrantes sin verificar su propósito.
+
+Los nombres de ramas deberán describir brevemente el trabajo y utilizar un formato acordado
+por el equipo. Los nombres históricos no obligan a cambiar ramas ya publicadas.
 
 <a id="seccion-8-3"></a>
 
@@ -2173,6 +2651,54 @@ no necesitan servicios externos y con `[TestCategory("Integration")]` cuando com
 transporte u otros límites reales. La ubicación de carpeta por sí sola no filtra la ejecución.
 Las pruebas de heartbeat/presencia heredadas quedan sin cambios hasta su sustitución.
 La ejecución completa de la solución debe mantenerse además de cualquier filtro por categoría.
+
+<a id="seccion-9-6"></a>
+
+### 9.6 Criterios y casos de prueba
+
+Las pruebas deberán derivarse de requisitos, reglas de negocio y riesgos identificados. Para
+cada operación crítica se deberán considerar el caso válido, los datos inválidos y las
+condiciones límite que puedan cambiar el resultado.
+
+Las pruebas unitarias deberán aislar la lógica que se evalúa. Las pruebas de integración
+deberán identificar expresamente los límites reales que verifican, como EF Core, SQL Server
+o el transporte gRPC.
+
+Las pruebas que utilicen una base de datos deberán definir cómo crean, aíslan y limpian sus
+datos. No deberán depender accidentalmente de registros compartidos o del orden de ejecución.
+
+Las pruebas no deberán afirmar que la comunicación entre computadoras funciona si solo se
+verificó una conexión local. El informe de verificación deberá identificar el entorno y los
+límites de la comprobación realizada.
+
+Los nombres de pruebas seguirán la convención de la sección 2.19. Las pruebas podrán utilizar
+datos literales representativos del escenario sin extraerlos a constantes, siempre que no
+sean políticas compartidas del sistema.
+
+**Correcto**
+
+```csharp
+public void ValidateMove_OccupiedPosition_RejectsMove()
+{
+    // Arrange
+    GameState gameState = CreateGameWithOccupiedPosition();
+    // Act
+    MoveValidationResult result = _gameRules.ValidateMove(
+        gameState,
+        CreateMoveForOccupiedPosition());
+    // Assert
+    Assert.AreEqual(MoveValidationResult.Rejected, result);
+}
+```
+
+**Incorrecto**
+
+```csharp
+public void TestMove()
+{
+    Assert.IsTrue(_gameRules.ValidateMove(_gameState, _move));
+}
+```
 
 <a id="seccion-10"></a>
 
@@ -2318,6 +2844,12 @@ La IA se utilizó para ayudar con:
 
 - Unity Technologies. (n.d.-b). Naming and code style tips for C# scripting in Unity. Unity. Retrieved August 29, 2026, from https://unity.com/how-to/naming-andcode-style-tips-c-scripting-unity
 
+- Microsoft. (s. f.). SemaphoreSlim Class. Microsoft Learn. https://learn.microsoft.com/en-us/dotnet/api/system.threading.semaphoreslim?view=net-10.0
+
+- Microsoft. (s. f.). The lock statement. Microsoft Learn. https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/statements/lock
+
+- gRPC Authors. (s. f.). Interface `IAsyncStreamWriter<T>`. gRPC C#. https://grpc.github.io/grpc/csharp/api/Grpc.Core.IAsyncStreamWriter-1.html
+
 <a id="seccion-13"></a>
 
 ## 13 Mantenimiento del estándar y trabajo con Codex
@@ -2367,17 +2899,104 @@ no deben depender de enlaces a informes ignorados. No es necesario generar un Ma
 adicional cuando la explicación en el chat sea suficiente, salvo solicitud del usuario.
 
 
-### Observaciones conservadas para revisión
+<a id="seccion-13-4"></a>
 
-- Falta Servidor
-- Falta Patrón MVVM
-- Checar en el estándar el nombrado de los elementos de las vistas
-- Checar uso de valores anulables y condicionales ternarios.
-- Checar nombrado de propiedades de las clases.
-- Uso de bindings
-- Estructura de protos, contratos y clases que los implementan (también nombrado de clases prefijo y sufijo)
-- Configuración de servidor usando HTTP2 y TLC
-- Llamadas entre cliente y servidor
-- Número máximo de parámetros por métodos
-- Manejo de excepciones
-- Métodos síncronos y asíncronos
+### 13.4 Pendientes de evolución del estándar
+
+Las propuestas de reglas que todavía no hayan sido adoptadas deberán mantenerse fuera de
+las obligaciones vigentes del estándar. Una propuesta pendiente deberá identificar el
+problema que busca resolver y la regla sugerida.
+
+Cuando el equipo adopte una propuesta, la regla completa deberá incorporarse en la sección
+correspondiente del estándar. No se mantendrán listas de observaciones que contradigan o
+dupliquen las reglas vigentes.
+
+<a id="seccion-14"></a>
+
+## 14 Seguridad y protección de información
+
+<a id="seccion-14-1"></a>
+
+### 14.1 Configuración y secretos
+
+Las contraseñas, tokens, claves privadas y cadenas de conexión con credenciales no deberán
+guardarse en el repositorio ni escribirse directamente en el código fuente. Se obtendrán de
+mecanismos de configuración adecuados para el entorno, como variables de entorno o
+almacenamiento local de secretos.
+
+Los archivos de configuración de ejemplo podrán incluir nombres de claves y valores
+ficticios, pero no credenciales válidas. Los secretos de desarrollo y los de despliegue
+deberán mantenerse separados.
+
+**Correcto**
+
+```csharp
+string? connectionString = configuration.GetConnectionString(
+    "AtariGoConnection");
+```
+
+**Incorrecto**
+
+```csharp
+string connectionString =
+    "Server=server;Database=AtariGo;User Id=admin;Password=RealPassword;";
+```
+
+<a id="seccion-14-2"></a>
+
+### 14.2 Contraseñas y tokens
+
+Las contraseñas no se almacenarán en texto plano ni se cifrarán para poder recuperarlas.
+Se almacenarán utilizando un algoritmo de hashing de contraseñas aprobado por el proyecto
+y sus parámetros vigentes.
+
+Los tokens de sesión no se registrarán en logs ni se mostrarán en mensajes de error. Si el
+servidor necesita conservar información de un token para validarlo o revocarlo, se almacenará
+el valor protegido definido por el diseño de autenticación, no el token reutilizable del
+cliente.
+
+La validación de credenciales y de permisos deberá realizarse en el servidor. Ocultar un
+botón o una opción de interfaz no constituye autorización.
+
+<a id="seccion-14-3"></a>
+
+### 14.3 Transporte y certificados
+
+La comunicación gRPC entre cliente y servidor deberá utilizar TLS. El cliente deberá
+validar la identidad del servidor mediante la cadena de confianza y el nombre o dirección
+contemplados por el certificado. El certificado de desarrollo local deberá ser confiable
+para el equipo que ejecuta el cliente y no deberá desactivar la validación TLS.
+
+No se deberá desactivar la validación de certificados para solucionar errores de conexión.
+Los certificados privados y sus claves privadas no deberán incluirse en el repositorio ni
+distribuirse junto con el cliente.
+
+<a id="seccion-14-4"></a>
+
+### 14.4 Validación y mensajes al usuario
+
+Los datos recibidos del cliente deberán validarse en el servidor antes de realizar cambios.
+La validación de interfaz mejora la experiencia, pero no reemplaza la validación del servidor.
+
+Los mensajes al usuario deberán explicar el resultado sin revelar detalles internos que
+faciliten el acceso a información sensible o la explotación del sistema. El detalle técnico
+deberá registrarse únicamente en logs protegidos y saneados.
+
+**Correcto**
+
+```csharp
+if (request.UserName.Length > UserNameRules.MaximumLength)
+{
+    return RegisterResult.InvalidUserName;
+}
+```
+
+**Incorrecto**
+
+```csharp
+if (request.UserName.Length > 15)
+{
+    throw new Exception(
+        $"Invalid username in database query {sqlCommandText}");
+}
+```
