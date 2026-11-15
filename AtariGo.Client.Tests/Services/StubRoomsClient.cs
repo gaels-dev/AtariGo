@@ -22,6 +22,8 @@ internal sealed class StubRoomsClient : IRoomsClient
 
     public Func<StartGameRequest, Task>? StartHandler { get; set; }
 
+    public Func<int, Task>? LeaveHandler { get; set; }
+
     public List<string> Operations { get; } = new List<string>();
 
     public string? JoinedCode { get; private set; }
@@ -85,7 +87,7 @@ internal sealed class StubRoomsClient : IRoomsClient
     public Task LeaveRoomAsync(int roomId, CancellationToken cancellationToken)
     {
         LeftRoomId = roomId;
-        return Task.CompletedTask;
+        return LeaveHandler is null ? Task.CompletedTask : LeaveHandler(roomId);
     }
 
     public IAsyncEnumerable<RoomSnapshot> WatchRoomAsync(

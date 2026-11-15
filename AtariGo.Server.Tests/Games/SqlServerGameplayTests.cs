@@ -7,6 +7,7 @@ using AtariGo.Server.Application.Games;
 using AtariGo.Server.Configuration;
 using AtariGo.Server.Data;
 using AtariGo.Server.Data.Entities;
+using AtariGo.Server.Tests.RoomInvitations;
 
 namespace AtariGo.Server.Tests.Games;
 
@@ -16,7 +17,9 @@ namespace AtariGo.Server.Tests.Games;
 public sealed class SqlServerGameplayTests
 {
     [TestMethod]
-    public async Task Scripts_FreshSchemaAndRepeatedUpgrade_PreserveGameAndAcceptMoves()
+    [DataRow(false)]
+    [DataRow(true)]
+    public async Task Scripts_FreshSchemaAndRepeatedUpgrade_PreserveGameAndAcceptMoves(bool direct)
     {
         // Arrange
         await using SqlServerTestDatabase database = await SqlServerTestDatabase.CreateAsync();
@@ -25,9 +28,10 @@ public sealed class SqlServerGameplayTests
         Guid blackId = Guid.NewGuid();
         Guid whiteId = Guid.NewGuid();
         long gameId = await SeedAsync(provider, (blackId, whiteId));
+        Func<Task> upgrade = direct ? database.UpgradeDirectAsync : database.UpgradeAsync;
         // Act
-        await database.UpgradeAsync();
-        await database.UpgradeAsync();
+        await upgrade();
+        await upgrade();
         GameCoordinator coordinator = provider.GetRequiredService<GameCoordinator>();
         GameSessionParticipant blackPlayer = new GameSessionParticipant(
             GameSessionRules.CreateGuestKey(blackId), "Black", "Black");
@@ -58,7 +62,9 @@ public sealed class SqlServerGameplayTests
     }
 
     [TestMethod]
-    public async Task Scripts_LegacyUnplayedGame_BackfillsWithoutDeletingParticipants()
+    [DataRow(false)]
+    [DataRow(true)]
+    public async Task Scripts_LegacyUnplayedGame_BackfillsWithoutDeletingParticipants(bool direct)
     {
         // Arrange
         await using SqlServerTestDatabase database = await SqlServerTestDatabase.CreateAsync();
@@ -66,9 +72,10 @@ public sealed class SqlServerGameplayTests
             .BuildServiceProvider();
         long gameId = await SeedAsync(provider, (Guid.NewGuid(), Guid.NewGuid()));
         await database.RestoreLegacySchemaAsync();
+        Func<Task> upgrade = direct ? database.UpgradeDirectAsync : database.UpgradeAsync;
         // Act
-        await database.UpgradeAsync();
-        await database.UpgradeAsync();
+        await upgrade();
+        await upgrade();
         await using AtariGoDbContext context = database.CreateContext();
         Game progress = await context.Games.SingleAsync();
         // Assert
@@ -79,7 +86,10 @@ public sealed class SqlServerGameplayTests
     }
 
     [TestMethod]
-    public async Task Scripts_LegacyActiveGameWithMoves_RollsBackWithoutResettingBoardHistory()
+    [DataRow(false)]
+    [DataRow(true)]
+    public async Task Scripts_LegacyActiveGameWithMoves_RollsBackWithoutResettingBoardHistory(
+        bool direct)
     {
         // Arrange
         await using SqlServerTestDatabase database = await SqlServerTestDatabase.CreateAsync();
@@ -95,8 +105,9 @@ public sealed class SqlServerGameplayTests
         });
         await context.SaveChangesAsync();
         await database.RestoreLegacySchemaAsync();
+        Func<Task> upgrade = direct ? database.UpgradeDirectAsync : database.UpgradeAsync;
         // Act
-        SqlException exception = await Assert.ThrowsAsync<SqlException>(database.UpgradeAsync);
+        SqlException exception = await Assert.ThrowsAsync<SqlException>(upgrade);
         // Assert
         Assert.AreEqual(51001, exception.Number);
         Assert.AreEqual(1, await context.Moves.CountAsync());
@@ -108,6 +119,27 @@ public sealed class SqlServerGameplayTests
     }
 
     [TestMethod]
+    public async Task Scripts_DirectUpgrade_MissingGuestIdentity_AddsColumnAndPreservesBaseTables()
+    {
+        // Arrange
+        await using SqlServerTestDatabase database = await SqlServerTestDatabase.CreateAsync();
+        await database.RestoreLegacySchemaAsync();
+        await using AtariGoDbContext context = database.CreateContext();
+        await context.Database.ExecuteSqlRawAsync("""
+            DROP INDEX UX_GamePlayers_Game_GuestIdentity ON dbo.GamePlayers;
+            ALTER TABLE dbo.GamePlayers DROP COLUMN GuestIdentityId;
+            """);
+        // Act
+        await database.UpgradeDirectAsync();
+        await database.UpgradeDirectAsync();
+        // Assert
+        Assert.AreEqual(18, await new DatabaseReadinessCheck(context).CheckAsync(
+            CancellationToken.None));
+        Assert.AreEqual(18, await context.Database.SqlQueryRaw<int>(
+            "SELECT COUNT(*) AS Value FROM sys.tables").SingleAsync());
+    }
+
+    [TestMethod]
     [DataRow(false)]
     [DataRow(true)]
     public async Task Scripts_PreviousDeployment_MigratesBoardAndResponsesWithoutDuplicateEvents(
@@ -115,7 +147,8 @@ public sealed class SqlServerGameplayTests
     {
         // Arrange
         await using SqlServerTestDatabase database = await SqlServerTestDatabase.CreateAsync();
-        await using ServiceProvider before = CreateServices(database.ConnectionString)
+        ManualTimeProvider time = new ManualTimeProvider();
+        await using ServiceProvider before = CreateServices(database.ConnectionString, time)
             .BuildServiceProvider();
         (Guid Black, Guid White) ids = (Guid.NewGuid(), Guid.NewGuid());
         long gameId = await SeedAsync(before, ids);
@@ -147,7 +180,7 @@ public sealed class SqlServerGameplayTests
         // Act
         await database.UpgradeAsync();
         await database.UpgradeAsync();
-        await using ServiceProvider after = CreateServices(database.ConnectionString)
+        await using ServiceProvider after = CreateServices(database.ConnectionString, time)
             .BuildServiceProvider();
         (GameSessionConnection Black, GameSessionConnection White) restored =
             await ConnectPlayersAsync(after, gameId, ids);
@@ -256,14 +289,17 @@ public sealed class SqlServerGameplayTests
         return (blackConnection, whiteConnection);
     }
 
-    private static ServiceCollection CreateServices(string connectionString)
+    private static ServiceCollection CreateServices(string connectionString,
+        TimeProvider? timeProvider = null)
     {
         ServiceCollection services = new ServiceCollection();
         services.AddDbContext<AtariGoDbContext>(options => options.UseSqlServer(connectionString));
-        services.AddSingleton(TimeProvider.System);
+        services.AddSingleton(timeProvider ?? TimeProvider.System);
         services.AddSingleton<IGameSessionRegistry, GameSessionRegistry>();
         services.AddSingleton<GameRulesEngine>();
+        services.AddSingleton<GameOperationGate>();
         services.AddSingleton<GameCoordinator>();
+        services.AddScoped<GameCommandService>();
         services.AddScoped<GamePersistenceService>();
         services.AddScoped<GameActionProcessor>();
         return services;
@@ -274,7 +310,7 @@ public sealed class SqlServerGameplayTests
     {
         using IServiceScope scope = provider.CreateScope();
         AtariGoDbContext context = scope.ServiceProvider.GetRequiredService<AtariGoDbContext>();
-        DateTime now = DateTime.UtcNow;
+        DateTime now = provider.GetRequiredService<TimeProvider>().GetUtcNow().UtcDateTime;
         Game game = new Game
         {
             GameType = "Public", State = "InProgress", StartedAt = now,

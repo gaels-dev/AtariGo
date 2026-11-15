@@ -204,7 +204,7 @@ namespace AtariGo.Client.ViewModels
         public void NavigateToPublicGame(PublicMatchNavigationContext navigationContext)
         {
             GameBoardViewModelContext boardContext = new GameBoardViewModelContext(
-                new GrpcGameSessionClient(SessionToken, GuestCredential),
+                new GameplaySession(new GrpcGameSessionClient(SessionToken, GuestCredential)),
                 navigationContext.IsGuest,
                 navigationContext.PlayerName);
             GameBoardViewModel gameBoard = new GameBoardViewModel(
@@ -238,12 +238,6 @@ namespace AtariGo.Client.ViewModels
             }
         }
 
-        private async Task SignOutGuestAsync()
-        {
-            await RevokeGuestIdentityAsync();
-            _navigationService.SignOut();
-        }
-
         public void NavigateToGameBoard(
             bool isGuest = false,
             int targetCaptures = GameRules.DefaultCaptureGoal)
@@ -265,7 +259,7 @@ namespace AtariGo.Client.ViewModels
         public void NavigateToSharedGame(PrivateRoomNavigationContext navigationContext)
         {
             GameBoardViewModelContext boardContext = new GameBoardViewModelContext(
-                new GrpcGameSessionClient(SessionToken, null),
+                new GameplaySession(new GrpcGameSessionClient(SessionToken, null)),
                 false,
                 _playerName);
             GameBoardViewModel gameBoard = new GameBoardViewModel(
@@ -300,6 +294,12 @@ namespace AtariGo.Client.ViewModels
         public void CloseDialog()
         {
             CurrentDialogViewModel = null;
+        }
+
+        private async Task SignOutGuestAsync()
+        {
+            await RevokeGuestIdentityAsync();
+            _navigationService.SignOut();
         }
 
         private void StartRealtimeConnection()

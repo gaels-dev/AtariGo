@@ -1,7 +1,6 @@
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
-
 using Grpc.Core;
 
 using AtariGo.Client.Models;
@@ -16,6 +15,37 @@ namespace AtariGo.Client.Tests.ViewModels;
 [TestCategory("Unit")]
 public sealed class PrivateRoomLobbyViewModelTests
 {
+    [TestMethod]
+    public async Task WatchRoomAsync_BackgroundUpdate_UsesCapturedUiContext()
+    {
+        // Arrange
+        StubRoomsClient client = CreateWaitingClient();
+        RoomSnapshot started = client.Room.Clone();
+        started.State = RoomState.Started;
+        started.GameId = 42;
+        started.Version++;
+        client.Updates.Add(started);
+        RecordingSynchronizationContext context = new RecordingSynchronizationContext();
+        SynchronizationContext? previous = SynchronizationContext.Current;
+        PrivateRoomLobbyViewModel model;
+        try
+        {
+            SynchronizationContext.SetSynchronizationContext(context);
+            model = CreateLobby(client);
+        }
+        finally
+        {
+            SynchronizationContext.SetSynchronizationContext(previous);
+        }
+        using (model)
+        {
+            // Act
+            await model.WatchRoomAsync();
+            // Assert
+            Assert.IsTrue(context.SendCount > 0);
+        }
+    }
+
     [TestMethod]
     public async Task StartGameCommand_PendingConfiguration_ConfirmsBeforeStarting()
     {
@@ -108,7 +138,8 @@ public sealed class PrivateRoomLobbyViewModelTests
         client.Updates.Add(started);
         INavigationService navigation =
             DispatchProxy.Create<INavigationService, RecordingNavigationProxy>();
-        using var model = new PrivateRoomLobbyViewModel(navigation, client,
+        using var model = new PrivateRoomLobbyViewModel(navigation,
+            new PrivateRoomSession(client, client.Room),
             new PrivateRoomNavigationContext(client.Room, false));
 
         // Act
@@ -225,7 +256,8 @@ public sealed class PrivateRoomLobbyViewModelTests
         StubRoomsClient client = CreateWaitingClient();
         INavigationService navigation =
             DispatchProxy.Create<INavigationService, RecordingNavigationProxy>();
-        using var model = new PrivateRoomLobbyViewModel(navigation, client,
+        using var model = new PrivateRoomLobbyViewModel(navigation,
+            new PrivateRoomSession(client, client.Room),
             new PrivateRoomNavigationContext(client.Room, true));
 
         // Act
@@ -254,7 +286,8 @@ public sealed class PrivateRoomLobbyViewModelTests
     {
         INavigationService navigation =
             DispatchProxy.Create<INavigationService, RecordingNavigationProxy>();
-        return new PrivateRoomLobbyViewModel(navigation, client,
+        return new PrivateRoomLobbyViewModel(navigation,
+            new PrivateRoomSession(client, client.Room),
             new PrivateRoomNavigationContext(client.Room, host));
     }
 

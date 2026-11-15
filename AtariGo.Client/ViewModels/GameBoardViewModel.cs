@@ -3,8 +3,6 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Windows.Input;
 
-using Grpc.Core;
-
 using AtariGo.Client.Commands;
 using AtariGo.Client.Models;
 using AtariGo.Client.Services;
@@ -16,14 +14,11 @@ namespace AtariGo.Client.ViewModels
     public partial class GameBoardViewModel : ViewModelBase, IDisposable
     {
         private const string BlackStoneColorName = "Black";
-        private const string WhiteStoneColorName = "White";
         private readonly INavigationService _navigationService;
-        private readonly IGameSessionClient? _gameSessionClient;
+        private readonly IGameplaySession? _session;
+        private readonly SynchronizationContext? _uiContext;
         private readonly CancellationTokenSource _lifetimeCancellation =
             new CancellationTokenSource();
-        private CancellationTokenSource? _sessionCancellation;
-        private IGameSessionStream? _gameSessionStream;
-        private Task? _sessionTask;
 
         private StoneColor _currentTurn;
         private StoneColor _myColor;
@@ -46,7 +41,8 @@ namespace AtariGo.Client.ViewModels
             ArgumentNullException.ThrowIfNull(navigationService);
             ArgumentNullException.ThrowIfNull(context);
             _navigationService = navigationService;
-            _gameSessionClient = context.SessionClient;
+            _session = context.Session;
+            _uiContext = SynchronizationContext.Current;
             _targetCaptures = GameRules.DefaultCaptureGoal;
             _isChatEnabled = false;
 
@@ -75,6 +71,10 @@ namespace AtariGo.Client.ViewModels
             SurrenderCommand = new RelayCommand(PromptSurrender);
             ReportPlayerCommand = new RelayCommand(PromptReportPlayer);
             LeaveGameCommand = new RelayCommand(PromptLeaveGame);
+            if (_session is not null)
+            {
+                _session.Updated += HandleSessionUpdate;
+            }
         }
 
         public long? GameId { get; private set; }
@@ -112,7 +112,7 @@ namespace AtariGo.Client.ViewModels
         }
 
         public bool IsMyTurn => !_isDisposed && _isPlaying && _currentTurn == _myColor
-            && _gameSessionStream is not null && _pendingGameAction is null;
+            && _isSessionConnected && !_hasPendingAction;
 
         public string TurnStatusMessage => IsMyTurn
             ? Properties.Resources.GameBoard_Status_YourTurn
@@ -225,6 +225,7 @@ namespace AtariGo.Client.ViewModels
 
         public void OpenSharedGame(PrivateRoomNavigationContext navigationContext)
         {
+            ArgumentNullException.ThrowIfNull(navigationContext);
             RoomSnapshot room = navigationContext.Room;
             GameId = room.GameId;
             TargetCaptures = room.Configuration.CaptureGoal;
@@ -243,6 +244,7 @@ namespace AtariGo.Client.ViewModels
 
         public void OpenPublicGame(PublicMatchNavigationContext navigationContext)
         {
+            ArgumentNullException.ThrowIfNull(navigationContext);
             PublicGameStarted game = navigationContext.Game;
             GameId = game.GameId;
             MyPlayerName = navigationContext.PlayerName;
@@ -272,7 +274,11 @@ namespace AtariGo.Client.ViewModels
             _clockTimer.Stop();
             _clockTimer.Tick -= OnClockTick;
             _lifetimeCancellation.Cancel();
-            _sessionCancellation?.Cancel();
+            if (_session is not null)
+            {
+                _session.Updated -= HandleSessionUpdate;
+                _session.Dispose();
+            }
             _lifetimeCancellation.Dispose();
         }
 
@@ -309,7 +315,7 @@ namespace AtariGo.Client.ViewModels
         private async Task SendChatMessageAsync()
         {
             if (!IsChatEnabled
-                || _gameSessionStream is null
+                || _session is null
                 || string.IsNullOrWhiteSpace(ChatInput))
             {
                 return;
@@ -323,11 +329,12 @@ namespace AtariGo.Client.ViewModels
                 return;
             }
 
-            await _gameSessionStream.SendChatMessageAsync(
-                message,
-                _lifetimeCancellation.Token);
-            ChatInput = string.Empty;
-            ChatStatusMessage = string.Empty;
+            bool sent = await _session.SendChatAsync(message, _lifetimeCancellation.Token);
+            if (sent && !_isDisposed)
+            {
+                ChatInput = string.Empty;
+                ChatStatusMessage = string.Empty;
+            }
         }
 
         private void PromptSurrender()
@@ -376,7 +383,7 @@ namespace AtariGo.Client.ViewModels
 
         private void StartGameSession(long gameId)
         {
-            if (_gameSessionClient is null)
+            if (_session is null)
             {
                 _hasPermanentSessionFailure = true;
                 SessionStatusMessage = GetLocalizedMessage(
@@ -385,21 +392,19 @@ namespace AtariGo.Client.ViewModels
                 NotifyGameplayAvailability();
                 return;
             }
-
-            CancellationTokenSource cancellation =
-                CancellationTokenSource.CreateLinkedTokenSource(
-                    _lifetimeCancellation.Token);
-            _sessionCancellation = cancellation;
-            SessionStatusMessage = GetLocalizedMessage(
-                "GameBoard_Status_Connecting");
-            _sessionTask = RunGameSessionAsync(gameId, cancellation);
+            SessionStatusMessage = GetLocalizedMessage("GameBoard_Status_Connecting");
+            _ = _session.RunAsync(gameId, _lifetimeCancellation.Token);
         }
 
-        private void ApplyGameServerEvent(GameSessionServerEvent serverEvent)
+        private void ApplyGameServerEvent(GameplaySessionUpdate update)
         {
+            GameSessionServerEvent serverEvent = update.ServerEvent!;
             if (serverEvent.EventCase == GameSessionServerEvent.EventOneofCase.ActionResult)
             {
-                ApplyActionResult(serverEvent.ActionResult);
+                if (update.IsMatchingActionResult)
+                {
+                    ApplyActionResult(serverEvent.ActionResult, update.IsSurrenderResult);
+                }
                 return;
             }
             if (serverEvent.EventCase
@@ -425,17 +430,6 @@ namespace AtariGo.Client.ViewModels
 
         private void ApplyGameSnapshot(GameSessionSnapshot snapshot)
         {
-            if (!IsValidSnapshot(snapshot))
-            {
-                SessionStatusMessage = GetLocalizedMessage(
-                    "GameBoard_Status_InvalidSnapshot");
-                return;
-            }
-
-            if (snapshot.Version < _gameVersion)
-            {
-                return;
-            }
             ApplyPlayerInformation(snapshot);
             ApplyBoardCells(snapshot);
             MaximumChatMessageLength = snapshot.MaximumChatMessageLength;
@@ -488,11 +482,7 @@ namespace AtariGo.Client.ViewModels
                 exception.GetType().Name);
             ChatStatusMessage = GetLocalizedMessage(
                 "GameBoard_Chat_Err_SendFailed");
-            if (exception is RpcException rpcException)
-            {
-                SessionStatusMessage = GrpcFailureMessages.GetMessage(rpcException);
-                IsChatEnabled = false;
-            }
+
         }
 
         private static string GetConnectionStatusResourceKey(
@@ -506,42 +496,6 @@ namespace AtariGo.Client.ViewModels
             return snapshot.OpponentDisconnected
                 ? "GameBoard_Status_OpponentDisconnected"
                 : "GameBoard_Status_WaitingOpponent";
-        }
-
-        private bool IsValidSnapshot(GameSessionSnapshot snapshot)
-        {
-            if (!MatchesSnapshotHeader(snapshot))
-            {
-                return false;
-            }
-
-            HashSet<int> cellIndexes = new HashSet<int>();
-            foreach (GameBoardCell cell in snapshot.Cells)
-            {
-                if (cell.Row < 0 || cell.Row >= snapshot.BoardSize
-                    || cell.Column < 0 || cell.Column >= snapshot.BoardSize)
-                {
-                    return false;
-                }
-
-                int cellIndex = cell.Row * snapshot.BoardSize + cell.Column;
-                if (!cellIndexes.Add(cellIndex))
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        private bool MatchesSnapshotHeader(GameSessionSnapshot snapshot)
-        {
-            return snapshot.GameId == GameId
-                && snapshot.BoardSize == GameRules.BoardSize
-                && snapshot.Cells.Count == Cells.Count
-                && IsValidStoneColor(snapshot.PlayerStoneColor)
-                && IsValidStoneColor(snapshot.OpponentStoneColor)
-                && snapshot.MaximumChatMessageLength > 0;
         }
 
         private void ApplyPlayerInformation(GameSessionSnapshot snapshot)
@@ -562,12 +516,6 @@ namespace AtariGo.Client.ViewModels
                 Cells[cellIndex].IsLastMove = snapshot.HasLastMove
                     && cell.Row == snapshot.LastMoveRow && cell.Column == snapshot.LastMoveColumn;
             }
-        }
-
-        private static bool IsValidStoneColor(string stoneColor)
-        {
-            return stoneColor == BlackStoneColorName
-                || stoneColor == WhiteStoneColorName;
         }
 
         private static StoneColor MapStoneColor(string stoneColor)

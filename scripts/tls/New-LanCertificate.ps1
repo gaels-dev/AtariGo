@@ -138,7 +138,6 @@ $state | ConvertTo-Json | Set-Content -LiteralPath $statePath -Encoding utf8
 Export-Certificate -Cert $serverCertificate `
     -FilePath (Join-Path $outputPath 'AtariGo-Server.cer') -Force | Out-Null
 
-# The certificate is selected from Windows; no private key is written to a file.
 $projectPath = Join-Path $repositoryPath 'AtariGo.Server/AtariGo.Server.csproj'
 $certificateSettings = @{
     'Subject' = $serverCertificate.Subject.Substring('CN='.Length)

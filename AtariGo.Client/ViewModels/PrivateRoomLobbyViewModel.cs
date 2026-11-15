@@ -1,9 +1,6 @@
 using System.Diagnostics;
 using System.Globalization;
-using System.IO;
 using System.Windows.Input;
-
-using Grpc.Core;
 
 using AtariGo.Client.Commands;
 using AtariGo.Client.Models;
@@ -15,33 +12,33 @@ namespace AtariGo.Client.ViewModels;
 public sealed class PrivateRoomLobbyViewModel : ViewModelBase, IDisposable
 {
     private const string WaitingOpponentName = "?";
-    private static readonly TimeSpan reconnectDelay = TimeSpan.FromSeconds(1);
 
     private readonly INavigationService _navigationService;
-    private readonly IRoomsClient _roomsClient;
+    private readonly IPrivateRoomSession _session;
+    private readonly SynchronizationContext? _uiContext;
     private readonly CancellationTokenSource _lifetimeCancellation = new CancellationTokenSource();
     private readonly int _roomId;
     private RoomSnapshot _room;
-    private Task? _observationTask;
     private bool _isBusy;
     private bool _isSynchronized = true;
     private bool _isDisposed;
-    private bool _hasOpenedGame;
+    private bool _hasNavigated;
     private int _selectedCaptureGoal;
     private string _opponentName = WaitingOpponentName;
     private string _errorMessage = string.Empty;
 
     public PrivateRoomLobbyViewModel(
         INavigationService navigationService,
-        IRoomsClient roomsClient,
+        IPrivateRoomSession session,
         PrivateRoomNavigationContext navigationContext)
     {
         ArgumentNullException.ThrowIfNull(navigationService);
-        ArgumentNullException.ThrowIfNull(roomsClient);
+        ArgumentNullException.ThrowIfNull(session);
         ArgumentNullException.ThrowIfNull(navigationContext);
         _navigationService = navigationService;
-        _roomsClient = roomsClient;
-        _room = navigationContext.Room.Clone();
+        _session = session;
+        _uiContext = SynchronizationContext.Current;
+        _room = session.Room;
         _roomId = _room.RoomId;
         IsHost = navigationContext.IsHost;
         SelectedCaptureGoal = _room.Configuration.CaptureGoal;
@@ -50,6 +47,7 @@ public sealed class PrivateRoomLobbyViewModel : ViewModelBase, IDisposable
             StartGameAsync, ShowFailure, _lifetimeCancellation.Token);
         LeaveRoomCommand = new AsyncRelayCommand(
             LeaveRoomAsync, ShowFailure, _lifetimeCancellation.Token);
+        _session.Updated += HandleSessionUpdate;
     }
 
     public RoomInvitationsViewModel? RoomInvitations { get; private set; }
@@ -128,17 +126,7 @@ public sealed class PrivateRoomLobbyViewModel : ViewModelBase, IDisposable
 
     public Task WatchRoomAsync()
     {
-        if (_isDisposed)
-        {
-            return Task.CompletedTask;
-        }
-
-        if (_observationTask is null || _observationTask.IsCompleted)
-        {
-            _observationTask = ObserveRoomAsync(_lifetimeCancellation.Token);
-        }
-
-        return _observationTask;
+        return _isDisposed ? Task.CompletedTask : _session.WatchAsync(_lifetimeCancellation.Token);
     }
 
     public void Dispose()
@@ -147,88 +135,12 @@ public sealed class PrivateRoomLobbyViewModel : ViewModelBase, IDisposable
         {
             return;
         }
-
         _isDisposed = true;
+        _session.Updated -= HandleSessionUpdate;
         RoomInvitations?.Dispose();
         _lifetimeCancellation.Cancel();
+        _session.Dispose();
         _lifetimeCancellation.Dispose();
-    }
-
-    private async Task ObserveRoomAsync(CancellationToken cancellationToken)
-    {
-        bool fullSnapshot = false;
-        try
-        {
-            bool finished = HandleRoom(_room);
-            while (!finished && !_isDisposed)
-            {
-                finished = await TryObserveRoomAsync(fullSnapshot, cancellationToken);
-                if (!finished)
-                {
-                    _isSynchronized = false;
-                    if (string.IsNullOrEmpty(ErrorMessage))
-                    {
-                        ErrorMessage = GetMessage("Connection_Err_Unavailable");
-                    }
-
-                    NotifyConfigurationState();
-                    await Task.Delay(reconnectDelay, cancellationToken);
-                    fullSnapshot = true;
-                }
-            }
-        }
-        catch (Exception exception)
-            when (GrpcCallPolicy.IsRequestedCancellation(exception, cancellationToken))
-        {
-            Trace.TraceInformation("Room observation stopped with its owner.");
-        }
-        catch (Exception exception)
-        {
-            if (!_isDisposed)
-            {
-                _isSynchronized = false;
-                NotifyConfigurationState();
-                ShowFailure(exception);
-            }
-        }
-    }
-
-    private async Task<bool> TryObserveRoomAsync(bool fullSnapshot, CancellationToken token)
-    {
-        bool finished = false;
-        try
-        {
-            var request = new WatchRoomRequest { RoomId = _roomId };
-            if (!fullSnapshot)
-            {
-                request.FromVersion = _room.Version;
-            }
-
-            await foreach (RoomSnapshot room in _roomsClient.WatchRoomAsync(request, token))
-            {
-                token.ThrowIfCancellationRequested();
-                finished = HandleRoom(room);
-                if (finished)
-                {
-                    break;
-                }
-            }
-        }
-        catch (RpcException exception)
-            when (!GrpcCallPolicy.IsRequestedCancellation(exception, token))
-        {
-            _isSynchronized = false;
-            NotifyConfigurationState();
-            ShowFailure(exception);
-            finished = exception.StatusCode is StatusCode.Unauthenticated
-                or StatusCode.PermissionDenied or StatusCode.NotFound;
-        }
-        catch (IOException exception)
-        {
-            ShowFailure(exception);
-        }
-
-        return finished;
     }
 
     private async Task StartGameAsync(object? parameter)
@@ -237,31 +149,12 @@ public sealed class PrivateRoomLobbyViewModel : ViewModelBase, IDisposable
         {
             return;
         }
-
-        CancellationToken token = _lifetimeCancellation.Token;
         _isBusy = true;
         ErrorMessage = string.Empty;
         NotifyConfigurationState();
         try
         {
-            bool confirmed = await ConfirmConfigurationAsync(token);
-            if (confirmed && !_isDisposed)
-            {
-                var request = new StartGameRequest
-                {
-                    RoomId = _roomId, ExpectedRoomVersion = _room.Version
-                };
-                await _roomsClient.StartGameAsync(request, token);
-            }
-        }
-        catch (RpcException exception)
-            when (!GrpcCallPolicy.IsRequestedCancellation(exception, token))
-        {
-            await RecoverStartAsync(exception, token);
-        }
-        catch (IOException exception)
-        {
-            await RecoverStartAsync(exception, token);
+            await _session.StartGameAsync(SelectedCaptureGoal, _lifetimeCancellation.Token);
         }
         finally
         {
@@ -273,110 +166,92 @@ public sealed class PrivateRoomLobbyViewModel : ViewModelBase, IDisposable
         }
     }
 
-    private async Task<bool> ConfirmConfigurationAsync(CancellationToken token)
-    {
-        int selectedGoal = SelectedCaptureGoal;
-        if (selectedGoal != TargetCaptures)
-        {
-            RoomConfiguration configuration = _room.Configuration.Clone();
-            configuration.CaptureGoal = selectedGoal;
-            var request = new UpdateRoomConfigurationRequest
-            {
-                RoomId = _roomId, Configuration = configuration, ExpectedVersion = _room.Version
-            };
-            RoomSnapshot confirmed = await _roomsClient.UpdateRoomConfigurationAsync(
-                request, token);
-            token.ThrowIfCancellationRequested();
-            HandleRoom(confirmed);
-        }
-
-        return !_isDisposed && _room.State == RoomState.Waiting
-            && _room.Configuration.CaptureGoal == selectedGoal
-            && _room.Participants.Any(participant => !participant.IsHost);
-    }
-
-    private async Task RecoverStartAsync(Exception failure, CancellationToken token)
-    {
-        if (_isDisposed)
-        {
-            return;
-        }
-
-        _isSynchronized = false;
-        string failureMessage = failure is RpcException { StatusCode: StatusCode.Aborted }
-            ? GetMessage("PrivateRoom_Err_ConfigurationChanged")
-            : GetMessage("PrivateRoom_Err_ConfigurationUnconfirmed");
-        ErrorMessage = failureMessage;
-        NotifyConfigurationState();
-        try
-        {
-            using CancellationTokenSource timeout =
-                CancellationTokenSource.CreateLinkedTokenSource(token);
-            timeout.CancelAfter(TimeSpan.FromSeconds(GrpcCallPolicy.RequestTimeoutSeconds));
-            await foreach (RoomSnapshot room in _roomsClient.WatchRoomAsync(
-                new WatchRoomRequest { RoomId = _roomId }, timeout.Token))
-            {
-                HandleRoom(room);
-                if (!_isDisposed)
-                {
-                    ErrorMessage = failureMessage;
-                }
-
-                break;
-            }
-        }
-        catch (Exception exception) when (!token.IsCancellationRequested)
-        {
-            ShowFailure(exception);
-        }
-    }
-
     private async Task LeaveRoomAsync(object? parameter)
     {
         if (!CanLeaveRoom)
         {
             return;
         }
-
-        CancellationToken token = _lifetimeCancellation.Token;
-        try
+        bool left = await _session.LeaveAsync(_lifetimeCancellation.Token);
+        if (left && !_isDisposed)
         {
-            await _roomsClient.LeaveRoomAsync(_roomId, token);
+            _navigationService.NavigateToMainMenu();
         }
-        catch (RpcException exception) when (exception.StatusCode == StatusCode.NotFound)
-        {
-            Trace.TraceInformation("The room was already closed.");
-        }
-
-        token.ThrowIfCancellationRequested();
-        _navigationService.NavigateToMainMenu();
     }
 
-    private bool HandleRoom(RoomSnapshot room)
+    private void HandleSessionUpdate(PrivateRoomSessionUpdate update)
     {
-        if (_isDisposed || room.RoomId != _roomId || room.Version < _room.Version)
+        if (_uiContext is not null && SynchronizationContext.Current != _uiContext)
         {
-            return _isDisposed;
+            _uiContext.Send(ApplyDispatchedUpdate, update);
         }
-
-        ApplyRoom(room);
-        bool finished = room.State == RoomState.Closed;
-        if (finished)
+        else
         {
+            ApplySessionUpdate(update);
+        }
+    }
+
+    private void ApplyDispatchedUpdate(object? state)
+    {
+        if (state is PrivateRoomSessionUpdate update)
+        {
+            ApplySessionUpdate(update);
+        }
+    }
+
+    private void ApplySessionUpdate(PrivateRoomSessionUpdate update)
+    {
+        if (_isDisposed || update.Room.RoomId != _roomId || update.Room.Version < _room.Version)
+        {
+            return;
+        }
+        _isSynchronized = update.IsSynchronized;
+        ApplyRoom(update.Room);
+        ErrorMessage = GetFailureMessage(update);
+        NotifyConfigurationState();
+        NavigateForRoom(update.Room);
+    }
+
+    private void NavigateForRoom(RoomSnapshot room)
+    {
+        if (_hasNavigated)
+        {
+            return;
+        }
+        if (room.State == RoomState.Closed)
+        {
+            _hasNavigated = true;
             _navigationService.NavigateToMainMenu();
         }
         else if (room.State == RoomState.Started && room.GameId > 0)
         {
-            finished = true;
-            if (!_hasOpenedGame)
-            {
-                _hasOpenedGame = true;
-                _navigationService.NavigateToSharedGame(
-                    new PrivateRoomNavigationContext(room, IsHost));
-            }
+            _hasNavigated = true;
+            _navigationService.NavigateToSharedGame(new PrivateRoomNavigationContext(room, IsHost));
         }
+    }
 
-        return finished;
+    private static string GetFailureMessage(PrivateRoomSessionUpdate update)
+    {
+        if (update.IsStartRecovery)
+        {
+            string recoveryKey = update.Failure == ClientFailureReason.VersionConflict
+                ? "PrivateRoom_Err_ConfigurationChanged"
+                : "PrivateRoom_Err_ConfigurationUnconfirmed";
+            return GetMessage(recoveryKey);
+        }
+        if (update.Failure == ClientFailureReason.None)
+        {
+            return string.Empty;
+        }
+        string key = update.Failure switch
+        {
+            ClientFailureReason.Timeout => "Connection_Err_Timeout",
+            ClientFailureReason.Unavailable => "Connection_Err_Unavailable",
+            ClientFailureReason.SessionExpired => "Connection_Err_SessionExpired",
+            ClientFailureReason.Cancelled => "Connection_Err_Cancelled",
+            _ => "Connection_Err_RequestFailed"
+        };
+        return GetMessage(key);
     }
 
     private void ApplyRoom(RoomSnapshot room)
@@ -384,12 +259,6 @@ public sealed class PrivateRoomLobbyViewModel : ViewModelBase, IDisposable
         bool hasDraft = SelectedCaptureGoal != TargetCaptures;
         bool changedConfiguration = room.Configuration.CaptureGoal != TargetCaptures;
         _room = room.Clone();
-        if (!_isSynchronized)
-        {
-            ErrorMessage = string.Empty;
-        }
-
-        _isSynchronized = true;
         if (!hasDraft || changedConfiguration)
         {
             SelectedCaptureGoal = TargetCaptures;
@@ -432,7 +301,8 @@ public sealed class PrivateRoomLobbyViewModel : ViewModelBase, IDisposable
     {
         if (!_isDisposed)
         {
-            ErrorMessage = GrpcFailureMessages.GetMessage(exception);
+            Trace.TraceWarning("Room command failed: {0}.", exception.GetType().Name);
+            ErrorMessage = GetMessage("Connection_Err_RequestFailed");
         }
     }
 }

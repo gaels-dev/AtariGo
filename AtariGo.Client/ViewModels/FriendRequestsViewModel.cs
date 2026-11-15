@@ -206,7 +206,6 @@ public sealed class FriendRequestsViewModel : ViewModelBase, IDisposable
         RespondToFriendRequestResponse response,
         long requestId)
     {
-        // Membership follows the ordered session stream; replies may arrive after a removal.
         switch (response.Status)
         {
             case FriendRequestResponseStatus.Accepted:

@@ -3,6 +3,6 @@ using AtariGo.Client.Services;
 namespace AtariGo.Client.Models;
 
 public sealed record GameBoardViewModelContext(
-    IGameSessionClient? SessionClient,
+    IGameplaySession? Session,
     bool IsGuest,
     string PlayerName);

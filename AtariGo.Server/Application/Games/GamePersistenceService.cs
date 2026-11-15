@@ -15,12 +15,15 @@ public sealed class GamePersistenceService
 
     public GamePersistenceService(AtariGoDbContext dbContext, TimeProvider timeProvider)
     {
+        ArgumentNullException.ThrowIfNull(dbContext);
+        ArgumentNullException.ThrowIfNull(timeProvider);
         _dbContext = dbContext;
         _timeProvider = timeProvider;
     }
 
     public Task<Game> LoadAsync(long gameId, CancellationToken cancellationToken)
     {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(gameId);
         return _dbContext.Games.Include(game => game.GamePlayers)
             .Include(game => game.GameConfiguration)
             .SingleAsync(game => game.GameId == gameId, cancellationToken);
@@ -28,6 +31,7 @@ public sealed class GamePersistenceService
 
     public static GameRuntimeState Read(Game game)
     {
+        ArgumentNullException.ThrowIfNull(game);
         if (game.BoardStateJson is null || !game.TurnDeadlineUtc.HasValue)
         {
             throw new InvalidOperationException("The persisted game state is missing.");
@@ -45,6 +49,7 @@ public sealed class GamePersistenceService
 
     public static void Initialize(Game game, int goal, DateTime now)
     {
+        ArgumentNullException.ThrowIfNull(game);
         game.BoardStateJson = JsonSerializer.Serialize(new GameState { CaptureGoal = goal });
         game.State = GameRuntimeState.Waiting;
         game.TurnDeadlineUtc = now.AddSeconds(GameRuntimeState.ConnectionGraceSeconds);
@@ -52,6 +57,7 @@ public sealed class GamePersistenceService
 
     public async Task<GameActionResult?> FindActionAsync(GameActionContext context)
     {
+        ArgumentNullException.ThrowIfNull(context);
         GameEvent? entry = await _dbContext.GameEvents.SingleOrDefaultAsync(gameEvent =>
             gameEvent.GameId == context.Game.GameId
             && gameEvent.GamePlayerId == context.Player.GamePlayerId
@@ -71,7 +77,63 @@ public sealed class GamePersistenceService
         return result;
     }
 
-    public void RecordAction(GameActionContext context, GameActionResult result)
+    public async Task SaveActionAsync(GameActionContext context, GameActionResult result,
+        GameRuntimeState previous)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        ArgumentNullException.ThrowIfNull(result);
+        ArgumentNullException.ThrowIfNull(previous);
+        if (result.IsAccepted && !context.Command.IsSurrender)
+        {
+            AddMove(context, previous.Board);
+        }
+        RecordAction(context, result);
+        if (context.Runtime != previous)
+        {
+            await SaveAsync(context.Game, context.Runtime, CancellationToken.None);
+        }
+        else
+        {
+            await _dbContext.SaveChangesAsync(CancellationToken.None);
+        }
+    }
+
+    public async Task SaveAsync(Game game, GameRuntimeState state,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(game);
+        ArgumentNullException.ThrowIfNull(state);
+        if (state.IsTerminal)
+        {
+            game.FinishedAt = _timeProvider.GetUtcNow().UtcDateTime;
+        }
+        AddTransitionEvent(game, state);
+        game.StateVersion++;
+        game.BoardStateJson = JsonSerializer.Serialize(state.Board);
+        game.TurnDeadlineUtc = state.DeadlineUtc;
+        game.State = state.Status;
+        game.EndReason = state.IsTerminal ? state.EndReason : null;
+        UpdateParticipants(game, state);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    private void AddMove(GameActionContext context, GameState previous)
+    {
+        GameState next = context.Runtime.Board;
+        int before = previous.BlackCaptures + previous.WhiteCaptures;
+        int after = next.BlackCaptures + next.WhiteCaptures;
+        _dbContext.Moves.Add(new Move
+        {
+            GamePlayerId = context.Player.GamePlayerId,
+            TurnNumber = previous.TurnNumber,
+            Row = checked((byte)context.Command.Row),
+            Column = checked((byte)context.Command.Column),
+            PlayedAt = context.Now,
+            CapturedStones = after - before
+        });
+    }
+
+    private void RecordAction(GameActionContext context, GameActionResult result)
     {
         string eventType = "ActionRejected";
         if (result.IsAccepted)
@@ -89,19 +151,6 @@ public sealed class GamePersistenceService
             ActionRequestJson = JsonSerializer.Serialize(context.Command),
             ActionResultJson = JsonSerializer.Serialize(result)
         });
-    }
-
-    public async Task SaveAsync(Game game, GameRuntimeState state,
-        CancellationToken cancellationToken)
-    {
-        AddTransitionEvent(game, state);
-        game.StateVersion++;
-        game.BoardStateJson = JsonSerializer.Serialize(state.Board);
-        game.TurnDeadlineUtc = state.DeadlineUtc;
-        game.State = state.Status;
-        game.EndReason = state.IsTerminal ? state.EndReason : null;
-        UpdateParticipants(game, state);
-        await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
     private void AddTransitionEvent(Game game, GameRuntimeState next)

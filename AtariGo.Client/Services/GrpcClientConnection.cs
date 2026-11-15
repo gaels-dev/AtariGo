@@ -4,7 +4,6 @@ using Grpc.Net.Client;
 
 namespace AtariGo.Client.Services
 {
-    /// <summary>Owns the reusable transport shared by the application's gRPC adapters.</summary>
     public sealed class GrpcClientConnection : IDisposable
     {
         private static readonly Lazy<GrpcClientConnection> sharedConnection =

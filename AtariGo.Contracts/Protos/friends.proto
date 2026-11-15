@@ -74,7 +74,6 @@ enum FriendRequestResponseStatus {
   FRIEND_REQUEST_RESPONSE_STATUS_ALREADY_PROCESSED = 5;
 }
 
-// Only pending requests are retained by the current request workflow.
 enum FriendRequestFilter {
   FRIEND_REQUEST_FILTER_UNSPECIFIED = 0;
   FRIEND_REQUEST_FILTER_PENDING = 1;

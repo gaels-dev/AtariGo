@@ -85,9 +85,10 @@ public sealed class SessionGrpcService : Session.SessionBase
         SessionConnectionLease connection,
         CancellationToken callCancellationToken)
     {
-        using var streamCancellation = CancellationTokenSource.CreateLinkedTokenSource(
-            callCancellationToken,
-            connection.CancellationToken);
+        using CancellationTokenSource streamCancellation =
+            CancellationTokenSource.CreateLinkedTokenSource(
+                callCancellationToken,
+                connection.CancellationToken);
         Task receiveTask = DrainClientEventsAsync(
             streams.RequestStream,
             streamCancellation.Token);
@@ -186,7 +187,6 @@ public sealed class SessionGrpcService : Session.SessionBase
         };
     }
 
-    /// <summary>Maintains the authenticated player's real-time lobby connection.</summary>
     public override async Task Connect(
         IAsyncStreamReader<SessionClientEvent> requestStream,
         IServerStreamWriter<SessionServerEvent> responseStream,

@@ -4,10 +4,6 @@ using AtariGo.Contracts;
 
 namespace AtariGo.Client.Services
 {
-    /// <summary>
-    /// Provides navigation and window-level actions to view models without
-    /// passing individual callbacks through the view-model hierarchy.
-    /// </summary>
     public interface INavigationService
     {
         void NavigateToMainWindow(ClientSessionContext context);

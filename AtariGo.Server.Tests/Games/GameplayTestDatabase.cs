@@ -51,7 +51,9 @@ internal sealed class GameplayTestDatabase : IAsyncDisposable
             provider => provider.GetRequiredService<ManualTimeProvider>());
         services.AddSingleton<IGameSessionRegistry, GameSessionRegistry>();
         services.AddSingleton<GameRulesEngine>();
+        services.AddSingleton<GameOperationGate>();
         services.AddSingleton<GameCoordinator>();
+        services.AddScoped<GameCommandService>();
         services.AddScoped<GameActionProcessor>();
         services.AddScoped<GamePersistenceService>();
         GameplayTestDatabase database = new GameplayTestDatabase(connection,

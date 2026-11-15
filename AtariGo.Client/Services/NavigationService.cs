@@ -9,10 +9,6 @@ using AtariGo.Contracts;
 
 namespace AtariGo.Client.Services
 {
-    /// <summary>
-    /// Routes navigation requests through the main view model and marshals
-    /// requests from background services onto the WPF dispatcher.
-    /// </summary>
     public sealed class NavigationService : INavigationService
     {
         public void NavigateToMainWindow(ClientSessionContext context)
@@ -274,7 +270,8 @@ namespace AtariGo.Client.Services
             }
 
             var roomsClient = new GrpcRoomsClient(mainViewModel.SessionToken);
-            var lobby = new PrivateRoomLobbyViewModel(this, roomsClient, navigationContext);
+            var session = new PrivateRoomSession(roomsClient, navigationContext.Room);
+            var lobby = new PrivateRoomLobbyViewModel(this, session, navigationContext);
             if (navigationContext.IsHost)
             {
                 var invitationContext = new RoomInvitationsNavigationContext(

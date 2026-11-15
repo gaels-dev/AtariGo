@@ -1,6 +1,3 @@
--- Stop the Atari Go server and run this single script against its existing database.
--- Migrates the previous deployment, removes its two auxiliary tables, and expands existing tables.
--- Also supports the original schema and repeated execution. All changes are one transaction.
 SET XACT_ABORT ON;
 BEGIN TRY
     BEGIN TRANSACTION;
@@ -97,7 +94,6 @@ IF EXISTS (SELECT 1 FROM #ActionsToMigrate AS source JOIN dbo.GameEvents AS targ
         AND target.ActionId = source.ActionId)
     THROW 51006, ''Both storage layouts contain the same action. No changes were committed.'', 1;
 
--- Reuse original move/resignation events, preserving their identity and timestamp.
 UPDATE target SET ActionId = source.ActionId,
     ActionRequestJson = source.RequestJson, ActionResultJson = source.ResultJson
 FROM dbo.GameEvents AS target JOIN #ActionsToMigrate AS source
@@ -163,7 +159,6 @@ IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE object_id = OBJECT_ID(N''dbo.Game
     CREATE UNIQUE INDEX UX_GamePlayers_Game_GuestIdentity ON dbo.GamePlayers(GameId, GuestIdentityId)
         WHERE GuestIdentityId IS NOT NULL;');
 
-    -- Drop only after every copy and target constraint has succeeded.
     IF OBJECT_ID(N'dbo.GameActionReceipts', N'U') IS NOT NULL DROP TABLE dbo.GameActionReceipts;
     IF OBJECT_ID(N'dbo.GameProgresses', N'U') IS NOT NULL DROP TABLE dbo.GameProgresses;
 

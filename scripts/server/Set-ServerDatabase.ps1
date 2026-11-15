@@ -17,7 +17,6 @@ try {
         throw [ArgumentException]::new('A non-empty SQL connection string is required.')
     }
 
-    # Standard input keeps the connection value out of process arguments and shell history.
     $settings['ConnectionStrings:AtariGoConnection'] = $credential.Password
     $settings | ConvertTo-Json -Compress | & dotnet user-secrets set --project $projectPath
     if ($LASTEXITCODE -ne 0) {

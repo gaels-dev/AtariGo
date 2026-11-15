@@ -43,7 +43,9 @@ internal sealed class GameplayGrpcTestHost : IAsyncDisposable
         builder.Services.AddSingleton<TimeProvider>(database.Time);
         builder.Services.AddSingleton<IGameSessionRegistry, GameSessionRegistry>();
         builder.Services.AddSingleton<GameRulesEngine>();
+        builder.Services.AddSingleton<GameOperationGate>();
         builder.Services.AddSingleton<GameCoordinator>();
+        builder.Services.AddScoped<GameCommandService>();
         builder.Services.AddSingleton<IGuestIdentityRegistry, GuestIdentityRegistry>();
         builder.Services.AddScoped<GamePersistenceService>();
         builder.Services.AddScoped<GameActionProcessor>();

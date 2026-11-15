@@ -1,6 +1,5 @@
 using System.Reflection;
 
-
 using Grpc.Core;
 
 using AtariGo.Client.Models;
@@ -16,6 +15,32 @@ namespace AtariGo.Client.Tests.ViewModels;
 [TestCategory("Unit")]
 public sealed class GameBoardViewModelTests
 {
+    [TestMethod]
+    public async Task ApplySnapshot_BackgroundUpdate_UsesCapturedUiContext()
+    {
+        // Arrange
+        StubGameSessionStream stream = new StubGameSessionStream();
+        RecordingSynchronizationContext context = new RecordingSynchronizationContext();
+        SynchronizationContext? previous = SynchronizationContext.Current;
+        GameBoardViewModel model;
+        try
+        {
+            SynchronizationContext.SetSynchronizationContext(context);
+            model = CreateModel(stream);
+        }
+        finally
+        {
+            SynchronizationContext.SetSynchronizationContext(previous);
+        }
+        using (model)
+        {
+            // Act
+            await WaitUntilAsync(() => model.IsMyTurn);
+            // Assert
+            Assert.IsTrue(context.SendCount > 0);
+        }
+    }
+
     [TestMethod]
     public async Task PlaceStoneCommand_OnlineMove_WaitsForServerBeforeDrawingStone()
     {
@@ -141,7 +166,7 @@ public sealed class GameBoardViewModelTests
     }
 
     [TestMethod]
-    public void LeaveGameCommand_InitialConnectionRejected_StopsRetryingAndAllowsExit()
+    public async Task LeaveGameCommand_InitialConnectionRejected_StopsRetryingAndAllowsExit()
     {
         // Arrange
         StubGameSessionClient client = new StubGameSessionClient
@@ -151,6 +176,7 @@ public sealed class GameBoardViewModelTests
         INavigationService navigation = DispatchProxy.Create<INavigationService,
             RecordingNavigationProxy>();
         using GameBoardViewModel model = OpenModel(client, navigation);
+        await WaitUntilAsync(() => client.ConnectCount == 1 && model.CanLeaveGame);
         // Act
         model.LeaveGameCommand.Execute(null);
         // Assert
@@ -402,7 +428,8 @@ public sealed class GameBoardViewModelTests
         INavigationService navigation)
     {
         GameBoardViewModel model = new GameBoardViewModel(navigation,
-            new GameBoardViewModelContext(client, true, "Black"));
+            new GameBoardViewModelContext(
+                client is null ? null : new GameplaySession(client), true, "Black"));
         model.OpenPublicGame(new PublicMatchNavigationContext(new PublicGameStarted
         {
             GameId = 1,
@@ -415,37 +442,7 @@ public sealed class GameBoardViewModelTests
 
     private static GameSessionSnapshot Snapshot(long version)
     {
-        GameSessionSnapshot snapshot = new GameSessionSnapshot
-        {
-            GameId = 1,
-            BoardSize = 9,
-            CaptureGoal = 1,
-            TurnTimeSeconds = 30,
-            PlayerName = "Black",
-            OpponentName = "White",
-            PlayerStoneColor = "Black",
-            OpponentStoneColor = "White",
-            OpponentConnected = true,
-            MaximumChatMessageLength = 100,
-            Status = "InProgress",
-            Version = version,
-            CurrentTurn = GameStoneState.Black,
-            BlackRemainingMilliseconds = 30000,
-            WhiteRemainingMilliseconds = 30000
-        };
-        for (int row = 0; row < snapshot.BoardSize; row++)
-        {
-            for (int column = 0; column < snapshot.BoardSize; column++)
-            {
-                snapshot.Cells.Add(new GameBoardCell
-                {
-                    Row = row,
-                    Column = column,
-                    Stone = GameStoneState.Empty
-                });
-            }
-        }
-        return snapshot;
+        return GameSessionTestData.Snapshot(version);
     }
 
     private static async Task WaitUntilAsync(Func<bool> predicate)

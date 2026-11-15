@@ -26,7 +26,6 @@ namespace AtariGo.Client.Views
                 return;
             }
 
-            // A language refresh transfers the same view model to a replacement window.
             bool isTransferred = Application.Current.MainWindow is LoginView replacement
                 && !ReferenceEquals(replacement, this)
                 && ReferenceEquals(replacement.DataContext, viewModel);

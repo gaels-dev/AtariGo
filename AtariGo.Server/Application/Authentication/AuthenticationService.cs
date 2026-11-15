@@ -79,7 +79,6 @@ public sealed class AuthenticationService : IAuthenticationService
                 cancellationToken);
     }
 
-    /// <summary>Verifies a password and upgrades a legacy value after a successful match.</summary>
     private bool VerifyPassword(User user, string password)
     {
         Credential credential = user.Credential!;

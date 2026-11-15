@@ -23,7 +23,6 @@ $request.VersionPolicy = [System.Net.Http.HttpVersionPolicy]::RequestVersionExac
 $response = $null
 
 try {
-    # Standard certificate and hostname validation remain enabled.
     $response = $client.SendAsync($request).GetAwaiter().GetResult()
     $response.EnsureSuccessStatusCode() | Out-Null
     Write-Output ('HTTPS connection validated. HTTP version: ' + $response.Version)

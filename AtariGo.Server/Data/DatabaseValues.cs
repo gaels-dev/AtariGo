@@ -1,6 +1,5 @@
 namespace AtariGo.Server.Data;
 
-/// <summary>Defines the string values persisted by the database for status columns.</summary>
 public static class DatabaseValues
 {
     public static class AccountStates

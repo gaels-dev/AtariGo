@@ -37,7 +37,6 @@ public sealed class GameClockSynchronization
         }
         else
         {
-            // The initial handshake estimates transit; later snapshots cannot turn the clock back.
             TimeSpan roundTrip = _timeProvider.GetElapsedTime(
                 _connectionStartedTimestamp, received);
             estimatedNow += roundTrip.TotalMilliseconds / RoundTripLegs;

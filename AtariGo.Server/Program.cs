@@ -43,12 +43,15 @@ builder.Services.AddScoped<IGameLifecycleService, GameLifecycleService>();
 builder.Services.AddSingleton<GameRulesEngine>();
 builder.Services.AddScoped<GamePersistenceService>();
 builder.Services.AddScoped<GameActionProcessor>();
+builder.Services.AddSingleton<GameOperationGate>();
 builder.Services.AddSingleton<GameCoordinator>();
+builder.Services.AddScoped<GameCommandService>();
 builder.Services.AddHostedService<GameClockService>();
 builder.Services.AddScoped<IGameSessionCatalog, GameSessionCatalog>();
 builder.Services.AddSingleton<IGameSessionRegistry, GameSessionRegistry>();
 builder.Services.AddSingleton<IGuestIdentityRegistry, GuestIdentityRegistry>();
 builder.Services.AddSingleton<InMemoryPublicMatchmakingQueue>();
+builder.Services.AddScoped<PublicMatchmakingService>();
 builder.Services.AddSingleton<IRoomInvitationNotifier>(provider =>
     provider.GetRequiredService<ISessionConnectionRegistry>());
 builder.Services.AddSingleton<IRoomsService, RoomsService>();

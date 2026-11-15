@@ -4,6 +4,20 @@ La jugabilidad amplía las tablas existentes `Games` y `GameEvents`. No requiere
 adicionales. `Moves` conserva las jugadas y `GamePlayers` las capturas y resultados por jugador.
 El código usa exclusivamente ese esquema; no hay selección de diseños antiguos al arrancar.
 
+## Actualización directa desde la BD anterior a la jugabilidad
+
+Si la BD no recibió ninguna de las actualizaciones de jugabilidad, usar únicamente
+`Update-Gameplay-Direct.sql`. Seleccionar la BD existente en SQL Server Management Studio,
+detener el servidor Atari Go, respaldar la BD y ejecutar el archivo completo.
+Este archivo aplica directamente las columnas, restricciones e índices finales; no crea,
+migra ni elimina tablas auxiliares. Si falta `GamePlayers.GuestIdentityId`, también añade
+esa columna y su índice, que necesita la identidad de invitados ya utilizada por el servidor.
+
+Conserva los resultados históricos. Prepara partidas activas sin movimientos y rechaza,
+sin guardar cambios parciales, partidas activas que tengan movimientos sin tablero guardado.
+Puede ejecutarse de nuevo sin duplicar columnas ni reiniciar estados existentes.
+Después, ejecutar `dotnet run --project .\AtariGo.Server -- --check-database`.
+
 ## Corrección de una BD que ya ejecutó la actualización anterior
 
 Usar **un solo archivo: `Update-Gameplay.sql` de esta versión**. Su contenido sustituye al

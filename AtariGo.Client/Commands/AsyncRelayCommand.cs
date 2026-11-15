@@ -27,9 +27,6 @@ public sealed class AsyncRelayCommand : ICommand
 
     public bool CanExecute(object? parameter) => !_isExecuting;
 
-    /// <summary>
-    /// Runs the task at the ICommand void boundary and handles command failures.
-    /// </summary>
     public async void Execute(object? parameter)
     {
         if (!CanExecute(parameter))

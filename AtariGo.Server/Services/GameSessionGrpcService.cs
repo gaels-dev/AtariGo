@@ -261,7 +261,6 @@ public sealed class GameSessionGrpcService : GameSession.GameSessionBase
         }
         catch (Exception exception) when (completedTask.IsFaulted)
         {
-            // Preserve the first failure while observing a second failure during cleanup.
             _logger.LogWarning("The paired game stream also failed with {ErrorType}.",
                 exception.GetType().Name);
         }

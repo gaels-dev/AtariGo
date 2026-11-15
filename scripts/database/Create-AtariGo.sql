@@ -1,4 +1,3 @@
--- Fresh installation only. Existing databases must use Update-Gameplay.sql.
 USE master;
 GO
 
@@ -14,12 +13,6 @@ GO
 USE AtariGoDB;
 GO
 
-/*
-    AtariGO database schema.
-    The application owns game rules and validates cross-row rules such as
-    starting a game only after exactly two players have joined.
-    Foreign keys use NO ACTION by default to preserve game and moderation history.
-*/
 
 CREATE TABLE dbo.Roles
 (
@@ -278,7 +271,6 @@ CREATE TABLE dbo.GameConfigurations
     GameConfigurationId INT IDENTITY(1, 1) NOT NULL,
     CaptureGoal TINYINT NOT NULL
         CONSTRAINT DF_GameConfigurations_CaptureGoal DEFAULT (1),
-    -- Legacy compatibility field; gameplay only uses TurnTimeSeconds.
     GameTimeSeconds INT NOT NULL,
     TurnTimeSeconds INT NOT NULL,
     CONSTRAINT PK_GameConfigurations PRIMARY KEY (GameConfigurationId),
@@ -393,7 +385,6 @@ CREATE TABLE dbo.Moves
 (
     MoveId BIGINT IDENTITY(1, 1) NOT NULL,
     GamePlayerId BIGINT NOT NULL,
-    -- Global turn number; automatic timeout passes also advance this counter.
     TurnNumber INT NOT NULL,
     [Row] TINYINT NOT NULL,
     [Column] TINYINT NOT NULL,
@@ -532,12 +523,10 @@ CREATE INDEX IX_Sanctions_Report ON dbo.Sanctions (ReportId)
     WHERE ReportId IS NOT NULL;
 GO
 
--- Guest credentials are issued by the application; names are not authentication keys.
 CREATE UNIQUE INDEX UX_GamePlayers_Game_GuestIdentity
     ON dbo.GamePlayers(GameId, GuestIdentityId) WHERE GuestIdentityId IS NOT NULL;
 GO
 
--- Minimal application prerequisite; no users, passwords or sessions are created.
 INSERT INTO dbo.Roles(Name, Description) VALUES (N'Player', N'Registered player');
 GO
 

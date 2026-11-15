@@ -1,298 +1,113 @@
-using AtariGo.Server.Data;
-using AtariGo.Server.Data.Entities;
-
 namespace AtariGo.Server.Application.Games;
 
 public sealed class GameCoordinator : IDisposable, IAsyncDisposable
 {
-    private const int GateCount = 128;
-    private const int MaximumActionIdLength = 64;
-    private readonly SemaphoreSlim[] _gates = Enumerable.Range(0, GateCount)
-        .Select(_ => new SemaphoreSlim(1, 1)).ToArray();
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly IGameSessionRegistry _registry;
-    private readonly TimeProvider _timeProvider;
-    private readonly object _lifetimeSync = new object();
-    private readonly TaskCompletionSource _disposalCompletion = new TaskCompletionSource(
-        TaskCreationOptions.RunContinuationsAsynchronously);
-    private int _pendingOperations;
-    private bool _isDisposed;
+    private readonly GameOperationGate _operations;
 
     public GameCoordinator(IServiceScopeFactory scopeFactory,
-        IGameSessionRegistry registry, TimeProvider timeProvider)
+        IGameSessionRegistry registry, GameOperationGate operations)
     {
+        ArgumentNullException.ThrowIfNull(scopeFactory);
+        ArgumentNullException.ThrowIfNull(registry);
+        ArgumentNullException.ThrowIfNull(operations);
         _scopeFactory = scopeFactory;
         _registry = registry;
-        _timeProvider = timeProvider;
+        _operations = operations;
     }
 
     public async Task<GameSessionConnection> ConnectAsync(GameSessionDefinition definition,
         CancellationToken cancellationToken)
     {
-        SemaphoreSlim gate = GetGate(definition.GameId);
-        await EnterAsync(gate, cancellationToken);
+        ArgumentNullException.ThrowIfNull(definition);
+        using GameOperationLease lease = await _operations.EnterAsync(
+            definition.GameId, cancellationToken);
+        using IServiceScope scope = _scopeFactory.CreateScope();
+        GameCommandService commands = scope.ServiceProvider
+            .GetRequiredService<GameCommandService>();
+        GameOperationContext operation = await commands.LoadAsync(
+            definition.GameId, cancellationToken);
+        GameSessionConnection connection = _registry.Connect(definition with
+        {
+            Progress = operation.Progress,
+            Version = operation.Version
+        });
         try
         {
-            using IServiceScope scope = _scopeFactory.CreateScope();
-            GamePersistenceService store = scope.ServiceProvider
-                .GetRequiredService<GamePersistenceService>();
-            Game game = await store.LoadAsync(definition.GameId, cancellationToken);
-            GameRuntimeState runtime = GamePersistenceService.Read(game);
-            GameSessionConnection connection = _registry.Connect(definition with
-            {
-                Progress = runtime,
-                Version = game.StateVersion
-            });
-            try
-            {
-                await StartOrAdvanceAsync(store, game);
-                return connection;
-            }
-            catch
-            {
-                _registry.Disconnect(connection);
-                throw;
-            }
+            Publish(await commands.AdvanceAsync(operation,
+                () => _registry.AreBothConnected(definition.GameId)));
         }
-        finally
+        catch
         {
-            Exit(gate);
+            _registry.Disconnect(connection);
+            throw;
         }
+        return connection;
     }
 
     public async Task ProcessAsync(GameSessionConnection connection,
         GameActionCommand command, CancellationToken cancellationToken)
     {
-        SemaphoreSlim gate = GetGate(connection.GameId);
-        await EnterAsync(gate, cancellationToken);
-        try
+        ArgumentNullException.ThrowIfNull(connection);
+        ArgumentNullException.ThrowIfNull(command);
+        using GameOperationLease lease = await _operations.EnterAsync(
+            connection.GameId, cancellationToken);
+        if (!_registry.IsCurrent(connection))
         {
-            if (!_registry.IsCurrent(connection))
-            {
-                return;
-            }
-            using IServiceScope scope = _scopeFactory.CreateScope();
-            GameActionResult result = await ProcessActionAsync(scope, connection, command);
-            _registry.PublishActionResult(connection, result);
+            return;
         }
-        finally
+        using IServiceScope scope = _scopeFactory.CreateScope();
+        GameCommandService commands = scope.ServiceProvider
+            .GetRequiredService<GameCommandService>();
+        GameOperationResult result = await commands.ProcessAsync(connection, command,
+            () => _registry.AreBothConnected(connection.GameId));
+        Publish(result);
+        if (result.ActionResult is not null)
         {
-            Exit(gate);
+            _registry.PublishActionResult(connection, result.ActionResult);
         }
     }
 
     public async Task AdvanceAsync(long gameId, CancellationToken cancellationToken)
     {
-        SemaphoreSlim gate = GetGate(gameId);
-        await EnterAsync(gate, cancellationToken);
-        try
-        {
-            using IServiceScope scope = _scopeFactory.CreateScope();
-            GamePersistenceService store = scope.ServiceProvider
-                .GetRequiredService<GamePersistenceService>();
-            Game game = await store.LoadAsync(gameId, cancellationToken);
-            await StartOrAdvanceAsync(store, game);
-        }
-        finally
-        {
-            Exit(gate);
-        }
+        using GameOperationLease lease = await _operations.EnterAsync(gameId, cancellationToken);
+        using IServiceScope scope = _scopeFactory.CreateScope();
+        GameCommandService commands = scope.ServiceProvider
+            .GetRequiredService<GameCommandService>();
+        GameOperationContext operation = await commands.LoadAsync(gameId, cancellationToken);
+        Publish(await commands.AdvanceAsync(operation, () => _registry.AreBothConnected(gameId)));
     }
 
     public void Disconnect(GameSessionConnection connection)
     {
+        ArgumentNullException.ThrowIfNull(connection);
         _registry.Disconnect(connection);
     }
 
     public ChatMessageSubmissionResult PublishChatMessage(
         GameSessionConnection connection, string text)
     {
+        ArgumentNullException.ThrowIfNull(connection);
+        ArgumentNullException.ThrowIfNull(text);
         return _registry.PublishChatMessage(connection, text);
     }
 
     public void Dispose()
     {
-        lock (_lifetimeSync)
-        {
-            _isDisposed = true;
-            TryFinishDisposal();
-        }
+        _operations.Dispose();
     }
 
     public ValueTask DisposeAsync()
     {
-        Dispose();
-        return new ValueTask(_disposalCompletion.Task);
+        return _operations.DisposeAsync();
     }
 
-    private async Task EnterAsync(SemaphoreSlim gate, CancellationToken cancellationToken)
+    private void Publish(GameOperationResult result)
     {
-        lock (_lifetimeSync)
+        if (result.Progress is not null)
         {
-            ObjectDisposedException.ThrowIf(_isDisposed, this);
-            _pendingOperations++;
+            _registry.PublishProgress(result.GameId, result.Progress, result.Version);
         }
-        try
-        {
-            await gate.WaitAsync(cancellationToken);
-        }
-        catch
-        {
-            FinishOperation();
-            throw;
-        }
-    }
-
-    private void Exit(SemaphoreSlim gate)
-    {
-        gate.Release();
-        FinishOperation();
-    }
-
-    private void FinishOperation()
-    {
-        lock (_lifetimeSync)
-        {
-            _pendingOperations--;
-            TryFinishDisposal();
-        }
-    }
-
-    private void TryFinishDisposal()
-    {
-        if (_isDisposed && _pendingOperations == 0 && !_disposalCompletion.Task.IsCompleted)
-        {
-            foreach (SemaphoreSlim gate in _gates)
-            {
-                gate.Dispose();
-            }
-            _disposalCompletion.SetResult();
-        }
-    }
-
-    private SemaphoreSlim GetGate(long gameId)
-    {
-        return _gates[(int)((ulong)gameId % GateCount)];
-    }
-
-    private async Task<GameActionResult> ProcessActionAsync(IServiceScope scope,
-        GameSessionConnection connection, GameActionCommand command)
-    {
-        if (command.ActionId.Length > MaximumActionIdLength
-            || !Guid.TryParseExact(command.ActionId, "N", out _))
-        {
-            return new GameActionResult
-            {
-                ActionId = command.ActionId,
-                Rejection = "InvalidAction"
-            };
-        }
-        AtariGoDbContext database = scope.ServiceProvider.GetRequiredService<AtariGoDbContext>();
-        GamePersistenceService store = scope.ServiceProvider
-            .GetRequiredService<GamePersistenceService>();
-        Game game = await store.LoadAsync(connection.GameId, CancellationToken.None);
-        GameActionContext context = CreateContext(connection, command, game);
-        GameActionResult? previous = await store.FindActionAsync(context);
-        if (previous is not null)
-        {
-            await StartOrAdvanceAsync(store, game);
-            return previous;
-        }
-        GameRuntimeState original = context.Runtime;
-        GameActionResult result = EvaluateAction(context,
-            scope.ServiceProvider.GetRequiredService<GameActionProcessor>());
-        bool stateChanged = context.Runtime != original;
-        long nextVersion = game.StateVersion;
-        if (stateChanged)
-        {
-            nextVersion++;
-        }
-        result = result with { Version = nextVersion };
-        store.RecordAction(context, result);
-        if (stateChanged)
-        {
-            await SaveTransitionAsync(store, game, context.Runtime);
-        }
-        else
-        {
-            await database.SaveChangesAsync(CancellationToken.None);
-            _registry.PublishProgress(game.GameId, context.Runtime, game.StateVersion);
-        }
-        return result;
-    }
-
-    private GameActionResult EvaluateAction(GameActionContext context,
-        GameActionProcessor processor)
-    {
-        context.Now = _timeProvider.GetUtcNow().UtcDateTime;
-        GameRuntimeState current = context.Runtime;
-        context.Runtime = GameClock.Advance(current, context.Now,
-            context.Game.GameConfiguration.TurnTimeSeconds);
-        if (context.Runtime != current && !context.Command.IsSurrender)
-        {
-            return new GameActionResult
-            {
-                ActionId = context.Command.ActionId,
-                Rejection = context.Runtime.IsTerminal ? "Finished" : "StaleVersion"
-            };
-        }
-        return processor.Apply(context);
-    }
-
-    private static GameActionContext CreateContext(GameSessionConnection connection,
-        GameActionCommand command, Game game)
-    {
-        GamePlayer player = game.GamePlayers.Single(participant =>
-            GetPlayerKey(participant) == connection.PlayerKey);
-        return new GameActionContext
-        {
-            Command = command,
-            Game = game,
-            Runtime = GamePersistenceService.Read(game),
-            Player = player
-        };
-    }
-
-    private async Task StartOrAdvanceAsync(GamePersistenceService store,
-        Game game)
-    {
-        GameRuntimeState runtime = GamePersistenceService.Read(game);
-        DateTime now = _timeProvider.GetUtcNow().UtcDateTime;
-        int seconds = game.GameConfiguration.TurnTimeSeconds;
-        GameRuntimeState next = GameClock.Advance(runtime, now, seconds);
-        if (next.Status == GameRuntimeState.Waiting && _registry.AreBothConnected(game.GameId))
-        {
-            next = next with
-            {
-                Status = GameRuntimeState.Playing,
-                DeadlineUtc = now.AddSeconds(seconds)
-            };
-        }
-        if (next != runtime)
-        {
-            await SaveTransitionAsync(store, game, next);
-        }
-        else
-        {
-            _registry.PublishProgress(game.GameId, runtime, game.StateVersion);
-        }
-    }
-
-    private async Task SaveTransitionAsync(GamePersistenceService store,
-        Game game, GameRuntimeState runtime)
-    {
-        if (runtime.IsTerminal)
-        {
-            game.FinishedAt = _timeProvider.GetUtcNow().UtcDateTime;
-        }
-        await store.SaveAsync(game, runtime, CancellationToken.None);
-        _registry.PublishProgress(game.GameId, runtime, game.StateVersion);
-    }
-
-    private static string GetPlayerKey(GamePlayer player)
-    {
-        return player.UserId.HasValue
-            ? GameSessionRules.CreateUserKey(player.UserId.Value)
-            : GameSessionRules.CreateGuestKey(player.GuestIdentityId!.Value);
     }
 }

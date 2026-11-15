@@ -2,7 +2,6 @@ using AtariGo.Server.Application.Rooms;
 
 namespace AtariGo.Server.Application.RoomInvitations;
 
-// RoomsService owns this registry and calls it only while holding its room lock.
 internal sealed class RoomInvitationRegistry
 {
     private const int InvitationRetentionMinutes = 2;
@@ -18,6 +17,8 @@ internal sealed class RoomInvitationRegistry
 
     public RoomInvitationRegistry(IRoomInvitationNotifier notifier, ILogger logger)
     {
+        ArgumentNullException.ThrowIfNull(notifier);
+        ArgumentNullException.ThrowIfNull(logger);
         _notifier = notifier;
         _logger = logger;
     }
@@ -105,7 +106,6 @@ internal sealed class RoomInvitationRegistry
         _logger.LogInformation(
             "Room invitation {InvitationId} in room {RoomId}: {State}.",
             entry.InvitationId, entry.RoomId, entry.State);
-        // The notifier only queues events; no network waits occur under the room lock.
         _notifier.NotifyRoomInvitationsChanged(entry.Sender.UserId);
         _notifier.NotifyRoomInvitationsChanged(entry.Recipient.UserId);
     }

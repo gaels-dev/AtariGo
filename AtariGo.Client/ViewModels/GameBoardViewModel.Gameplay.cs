@@ -1,10 +1,7 @@
 using System.Diagnostics;
 using System.Globalization;
-using System.IO;
 using System.Windows.Input;
 using System.Windows.Threading;
-
-using Grpc.Core;
 
 using AtariGo.Client.Commands;
 using AtariGo.Client.Models;
@@ -16,12 +13,10 @@ namespace AtariGo.Client.ViewModels;
 public partial class GameBoardViewModel
 {
     private const int ClockRefreshMilliseconds = 250;
-    private const int ReconnectDelayMilliseconds = 1000;
     private readonly GameClockSynchronization _clockSynchronization =
         new GameClockSynchronization(TimeProvider.System);
     private long _turnDeadlineMilliseconds;
     private readonly DispatcherTimer _clockTimer = new DispatcherTimer();
-    private long _gameVersion = -1;
     private bool _isPlaying;
     private bool _isFinished;
     private bool _hasPermanentSessionFailure;
@@ -29,8 +24,8 @@ public partial class GameBoardViewModel
     private long _blackClockMilliseconds;
     private long _whiteClockMilliseconds;
     private long _clockReceivedTimestamp;
-    private GameSessionClientEvent? _pendingGameAction;
-    private CancellationTokenSource? _sessionAttemptCancellation;
+    private bool _hasPendingAction;
+    private bool _isSessionConnected;
     private string _actionStatusMessage = string.Empty;
 
     public ICommand PlaceStoneCommand { get; private set; } = null!;
@@ -44,7 +39,7 @@ public partial class GameBoardViewModel
     }
 
     public bool CanSurrender => !_isDisposed && !_isFinished && !_hasPermanentSessionFailure
-        && _gameSessionStream is not null && _pendingGameAction is null;
+        && _isSessionConnected && !_hasPendingAction;
 
     public bool CanLeaveGame => !_isDisposed && (!GameId.HasValue || _isFinished
         || _hasPermanentSessionFailure || CanSurrender);
@@ -81,17 +76,7 @@ public partial class GameBoardViewModel
         {
             return;
         }
-        _pendingGameAction = new GameSessionClientEvent
-        {
-            SubmitMove = new SubmitGameMove
-            {
-                ActionId = Guid.NewGuid().ToString("N"),
-                ExpectedVersion = _gameVersion,
-                Row = cell.Row,
-                Column = cell.Column
-            }
-        };
-        await SendPendingActionAsync(_lifetimeCancellation.Token);
+        await _session!.SubmitMoveAsync(cell.Row, cell.Column, _lifetimeCancellation.Token);
     }
 
     private async Task SurrenderAsync()
@@ -100,34 +85,12 @@ public partial class GameBoardViewModel
         {
             return;
         }
-        _pendingGameAction = new GameSessionClientEvent
-        {
-            Surrender = new SurrenderGame { ActionId = Guid.NewGuid().ToString("N") }
-        };
-        await SendPendingActionAsync(_lifetimeCancellation.Token);
+        await _session!.SurrenderAsync(_lifetimeCancellation.Token);
     }
 
-    private async Task SendPendingActionAsync(CancellationToken cancellationToken)
+    private void ApplyActionResult(GameActionResponse result, bool isSurrender)
     {
-        NotifyGameplayAvailability();
-        if (_pendingGameAction is not null && _gameSessionStream is not null)
-        {
-            ActionStatusMessage = GetLocalizedMessage("GameBoard_Action_Pending");
-            await _gameSessionStream.SendEventAsync(_pendingGameAction, cancellationToken);
-        }
-    }
-
-    private void ApplyActionResult(GameActionResponse result)
-    {
-        string? pendingId = _pendingGameAction?.SubmitMove?.ActionId
-            ?? _pendingGameAction?.Surrender?.ActionId;
-        if (result.ActionId != pendingId)
-        {
-            return;
-        }
-        bool shouldReturn = _returnToMenuAfterSurrender
-            && _pendingGameAction?.Surrender is not null && result.IsAccepted;
-        _pendingGameAction = null;
+        bool shouldReturn = _returnToMenuAfterSurrender && isSurrender && result.IsAccepted;
         _returnToMenuAfterSurrender = false;
         ActionStatusMessage = result.IsAccepted ? string.Empty
             : GetLocalizedMessage("GameBoard_Action_" + result.Rejection);
@@ -140,7 +103,6 @@ public partial class GameBoardViewModel
 
     private void ApplyGameplaySnapshot(GameSessionSnapshot snapshot)
     {
-        _gameVersion = snapshot.Version;
         _isPlaying = snapshot.Status == "InProgress";
         _isFinished = snapshot.Status == "Completed" || snapshot.Status == "Cancelled";
         _blackClockMilliseconds = snapshot.BlackRemainingMilliseconds;
@@ -249,125 +211,103 @@ public partial class GameBoardViewModel
 
     private void HandleGameplayFailure(Exception exception)
     {
-        Trace.TraceWarning("Gameplay send failed: {0}.", exception.GetType().Name);
-        if (exception is RpcException failure && IsPermanentSessionFailure(failure.StatusCode))
+        if (!_isDisposed)
         {
-            CloseGameSession(failure);
+            Trace.TraceWarning("Gameplay command failed: {0}.", exception.GetType().Name);
+            ActionStatusMessage = GetLocalizedMessage("Connection_Err_RequestFailed");
+        }
+    }
+
+    private void HandleSessionUpdate(GameplaySessionUpdate update)
+    {
+        if (_uiContext is not null && SynchronizationContext.Current != _uiContext)
+        {
+            _uiContext.Send(ApplyDispatchedUpdate, update);
         }
         else
         {
-            ActionStatusMessage = GetLocalizedMessage("GameBoard_Action_Recovering");
+            ApplySessionUpdate(update);
         }
-        // Keep the same action ID: the next connection recovers its durable receipt.
-        _sessionAttemptCancellation?.Cancel();
     }
 
-    private async Task RunGameSessionAsync(long gameId, CancellationTokenSource cancellation)
+    private void ApplyDispatchedUpdate(object? state)
     {
-        try
+        if (state is GameplaySessionUpdate update)
         {
-            bool retry = true;
-            while (!cancellation.IsCancellationRequested && retry)
-            {
-                retry = await TryReadSessionAsync(gameId, cancellation.Token);
-                if (retry)
-                {
-                    SessionStatusMessage = GetLocalizedMessage("GameBoard_Action_Recovering");
-                    await Task.Delay(ReconnectDelayMilliseconds, cancellation.Token);
-                }
-            }
-        }
-        catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
-        {
-            Trace.TraceInformation("Game session owner stopped.");
-        }
-        finally
-        {
-            if (ReferenceEquals(_sessionCancellation, cancellation))
-            {
-                _sessionCancellation = null;
-            }
-            cancellation.Dispose();
+            ApplySessionUpdate(update);
         }
     }
 
-    private async Task<bool> TryReadSessionAsync(long gameId, CancellationToken cancellationToken)
+    private void ApplySessionUpdate(GameplaySessionUpdate update)
     {
-        using CancellationTokenSource attempt =
-            CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        _sessionAttemptCancellation = attempt;
-        try
+        if (_isDisposed)
         {
-            await ReadSessionEventsAsync(gameId, attempt.Token);
+            return;
         }
-        catch (OperationCanceledException) when (attempt.IsCancellationRequested)
+        _hasPendingAction = update.HasPendingAction;
+        _isSessionConnected = update.State == GameplayConnectionState.Connected;
+        IsChatEnabled = _isSessionConnected;
+        if (update.ConnectionStarted)
         {
-            Trace.TraceInformation("Game session read cancelled.");
+            _clockSynchronization.BeginConnection();
         }
-        catch (RpcException exception)
+        if (update.State == GameplayConnectionState.Closed)
         {
-            if (IsPermanentSessionFailure(exception.StatusCode))
+            ApplyClosedSession(update.Failure);
+        }
+        else if (update.InvalidSnapshot)
+        {
+            SessionStatusMessage = GetLocalizedMessage("GameBoard_Status_InvalidSnapshot");
+        }
+        else if (update.ServerEvent is not null)
+        {
+            ApplyGameServerEvent(update);
+        }
+        else
+        {
+            ApplyConnectionStatus(update);
+        }
+        if (!_isDisposed)
+        {
+            if (update.ChatSendFailed)
             {
-                CloseGameSession(exception);
+                ChatStatusMessage = GetLocalizedMessage("GameBoard_Chat_Err_SendFailed");
             }
-            else
-            {
-                SessionStatusMessage = GrpcFailureMessages.GetMessage(exception);
-            }
+            NotifyGameplayAvailability();
         }
-        catch (IOException exception)
-        {
-            Trace.TraceWarning("Game session transport failed: {0}.", exception.GetType().Name);
-        }
-        finally
-        {
-            _gameSessionStream = null;
-            _sessionAttemptCancellation = null;
-            if (!_isDisposed)
-            {
-                IsChatEnabled = false;
-                NotifyGameplayAvailability();
-            }
-        }
-        return !cancellationToken.IsCancellationRequested && !_hasPermanentSessionFailure;
     }
 
-    private static bool IsPermanentSessionFailure(StatusCode status)
+    private void ApplyConnectionStatus(GameplaySessionUpdate update)
     {
-        return status is StatusCode.Unauthenticated or StatusCode.PermissionDenied
-            or StatusCode.InvalidArgument or StatusCode.AlreadyExists;
+        if (update.State != GameplayConnectionState.Connected)
+        {
+            string key = update.State == GameplayConnectionState.Connecting
+                ? "GameBoard_Status_Connecting" : "GameBoard_Action_Recovering";
+            SessionStatusMessage = GetLocalizedMessage(key);
+        }
+        if (update.HasPendingAction)
+        {
+            string key = _isSessionConnected
+                ? "GameBoard_Action_Pending" : "GameBoard_Action_Recovering";
+            ActionStatusMessage = GetLocalizedMessage(key);
+        }
     }
 
-    private void CloseGameSession(RpcException exception)
+    private void ApplyClosedSession(ClientFailureReason failure)
     {
         _hasPermanentSessionFailure = true;
         _returnToMenuAfterSurrender = false;
         ActionStatusMessage = string.Empty;
-        SessionStatusMessage = exception.StatusCode == StatusCode.AlreadyExists
-            ? GetLocalizedMessage("GameBoard_Connection_Replaced")
-            : GrpcFailureMessages.GetMessage(exception) + " "
-                + GetLocalizedMessage("GameBoard_Connection_Closed");
-        NotifyGameplayAvailability();
-    }
-
-    private async Task ReadSessionEventsAsync(long gameId, CancellationToken cancellationToken)
-    {
-        _clockSynchronization.BeginConnection();
-        await using IGameSessionStream stream = await _gameSessionClient!.ConnectAsync(
-            gameId, cancellationToken);
-        _gameSessionStream = stream;
-        bool restored = false;
-        await foreach (GameSessionServerEvent serverEvent in stream.ReadEventsAsync(
-            cancellationToken))
+        if (failure == ClientFailureReason.ConnectionReplaced)
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            ApplyGameServerEvent(serverEvent);
-            if (!restored
-                && serverEvent.EventCase == GameSessionServerEvent.EventOneofCase.Snapshot)
-            {
-                restored = true;
-                await SendPendingActionAsync(cancellationToken);
-            }
+            SessionStatusMessage = GetLocalizedMessage("GameBoard_Connection_Replaced");
+        }
+        else
+        {
+            string key = failure == ClientFailureReason.SessionExpired
+                ? "Connection_Err_SessionExpired" : "Connection_Err_RequestFailed";
+            SessionStatusMessage = GetLocalizedMessage(key) + " "
+                + GetLocalizedMessage("GameBoard_Connection_Closed");
         }
     }
 }

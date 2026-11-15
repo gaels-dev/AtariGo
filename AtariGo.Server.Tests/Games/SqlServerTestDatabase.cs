@@ -47,6 +47,12 @@ internal sealed class SqlServerTestDatabase : IAsyncDisposable
         await ExecuteAsync(await File.ReadAllTextAsync(ScriptPath("Update-Gameplay.sql")), false);
     }
 
+    public async Task UpgradeDirectAsync()
+    {
+        string script = await File.ReadAllTextAsync(ScriptPath("Update-Gameplay-Direct.sql"));
+        await ExecuteAsync(script, false);
+    }
+
     public async Task RestoreLegacySchemaAsync()
     {
         await ExecuteAsync("""

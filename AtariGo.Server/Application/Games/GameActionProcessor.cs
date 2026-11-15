@@ -1,25 +1,27 @@
 using AtariGo.GameLogic.Actions;
 using AtariGo.GameLogic.Models;
 using AtariGo.GameLogic.Rules;
-using AtariGo.Server.Data;
-using AtariGo.Server.Data.Entities;
 
 namespace AtariGo.Server.Application.Games;
 
 public sealed class GameActionProcessor
 {
     private readonly GameRulesEngine _engine;
-    private readonly AtariGoDbContext _dbContext;
 
-    public GameActionProcessor(GameRulesEngine engine, AtariGoDbContext dbContext)
+    public GameActionProcessor(GameRulesEngine engine)
     {
+        ArgumentNullException.ThrowIfNull(engine);
         _engine = engine;
-        _dbContext = dbContext;
     }
 
     public GameActionResult Apply(GameActionContext context)
     {
-        string rejection = Validate(context);
+        ArgumentNullException.ThrowIfNull(context);
+        string rejection = AdvanceClock(context);
+        if (rejection.Length == 0)
+        {
+            rejection = Validate(context);
+        }
         if (rejection.Length == 0)
         {
             rejection = ApplyValidAction(context);
@@ -31,6 +33,19 @@ public sealed class GameActionProcessor
             Rejection = rejection,
             Version = context.Game.StateVersion + 1
         };
+    }
+
+    private static string AdvanceClock(GameActionContext context)
+    {
+        GameRuntimeState current = context.Runtime;
+        context.Runtime = GameClock.Advance(current, context.Now,
+            context.Game.GameConfiguration.TurnTimeSeconds);
+        string rejection = string.Empty;
+        if (context.Runtime != current && !context.Command.IsSurrender)
+        {
+            rejection = context.Runtime.IsTerminal ? "Finished" : "StaleVersion";
+        }
+        return rejection;
     }
 
     private static string Validate(GameActionContext context)
@@ -57,54 +72,51 @@ public sealed class GameActionProcessor
 
     private string ApplyValidAction(GameActionContext context)
     {
-        GameState board = context.Runtime.Board;
+        string rejection = string.Empty;
         if (context.Command.IsSurrender)
         {
-            context.Runtime = context.Runtime with
-            {
-                Board = board with { Winner = GameRulesEngine.GetOpponent(context.PlayerColor) },
-                Status = GameRuntimeState.Completed,
-                EndReason = "Surrender"
-            };
-            return string.Empty;
+            ApplySurrender(context);
         }
-        MoveCommand move = new MoveCommand(context.PlayerColor,
-            new BoardPosition(context.Command.Row, context.Command.Column));
-        MoveResult result = _engine.SubmitMove(board, move);
-        if (!result.IsAccepted)
+        else
         {
-            return result.Rejection.ToString();
+            rejection = ApplyMove(context);
         }
-        AddMove(context, result.State);
-        context.Runtime = context.Runtime with
-        {
-            Board = result.State,
-            DeadlineUtc = context.Now.AddSeconds(
-                context.Game.GameConfiguration.TurnTimeSeconds)
-        };
-        if (result.State.Winner != StoneColor.Empty)
-        {
-            context.Runtime = context.Runtime with
-            {
-                Status = GameRuntimeState.Completed,
-                EndReason = "CaptureGoal"
-            };
-        }
-        return string.Empty;
+        return rejection;
     }
 
-    private void AddMove(GameActionContext context, GameState next)
+    private static void ApplySurrender(GameActionContext context)
     {
-        int before = context.Runtime.Board.BlackCaptures + context.Runtime.Board.WhiteCaptures;
-        int after = next.BlackCaptures + next.WhiteCaptures;
-        _dbContext.Moves.Add(new Move
+        GameState board = context.Runtime.Board;
+        context.Runtime = context.Runtime with
         {
-            GamePlayerId = context.Player.GamePlayerId,
-            TurnNumber = context.Runtime.Board.TurnNumber,
-            Row = checked((byte)context.Command.Row),
-            Column = checked((byte)context.Command.Column),
-            PlayedAt = context.Now,
-            CapturedStones = after - before
-        });
+            Board = board with { Winner = GameRulesEngine.GetOpponent(context.PlayerColor) },
+            Status = GameRuntimeState.Completed,
+            EndReason = "Surrender"
+        };
+    }
+
+    private string ApplyMove(GameActionContext context)
+    {
+        MoveCommand move = new MoveCommand(context.PlayerColor,
+            new BoardPosition(context.Command.Row, context.Command.Column));
+        MoveResult result = _engine.SubmitMove(context.Runtime.Board, move);
+        if (result.IsAccepted)
+        {
+            context.Runtime = context.Runtime with
+            {
+                Board = result.State,
+                DeadlineUtc = context.Now.AddSeconds(
+                    context.Game.GameConfiguration.TurnTimeSeconds)
+            };
+            if (result.State.Winner != StoneColor.Empty)
+            {
+                context.Runtime = context.Runtime with
+                {
+                    Status = GameRuntimeState.Completed,
+                    EndReason = "CaptureGoal"
+                };
+            }
+        }
+        return result.IsAccepted ? string.Empty : result.Rejection.ToString();
     }
 }

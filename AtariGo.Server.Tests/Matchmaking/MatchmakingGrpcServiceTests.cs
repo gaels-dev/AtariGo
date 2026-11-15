@@ -1,11 +1,12 @@
 using System.Net;
 
-using Grpc.Core;
-using Grpc.Net.Client;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.DependencyInjection;
+
+using Grpc.Core;
+using Grpc.Net.Client;
 
 using AtariGo.Contracts;
 using AtariGo.Server.Application.Games;
@@ -29,6 +30,7 @@ public sealed class MatchmakingGrpcServiceTests
     [TestMethod]
     public async Task SearchPublicMatch_PlayerLeavesCountdown_RequeuesRemainingPlayer()
     {
+        // Arrange
         await using WebApplication app = await StartServerAsync();
         using GrpcChannel channel = GrpcChannel.ForAddress(app.Urls.Single());
         AtariGo.Contracts.Matchmaking.MatchmakingClient client =
@@ -56,12 +58,14 @@ public sealed class MatchmakingGrpcServiceTests
                 await ReadNextEventAsync(remainingCall, timeout.Token);
                 await ReadNextEventAsync(remainingCall, timeout.Token);
 
+                // Act
                 leavingCancellation.Cancel();
 
                 MatchmakingEvent cancelledEvent = await ReadNextEventAsync(
                     remainingCall, timeout.Token);
                 MatchmakingEvent requeuedEvent = await ReadNextEventAsync(
                     remainingCall, timeout.Token);
+                // Assert
                 Assert.AreEqual(
                     MatchmakingEvent.EventOneofCase.MatchCountdownCancelled,
                     cancelledEvent.EventCase);
@@ -76,6 +80,68 @@ public sealed class MatchmakingGrpcServiceTests
                 remainingCancellation.Cancel();
             }
         }
+    }
+
+    [TestMethod]
+    public async Task SearchPublicMatch_CountdownCompletes_ReturnsTheSameGameToBothPlayers()
+    {
+        // Arrange
+        ControlledPublicGameLifecycleService lifecycle = new ControlledPublicGameLifecycleService();
+        lifecycle.Completion.SetResult(42);
+        await using WebApplication app = await StartServerAsync(lifecycle,
+            new AdvancingMatchmakingTimeProvider());
+        using GrpcChannel channel = GrpcChannel.ForAddress(app.Urls.Single());
+        AtariGo.Contracts.Matchmaking.MatchmakingClient client =
+            new AtariGo.Contracts.Matchmaking.MatchmakingClient(channel);
+        using CancellationTokenSource timeout = new CancellationTokenSource(
+            TimeSpan.FromSeconds(TestTimeoutSeconds));
+        string blackCredential = await CreateGuestCredentialAsync(client, "Guest-Black",
+            timeout.Token);
+        string whiteCredential = await CreateGuestCredentialAsync(client, "Guest-White",
+            timeout.Token);
+        using AsyncServerStreamingCall<MatchmakingEvent> black = StartSearch(client,
+            blackCredential, timeout.Token);
+        await ReadNextEventAsync(black, timeout.Token);
+        using AsyncServerStreamingCall<MatchmakingEvent> white = StartSearch(client,
+            whiteCredential, timeout.Token);
+        await ReadNextEventAsync(black, timeout.Token);
+        await ReadNextEventAsync(white, timeout.Token);
+        await ReadNextEventAsync(white, timeout.Token);
+        // Act
+        MatchmakingEvent blackStarted = await ReadNextEventAsync(black, timeout.Token);
+        MatchmakingEvent whiteStarted = await ReadNextEventAsync(white, timeout.Token);
+        // Assert
+        Assert.AreEqual(MatchmakingEvent.EventOneofCase.PublicGameStarted, blackStarted.EventCase);
+        Assert.AreEqual(MatchmakingEvent.EventOneofCase.PublicGameStarted, whiteStarted.EventCase);
+        Assert.AreEqual(42, blackStarted.PublicGameStarted.GameId);
+        Assert.AreEqual(blackStarted.PublicGameStarted.GameId,
+            whiteStarted.PublicGameStarted.GameId);
+        Assert.AreEqual(1, lifecycle.CreationCount);
+        Assert.IsFalse(await black.ResponseStream.MoveNext(timeout.Token));
+        Assert.IsFalse(await white.ResponseStream.MoveNext(timeout.Token));
+    }
+
+    [TestMethod]
+    public async Task SearchPublicMatch_AlreadySearching_ReturnsFailedPrecondition()
+    {
+        // Arrange
+        await using WebApplication app = await StartServerAsync();
+        using GrpcChannel channel = GrpcChannel.ForAddress(app.Urls.Single());
+        AtariGo.Contracts.Matchmaking.MatchmakingClient client =
+            new AtariGo.Contracts.Matchmaking.MatchmakingClient(channel);
+        using CancellationTokenSource timeout = new CancellationTokenSource(
+            TimeSpan.FromSeconds(TestTimeoutSeconds));
+        string credential = await CreateGuestCredentialAsync(client, "Guest-Same", timeout.Token);
+        using AsyncServerStreamingCall<MatchmakingEvent> first = StartSearch(client,
+            credential, timeout.Token);
+        await ReadNextEventAsync(first, timeout.Token);
+        using AsyncServerStreamingCall<MatchmakingEvent> second = StartSearch(client,
+            credential, timeout.Token);
+        // Act
+        RpcException failure = await Assert.ThrowsAsync<RpcException>(() =>
+            second.ResponseStream.MoveNext(timeout.Token));
+        // Assert
+        Assert.AreEqual(StatusCode.FailedPrecondition, failure.StatusCode);
     }
 
     private static async Task AssertRemainingPlayerPairsAgainAsync(
@@ -107,19 +173,22 @@ public sealed class MatchmakingGrpcServiceTests
         nextCancellation.Cancel();
     }
 
-    private static async Task<WebApplication> StartServerAsync()
+    private static async Task<WebApplication> StartServerAsync(
+        IGameLifecycleService? lifecycle = null, TimeProvider? timeProvider = null)
     {
         WebApplicationBuilder builder = WebApplication.CreateBuilder();
         builder.Configuration.Sources.Clear();
         builder.WebHost.ConfigureKestrel(ConfigureListener);
         builder.Services.AddGrpc();
-        builder.Services.AddSingleton(TimeProvider.System);
+        builder.Services.AddSingleton(timeProvider ?? TimeProvider.System);
         builder.Services.AddSingleton<IGuestIdentityRegistry, GuestIdentityRegistry>();
         builder.Services.AddSingleton<InMemoryPublicMatchmakingQueue>();
+        builder.Services.AddScoped<PublicMatchmakingService>();
         builder.Services.AddSingleton<ISessionService, TestRoomSessionService>();
         builder.Services.AddSingleton<IRoomInvitationNotifier, SessionConnectionRegistry>();
         builder.Services.AddSingleton<IRoomsService, RoomsService>();
-        builder.Services.AddSingleton<IGameLifecycleService, TestGameLifecycleService>();
+        builder.Services.AddSingleton<IGameLifecycleService>(provider => lifecycle
+            ?? new TestGameLifecycleService(provider.GetRequiredService<IRoomsService>()));
 
         WebApplication app = builder.Build();
         app.MapGrpcService<MatchmakingGrpcService>();
