@@ -87,6 +87,11 @@ namespace AtariGo.Client.Services
             Dispatch(ShowFriendList);
         }
 
+        public void NavigateToGameHistory()
+        {
+            Dispatch(ShowGameHistory);
+        }
+
         public void OpenOptionsDialog()
         {
             Dispatch(() => GetMainViewModel()?.OpenOptionsDialog());
@@ -331,6 +336,20 @@ namespace AtariGo.Client.Services
                     SessionToken = mainViewModel.SessionToken,
                     Friends = mainViewModel.Friends
                 });
+        }
+
+        private void ShowGameHistory()
+        {
+            MainViewModel? mainViewModel = GetMainViewModel();
+            if (mainViewModel is null || mainViewModel.IsGuest
+                || string.IsNullOrWhiteSpace(mainViewModel.SessionToken))
+            {
+                return;
+            }
+            var client = new GrpcGameHistoryClient(mainViewModel.SessionToken);
+            var history = new GameHistoryViewModel(this, client);
+            mainViewModel.CurrentViewModel = history;
+            history.RefreshCommand.Execute(null);
         }
 
         private void ReplaceMainWindowWithLogin(bool sessionExpired)

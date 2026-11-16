@@ -900,4 +900,26 @@
   <data name="GameBoard_Lbl_CapturesStatus" xml:space="preserve"><value>Gefangene · Schwarz: {0} · Weiß: {1} · Ziel: {2}</value></data>
   <data name="GameBoard_Connection_Closed" xml:space="preserve"><value>Diese Spielverbindung kann nicht fortgesetzt werden. Du kannst zum Menü zurückkehren; dies bestätigt keine Aufgabe.</value></data>
   <data name="GameBoard_Connection_Replaced" xml:space="preserve"><value>Das Spiel ist in einer anderen Verbindung geöffnet. Du kannst zum Menü zurückkehren, ohne diese Verbindung zu beeinflussen.</value></data>
+  <data name="GameHistory_Lbl_Title" xml:space="preserve"><value>Spielverlauf</value></data>
+  <data name="GameHistory_Lbl_Description" xml:space="preserve"><value>Deine 20 neuesten Partien. Die Zeiten entsprechen der Ortszeit dieses Computers.</value></data>
+  <data name="GameHistory_Col_Date" xml:space="preserve"><value>Datum</value></data>
+  <data name="GameHistory_Col_Opponent" xml:space="preserve"><value>Gegner</value></data>
+  <data name="GameHistory_Col_Result" xml:space="preserve"><value>Ergebnis</value></data>
+  <data name="GameHistory_Col_YourStones" xml:space="preserve"><value>Deine Steine</value></data>
+  <data name="GameHistory_Col_OpponentStones" xml:space="preserve"><value>Steine des Gegners</value></data>
+  <data name="GameHistory_Btn_Refresh" xml:space="preserve"><value>Aktualisieren / erneut versuchen</value></data>
+  <data name="GameHistory_Btn_Back" xml:space="preserve"><value>Zurück zur Lobby</value></data>
+  <data name="GameHistory_Msg_Loading" xml:space="preserve"><value>Spielverlauf wird geladen…</value></data>
+  <data name="GameHistory_Msg_Empty" xml:space="preserve"><value>Du hast noch keine gespeicherten Partien.</value></data>
+  <data name="GameHistory_Err_Unavailable" xml:space="preserve"><value>Dein Spielverlauf ist nicht verfügbar. Bitte versuche es erneut.</value></data>
+  <data name="GameHistory_Color_Black" xml:space="preserve"><value>Schwarz</value></data>
+  <data name="GameHistory_Color_White" xml:space="preserve"><value>Weiß</value></data>
+  <data name="GameHistory_Result_Won" xml:space="preserve"><value>Sieg</value></data>
+  <data name="GameHistory_Result_Lost" xml:space="preserve"><value>Niederlage</value></data>
+  <data name="GameHistory_Result_Surrendered" xml:space="preserve"><value>Aufgegeben</value></data>
+  <data name="GameHistory_Result_Abandoned" xml:space="preserve"><value>Verlassen</value></data>
+  <data name="GameHistory_Result_Pending" xml:space="preserve"><value>Kein bestätigtes Ergebnis</value></data>
+  <data name="GameHistory_Result_InProgress" xml:space="preserve"><value>Läuft</value></data>
+  <data name="GameHistory_Result_Waiting" xml:space="preserve"><value>Wartet</value></data>
+  <data name="GameHistory_Result_Cancelled" xml:space="preserve"><value>Abgebrochen</value></data>
 </root>

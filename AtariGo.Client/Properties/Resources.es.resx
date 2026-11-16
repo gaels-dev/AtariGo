@@ -900,4 +900,26 @@
   <data name="GameBoard_Lbl_CapturesStatus" xml:space="preserve"><value>Capturas · Negras: {0} · Blancas: {1} · Objetivo: {2}</value></data>
   <data name="GameBoard_Connection_Closed" xml:space="preserve"><value>Esta conexión de partida no puede continuar. Puedes volver al menú; esto no confirma una rendición.</value></data>
   <data name="GameBoard_Connection_Replaced" xml:space="preserve"><value>La partida está abierta en otra conexión. Puedes volver al menú sin afectar esa conexión.</value></data>
+  <data name="GameHistory_Lbl_Title" xml:space="preserve"><value>Historial de partidas</value></data>
+  <data name="GameHistory_Lbl_Description" xml:space="preserve"><value>Tus 20 partidas más recientes. Las fechas usan la hora local de este equipo.</value></data>
+  <data name="GameHistory_Col_Date" xml:space="preserve"><value>Fecha</value></data>
+  <data name="GameHistory_Col_Opponent" xml:space="preserve"><value>Rival</value></data>
+  <data name="GameHistory_Col_Result" xml:space="preserve"><value>Resultado</value></data>
+  <data name="GameHistory_Col_YourStones" xml:space="preserve"><value>Tus fichas</value></data>
+  <data name="GameHistory_Col_OpponentStones" xml:space="preserve"><value>Fichas del rival</value></data>
+  <data name="GameHistory_Btn_Refresh" xml:space="preserve"><value>Actualizar / reintentar</value></data>
+  <data name="GameHistory_Btn_Back" xml:space="preserve"><value>Volver al lobby</value></data>
+  <data name="GameHistory_Msg_Loading" xml:space="preserve"><value>Consultando tu historial…</value></data>
+  <data name="GameHistory_Msg_Empty" xml:space="preserve"><value>Todavía no tienes partidas registradas.</value></data>
+  <data name="GameHistory_Err_Unavailable" xml:space="preserve"><value>Tu historial no está disponible. Puedes intentar nuevamente.</value></data>
+  <data name="GameHistory_Color_Black" xml:space="preserve"><value>Negras</value></data>
+  <data name="GameHistory_Color_White" xml:space="preserve"><value>Blancas</value></data>
+  <data name="GameHistory_Result_Won" xml:space="preserve"><value>Victoria</value></data>
+  <data name="GameHistory_Result_Lost" xml:space="preserve"><value>Derrota</value></data>
+  <data name="GameHistory_Result_Surrendered" xml:space="preserve"><value>Rendición</value></data>
+  <data name="GameHistory_Result_Abandoned" xml:space="preserve"><value>Abandono</value></data>
+  <data name="GameHistory_Result_Pending" xml:space="preserve"><value>Sin resultado confirmado</value></data>
+  <data name="GameHistory_Result_InProgress" xml:space="preserve"><value>En curso</value></data>
+  <data name="GameHistory_Result_Waiting" xml:space="preserve"><value>En espera</value></data>
+  <data name="GameHistory_Result_Cancelled" xml:space="preserve"><value>Cancelada</value></data>
 </root>

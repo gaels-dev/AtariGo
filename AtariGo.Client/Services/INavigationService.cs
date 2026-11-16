@@ -37,6 +37,8 @@ namespace AtariGo.Client.Services
 
         void NavigateToFriendList();
 
+        void NavigateToGameHistory();
+
         void OpenOptionsDialog();
 
         void OpenDialog(DialogViewModelBase dialog);

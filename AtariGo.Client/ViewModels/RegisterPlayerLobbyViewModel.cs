@@ -214,6 +214,10 @@ namespace AtariGo.Client.ViewModels
 
         public ICommand RefreshLeaderboardCommand { get; private set; } = null!;
 
+        public ICommand GameHistoryCommand { get; private set; } = null!;
+
+        public string GameHistoryLabel => GetLocalizedMessage("GameHistory_Lbl_Title");
+
         public void Dispose()
         {
             FriendRemoval.Dispose();
@@ -244,6 +248,7 @@ namespace AtariGo.Client.ViewModels
             Func<Task>? signOutAsync)
         {
             OptionsCommand = new RelayCommand(navigationService.OpenOptionsDialog);
+            GameHistoryCommand = new RelayCommand(navigationService.NavigateToGameHistory);
             ExitCommand = new RelayCommand(navigationService.ExitApplication);
             SignOutCommand = signOutAsync is null
                 ? new RelayCommand(navigationService.SignOut)

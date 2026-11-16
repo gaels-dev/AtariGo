@@ -74,6 +74,10 @@ puede modificar ese alcance. Lobby y partidas se dejaron expresamente para esa e
 
 ## Cuidado del repositorio y verificación
 
+Por decisión vigente del usuario, todo el trabajo se realiza directamente en `develop`,
+incluidos los commits y pushes autorizados. No crear nuevas ramas mientras el usuario no
+indique expresamente otro flujo. Esta decisión está incorporada en la sección 8.2 del estándar.
+
 Conserva los cambios locales del usuario y evita mezclar cambios ajenos a la tarea. Modifica
 archivos generados mediante su fuente o generador. No incorpores secretos, claves privadas
 ni configuración local. No hagas commit ni push salvo que el usuario lo solicite para la tarea vigente. Si lo pide,

@@ -247,6 +247,13 @@
                     </Grid>
 
                     <Button Style="{StaticResource RoundedButtonStyle}"
+                            Content="{Binding GameHistoryLabel}"
+                            Command="{Binding GameHistoryCommand}"
+                            Height="45" Background="#4A90E2" Foreground="White"
+                            FontWeight="Bold" FontSize="14" BorderBrush="#2C2A29"
+                            BorderThickness="1" Margin="0,0,0,12"/>
+
+                    <Button Style="{StaticResource RoundedButtonStyle}"
                             Content="{x:Static properties:Resources.RegisterPlayerLobby_Btn_Options}"
                             Command="{Binding OptionsCommand}"
                             Height="42"

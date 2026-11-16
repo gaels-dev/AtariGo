@@ -2560,17 +2560,19 @@ específica. No hacer commit ni push sin que el usuario lo solicite para la tare
 La rama `main` representará las versiones estables del proyecto. La rama `develop` será
 la rama de integración del trabajo en curso.
 
-Los cambios se desarrollarán en ramas de trabajo creadas a partir de `develop`. Al terminar,
-se integrarán en `develop` después de revisar los cambios y ejecutar las verificaciones
-pertinentes. La publicación de una versión estable se realizará mediante la integración del
-estado aprobado de `develop` en `main`.
+Por decisión del responsable del proyecto del 2026-11-16, por ahora todos los cambios se
+desarrollarán directamente en `develop`, incluidos los commits y los pushes solicitados.
+No se crearán nuevas ramas hasta que el responsable indique expresamente otro flujo.
+Antes de hacer commit se revisarán los cambios y se ejecutarán las verificaciones pertinentes.
+La publicación de una versión estable se realizará mediante la integración del estado
+aprobado de `develop` en `main`, cuando el responsable la solicite.
 
 No se deberán integrar directamente cambios incompletos en `main`. Los conflictos deberán
 resolverse revisando el comportamiento afectado; no se deberán descartar cambios de otros
 integrantes sin verificar su propósito.
 
-Los nombres de ramas deberán describir brevemente el trabajo y utilizar un formato acordado
-por el equipo. Los nombres históricos no obligan a cambiar ramas ya publicadas.
+Las ramas históricas no se renombrarán ni se publicarán cambios en ellas para sustituir
+este flujo de trabajo sin una instrucción explícita del responsable.
 
 <a id="seccion-8-3"></a>
 

@@ -39,7 +39,7 @@ La matriz distingue contratos existentes de nuevos, delimita las responsabilidad
 | game_lifecycle.proto | StartGame, GetGameSummaryByGameId, LeaveGame, SurrenderGame, WatchGameLifecycle |
 | game_moves.proto | SubmitMove |
 | game_state.proto | GetGameStateByGameId, WatchGameStateByGameId, GetGameEventsByGameId |
-| game_history.proto | ListGamesByPlayer, GetGameHistoryByGameId, GetGameReplayByGameId |
+| game_history.proto | ListGamesByPlayer; reproducción de jugadas diferida a CU-028 |
 | player_statistics.proto | GetPlayerStatistics, GetPublicStatisticsByUserId |
 | leaderboard.proto | GetTopPlayers |
 | game_chat.proto | SendGameMessage, WatchGameMessages |
@@ -305,15 +305,23 @@ Cobertura: CU-17, CU-19
 
 ### 4.16  GameHistory
 
-Responsabilidad: Consulta de partidas terminadas y reproducción de movimientos registrados.
+Responsabilidad: Consulta de hasta veinte participaciones propias persistidas, con rival,
+resultado y colores de ambos jugadores. No consulta movimientos ni modifica partidas.
 
-Cobertura: CU-20
+Cobertura vigente: CU-023 de `CU-TerceraVersion.md`.
 
 | Servicio .proto | Interfaz de aplicación | Clase gRPC | Operaciones | Parámetros definidos |
 | --- | --- | --- | --- | --- |
-| game_history.proto | IGameHistoryService | GameHistoryGrpcService | ListGamesByPlayer | StateFilter, PageRequest { PageSize, PageToken } |
-|  |  |  | GetGameHistoryByGameId | GameId |
-|  |  |  | GetGameReplayByGameId | GameId |
+| game_history.proto | IGameHistoryService | GameHistoryGrpcService | ListGamesByPlayer | Sin parámetros de negocio; token de sesión registrada en metadata. |
+
+El servidor obtiene el usuario desde la sesión validada y limita su consulta a veinte
+participaciones. Ordena por `StartedAt` descendente, o `JoinedAt` propio cuando falta esa
+fecha, y desempata por `GameId` descendente. Incluye las modalidades y estados persistidos,
+sin convertir resultados pendientes en derrotas. Un rival invitado se identifica mediante
+su nombre temporal guardado; los invitados no pueden consultar un historial personal.
+Una respuesta vacía representa una consulta exitosa sin partidas; un fallo no devuelve
+resúmenes parciales. Las fechas viajan como instantes UTC y el cliente las presenta en su
+hora local. CU-028 es una funcionalidad futura y no se expone en este contrato.
 
 ### 4.17  PlayerStatistics
 

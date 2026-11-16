@@ -60,6 +60,10 @@
             <views:FriendListView/>
         </DataTemplate>
 
+        <DataTemplate DataType="{x:Type vm:GameHistoryViewModel}">
+            <views:GameHistoryView/>
+        </DataTemplate>
+
         <DataTemplate DataType="{x:Type dialogVm:ConfirmActionDialogViewModel}">
             <dialogViews:ConfirmActionDialogView/>
         </DataTemplate>
