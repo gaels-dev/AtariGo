@@ -81,22 +81,15 @@ public sealed class AuthenticationService : IAuthenticationService
 
     private bool VerifyPassword(User user, string password)
     {
-        Credential credential = user.Credential!;
         PasswordVerificationResult result = VerifyStoredPasswordHash(user, password);
 
-        bool isLegacyPassword = result == PasswordVerificationResult.Failed
-            && string.Equals(credential.PasswordHash, password, StringComparison.Ordinal);
-        if (result == PasswordVerificationResult.Failed && !isLegacyPassword)
+        if (result == PasswordVerificationResult.SuccessRehashNeeded)
         {
-            return false;
+            user.Credential!.PasswordHash = _passwordHasher.HashPassword(user, password);
         }
 
-        if (result == PasswordVerificationResult.SuccessRehashNeeded || isLegacyPassword)
-        {
-            credential.PasswordHash = _passwordHasher.HashPassword(user, password);
-        }
-
-        return true;
+        return result is PasswordVerificationResult.Success
+            or PasswordVerificationResult.SuccessRehashNeeded;
     }
 
     private PasswordVerificationResult VerifyStoredPasswordHash(
