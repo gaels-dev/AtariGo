@@ -922,4 +922,22 @@
   <data name="GameHistory_Result_InProgress" xml:space="preserve"><value>En curso</value></data>
   <data name="GameHistory_Result_Waiting" xml:space="preserve"><value>En espera</value></data>
   <data name="GameHistory_Result_Cancelled" xml:space="preserve"><value>Cancelada</value></data>
+  <data name="ChangePassword_Lbl_Title" xml:space="preserve"><value>Cambiar contraseña</value></data>
+  <data name="ChangePassword_Lbl_CurrentPassword" xml:space="preserve"><value>Contraseña actual</value></data>
+  <data name="ChangePassword_Lbl_NewPassword" xml:space="preserve"><value>Nueva contraseña</value></data>
+  <data name="ChangePassword_Lbl_Confirmation" xml:space="preserve"><value>Confirmar nueva contraseña</value></data>
+  <data name="ChangePassword_Lbl_Policy" xml:space="preserve"><value>Usa entre 8 y 255 caracteres y al menos una mayúscula.</value></data>
+  <data name="ChangePassword_Btn_Save" xml:space="preserve"><value>Guardar contraseña</value></data>
+  <data name="ChangePassword_Btn_Cancel" xml:space="preserve"><value>Cancelar</value></data>
+  <data name="ChangePassword_Btn_Close" xml:space="preserve"><value>Volver al perfil</value></data>
+  <data name="ChangePassword_Msg_Saving" xml:space="preserve"><value>Guardando tu contraseña. Espera un momento…</value></data>
+  <data name="ChangePassword_Result_Changed" xml:space="preserve"><value>Tu nueva contraseña ya está vigente.</value></data>
+  <data name="ChangePassword_Result_MissingFields" xml:space="preserve"><value>Completa los tres campos de contraseña.</value></data>
+  <data name="ChangePassword_Result_IncorrectCurrentPassword" xml:space="preserve"><value>La contraseña actual es incorrecta. Introduce nuevamente las contraseñas.</value></data>
+  <data name="ChangePassword_Result_InvalidNewPassword" xml:space="preserve"><value>La nueva contraseña debe tener entre 8 y 255 caracteres y al menos una mayúscula.</value></data>
+  <data name="ChangePassword_Result_ConfirmationMismatch" xml:space="preserve"><value>La nueva contraseña y su confirmación no coinciden.</value></data>
+  <data name="ChangePassword_Result_CredentialChanged" xml:space="preserve"><value>Tu contraseña cambió durante esta solicitud. Vuelve a introducir la contraseña vigente.</value></data>
+  <data name="ChangePassword_Result_SessionExpired" xml:space="preserve"><value>Tu sesión no es válida o venció. Inicia sesión nuevamente para cambiar tu contraseña.</value></data>
+  <data name="ChangePassword_Result_AccountUnavailable" xml:space="preserve"><value>Las credenciales de tu cuenta no están disponibles. Inicia sesión nuevamente e intenta más tarde.</value></data>
+  <data name="ChangePassword_Result_Unconfirmed" xml:space="preserve"><value>No pudimos confirmar el cambio. Tu contraseña podría haber cambiado. No se repitió el envío automáticamente.</value></data>
 </root>

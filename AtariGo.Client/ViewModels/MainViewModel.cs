@@ -151,6 +151,7 @@ namespace AtariGo.Client.ViewModels
             _lifetimeCancellation.Cancel();
             StopRealtimeConnection();
             RoomInvitations?.Dispose();
+            CloseDialog();
             (CurrentViewModel as IDisposable)?.Dispose();
             _lifetimeCancellation.Dispose();
         }
@@ -287,13 +288,26 @@ namespace AtariGo.Client.ViewModels
 
         public void OpenDialog(DialogViewModelBase dialog)
         {
-            dialog.DialogClosed += _ => CloseDialog();
+            ArgumentNullException.ThrowIfNull(dialog);
+            CloseDialog();
+            dialog.DialogClosed += OnDialogClosed;
             CurrentDialogViewModel = dialog;
         }
 
         public void CloseDialog()
         {
+            DialogViewModelBase? dialog = CurrentDialogViewModel;
             CurrentDialogViewModel = null;
+            if (dialog is not null)
+            {
+                dialog.DialogClosed -= OnDialogClosed;
+                (dialog as IDisposable)?.Dispose();
+            }
+        }
+
+        private void OnDialogClosed(bool? result)
+        {
+            CloseDialog();
         }
 
         private async Task SignOutGuestAsync()

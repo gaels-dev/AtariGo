@@ -67,6 +67,8 @@ namespace AtariGo.Client.Services
 
         void OpenNewPasswordDialog();
 
+        void OpenChangePasswordDialog();
+
         void CloseLoginDialog();
     }
 }

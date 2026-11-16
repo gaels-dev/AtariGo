@@ -75,6 +75,10 @@
         <DataTemplate DataType="{x:Type dialogVm:OptionsDialogViewModel}">
             <dialogViews:OptionsDialogView/>
         </DataTemplate>
+
+        <DataTemplate DataType="{x:Type dialogVm:ChangePasswordDialogViewModel}">
+            <dialogViews:ChangePasswordDialogView/>
+        </DataTemplate>
     </Window.Resources>
 
     <Grid>

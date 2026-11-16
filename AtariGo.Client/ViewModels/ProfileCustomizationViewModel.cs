@@ -116,7 +116,7 @@ namespace AtariGo.Client.ViewModels
 
         private void ChangePassword()
         {
-            _navigationService.OpenNewPasswordDialog();
+            _navigationService.OpenChangePasswordDialog();
         }
     }
 }

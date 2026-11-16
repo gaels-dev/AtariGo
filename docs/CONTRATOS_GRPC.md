@@ -112,6 +112,17 @@ Cobertura: CU-05
 | --- | --- | --- | --- | --- |
 | credentials.proto | ICredentialsService | CredentialsGrpcService | ChangePassword | CurrentPassword, NewPassword,<br>Confirmation |
 
+Implementado para CU-005: la identidad se obtiene de una sesión registrada validada en
+metadata, sin identificador de usuario en la solicitud. La contraseña nueva sigue la política
+de registro: entre 8 y 255 caracteres, al menos una mayúscula y confirmación idéntica.
+El servidor verifica la contraseña actual con el hasher vigente y actualiza hash y fecha UTC
+en una escritura condicionada al hash original, comparado con colación binaria. Una credencial
+modificada simultáneamente no se sobrescribe. La sesión actual permanece activa.
+Solo `Changed` confirma el guardado. Las validaciones devuelven estados específicos; un fallo
+de transporte o un plazo agotado se presentan como cambio no confirmado y no provocan reenvíos
+automáticos. Las contraseñas no se incluyen en respuestas ni logs. El diálogo se abre desde
+el perfil dentro de la ventana principal y limpia los valores capturados al finalizar.
+
 ### 4.5  Profile
 
 Responsabilidad: Consultar y modificar el perfil del propietario; la identidad de cuenta no se altera sin validación.

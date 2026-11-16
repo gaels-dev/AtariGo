@@ -162,6 +162,11 @@ namespace AtariGo.Client.Services
             Dispatch(() => GetLoginViewModel()?.OpenNewPasswordDialog());
         }
 
+        public void OpenChangePasswordDialog()
+        {
+            Dispatch(ShowChangePasswordDialog);
+        }
+
         public void CloseLoginDialog()
         {
             Dispatch(() => GetLoginViewModel()?.CloseDialog());
@@ -240,6 +245,18 @@ namespace AtariGo.Client.Services
 
             mainViewModel.CurrentViewModel = new ProfileCustomizationViewModel(
                 this, mainViewModel.PlayerName);
+        }
+
+        private void ShowChangePasswordDialog()
+        {
+            MainViewModel? mainViewModel = GetMainViewModel();
+            if (mainViewModel is null || mainViewModel.IsGuest
+                || string.IsNullOrWhiteSpace(mainViewModel.SessionToken))
+            {
+                return;
+            }
+            var client = new GrpcCredentialsClient(mainViewModel.SessionToken);
+            mainViewModel.OpenDialog(new ChangePasswordDialogViewModel(client));
         }
 
         private void ShowCreatePrivateRoom()

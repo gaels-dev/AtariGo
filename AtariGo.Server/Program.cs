@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 using AtariGo.GameLogic.Rules;
 using AtariGo.Server.Application.Authentication;
+using AtariGo.Server.Application.Credentials;
 using AtariGo.Server.Application.Friends;
 using AtariGo.Server.Application.Friendships;
 using AtariGo.Server.Application.Games;
@@ -34,6 +35,7 @@ builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<DatabaseReadinessCheck>();
 
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
+builder.Services.AddScoped<ICredentialsService, CredentialsService>();
 builder.Services.AddScoped<IFriendService, FriendService>();
 builder.Services.AddScoped<IFriendshipsService, FriendshipsService>();
 builder.Services.AddSingleton<FriendMutationCoordinator>();
@@ -75,6 +77,7 @@ if (!DatabaseConnectionSettings.Validate(app.Configuration, app.Logger))
 }
 
 app.MapGrpcService<AuthenticationGrpcService>();
+app.MapGrpcService<CredentialsGrpcService>();
 app.MapGrpcService<FriendDirectoryGrpcService>();
 app.MapGrpcService<FriendshipsGrpcService>();
 app.MapGrpcService<RegistrationGrpcService>();

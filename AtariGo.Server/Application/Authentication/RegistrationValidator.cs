@@ -6,8 +6,6 @@ public sealed class RegistrationValidator
 {
     private const int MaximumUserNameLength = 15;
     private const int MaximumEmailLength = 254;
-    private const int MinimumPasswordLength = 8;
-    private const int MaximumPasswordLength = 255;
     private const string ReservedGuestName = "Guest";
     private const string ReservedGuestPrefix = "Guest-";
 
@@ -16,7 +14,7 @@ public sealed class RegistrationValidator
         return IsValidUserName(command.UserName)
             && !IsReservedGuestName(command.UserName)
             && IsValidEmail(command.Email)
-            && IsValidPassword(command.Password)
+            && PasswordPolicy.IsValid(command.Password)
             && PasswordsMatch(command.Password, command.PasswordConfirmation)
             && !string.IsNullOrWhiteSpace(command.ConfirmationText);
     }
@@ -45,14 +43,6 @@ public sealed class RegistrationValidator
         return !string.IsNullOrWhiteSpace(email)
             && email.Trim().Length <= MaximumEmailLength
             && MailAddress.TryCreate(email.Trim(), out _);
-    }
-
-    private static bool IsValidPassword(string password)
-    {
-        return !string.IsNullOrWhiteSpace(password)
-            && password.Length >= MinimumPasswordLength
-            && password.Length <= MaximumPasswordLength
-            && password.Any(char.IsUpper);
     }
 
     private static bool PasswordsMatch(string password, string confirmation)
