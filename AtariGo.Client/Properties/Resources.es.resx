@@ -631,6 +631,21 @@
   <data name="ProfileCustomization_Msg_Updated" xml:space="preserve">
     <value>Perfil actualizado correctamente.</value>
   </data>
+  <data name="ProfileCustomization_Lbl_Wins" xml:space="preserve">
+    <value>Victorias:</value>
+  </data>
+  <data name="ProfileCustomization_Err_InvalidUserName" xml:space="preserve">
+    <value>Ingresa un nombre válido de hasta 15 caracteres. Los nombres de invitado están reservados.</value>
+  </data>
+  <data name="ProfileCustomization_Err_UserNameTaken" xml:space="preserve">
+    <value>Ese nombre de usuario ya está ocupado.</value>
+  </data>
+  <data name="ProfileCustomization_Err_InvalidAvatar" xml:space="preserve">
+    <value>Selecciona un avatar válido.</value>
+  </data>
+  <data name="ProfileCustomization_Err_Unavailable" xml:space="preserve">
+    <value>No se pudo cargar o guardar el perfil. Inténtalo de nuevo.</value>
+  </data>
   <data name="PrivateRoom_Lbl_Title" xml:space="preserve">
     <value>Sala Privada</value>
   </data>

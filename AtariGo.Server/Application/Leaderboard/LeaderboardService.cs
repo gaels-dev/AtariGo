@@ -31,12 +31,15 @@ public sealed class LeaderboardService : ILeaderboardService
             .GroupBy(player => new
             {
                 player.UserId,
-                player.User!.UserName
+                player.User!.UserName,
+                AvatarId = player.User.Profile == null
+                    ? DatabaseValues.AvatarIds.Default : player.User.Profile.AvatarId
             })
             .Select(group => new
             {
                 UserName = group.Key.UserName,
-                Wins = group.Count()
+                Wins = group.Count(),
+                group.Key.AvatarId
             })
             .OrderByDescending(player => player.Wins)
             .ThenBy(player => player.UserName)
@@ -46,7 +49,8 @@ public sealed class LeaderboardService : ILeaderboardService
         return players
             .Select(player => new PlayerLeaderboardEntry(
                 player.UserName,
-                player.Wins))
+                player.Wins,
+                player.AvatarId))
             .ToList();
     }
 

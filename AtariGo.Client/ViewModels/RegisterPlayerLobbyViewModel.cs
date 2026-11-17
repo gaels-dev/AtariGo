@@ -6,6 +6,8 @@ using System.Globalization;
 using System.Windows.Data;
 using System.Windows.Input;
 
+using Grpc.Core;
+
 using AtariGo.Client.Commands;
 using AtariGo.Client.Properties;
 using AtariGo.Client.Services;
@@ -15,16 +17,18 @@ namespace AtariGo.Client.ViewModels
 {
     public class RegisterPlayerLobbyViewModel : ViewModelBase, IDisposable
     {
-        private const int DefaultPlayerWins = 54;
         private const int LeaderboardLimit = 10;
+        private const int DefaultAvatarId = 1;
         private const string DefaultPlayerName = "Player";
 
         private readonly ILeaderboardClient _leaderboardClient;
+        private readonly IProfileClient? _profileClient;
         private readonly CancellationTokenSource _lifetimeCancellation =
             new CancellationTokenSource();
 
         private string _playerName;
         private int _playerWins;
+        private int _playerAvatarId;
         private bool _isGuest;
         private bool _isLeaderboardLoading;
         private string _leaderboardStatus = string.Empty;
@@ -40,8 +44,9 @@ namespace AtariGo.Client.ViewModels
 
             _leaderboardClient =
                 leaderboardClient ?? new GrpcLeaderboardClient();
+            _profileClient = context?.ProfileClient;
             _playerName = DefaultPlayerName;
-            _playerWins = DefaultPlayerWins;
+            _playerAvatarId = DefaultAvatarId;
             _isGuest = false;
             RoomInvitations = context?.RoomInvitations;
             Friends = context?.Friends ?? new ObservableCollection<FriendItemViewModel>();
@@ -62,6 +67,10 @@ namespace AtariGo.Client.ViewModels
                 "Leaderboard_Msg_Loading");
 
             _ = LoadLeaderboardAsync();
+            if (_profileClient is not null)
+            {
+                _ = LoadPlayerProfileAsync();
+            }
         }
 
         public ObservableCollection<LeaderboardEntry>
@@ -172,6 +181,12 @@ namespace AtariGo.Client.ViewModels
             {
                 SetProperty(ref _playerWins, value);
             }
+        }
+
+        public int PlayerAvatarId
+        {
+            get => _playerAvatarId;
+            private set => SetProperty(ref _playerAvatarId, value);
         }
 
         public bool IsGuest
@@ -316,6 +331,27 @@ namespace AtariGo.Client.ViewModels
             finally
             {
                 IsLeaderboardLoading = false;
+            }
+        }
+
+        private async Task LoadPlayerProfileAsync()
+        {
+            CancellationToken cancellationToken = _lifetimeCancellation.Token;
+            try
+            {
+                UserProfile profile = await _profileClient!.GetProfileAsync(cancellationToken);
+                cancellationToken.ThrowIfCancellationRequested();
+                PlayerWins = profile.Wins;
+                PlayerAvatarId = profile.AvatarId;
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                Trace.TraceInformation("Lobby profile load was cancelled.");
+            }
+            catch (RpcException exception)
+            {
+                Trace.TraceWarning("Lobby profile load failed with status {0}.",
+                    exception.StatusCode);
             }
         }
 

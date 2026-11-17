@@ -53,6 +53,26 @@ internal sealed class SqlServerTestDatabase : IAsyncDisposable
         await ExecuteAsync(script, false);
     }
 
+    public async Task UpgradeProfileAsync()
+    {
+        string script = await File.ReadAllTextAsync(ScriptPath("Update-ProfileAvatars.sql"));
+        await ExecuteAsync(script.Replace("AtariGoDB", _databaseName), false);
+    }
+
+    public async Task RestoreLegacyProfileSchemaAsync()
+    {
+        await ExecuteAsync("""
+            ALTER TABLE dbo.Profiles DROP CONSTRAINT CK_Profiles_AvatarId;
+            ALTER TABLE dbo.Profiles DROP CONSTRAINT DF_Profiles_AvatarId;
+            ALTER TABLE dbo.Profiles DROP COLUMN AvatarId;
+            ALTER TABLE dbo.Profiles ADD Avatar VARBINARY(MAX) NULL;
+            ALTER TABLE dbo.Users DROP CONSTRAINT CK_Users_UserName_NotGuest;
+            ALTER TABLE dbo.Users DROP CONSTRAINT UQ_Users_UserName;
+            ALTER TABLE dbo.Users ALTER COLUMN UserName NVARCHAR(100) NOT NULL;
+            ALTER TABLE dbo.Users ADD CONSTRAINT UQ_Users_UserName UNIQUE (UserName);
+            """, false);
+    }
+
     public async Task RestoreLegacySchemaAsync()
     {
         await ExecuteAsync("""

@@ -94,6 +94,29 @@ public sealed class SessionConnectionRegistry : ISessionConnectionRegistry
         }
     }
 
+    public void UpdateUserName(int userId, string userName)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(userName);
+        lock (_registryLock)
+        {
+            if (!_connections.TryGetValue(userId, out SessionConnectionLease? connection))
+            {
+                return;
+            }
+            if (string.Equals(connection.ConnectionInfo.UserName, userName,
+                StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            connection.ConnectionInfo = connection.ConnectionInfo with { UserName = userName };
+            foreach (FriendPresenceEntry friend in connection.ConnectionInfo.Friends)
+            {
+                UpdateFriendName(friend.UserId, userId, userName);
+            }
+        }
+    }
+
     public bool Remove(SessionConnectionLease connection)
     {
         ArgumentNullException.ThrowIfNull(connection);
@@ -242,6 +265,23 @@ public sealed class SessionConnectionRegistry : ISessionConnectionRegistry
         {
             connection.Stop();
         }
+    }
+
+    private void UpdateFriendName(int friendUserId, int userId, string userName)
+    {
+        if (!_connections.TryGetValue(friendUserId, out SessionConnectionLease? friendConnection))
+        {
+            return;
+        }
+        friendConnection.ConnectionInfo = friendConnection.ConnectionInfo with
+        {
+            Friends = friendConnection.ConnectionInfo.Friends
+                .Select(friend => friend.UserId == userId
+                    ? friend with { UserName = userName } : friend)
+                .ToList()
+        };
+        QueuePresenceEvent(friendConnection,
+            new FriendPresenceEntry(userId, userName, true));
     }
 
     private static void QueuePresenceEvent(

@@ -1,3 +1,3 @@
 namespace AtariGo.Server.Application.Leaderboard;
 
-public sealed record PlayerLeaderboardEntry(string UserName, int Wins);
+public sealed record PlayerLeaderboardEntry(string UserName, int Wins, int AvatarId);

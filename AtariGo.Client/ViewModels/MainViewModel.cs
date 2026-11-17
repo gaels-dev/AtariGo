@@ -140,6 +140,12 @@ namespace AtariGo.Client.ViewModels
         public ObservableCollection<FriendItemViewModel> Friends { get; } =
             new();
 
+        public void UpdatePlayerName(string playerName)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(playerName);
+            PlayerName = playerName;
+        }
+
         public void Dispose()
         {
             if (_isDisposed)
@@ -173,6 +179,8 @@ namespace AtariGo.Client.ViewModels
                 {
                     Friends = Friends,
                     SessionToken = SessionToken,
+                    ProfileClient = string.IsNullOrWhiteSpace(SessionToken)
+                        ? null : new GrpcProfileClient(SessionToken),
                     SignOutAsync = SignOutAsync,
                     RoomInvitations = RoomInvitations
                 })
@@ -453,6 +461,11 @@ namespace AtariGo.Client.ViewModels
             }
 
             friend.IsOnline = friendPresence.IsOnline;
+            friend.Username = friendPresence.UserName;
+            if (CurrentViewModel is RegisterPlayerLobbyViewModel lobby)
+            {
+                lobby.FilteredFriends.Refresh();
+            }
             SetPresenceStatus(string.Empty);
         }
 

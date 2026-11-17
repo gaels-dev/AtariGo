@@ -104,7 +104,10 @@ public sealed class RegistrationService : IRegistrationService
             RegistrationDate = now,
             RoleId = playerRole.RoleId,
             Credential = new Credential { FailedAttempts = 0 },
-            Profile = new Profile()
+            Profile = new AtariGo.Server.Data.Entities.Profile
+            {
+                AvatarId = DatabaseValues.AvatarIds.Default
+            }
         };
         user.Credential!.PasswordHash = _passwordHasher.HashPassword(
             user,

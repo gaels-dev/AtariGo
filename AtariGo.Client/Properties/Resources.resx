@@ -630,7 +630,22 @@
     <value>Close</value>
   </data>
   <data name="ProfileCustomization_Msg_Updated" xml:space="preserve">
-    <value>Profile updated succesfully</value>
+    <value>Profile updated successfully.</value>
+  </data>
+  <data name="ProfileCustomization_Lbl_Wins" xml:space="preserve">
+    <value>Wins:</value>
+  </data>
+  <data name="ProfileCustomization_Err_InvalidUserName" xml:space="preserve">
+    <value>Enter a valid username of up to 15 characters. Guest names are reserved.</value>
+  </data>
+  <data name="ProfileCustomization_Err_UserNameTaken" xml:space="preserve">
+    <value>That username is already in use.</value>
+  </data>
+  <data name="ProfileCustomization_Err_InvalidAvatar" xml:space="preserve">
+    <value>Select a valid avatar.</value>
+  </data>
+  <data name="ProfileCustomization_Err_Unavailable" xml:space="preserve">
+    <value>The profile could not be loaded or saved. Try again.</value>
   </data>
   <data name="PrivateRoom_Lbl_Title" xml:space="preserve">
     <value>Private Room</value>

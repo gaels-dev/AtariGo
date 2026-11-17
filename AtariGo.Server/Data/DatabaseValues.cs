@@ -2,6 +2,12 @@ namespace AtariGo.Server.Data;
 
 public static class DatabaseValues
 {
+    public static class AvatarIds
+    {
+        public const int Default = 1;
+        public const int Maximum = 5;
+    }
+
     public static class AccountStates
     {
         public const string Active = "Active";

@@ -1,5 +1,20 @@
 # Base de datos para la jugabilidad
 
+## Actualización de perfil y avatares
+
+`Update-ProfileAvatars.sql` actualiza la BD existente para guardar `Profiles.AvatarId`
+en lugar de la imagen binaria. Asigna el avatar `1` a todos los perfiles existentes
+y crea el perfil predeterminado para las cuentas que no lo tenían. También ajusta
+`Users.UserName` a `NVARCHAR(15)` y conserva la unicidad y la restricción de nombres
+reservados. Si hay un nombre de más de 15 caracteres o un nombre reservado, detiene
+la actualización y revierte la transacción; se deben corregir esos datos antes de
+repetirla. Se puede ejecutar de nuevo después de una actualización correcta.
+
+Detener el servidor, respaldar la BD y ejecutar el script completo antes de iniciar
+la versión que usa `AvatarId`. El archivo `Create-AtariGo.sql` ya contiene el esquema
+para instalaciones nuevas y no se ejecuta sobre una BD existente. La aplicación no
+actualiza el esquema automáticamente.
+
 La jugabilidad amplía las tablas existentes `Games` y `GameEvents`. No requiere tablas
 adicionales. `Moves` conserva las jugadas y `GamePlayers` las capturas y resultados por jugador.
 El código usa exclusivamente ese esquema; no hay selección de diseños antiguos al arrancar.

@@ -4,10 +4,15 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:properties="clr-namespace:AtariGo.Client.Properties"
+             xmlns:converters="clr-namespace:AtariGo.Client.Converters"
              mc:Ignorable="d"
              d:DesignHeight="700"
              d:DesignWidth="1000"
              Background="#E5D8C5">
+
+    <UserControl.Resources>
+        <converters:AvatarIdToImageConverter x:Key="AvatarImageConverter"/>
+    </UserControl.Resources>
 
     <Grid>
         <Grid.RowDefinitions>
@@ -52,34 +57,40 @@
                         Foreground="#2C2A29"
                         Margin="0,0,0,10"/>
 
-                    <ItemsControl ItemsSource="{Binding AvailableAvatars}"
-                                  Margin="0,0,0,20">
-                        <ItemsControl.ItemsPanel>
+                    <ListBox ItemsSource="{Binding AvailableAvatars}"
+                             SelectedItem="{Binding SelectedAvatarId, Mode=TwoWay}"
+                             IsEnabled="{Binding IsLoaded}"
+                             BorderThickness="0"
+                             Margin="0,0,0,20">
+                        <ListBox.ItemsPanel>
                             <ItemsPanelTemplate>
                                 <StackPanel Orientation="Horizontal"
                                             HorizontalAlignment="Center"/>
                             </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-
-                        <ItemsControl.ItemTemplate>
+                        </ListBox.ItemsPanel>
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem">
+                                <Setter Property="Padding" Value="3"/>
+                                <Setter Property="Margin" Value="4"/>
+                                <Setter Property="BorderBrush" Value="#2C2A29"/>
+                                <Setter Property="BorderThickness" Value="1"/>
+                                <Style.Triggers>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter Property="BorderBrush" Value="#1976D2"/>
+                                        <Setter Property="BorderThickness" Value="3"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ListBox.ItemContainerStyle>
+                        <ListBox.ItemTemplate>
                             <DataTemplate>
-                                <Button
-                                    Content="{Binding}"
-                                    Command="{Binding
-                                        DataContext.SelectAvatarCommand,
-                                        RelativeSource={
-                                            RelativeSource AncestorType=UserControl}}"
-                                    CommandParameter="{Binding}"
-                                    Width="70"
-                                    Height="70"
-                                    Margin="8"
-                                    FontSize="30"
-                                    Background="#F5F1EA"
-                                    BorderBrush="#2C2A29"
-                                    BorderThickness="1.5"/>
+                                <Image Source="{Binding Converter={StaticResource AvatarImageConverter}}"
+                                       Width="62"
+                                       Height="62"
+                                       Stretch="UniformToFill"/>
                             </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
 
                     <TextBlock
                         Text="{x:Static properties:Resources.ProfileCustomization_Lbl_Username}"
@@ -90,6 +101,8 @@
                     <TextBox
                         Text="{Binding PlayerName,
                             UpdateSourceTrigger=PropertyChanged}"
+                        MaxLength="15"
+                        IsEnabled="{Binding IsLoaded}"
                         Height="36"
                         Padding="8"
                         FontSize="14"
@@ -101,13 +114,22 @@
                         Foreground="#2C2A29"
                         Margin="0,0,0,5"/>
 
-                    <TextBox Text="{Binding Email}"
+                    <TextBox Text="{Binding Email, Mode=OneWay}"
                              Height="36"
                              Padding="8"
                              FontSize="14"
                              IsReadOnly="True"
                              Background="#EEEEEE"
-                             Margin="0,0,0,20"/>
+                             Margin="0,0,0,12"/>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,20">
+                        <TextBlock Text="{Binding WinsLabel}"
+                                   FontWeight="Bold"
+                                   Foreground="#2C2A29"/>
+                        <TextBlock Text="{Binding Wins}"
+                                   Margin="8,0,0,0"
+                                   Foreground="#2C2A29"/>
+                    </StackPanel>
 
                     <TextBlock Text="{Binding StatusMessage}"
                                Foreground="#2E7D32"
@@ -119,6 +141,7 @@
                     <Button
                         Content="{x:Static properties:Resources.ProfileCustomization_Btn_Update}"
                         Command="{Binding UpdateProfileCommand}"
+                        IsEnabled="{Binding IsLoaded}"
                         Height="42"
                         Background="#4A90E2"
                         Foreground="White"

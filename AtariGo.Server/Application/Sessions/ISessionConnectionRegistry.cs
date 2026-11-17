@@ -15,6 +15,8 @@ public interface ISessionConnectionRegistry : IRoomInvitationNotifier
 
     void RemoveFriendship(int firstUserId, int secondUserId);
 
+    void UpdateUserName(int userId, string userName);
+
     bool Remove(SessionConnectionLease connection);
 
     void DisconnectSession(long sessionId);

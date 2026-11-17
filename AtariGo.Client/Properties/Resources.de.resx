@@ -631,6 +631,21 @@
   <data name="ProfileCustomization_Msg_Updated" xml:space="preserve">
     <value>Profil erfolgreich aktualisiert.</value>
   </data>
+  <data name="ProfileCustomization_Lbl_Wins" xml:space="preserve">
+    <value>Siege:</value>
+  </data>
+  <data name="ProfileCustomization_Err_InvalidUserName" xml:space="preserve">
+    <value>Gib einen gültigen Benutzernamen mit höchstens 15 Zeichen ein. Gastnamen sind reserviert.</value>
+  </data>
+  <data name="ProfileCustomization_Err_UserNameTaken" xml:space="preserve">
+    <value>Dieser Benutzername ist bereits vergeben.</value>
+  </data>
+  <data name="ProfileCustomization_Err_InvalidAvatar" xml:space="preserve">
+    <value>Wähle einen gültigen Avatar aus.</value>
+  </data>
+  <data name="ProfileCustomization_Err_Unavailable" xml:space="preserve">
+    <value>Das Profil konnte nicht geladen oder gespeichert werden. Versuche es erneut.</value>
+  </data>
   <data name="PrivateRoom_Lbl_Title" xml:space="preserve">
     <value>Privater Raum</value>
   </data>

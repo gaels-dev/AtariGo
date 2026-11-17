@@ -238,13 +238,17 @@ namespace AtariGo.Client.Services
         private void ShowProfileCustomization()
         {
             MainViewModel? mainViewModel = GetMainViewModel();
-            if (mainViewModel is null)
+            if (mainViewModel is null || mainViewModel.IsGuest
+                || string.IsNullOrWhiteSpace(mainViewModel.SessionToken))
             {
                 return;
             }
 
-            mainViewModel.CurrentViewModel = new ProfileCustomizationViewModel(
-                this, mainViewModel.PlayerName);
+            GrpcProfileClient client = new GrpcProfileClient(mainViewModel.SessionToken);
+            ProfileCustomizationViewModel profile = new ProfileCustomizationViewModel(
+                this, client, mainViewModel.UpdatePlayerName);
+            mainViewModel.CurrentViewModel = profile;
+            profile.LoadCommand.Execute(null);
         }
 
         private void ShowChangePasswordDialog()

@@ -25,7 +25,8 @@ public sealed class LeaderboardGrpcService : Leaderboard.LeaderboardBase
             {
                 Position = index + 1,
                 UserName = players[index].UserName,
-                Wins = players[index].Wins
+                Wins = players[index].Wins,
+                AvatarId = players[index].AvatarId
             });
         }
 

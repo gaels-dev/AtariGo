@@ -126,8 +126,13 @@ public sealed class SqlServerGameplayTests
         await database.RestoreLegacySchemaAsync();
         await using AtariGoDbContext context = database.CreateContext();
         await context.Database.ExecuteSqlRawAsync("""
+            ALTER TABLE dbo.GamePlayers DROP CONSTRAINT CK_GamePlayers_Identity;
             DROP INDEX UX_GamePlayers_Game_GuestIdentity ON dbo.GamePlayers;
             ALTER TABLE dbo.GamePlayers DROP COLUMN GuestIdentityId;
+            ALTER TABLE dbo.GamePlayers ADD CONSTRAINT CK_GamePlayers_Identity CHECK
+                ((UserId IS NOT NULL AND GuestName IS NULL)
+                OR (UserId IS NULL AND GuestName IS NOT NULL
+                    AND LEN(LTRIM(RTRIM(GuestName))) > 0));
             """);
         // Act
         await database.UpgradeDirectAsync();

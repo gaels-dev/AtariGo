@@ -5,7 +5,7 @@ public partial class Profile
 {
     public int UserId { get; set; }
 
-    public byte[]? Avatar { get; set; }
+    public int AvatarId { get; set; } = DatabaseValues.AvatarIds.Default;
 
     public string? Description { get; set; }
 

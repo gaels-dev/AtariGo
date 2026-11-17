@@ -4,9 +4,14 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:properties="clr-namespace:AtariGo.Client.Properties"
+             xmlns:converters="clr-namespace:AtariGo.Client.Converters"
              mc:Ignorable="d"
              d:DesignHeight="700" d:DesignWidth="1000"
              Background="#E5D8C5">
+
+    <UserControl.Resources>
+        <converters:AvatarIdToImageConverter x:Key="AvatarImageConverter"/>
+    </UserControl.Resources>
 
     <Grid>
         <Grid.RowDefinitions>
@@ -52,16 +57,9 @@
                         Margin="0,0,0,15">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                            <Grid Width="45" Height="45" Margin="0,0,12,0">
-                                <Ellipse Fill="#E0D7C6"
-                                         Stroke="#2C2A29"
-                                         StrokeThickness="1.5"/>
-                                <TextBlock Text="👤"
-                                           FontSize="22"
-                                           Foreground="#4A90E2"
-                                           HorizontalAlignment="Center"
-                                           VerticalAlignment="Center"/>
-                            </Grid>
+                            <Image Source="{Binding PlayerAvatarId,
+                                Converter={StaticResource AvatarImageConverter}}"
+                                   Width="45" Height="45" Margin="0,0,12,0"/>
                             <StackPanel VerticalAlignment="Center">
                                 <TextBlock
                                     Text="{x:Static
@@ -119,6 +117,7 @@
                         <Grid Margin="0,0,0,4">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="32"/>
+                                <ColumnDefinition Width="27"/>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="55"/>
                             </Grid.ColumnDefinitions>
@@ -126,12 +125,12 @@
                                        FontSize="10"
                                        FontWeight="Bold"
                                        Foreground="#666666"/>
-                            <TextBlock Grid.Column="1"
+                            <TextBlock Grid.Column="2"
                                        Text="{Binding PlayerHeader}"
                                        FontSize="10"
                                        FontWeight="Bold"
                                        Foreground="#666666"/>
-                            <TextBlock Grid.Column="2"
+                            <TextBlock Grid.Column="3"
                                        Text="{Binding WinsHeader}"
                                        FontSize="10"
                                        FontWeight="Bold"
@@ -147,17 +146,23 @@
                                         <Grid Margin="0,3">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="32"/>
+                                                <ColumnDefinition Width="27"/>
                                                 <ColumnDefinition Width="*"/>
                                                 <ColumnDefinition Width="55"/>
                                             </Grid.ColumnDefinitions>
                                             <TextBlock Text="{Binding Position}"
                                                        FontSize="12"
                                                        Foreground="#666666"/>
-                                            <TextBlock Grid.Column="1"
+                                            <Image Grid.Column="1"
+                                                   Source="{Binding AvatarId,
+                                                       Converter={StaticResource AvatarImageConverter}}"
+                                                   Width="22"
+                                                   Height="22"/>
+                                            <TextBlock Grid.Column="2"
                                                        Text="{Binding UserName}"
                                                        FontSize="12"
                                                        TextTrimming="CharacterEllipsis"/>
-                                            <TextBlock Grid.Column="2"
+                                            <TextBlock Grid.Column="3"
                                                        Text="{Binding Wins}"
                                                        FontSize="12"
                                                        FontWeight="Bold"

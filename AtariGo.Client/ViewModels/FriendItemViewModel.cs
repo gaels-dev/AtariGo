@@ -3,7 +3,7 @@ namespace AtariGo.Client.ViewModels
     public class FriendItemViewModel : ViewModelBase
     {
         private readonly int _userId;
-        private readonly string _username;
+        private string _username;
         private bool _isOnline;
 
         public FriendItemViewModel(
@@ -30,6 +30,10 @@ namespace AtariGo.Client.ViewModels
             get
             {
                 return _username;
+            }
+            set
+            {
+                SetProperty(ref _username, value);
             }
         }
 

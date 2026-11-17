@@ -3,16 +3,12 @@ GO
 
 IF DB_ID(N'AtariGoDB') IS NULL
 BEGIN
-    CREATE DATABASE AtariGoDB;
+    CREATE DATABASE AtariGoDB COLLATE Latin1_General_100_CI_AI_SC;
 END;
 GO
 
 USE AtariGoDB;
 GO
-
-USE AtariGoDB;
-GO
-
 
 CREATE TABLE dbo.Roles
 (
@@ -27,7 +23,7 @@ GO
 CREATE TABLE dbo.Users
 (
     UserId INT IDENTITY(1, 1) NOT NULL,
-    UserName NVARCHAR(100) NOT NULL,
+    UserName NVARCHAR(15) NOT NULL,
     Email NVARCHAR(254) NOT NULL,
     State VARCHAR(20) NOT NULL
         CONSTRAINT DF_Users_State DEFAULT ('Active'),
@@ -67,12 +63,14 @@ GO
 CREATE TABLE dbo.Profiles
 (
     UserId INT NOT NULL,
-    Avatar VARBINARY(MAX) NULL,
+    AvatarId INT NOT NULL
+        CONSTRAINT DF_Profiles_AvatarId DEFAULT (1),
     Description NVARCHAR(500) NULL,
     LastUpdate DATETIME2(0) NULL,
     CONSTRAINT PK_Profiles PRIMARY KEY (UserId),
     CONSTRAINT FK_Profiles_User FOREIGN KEY (UserId)
-        REFERENCES dbo.Users (UserId)
+        REFERENCES dbo.Users (UserId),
+    CONSTRAINT CK_Profiles_AvatarId CHECK (AvatarId BETWEEN 1 AND 5)
 );
 GO
 
@@ -163,7 +161,7 @@ CREATE TABLE dbo.FriendRequests
         CHECK (State IN ('Pending', 'Accepted', 'Rejected', 'Cancelled', 'Expired')),
     CONSTRAINT CK_FriendRequests_Response CHECK
         ((State = 'Pending' AND RespondedAt IS NULL)
-         OR (State <> 'Pending' AND RespondedAt IS NOT NULL))
+        OR (State <> 'Pending' AND RespondedAt IS NOT NULL))
 );
 GO
 
@@ -244,13 +242,13 @@ CREATE TABLE dbo.Invitations
         (InvitationType IN ('User', 'Email')),
     CONSTRAINT CK_Invitations_Recipient CHECK
         ((InvitationType = 'User' AND RecipientId IS NOT NULL AND RecipientEmail IS NULL)
-         OR (InvitationType = 'Email' AND RecipientId IS NULL AND RecipientEmail IS NOT NULL)),
+        OR (InvitationType = 'Email' AND RecipientId IS NULL AND RecipientEmail IS NOT NULL)),
     CONSTRAINT CK_Invitations_NotSelf CHECK (RecipientId IS NULL OR SenderId <> RecipientId),
     CONSTRAINT CK_Invitations_State
         CHECK (State IN ('Pending', 'Accepted', 'Rejected', 'Cancelled', 'Expired')),
     CONSTRAINT CK_Invitations_Response CHECK
         ((State = 'Pending' AND RespondedAt IS NULL)
-         OR (State <> 'Pending' AND RespondedAt IS NOT NULL))
+        OR (State <> 'Pending' AND RespondedAt IS NOT NULL))
 );
 GO
 
@@ -300,7 +298,7 @@ CREATE TABLE dbo.Games
     CONSTRAINT CK_Games_BoardStateJson CHECK (BoardStateJson IS NULL OR ISJSON(BoardStateJson) = 1),
     CONSTRAINT CK_Games_GameplayState CHECK
         ((BoardStateJson IS NULL AND TurnDeadlineUtc IS NULL)
-         OR (BoardStateJson IS NOT NULL AND TurnDeadlineUtc IS NOT NULL)),
+        OR (BoardStateJson IS NOT NULL AND TurnDeadlineUtc IS NOT NULL)),
     CONSTRAINT PK_Games PRIMARY KEY (GameId),
     CONSTRAINT FK_Games_Room FOREIGN KEY (RoomId)
         REFERENCES dbo.Rooms (RoomId),
@@ -309,14 +307,14 @@ CREATE TABLE dbo.Games
     CONSTRAINT CK_Games_Type CHECK (GameType IN ('Public', 'Private')),
     CONSTRAINT CK_Games_RoomByType CHECK
         ((GameType = 'Private' AND RoomId IS NOT NULL)
-         OR (GameType = 'Public' AND RoomId IS NULL)),
+        OR (GameType = 'Public' AND RoomId IS NULL)),
     CONSTRAINT CK_Games_State
         CHECK (State IN ('Waiting', 'InProgress', 'Completed', 'Abandoned', 'Cancelled')),
     CONSTRAINT CK_Games_FinishedAt CHECK
         (FinishedAt IS NULL OR (StartedAt IS NOT NULL AND FinishedAt >= StartedAt)),
     CONSTRAINT CK_Games_EndReason CHECK
         ((State IN ('Completed', 'Abandoned', 'Cancelled') AND EndReason IS NOT NULL)
-         OR (State IN ('Waiting', 'InProgress') AND EndReason IS NULL))
+        OR (State IN ('Waiting', 'InProgress') AND EndReason IS NULL))
 );
 GO
 
@@ -356,8 +354,9 @@ CREATE TABLE dbo.GamePlayers
     CONSTRAINT FK_GamePlayers_User FOREIGN KEY (UserId)
         REFERENCES dbo.Users (UserId),
     CONSTRAINT CK_GamePlayers_Identity CHECK
-        ((UserId IS NOT NULL AND GuestName IS NULL)
-         OR (UserId IS NULL AND GuestName IS NOT NULL AND LEN(LTRIM(RTRIM(GuestName))) > 0)),
+        ((UserId IS NOT NULL AND GuestName IS NULL AND GuestIdentityId IS NULL)
+        OR (UserId IS NULL AND GuestName IS NOT NULL
+            AND LEN(LTRIM(RTRIM(GuestName))) > 0 AND GuestIdentityId IS NOT NULL)),
     CONSTRAINT CK_GamePlayers_Color CHECK (StoneColor IN ('Black', 'White')),
     CONSTRAINT CK_GamePlayers_TurnOrder CHECK (TurnOrder IN (1, 2)),
     CONSTRAINT CK_GamePlayers_CapturedStones CHECK (CapturedStones >= 0),
@@ -418,9 +417,9 @@ CREATE TABLE dbo.GameEvents
     ActionResultJson NVARCHAR(MAX) NULL,
     CONSTRAINT CK_GameEvents_Action CHECK
         ((ActionId IS NULL AND ActionRequestJson IS NULL AND ActionResultJson IS NULL)
-         OR (ActionId IS NOT NULL AND GamePlayerId IS NOT NULL
-             AND ActionRequestJson IS NOT NULL AND ISJSON(ActionRequestJson) = 1
-             AND ActionResultJson IS NOT NULL AND ISJSON(ActionResultJson) = 1)),
+        OR (ActionId IS NOT NULL AND GamePlayerId IS NOT NULL
+            AND ActionRequestJson IS NOT NULL AND ISJSON(ActionRequestJson) = 1
+            AND ActionResultJson IS NOT NULL AND ISJSON(ActionResultJson) = 1)),
     Description NVARCHAR(1000) NULL,
     CreatedAt DATETIME2(0) NOT NULL
         CONSTRAINT DF_GameEvents_CreatedAt DEFAULT (SYSUTCDATETIME()),
@@ -432,7 +431,7 @@ CREATE TABLE dbo.GameEvents
     CONSTRAINT CK_GameEvents_Type CHECK
         (EventType IN
             ('GameStarted', 'GameFinished', 'Capture', 'Disconnect', 'Reconnect',
-             'Abandon', 'Surrender', 'Timeout', 'Move', 'ActionRejected'))
+            'Abandon', 'Surrender', 'Timeout', 'Move', 'ActionRejected'))
 );
 GO
 
@@ -470,7 +469,7 @@ CREATE TABLE dbo.Reports
         CHECK (State IN ('Pending', 'Reviewed', 'ActionTaken', 'Dismissed')),
     CONSTRAINT CK_Reports_Review CHECK
         ((State = 'Pending' AND ReviewedAt IS NULL AND ReviewerId IS NULL)
-         OR (State <> 'Pending' AND ReviewedAt IS NOT NULL AND ReviewerId IS NOT NULL)),
+        OR (State <> 'Pending' AND ReviewedAt IS NOT NULL AND ReviewerId IS NOT NULL)),
     CONSTRAINT CK_Reports_ReviewedAt CHECK
         (ReviewedAt IS NULL OR ReviewedAt >= CreatedAt)
 );
