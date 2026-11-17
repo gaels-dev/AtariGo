@@ -70,7 +70,7 @@ CREATE TABLE dbo.Profiles
     CONSTRAINT PK_Profiles PRIMARY KEY (UserId),
     CONSTRAINT FK_Profiles_User FOREIGN KEY (UserId)
         REFERENCES dbo.Users (UserId),
-    CONSTRAINT CK_Profiles_AvatarId CHECK (AvatarId BETWEEN 1 AND 5)
+    CONSTRAINT CK_Profiles_AvatarId CHECK (AvatarId BETWEEN 1 AND 20)
 );
 GO
 

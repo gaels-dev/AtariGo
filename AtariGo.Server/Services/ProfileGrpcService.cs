@@ -136,6 +136,8 @@ public sealed class ProfileGrpcService : Profile.ProfileBase
                 AtariGo.Contracts.ProfileUpdateStatus.UserNameTaken,
             Application.Profile.ProfileUpdateStatus.InvalidAvatar =>
                 AtariGo.Contracts.ProfileUpdateStatus.InvalidAvatar,
+            Application.Profile.ProfileUpdateStatus.AvatarLocked =>
+                AtariGo.Contracts.ProfileUpdateStatus.AvatarLocked,
             Application.Profile.ProfileUpdateStatus.AccountUnavailable =>
                 AtariGo.Contracts.ProfileUpdateStatus.AccountUnavailable,
             _ => AtariGo.Contracts.ProfileUpdateStatus.Unspecified

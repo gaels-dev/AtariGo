@@ -614,6 +614,18 @@
   <data name="ProfileCustomization_Lbl_SelectAvatar" xml:space="preserve">
     <value>Choose your Avatar</value>
   </data>
+  <data name="ProfileCustomization_Btn_ViewMore" xml:space="preserve">
+    <value>View more</value>
+  </data>
+  <data name="ProfileCustomization_Lbl_AllAvatars" xml:space="preserve">
+    <value>Choose an avatar</value>
+  </data>
+  <data name="ProfileCustomization_Lbl_SelectedAvatar" xml:space="preserve">
+    <value>Selected avatar:</value>
+  </data>
+  <data name="ProfileCustomization_Lbl_UnlockAtWins" xml:space="preserve">
+    <value>Unlocks at {0} wins</value>
+  </data>
   <data name="ProfileCustomization_Lbl_Username" xml:space="preserve">
     <value>Username</value>
   </data>
@@ -643,6 +655,9 @@
   </data>
   <data name="ProfileCustomization_Err_InvalidAvatar" xml:space="preserve">
     <value>Select a valid avatar.</value>
+  </data>
+  <data name="ProfileCustomization_Err_AvatarLocked" xml:space="preserve">
+    <value>You have not earned enough wins to use this avatar.</value>
   </data>
   <data name="ProfileCustomization_Err_Unavailable" xml:space="preserve">
     <value>The profile could not be loaded or saved. Try again.</value>

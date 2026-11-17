@@ -10,7 +10,7 @@ namespace AtariGo.Client.Converters;
 public sealed class AvatarIdToImageConverter : IValueConverter
 {
     public const int DefaultAvatarId = 1;
-    public const int MaximumAvatarId = 5;
+    public const int MaximumAvatarId = 20;
 
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {

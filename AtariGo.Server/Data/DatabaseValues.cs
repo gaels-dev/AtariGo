@@ -5,7 +5,9 @@ public static class DatabaseValues
     public static class AvatarIds
     {
         public const int Default = 1;
-        public const int Maximum = 5;
+        public const int InitialUnlockedMaximum = 5;
+        public const int Maximum = 20;
+        public const int WinsPerUnlock = 5;
     }
 
     public static class AccountStates

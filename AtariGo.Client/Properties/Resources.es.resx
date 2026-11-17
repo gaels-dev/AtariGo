@@ -613,6 +613,18 @@
   <data name="ProfileCustomization_Lbl_SelectAvatar" xml:space="preserve">
     <value>Elige tu avatar:</value>
   </data>
+  <data name="ProfileCustomization_Btn_ViewMore" xml:space="preserve">
+    <value>Ver más</value>
+  </data>
+  <data name="ProfileCustomization_Lbl_AllAvatars" xml:space="preserve">
+    <value>Elige un avatar</value>
+  </data>
+  <data name="ProfileCustomization_Lbl_SelectedAvatar" xml:space="preserve">
+    <value>Avatar seleccionado:</value>
+  </data>
+  <data name="ProfileCustomization_Lbl_UnlockAtWins" xml:space="preserve">
+    <value>Se desbloquea con {0} victorias</value>
+  </data>
   <data name="ProfileCustomization_Lbl_Username" xml:space="preserve">
     <value>Nombre de usuario</value>
   </data>
@@ -642,6 +654,9 @@
   </data>
   <data name="ProfileCustomization_Err_InvalidAvatar" xml:space="preserve">
     <value>Selecciona un avatar válido.</value>
+  </data>
+  <data name="ProfileCustomization_Err_AvatarLocked" xml:space="preserve">
+    <value>Aún no tienes suficientes victorias para usar este avatar.</value>
   </data>
   <data name="ProfileCustomization_Err_Unavailable" xml:space="preserve">
     <value>No se pudo cargar o guardar el perfil. Inténtalo de nuevo.</value>

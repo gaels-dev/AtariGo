@@ -19,6 +19,15 @@ La jugabilidad amplía las tablas existentes `Games` y `GameEvents`. No requiere
 adicionales. `Moves` conserva las jugadas y `GamePlayers` las capturas y resultados por jugador.
 El código usa exclusivamente ese esquema; no hay selección de diseños antiguos al arrancar.
 
+## Desbloqueo de avatares
+
+`Update-AvatarUnlocks.sql` amplía la restricción de `Profiles.AvatarId` de 1–5 a 1–20
+en una BD existente que ya tiene `AvatarId`. No modifica los perfiles guardados y puede
+ejecutarse de nuevo. Respaldar la BD y detener el servidor antes de aplicarlo. Las
+instalaciones nuevas ya reciben el rango 1–20 desde `Create-AtariGo.sql`. El servidor
+cuenta las victorias en partidas completadas antes de permitir un avatar del 6 al 20:
+el avatar 6 requiere 5 victorias y cada avatar siguiente requiere 5 más.
+
 ## Actualización directa desde la BD anterior a la jugabilidad
 
 Si la BD no recibió ninguna de las actualizaciones de jugabilidad, usar únicamente

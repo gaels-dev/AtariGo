@@ -68,7 +68,7 @@ public sealed class ProfileServiceTests
         ProfileUpdateResult taken = await service.UpdateAsync(
             new ProfileUpdateInput(1, "PlayerTwo", 2), CancellationToken.None);
         ProfileUpdateResult invalidAvatar = await service.UpdateAsync(
-            new ProfileUpdateInput(1, "NewName", 6), CancellationToken.None);
+            new ProfileUpdateInput(1, "NewName", 21), CancellationToken.None);
         UserProfileSnapshot? saved = await service.GetAsync(1, CancellationToken.None);
 
         // Assert
@@ -78,6 +78,40 @@ public sealed class ProfileServiceTests
         Assert.IsNotNull(saved);
         Assert.AreEqual("PlayerOne", saved.UserName);
         Assert.AreEqual(1, saved.AvatarId);
+    }
+
+    [TestMethod]
+    public async Task UpdateAsync_RequiresCompletedWinsForLockedAvatars()
+    {
+        // Arrange
+        await using SqliteConnection connection = await CreateDatabaseAsync();
+        await using AtariGoDbContext context = CreateContext(connection);
+        ProfileService service = new ProfileService(context, TimeProvider.System);
+
+        // Act
+        ProfileUpdateResult locked = await service.UpdateAsync(
+            new ProfileUpdateInput(1, "NewName", 6), CancellationToken.None);
+        for (int gameId = 3; gameId <= 6; gameId++)
+        {
+            await context.Database.ExecuteSqlInterpolatedAsync(
+                $"INSERT INTO Games VALUES ({gameId}, 'Completed')");
+            await context.Database.ExecuteSqlInterpolatedAsync(
+                $"INSERT INTO GamePlayers VALUES ({gameId}, {gameId}, 1, 'Won')");
+        }
+        ProfileUpdateResult unlocked = await service.UpdateAsync(
+            new ProfileUpdateInput(1, "NewName", 6), CancellationToken.None);
+        ProfileUpdateResult nextLocked = await service.UpdateAsync(
+            new ProfileUpdateInput(1, "NewName", 7), CancellationToken.None);
+        UserProfileSnapshot? saved = await service.GetAsync(1, CancellationToken.None);
+
+        // Assert
+        Assert.AreEqual(ProfileUpdateStatus.AvatarLocked, locked.Status);
+        Assert.AreEqual(ProfileUpdateStatus.Updated, unlocked.Status);
+        Assert.AreEqual(ProfileUpdateStatus.AvatarLocked, nextLocked.Status);
+        Assert.IsNotNull(saved);
+        Assert.AreEqual("NewName", saved.UserName);
+        Assert.AreEqual(6, saved.AvatarId);
+        Assert.AreEqual(5, saved.Wins);
     }
 
     [TestMethod]

@@ -59,6 +59,12 @@ internal sealed class SqlServerTestDatabase : IAsyncDisposable
         await ExecuteAsync(script.Replace("AtariGoDB", _databaseName), false);
     }
 
+    public async Task UpgradeAvatarUnlocksAsync()
+    {
+        string script = await File.ReadAllTextAsync(ScriptPath("Update-AvatarUnlocks.sql"));
+        await ExecuteAsync(script.Replace("AtariGoDB", _databaseName), false);
+    }
+
     public async Task RestoreLegacyProfileSchemaAsync()
     {
         await ExecuteAsync("""

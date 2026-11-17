@@ -10,7 +10,7 @@ public sealed class ProfileEntityConfiguration : IEntityTypeConfiguration<Profil
     public void Configure(EntityTypeBuilder<Profile> entity)
     {
         entity.ToTable("Profiles", table => table.HasCheckConstraint(
-            "CK_Profiles_AvatarId", "[AvatarId] BETWEEN 1 AND 5"));
+            "CK_Profiles_AvatarId", "[AvatarId] BETWEEN 1 AND 20"));
         entity.HasKey(profile => profile.UserId);
 
         entity.Property(profile => profile.UserId).ValueGeneratedNever();

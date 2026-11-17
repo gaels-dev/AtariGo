@@ -613,6 +613,18 @@
   <data name="ProfileCustomization_Lbl_SelectAvatar" xml:space="preserve">
     <value>Avatar auswählen:</value>
   </data>
+  <data name="ProfileCustomization_Btn_ViewMore" xml:space="preserve">
+    <value>Mehr anzeigen</value>
+  </data>
+  <data name="ProfileCustomization_Lbl_AllAvatars" xml:space="preserve">
+    <value>Avatar auswählen</value>
+  </data>
+  <data name="ProfileCustomization_Lbl_SelectedAvatar" xml:space="preserve">
+    <value>Ausgewählter Avatar:</value>
+  </data>
+  <data name="ProfileCustomization_Lbl_UnlockAtWins" xml:space="preserve">
+    <value>Ab {0} Siegen freigeschaltet</value>
+  </data>
   <data name="ProfileCustomization_Lbl_Username" xml:space="preserve">
     <value>Benutzername</value>
   </data>
@@ -642,6 +654,9 @@
   </data>
   <data name="ProfileCustomization_Err_InvalidAvatar" xml:space="preserve">
     <value>Wähle einen gültigen Avatar aus.</value>
+  </data>
+  <data name="ProfileCustomization_Err_AvatarLocked" xml:space="preserve">
+    <value>Du hast noch nicht genug Siege für diesen Avatar.</value>
   </data>
   <data name="ProfileCustomization_Err_Unavailable" xml:space="preserve">
     <value>Das Profil konnte nicht geladen oder gespeichert werden. Versuche es erneut.</value>

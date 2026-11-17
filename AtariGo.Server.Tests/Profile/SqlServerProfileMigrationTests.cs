@@ -1,3 +1,4 @@
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
 using AtariGo.Server.Application.Profile;
@@ -11,6 +12,39 @@ namespace AtariGo.Server.Tests.Profile;
 [TestCategory("SqlServer")]
 public sealed class SqlServerProfileMigrationTests
 {
+    [TestMethod]
+    public async Task UpgradeAvatarUnlocks_AllowsTwentyAndRejectsTwentyOne()
+    {
+        // Arrange
+        await using SqlServerTestDatabase database = await SqlServerTestDatabase.CreateAsync();
+        await using AtariGoDbContext context = database.CreateContext();
+        await context.Database.ExecuteSqlRawAsync("""
+            ALTER TABLE dbo.Profiles DROP CONSTRAINT CK_Profiles_AvatarId;
+            ALTER TABLE dbo.Profiles WITH CHECK ADD CONSTRAINT CK_Profiles_AvatarId
+                CHECK (AvatarId BETWEEN 1 AND 5);
+            INSERT INTO dbo.Users (UserName, Email, RoleId)
+            VALUES (N'PlayerOne', N'first@example.test', 1);
+            INSERT INTO dbo.Profiles (UserId, AvatarId) VALUES (1, 5);
+            """);
+
+        // Act
+        await database.UpgradeAvatarUnlocksAsync();
+        await database.UpgradeAvatarUnlocksAsync();
+        await context.Database.ExecuteSqlRawAsync(
+            "UPDATE dbo.Profiles SET AvatarId = 20 WHERE UserId = 1");
+        SqlException rejected = await Assert.ThrowsAsync<SqlException>(() =>
+            context.Database.ExecuteSqlRawAsync(
+                "UPDATE dbo.Profiles SET AvatarId = 21 WHERE UserId = 1"));
+        int savedAvatarId = await context.Profiles.AsNoTracking()
+            .Where(profile => profile.UserId == 1)
+            .Select(profile => profile.AvatarId)
+            .SingleAsync();
+
+        // Assert
+        Assert.AreEqual(547, rejected.Number);
+        Assert.AreEqual(20, savedAvatarId);
+    }
+
     [TestMethod]
     public async Task UpgradeProfile_BackfillsExistingUsersAndCanRunTwice()
     {

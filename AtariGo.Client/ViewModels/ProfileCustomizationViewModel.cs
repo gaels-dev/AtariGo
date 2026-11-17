@@ -14,7 +14,8 @@ namespace AtariGo.Client.ViewModels;
 public sealed class ProfileCustomizationViewModel : ViewModelBase, IDisposable
 {
     private const int DefaultAvatarId = 1;
-    private const int MaximumAvatarId = 5;
+    private const int FeaturedAvatarCount = 4;
+    private const int MaximumAvatarId = 20;
 
     private readonly INavigationService _navigationService;
     private readonly IProfileClient _profileClient;
@@ -26,6 +27,11 @@ public sealed class ProfileCustomizationViewModel : ViewModelBase, IDisposable
     private string _statusMessage = string.Empty;
     private int _selectedAvatarId = DefaultAvatarId;
     private int _wins;
+    private IReadOnlyList<AvatarOptionViewModel> _availableAvatars =
+        Array.Empty<AvatarOptionViewModel>();
+    private IReadOnlyList<AvatarOptionViewModel> _featuredAvatars =
+        Array.Empty<AvatarOptionViewModel>();
+    private bool _isAvatarPickerOpen;
     private bool _isLoaded;
     private bool _isDisposed;
 
@@ -39,14 +45,35 @@ public sealed class ProfileCustomizationViewModel : ViewModelBase, IDisposable
         _profileClient = profileClient;
         _onPlayerNameUpdated = onPlayerNameUpdated;
         _token = _lifetime.Token;
-        AvailableAvatars = Enumerable.Range(DefaultAvatarId, MaximumAvatarId).ToArray();
+        RefreshAvatarOptions();
         LoadCommand = new AsyncRelayCommand(LoadProfileAsync, HandleFailure, _token);
         UpdateProfileCommand = new AsyncRelayCommand(UpdateProfileAsync, HandleFailure, _token);
         ChangePasswordCommand = new RelayCommand(ChangePassword);
+        SelectAvatarCommand = new RelayCommand(SelectAvatar);
+        OpenAvatarPickerCommand = new RelayCommand(OpenAvatarPicker);
+        CloseAvatarPickerCommand = new RelayCommand(CloseAvatarPicker);
         BackCommand = new RelayCommand(_navigationService.NavigateToMainMenu);
     }
 
-    public IReadOnlyList<int> AvailableAvatars { get; }
+    public IReadOnlyList<AvatarOptionViewModel> AvailableAvatars
+    {
+        get => _availableAvatars;
+        private set => SetProperty(ref _availableAvatars, value);
+    }
+
+    public IReadOnlyList<AvatarOptionViewModel> FeaturedAvatars
+    {
+        get => _featuredAvatars;
+        private set => SetProperty(ref _featuredAvatars, value);
+    }
+
+    public string ViewMoreLabel => Localize("ProfileCustomization_Btn_ViewMore");
+
+    public string AllAvatarsLabel => Localize("ProfileCustomization_Lbl_AllAvatars");
+
+    public string SelectedAvatarLabel => Localize("ProfileCustomization_Lbl_SelectedAvatar");
+
+    public string CloseAvatarPickerLabel => Localize("ProfileCustomization_Btn_Close");
 
     public string PlayerName
     {
@@ -63,7 +90,13 @@ public sealed class ProfileCustomizationViewModel : ViewModelBase, IDisposable
     public int Wins
     {
         get => _wins;
-        private set => SetProperty(ref _wins, value);
+        private set
+        {
+            if (SetProperty(ref _wins, value))
+            {
+                RefreshAvatarOptions();
+            }
+        }
     }
 
     public string WinsLabel => Localize("ProfileCustomization_Lbl_Wins");
@@ -77,7 +110,19 @@ public sealed class ProfileCustomizationViewModel : ViewModelBase, IDisposable
     public int SelectedAvatarId
     {
         get => _selectedAvatarId;
-        set => SetProperty(ref _selectedAvatarId, value);
+        set
+        {
+            if (SetProperty(ref _selectedAvatarId, value))
+            {
+                UpdateAvatarSelection();
+            }
+        }
+    }
+
+    public bool IsAvatarPickerOpen
+    {
+        get => _isAvatarPickerOpen;
+        private set => SetProperty(ref _isAvatarPickerOpen, value);
     }
 
     public string StatusMessage
@@ -91,6 +136,12 @@ public sealed class ProfileCustomizationViewModel : ViewModelBase, IDisposable
     public ICommand UpdateProfileCommand { get; }
 
     public ICommand ChangePasswordCommand { get; }
+
+    public ICommand SelectAvatarCommand { get; }
+
+    public ICommand OpenAvatarPickerCommand { get; }
+
+    public ICommand CloseAvatarPickerCommand { get; }
 
     public ICommand BackCommand { get; }
 
@@ -160,6 +211,9 @@ public sealed class ProfileCustomizationViewModel : ViewModelBase, IDisposable
             case AtariGo.Contracts.ProfileUpdateStatus.InvalidAvatar:
                 StatusMessage = Localize("ProfileCustomization_Err_InvalidAvatar");
                 break;
+            case AtariGo.Contracts.ProfileUpdateStatus.AvatarLocked:
+                StatusMessage = Localize("ProfileCustomization_Err_AvatarLocked");
+                break;
             case AtariGo.Contracts.ProfileUpdateStatus.AccountUnavailable:
                 StatusMessage = Localize("Connection_Err_SessionExpired");
                 break;
@@ -216,6 +270,49 @@ public sealed class ProfileCustomizationViewModel : ViewModelBase, IDisposable
     private void ChangePassword()
     {
         _navigationService.OpenChangePasswordDialog();
+    }
+
+    private void SelectAvatar(object? parameter)
+    {
+        if (!IsLoaded || parameter is not AvatarOptionViewModel option
+            || !option.IsUnlocked)
+        {
+            return;
+        }
+        SelectedAvatarId = option.AvatarId;
+        IsAvatarPickerOpen = false;
+    }
+
+    private void OpenAvatarPicker()
+    {
+        if (IsLoaded)
+        {
+            IsAvatarPickerOpen = true;
+        }
+    }
+
+    private void CloseAvatarPicker()
+    {
+        IsAvatarPickerOpen = false;
+    }
+
+    private void RefreshAvatarOptions()
+    {
+        List<AvatarOptionViewModel> options = Enumerable
+            .Range(DefaultAvatarId, MaximumAvatarId)
+            .Select(avatarId => new AvatarOptionViewModel(avatarId, Wins))
+            .ToList();
+        AvailableAvatars = options;
+        FeaturedAvatars = options.Take(FeaturedAvatarCount).ToArray();
+        UpdateAvatarSelection();
+    }
+
+    private void UpdateAvatarSelection()
+    {
+        foreach (AvatarOptionViewModel option in AvailableAvatars)
+        {
+            option.IsSelected = option.AvatarId == SelectedAvatarId;
+        }
     }
 
     private static string Localize(string key)

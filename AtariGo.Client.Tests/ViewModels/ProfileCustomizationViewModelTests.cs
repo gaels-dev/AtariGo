@@ -67,4 +67,46 @@ public sealed class ProfileCustomizationViewModelTests
         Assert.AreEqual("PlayerTwo", model.PlayerName);
         Assert.IsFalse(string.IsNullOrWhiteSpace(model.StatusMessage));
     }
+
+    [TestMethod]
+    public async Task AvatarPicker_ShowsTwentyChoicesAndLocksByWins()
+    {
+        // Arrange
+        INavigationService navigation = DispatchProxy.Create<INavigationService,
+            RecordingNavigationProxy>();
+        StubProfileClient client = new StubProfileClient
+        {
+            Profile = new UserProfile
+            {
+                UserName = "PlayerOne", Email = "first@example.test", Wins = 9, AvatarId = 1
+            }
+        };
+        using ProfileCustomizationViewModel model = new ProfileCustomizationViewModel(
+            navigation, client, IgnoreName);
+
+        // Act
+        await CommandExecution.ExecuteAsync(model.LoadCommand, null);
+        model.OpenAvatarPickerCommand.Execute(null);
+        AvatarOptionViewModel locked = model.AvailableAvatars.Single(option =>
+            option.AvatarId == 7);
+        model.SelectAvatarCommand.Execute(locked);
+        AvatarOptionViewModel unlocked = model.AvailableAvatars.Single(option =>
+            option.AvatarId == 6);
+        model.SelectAvatarCommand.Execute(unlocked);
+
+        // Assert
+        Assert.HasCount(20, model.AvailableAvatars);
+        Assert.HasCount(4, model.FeaturedAvatars);
+        Assert.AreEqual(5, unlocked.RequiredWins);
+        Assert.AreEqual(10, locked.RequiredWins);
+        Assert.IsTrue(locked.IsLocked);
+        Assert.AreEqual(75, model.AvailableAvatars[19].RequiredWins);
+        Assert.AreEqual(6, model.SelectedAvatarId);
+        Assert.IsTrue(unlocked.IsSelected);
+        Assert.IsFalse(model.IsAvatarPickerOpen);
+    }
+
+    private static void IgnoreName(string playerName)
+    {
+    }
 }

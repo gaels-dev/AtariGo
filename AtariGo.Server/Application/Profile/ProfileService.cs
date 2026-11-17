@@ -71,6 +71,10 @@ public sealed class ProfileService : IProfileService
         {
             return new ProfileUpdateResult(ProfileUpdateStatus.UserNameTaken);
         }
+        if (await IsAvatarLockedAsync(input, cancellationToken))
+        {
+            return new ProfileUpdateResult(ProfileUpdateStatus.AvatarLocked);
+        }
 
         ApplyChanges(user, normalizedUserName, input.AvatarId);
         try
@@ -106,13 +110,31 @@ public sealed class ProfileService : IProfileService
         User user,
         CancellationToken cancellationToken)
     {
-        int wins = await _dbContext.GamePlayers.AsNoTracking().CountAsync(player =>
-            player.UserId == user.UserId
+        int wins = await GetWinsAsync(user.UserId, cancellationToken);
+        int avatarId = user.Profile?.AvatarId ?? DatabaseValues.AvatarIds.Default;
+        return new UserProfileSnapshot(user.UserName, user.Email, wins, avatarId);
+    }
+
+    private async Task<bool> IsAvatarLockedAsync(ProfileUpdateInput input,
+        CancellationToken cancellationToken)
+    {
+        if (input.AvatarId <= DatabaseValues.AvatarIds.InitialUnlockedMaximum)
+        {
+            return false;
+        }
+        int requiredWins = (input.AvatarId - DatabaseValues.AvatarIds.InitialUnlockedMaximum)
+            * DatabaseValues.AvatarIds.WinsPerUnlock;
+        int wins = await GetWinsAsync(input.UserId, cancellationToken);
+        return wins < requiredWins;
+    }
+
+    private Task<int> GetWinsAsync(int userId, CancellationToken cancellationToken)
+    {
+        return _dbContext.GamePlayers.AsNoTracking().CountAsync(player =>
+            player.UserId == userId
             && player.Result == DatabaseValues.GamePlayerResults.Won
             && player.Game.State == DatabaseValues.GameStates.Completed,
             cancellationToken);
-        int avatarId = user.Profile?.AvatarId ?? DatabaseValues.AvatarIds.Default;
-        return new UserProfileSnapshot(user.UserName, user.Email, wins, avatarId);
     }
 
     private static bool IsDuplicateUserName(DbUpdateException exception)

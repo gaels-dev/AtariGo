@@ -35,7 +35,9 @@ public sealed class ProfileCustomizationViewTests
 
         // Assert
         Assert.IsTrue(view.IsInitialized);
-        IReadOnlyList<Image> images = FindImages(view);
+        IReadOnlyList<Image> images = FindImages(view)
+            .Where(IsOutsideCollapsedOverlay)
+            .ToArray();
         Assert.HasCount(5, images);
         HashSet<string> loadedResources = new HashSet<string>();
         foreach (Image image in images)
@@ -46,10 +48,46 @@ public sealed class ProfileCustomizationViewTests
             Assert.IsGreaterThan(0, bitmap.PixelHeight);
             loadedResources.Add(bitmap.UriSource.AbsoluteUri);
         }
-        foreach (int avatarId in model.AvailableAvatars)
+        foreach (AvatarOptionViewModel option in model.FeaturedAvatars)
         {
             Assert.IsTrue(loadedResources.Any(resource => resource.EndsWith(
-                $"avatar_{avatarId}.png", StringComparison.OrdinalIgnoreCase)));
+                $"avatar_{option.AvatarId}.png", StringComparison.OrdinalIgnoreCase)));
+        }
+    }
+
+    [STATestMethod]
+    public async Task View_ExpandedPickerRendersAllAvatarResources()
+    {
+        // Arrange
+        INavigationService navigation = DispatchProxy.Create<INavigationService,
+            RecordingNavigationProxy>();
+        using ProfileCustomizationViewModel model = new ProfileCustomizationViewModel(
+            navigation, new StubProfileClient(), IgnoreName);
+        ProfileCustomizationView view = new ProfileCustomizationView
+        {
+            DataContext = model
+        };
+        await CommandExecution.ExecuteAsync(model.LoadCommand, null);
+        model.OpenAvatarPickerCommand.Execute(null);
+
+        // Act
+        view.Measure(new Size(1000, 700));
+        view.Arrange(new Rect(0, 0, 1000, 700));
+        view.UpdateLayout();
+        IReadOnlyList<Image> images = FindImages(view);
+
+        // Assert
+        Assert.IsTrue(model.IsAvatarPickerOpen);
+        HashSet<string> loadedResources = images
+            .OfType<Image>()
+            .Select(image => image.Source)
+            .OfType<BitmapImage>()
+            .Select(image => image.UriSource.AbsoluteUri)
+            .ToHashSet();
+        foreach (AvatarOptionViewModel option in model.AvailableAvatars)
+        {
+            Assert.IsTrue(loadedResources.Any(resource => resource.EndsWith(
+                $"avatar_{option.AvatarId}.png", StringComparison.OrdinalIgnoreCase)));
         }
     }
 
@@ -81,6 +119,20 @@ public sealed class ProfileCustomizationViewTests
             images.AddRange(FindImages(child));
         }
         return images;
+    }
+
+    private static bool IsOutsideCollapsedOverlay(Image image)
+    {
+        DependencyObject? current = image;
+        while (current is not null)
+        {
+            if (current is UIElement element && element.Visibility == Visibility.Collapsed)
+            {
+                return false;
+            }
+            current = VisualTreeHelper.GetParent(current);
+        }
+        return true;
     }
 
     private static void IgnoreName(string playerName)

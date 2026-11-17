@@ -47,7 +47,7 @@ BEGIN TRY
         EXEC sys.sp_executesql N'
             ALTER TABLE dbo.Profiles WITH CHECK
             ADD CONSTRAINT CK_Profiles_AvatarId
-            CHECK (AvatarId BETWEEN 1 AND 5);';
+            CHECK (AvatarId BETWEEN 1 AND 20);';
     END;
 
     IF EXISTS
