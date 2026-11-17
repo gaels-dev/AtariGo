@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="Grpc.AspNetCore.Server" Version="2.64.0" />
+    <PackageReference Include="MailKit" Version="5.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.12">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -24,6 +25,11 @@
   <ItemGroup>
     <ProjectReference Include="..\AtariGo.GameLogic\AtariGo.GameLogic.csproj" />
     <ProjectReference Include="..\AtariGo.Contracts\AtariGo.Contracts.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="..\AtariGo.Client\Properties\RecoveryEmail*.resx"
+                      Link="Properties\%(Filename)%(Extension)" />
   </ItemGroup>
 
 </Project>

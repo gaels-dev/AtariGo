@@ -229,6 +229,23 @@ public sealed class GameSessionRegistry : IGameSessionRegistry
         }
     }
 
+    public void DisconnectUser(int userId)
+    {
+        string playerKey = GameSessionRules.CreateUserKey(userId);
+        foreach (GameSessionState state in _sessions.Values)
+        {
+            lock (state.SyncRoot)
+            {
+                if (state.Connections.TryGetValue(playerKey, out GameSessionConnection? connection))
+                {
+                    connection.Revoke();
+                    state.RemoveConnection(connection);
+                    PublishSnapshots(state);
+                }
+            }
+        }
+    }
+
     private static bool IsCurrentConnection(
         GameSessionState state,
         GameSessionConnection connection)

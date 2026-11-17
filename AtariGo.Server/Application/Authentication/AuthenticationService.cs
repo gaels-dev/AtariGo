@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
 using AtariGo.Server.Data;
 using AtariGo.Server.Data.Entities;
@@ -37,6 +38,8 @@ public sealed class AuthenticationService : IAuthenticationService
         string password,
         CancellationToken cancellationToken)
     {
+        await using IDbContextTransaction transaction = await _dbContext.Database
+            .BeginTransactionAsync(cancellationToken);
         User? user = await FindUserByIdentifierAsync(identifier, cancellationToken);
 
         if (user?.Credential is null)
@@ -56,6 +59,7 @@ public sealed class AuthenticationService : IAuthenticationService
         }
 
         IssuedSessionToken token = await CreateSessionAsync(user, now, cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
 
         return new LoginOperationResult(LoginStatus.Success)
         {
@@ -69,14 +73,8 @@ public sealed class AuthenticationService : IAuthenticationService
         string identifier,
         CancellationToken cancellationToken)
     {
-        string normalizedIdentifier = identifier.Trim();
-
-        return _dbContext.Users
-            .Include(candidate => candidate.Credential)
-            .SingleOrDefaultAsync(
-                candidate => candidate.UserName == normalizedIdentifier
-                    || candidate.Email == normalizedIdentifier,
-                cancellationToken);
+        var accounts = new AccountCredentialStore(_dbContext);
+        return accounts.LockAccountAsync(identifier, cancellationToken);
     }
 
     private bool VerifyPassword(User user, string password)

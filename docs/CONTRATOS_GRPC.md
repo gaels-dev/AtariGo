@@ -26,7 +26,7 @@ La matriz distingue contratos existentes de nuevos, delimita las responsabilidad
 | --- | --- |
 | authentication.proto | Login, StartGuestSession, RefreshSession, ValidateSession |
 | registration.proto | RegisterAccount |
-| password_recovery.proto | RequestPasswordRecovery, VerifyRecoveryCode, ResetPassword |
+| password_recovery.proto | RequestPasswordRecovery, ResetPassword |
 | credentials.proto | ChangePassword |
 | profile.proto | GetAuthenticatedUserProfile, UpdateAuthenticatedUserProfile, ChangeAuthenticatedUserName, ChangeAuthenticatedUserEmail |
 | preferences.proto | GetAuthenticatedUserPreferences, UpdateAuthenticatedUserPreferences |
@@ -98,9 +98,44 @@ Cobertura: CU-04
 
 | Servicio .proto | Interfaz de aplicación | Clase gRPC | Operaciones | Parámetros definidos |
 | --- | --- | --- | --- | --- |
-| password_recovery.proto | IPasswordRecoveryService | PasswordRecoveryGrpcService | RequestPasswordRecovery | Identifier |
-|  |  |  | VerifyRecoveryCode | RecoveryId, VerificationCode |
-|  |  |  | ResetPassword | RecoveryProof, NewPassword, Confirmation |
+| password_recovery.proto | IPasswordRecoveryService | PasswordRecoveryGrpcService | RequestPasswordRecovery | Identifier, CultureName (opcional) |
+|  |  |  | ResetPassword | Identifier, Code, NewPassword, Confirmation |
+
+La validación del código y el cambio de contraseña se confirman en una sola operación atómica.
+El código no se devuelve al cliente: se entrega únicamente al correo registrado. La solicitud
+responde de forma genérica, incluso para cuentas inexistentes o envíos limitados por cuenta.
+
+El cliente comunica su cultura actual al solicitar el código. El correo utiliza las plantillas
+localizadas `Properties/RecoveryEmail*.resx` del cliente, embebidas también en el servidor sin
+una dependencia de WPF. Se admiten español, alemán e inglés; otras culturas usan inglés.
+
+El código tiene ocho dígitos aleatorios, caduca a los diez minutos y admite cinco intentos
+incorrectos. Reenviar invalida el anterior; hay al menos sesenta segundos entre envíos.
+El guardado confirmado consume el código, actualiza el hash y la fecha UTC y revoca las
+sesiones anteriores en una transacción. Después del commit se cierran sus conexiones de
+presencia y partidas. El restablecimiento no asigna por sí mismo un resultado a una partida.
+Los fallos de correo se indican sin afirmar entrega; una escritura con rollback confirmado
+permite reintentar. Un resultado de transporte perdido permanece sin confirmar.
+
+Para desarrollo con Gmail, ejecutar `scripts/Configure-RecoveryEmail.ps1 -Sender <correo>`
+desde PowerShell 7 e introducir la contraseña de aplicación en su entrada oculta. El script
+conserva los otros secretos del servidor y guarda `Smtp:Host`, `Smtp:Port`, `Smtp:Sender`,
+`Smtp:UserName`, `Smtp:Password` y `PasswordRecovery:HmacKey` en User Secrets, fuera del
+repositorio y con acceso de archivo restringido al usuario actual y SYSTEM. No cifra el
+archivo: es configuración de desarrollo, no un almacén de producción. Repetir el script
+permite cambiar de remitente; después hay que reiniciar el servidor. Gmail requiere una
+contraseña de aplicación asociada a una cuenta con verificación en dos pasos:
+[ayuda oficial de Google](https://support.google.com/accounts/answer/185833?hl=es).
+
+En despliegue, utilizar el almacén de secretos del entorno o variables como `Smtp__Password`
+y `PasswordRecovery__HmacKey`. Mantener estable la clave HMAC, con al menos 32 bytes, fuera
+de la base de datos. Si falta SMTP o esa clave, la recuperación queda no disponible.
+Los límites configurables `PasswordRecovery:AccountRequestsPerHour`,
+`PasswordRecovery:IpRequestsPerHour` y `PasswordRecovery:ResendSeconds` valen 5, 20 y 60
+por defecto. El límite por IP incluye solicitudes de envío y de restablecimiento; es local
+a la instancia. El límite por cuenta se conserva en la base de datos. Un despliegue con
+varias instancias necesita compartir el límite por IP y propagar las revocaciones de
+conexiones entre ellas, además de compartir la clave HMAC.
 
 ### 4.4  Credentials
 

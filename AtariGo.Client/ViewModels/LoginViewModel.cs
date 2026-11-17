@@ -178,17 +178,8 @@ namespace AtariGo.Client.ViewModels
 
         public void OpenForgotPasswordDialog()
         {
-            CurrentDialogViewModel = new ForgotPasswordDialogViewModel(_navigationService);
-        }
-
-        public void OpenForgotVerificationDialog()
-        {
-            CurrentDialogViewModel = new ForgotVerificationDialogViewModel(_navigationService);
-        }
-
-        public void OpenNewPasswordDialog()
-        {
-            CurrentDialogViewModel = new NewPasswordDialogViewModel(_navigationService);
+            CurrentDialogViewModel = new PasswordRecoveryDialogViewModel(
+                new GrpcPasswordRecoveryClient(), _navigationService);
         }
 
         public void CloseDialog()

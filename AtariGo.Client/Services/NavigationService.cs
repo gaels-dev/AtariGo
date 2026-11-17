@@ -152,16 +152,6 @@ namespace AtariGo.Client.Services
             Dispatch(() => GetLoginViewModel()?.OpenForgotPasswordDialog());
         }
 
-        public void OpenForgotVerificationDialog()
-        {
-            Dispatch(() => GetLoginViewModel()?.OpenForgotVerificationDialog());
-        }
-
-        public void OpenNewPasswordDialog()
-        {
-            Dispatch(() => GetLoginViewModel()?.OpenNewPasswordDialog());
-        }
-
         public void OpenChangePasswordDialog()
         {
             Dispatch(ShowChangePasswordDialog);

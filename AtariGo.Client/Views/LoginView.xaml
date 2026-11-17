@@ -26,14 +26,8 @@
             <dialogsView:RegistrationResultDialogView/>
         </DataTemplate>
 
-        <DataTemplate DataType="{x:Type dialogsVM:ForgotPasswordDialogViewModel}">
-            <dialogsView:ForgotPasswordDialogView/>
-        </DataTemplate>
-        <DataTemplate DataType="{x:Type dialogsVM:ForgotVerificationDialogViewModel}">
-            <dialogsView:ForgotVerificationDialogView/>
-        </DataTemplate>
-        <DataTemplate DataType="{x:Type dialogsVM:NewPasswordDialogViewModel}">
-            <dialogsView:NewPasswordDialogView/>
+        <DataTemplate DataType="{x:Type dialogsVM:PasswordRecoveryDialogViewModel}">
+            <dialogsView:PasswordRecoveryDialogView/>
         </DataTemplate>
         <DataTemplate DataType="{x:Type dialogsVM:GuestRegistrationDialogViewModel}">
             <dialogsView:GuestRegistrationDialogView/>

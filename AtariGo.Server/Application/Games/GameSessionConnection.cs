@@ -2,8 +2,10 @@ using System.Threading.Channels;
 
 namespace AtariGo.Server.Application.Games;
 
-public sealed class GameSessionConnection
+public sealed class GameSessionConnection : IDisposable
 {
+    private readonly CancellationTokenSource _revocation = new CancellationTokenSource();
+
     internal GameSessionConnection(
         long gameId,
         string playerKey,
@@ -17,6 +19,10 @@ public sealed class GameSessionConnection
 
     public bool IsReplaced { get; internal set; }
 
+    public bool IsRevoked { get; internal set; }
+
+    public CancellationToken RevocationToken => _revocation.Token;
+
     public long GameId { get; }
 
     public string PlayerKey { get; }
@@ -24,4 +30,15 @@ public sealed class GameSessionConnection
     public ChannelReader<GameSessionDelivery> Events { get; }
 
     internal ChannelWriter<GameSessionDelivery> EventWriter { get; }
+
+    internal void Revoke()
+    {
+        IsRevoked = true;
+        _revocation.Cancel();
+    }
+
+    public void Dispose()
+    {
+        _revocation.Dispose();
+    }
 }

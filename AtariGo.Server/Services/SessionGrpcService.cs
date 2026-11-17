@@ -44,7 +44,23 @@ public sealed class SessionGrpcService : Session.SessionBase
             throw SessionRequestAuthentication.CreateUnauthenticatedException();
         }
 
-        return _connectionRegistry.Register(info);
+        SessionConnectionLease connection = _connectionRegistry.Register(info);
+        try
+        {
+            SessionIdentity? identity = await _sessionService.ValidateSessionAsync(sessionToken,
+                cancellationToken);
+            if (identity is null)
+            {
+                throw SessionRequestAuthentication.CreateUnauthenticatedException();
+            }
+            return connection;
+        }
+        catch
+        {
+            _connectionRegistry.Remove(connection);
+            connection.Dispose();
+            throw;
+        }
     }
 
     private async Task RequireClientConnectionAsync(

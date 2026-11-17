@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="Recovery_Email_Subject" xml:space="preserve">
+    <value>Atari Go - Passwortwiederherstellung</value>
+  </data>
+  <data name="Recovery_Email_Body" xml:space="preserve">
+    <value>Atari Go
+
+Dein Wiederherstellungscode: {0}
+
+10 Minuten gültig. Gib diesen Code nicht weiter.
+
+Falls du dies nicht angefordert hast, ignoriere diese E-Mail.</value>
+  </data>
+</root>

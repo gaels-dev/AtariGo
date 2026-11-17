@@ -51,7 +51,35 @@ public sealed class GameSessionGrpcService : GameSession.GameSessionBase
         GameSessionPlayerRequest request = await IdentifyPlayerAsync(joinEvent.JoinGame.GameId,
             context);
         GameSessionDefinition definition = await FindGameAsync(request, context.CancellationToken);
-        return await _coordinator.ConnectAsync(definition, context.CancellationToken);
+        GameSessionConnection connection = await _coordinator.ConnectAsync(definition,
+            context.CancellationToken);
+        try
+        {
+            await RevalidatePlayerAsync(request, context);
+            return connection;
+        }
+        catch
+        {
+            _coordinator.Disconnect(connection);
+            connection.Dispose();
+            throw;
+        }
+    }
+
+    private async Task RevalidatePlayerAsync(GameSessionPlayerRequest request,
+        ServerCallContext context)
+    {
+        if (request.UserId is null)
+        {
+            return;
+        }
+        string token = SessionRequestAuthentication.GetSessionToken(context);
+        SessionIdentity? identity = await _sessionService.ValidateSessionAsync(token,
+            context.CancellationToken);
+        if (identity is null)
+        {
+            throw SessionRequestAuthentication.CreateUnauthenticatedException();
+        }
     }
 
     private static async Task<GameSessionClientEvent> ReadJoinEventAsync(
@@ -152,7 +180,7 @@ public sealed class GameSessionGrpcService : GameSession.GameSessionBase
     {
         using CancellationTokenSource streamCancellation =
             CancellationTokenSource.CreateLinkedTokenSource(
-                streamContext.CancellationToken);
+                streamContext.CancellationToken, connection.RevocationToken);
         Task receiveTask = ReceiveClientEventsAsync(
             streamContext.RequestStream,
             connection,
@@ -411,11 +439,11 @@ public sealed class GameSessionGrpcService : GameSession.GameSessionBase
                 responseStream,
                 context.CancellationToken);
             await RunDuplexStreamAsync(streamContext, connection);
-            if (connection.IsReplaced)
-            {
-                throw new RpcException(new Status(StatusCode.AlreadyExists,
-                    "This player opened a newer game connection."));
-            }
+            RequireActiveConnection(connection);
+        }
+        catch (OperationCanceledException) when (connection?.IsRevoked == true)
+        {
+            throw SessionRequestAuthentication.CreateUnauthenticatedException();
         }
         catch (OperationCanceledException)
             when (context.CancellationToken.IsCancellationRequested)
@@ -469,7 +497,21 @@ public sealed class GameSessionGrpcService : GameSession.GameSessionBase
             if (connection is not null)
             {
                 _coordinator.Disconnect(connection);
+                connection.Dispose();
             }
+        }
+    }
+
+    private static void RequireActiveConnection(GameSessionConnection connection)
+    {
+        if (connection.IsRevoked)
+        {
+            throw SessionRequestAuthentication.CreateUnauthenticatedException();
+        }
+        if (connection.IsReplaced)
+        {
+            throw new RpcException(new Status(StatusCode.AlreadyExists,
+                "This player opened a newer game connection."));
         }
     }
 }

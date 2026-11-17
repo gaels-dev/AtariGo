@@ -19,4 +19,6 @@ public interface IGameSessionRegistry
     void PruneIdleSessions();
 
     void Disconnect(GameSessionConnection connection);
+
+    void DisconnectUser(int userId);
 }

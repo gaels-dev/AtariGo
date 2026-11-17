@@ -41,6 +41,7 @@ public sealed class GameCoordinator : IDisposable, IAsyncDisposable
         catch
         {
             _registry.Disconnect(connection);
+            connection.Dispose();
             throw;
         }
         return connection;

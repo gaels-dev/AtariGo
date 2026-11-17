@@ -955,4 +955,58 @@
   <data name="ChangePassword_Result_SessionExpired" xml:space="preserve"><value>Tu sesión no es válida o venció. Inicia sesión nuevamente para cambiar tu contraseña.</value></data>
   <data name="ChangePassword_Result_AccountUnavailable" xml:space="preserve"><value>Las credenciales de tu cuenta no están disponibles. Inicia sesión nuevamente e intenta más tarde.</value></data>
   <data name="ChangePassword_Result_Unconfirmed" xml:space="preserve"><value>No pudimos confirmar el cambio. Tu contraseña podría haber cambiado. No se repitió el envío automáticamente.</value></data>
+  <data name="Recovery_Lbl_Title" xml:space="preserve">
+    <value>Restablecer contraseña</value>
+  </data>
+  <data name="Recovery_Lbl_Identifier" xml:space="preserve">
+    <value>Usuario o correo registrado</value>
+  </data>
+  <data name="Recovery_Lbl_Code" xml:space="preserve">
+    <value>Código de recuperación de 8 dígitos</value>
+  </data>
+  <data name="Recovery_Btn_Request" xml:space="preserve">
+    <value>Enviar código</value>
+  </data>
+  <data name="Recovery_Btn_Resend" xml:space="preserve">
+    <value>Reenviar código</value>
+  </data>
+  <data name="Recovery_Btn_Reset" xml:space="preserve">
+    <value>Restablecer contraseña</value>
+  </data>
+  <data name="Recovery_Result_Accepted" xml:space="preserve">
+    <value>Si la cuenta existe, recibirás un código. Caduca en 10 minutos. Espera al menos 60 segundos para reenviar.</value>
+  </data>
+  <data name="Recovery_Result_Reset" xml:space="preserve">
+    <value>Contraseña restablecida. Inicia sesión con tu nueva contraseña. Las sesiones anteriores se han cerrado.</value>
+  </data>
+  <data name="Recovery_Result_MissingFields" xml:space="preserve">
+    <value>Completa los campos obligatorios.</value>
+  </data>
+  <data name="Recovery_Result_InvalidCode" xml:space="preserve">
+    <value>Código incorrecto, caducado o ya utilizado. Tras 5 intentos fallidos, solicita uno nuevo.</value>
+  </data>
+  <data name="Recovery_Result_InvalidPassword" xml:space="preserve">
+    <value>Usa entre 8 y 255 caracteres y al menos una mayúscula.</value>
+  </data>
+  <data name="Recovery_Result_ConfirmationMismatch" xml:space="preserve">
+    <value>Las contraseñas no coinciden.</value>
+  </data>
+  <data name="Recovery_Result_RateLimited" xml:space="preserve">
+    <value>Demasiadas solicitudes. Inténtalo más tarde.</value>
+  </data>
+  <data name="Recovery_Result_Unavailable" xml:space="preserve">
+    <value>La recuperación no está disponible en este momento. Inténtalo más tarde.</value>
+  </data>
+  <data name="Recovery_Result_Unconfirmed" xml:space="preserve">
+    <value>No se pudo confirmar el resultado. Si estabas guardando, intenta iniciar sesión con la nueva contraseña antes de solicitar otro código. Si estabas solicitando un código, revisa tu correo.</value>
+  </data>
+  <data name="Recovery_Result_DeliveryFailed" xml:space="preserve">
+    <value>No se pudo enviar el correo de recuperación. Inténtalo más tarde. Tu contraseña no cambió.</value>
+  </data>
+  <data name="Recovery_Result_NotSaved" xml:space="preserve">
+    <value>No se pudo guardar la nueva contraseña. La anterior sigue vigente. Puedes reintentar.</value>
+  </data>
+  <data name="Recovery_Msg_Saving" xml:space="preserve">
+    <value>Guardando. Si cierras ahora, el resultado podría quedar sin confirmar; prueba iniciar sesión con la nueva contraseña antes de solicitar otro código.</value>
+  </data>
 </root>

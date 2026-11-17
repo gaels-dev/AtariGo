@@ -5,6 +5,8 @@ using Microsoft.EntityFrameworkCore;
 using AtariGo.GameLogic.Rules;
 using AtariGo.Server.Application.Authentication;
 using AtariGo.Server.Application.Credentials;
+using AtariGo.Server.Application.Email;
+using AtariGo.Server.Application.PasswordRecovery;
 using AtariGo.Server.Application.Friends;
 using AtariGo.Server.Application.Friendships;
 using AtariGo.Server.Application.Games;
@@ -37,6 +39,18 @@ builder.Services.AddScoped<DatabaseReadinessCheck>();
 
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 builder.Services.AddScoped<ICredentialsService, CredentialsService>();
+builder.Services.Configure<SmtpOptions>(builder.Configuration.GetSection("Smtp"));
+builder.Services.AddOptions<PasswordRecoveryOptions>()
+    .Bind(builder.Configuration.GetSection("PasswordRecovery"))
+    .Validate(options => options.AccountRequestsPerHour > 0 && options.IpRequestsPerHour > 0
+        && options.ResendSeconds >= PasswordRecoveryOptions.MinimumResendSeconds);
+builder.Services.AddSingleton<RecoveryCodeProtector>();
+builder.Services.AddSingleton<RecoveryRequestLimiter>();
+builder.Services.AddSingleton<IEmailSender, SmtpEmailSender>();
+builder.Services.AddScoped<RecoveryCodeDelivery>();
+builder.Services.AddScoped<PasswordResetWriter>();
+builder.Services.AddSingleton<RecoverySessionRevoker>();
+builder.Services.AddScoped<IPasswordRecoveryService, PasswordRecoveryService>();
 builder.Services.AddScoped<IFriendService, FriendService>();
 builder.Services.AddScoped<IFriendshipsService, FriendshipsService>();
 builder.Services.AddSingleton<FriendMutationCoordinator>();
@@ -80,6 +94,7 @@ if (!DatabaseConnectionSettings.Validate(app.Configuration, app.Logger))
 
 app.MapGrpcService<AuthenticationGrpcService>();
 app.MapGrpcService<CredentialsGrpcService>();
+app.MapGrpcService<PasswordRecoveryGrpcService>();
 app.MapGrpcService<FriendDirectoryGrpcService>();
 app.MapGrpcService<FriendshipsGrpcService>();
 app.MapGrpcService<RegistrationGrpcService>();

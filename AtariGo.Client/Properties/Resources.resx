@@ -956,4 +956,58 @@
   <data name="ChangePassword_Result_SessionExpired" xml:space="preserve"><value>Your session is invalid or expired. Sign in again before changing your password.</value></data>
   <data name="ChangePassword_Result_AccountUnavailable" xml:space="preserve"><value>Your account credentials are unavailable. Sign in again and try later.</value></data>
   <data name="ChangePassword_Result_Unconfirmed" xml:space="preserve"><value>We could not confirm the change. Your password may have changed. No automatic retry was made.</value></data>
+  <data name="Recovery_Lbl_Title" xml:space="preserve">
+    <value>Reset password</value>
+  </data>
+  <data name="Recovery_Lbl_Identifier" xml:space="preserve">
+    <value>Username or registered email</value>
+  </data>
+  <data name="Recovery_Lbl_Code" xml:space="preserve">
+    <value>8-digit recovery code</value>
+  </data>
+  <data name="Recovery_Btn_Request" xml:space="preserve">
+    <value>Send code</value>
+  </data>
+  <data name="Recovery_Btn_Resend" xml:space="preserve">
+    <value>Resend code</value>
+  </data>
+  <data name="Recovery_Btn_Reset" xml:space="preserve">
+    <value>Reset password</value>
+  </data>
+  <data name="Recovery_Result_Accepted" xml:space="preserve">
+    <value>If the account exists, you will receive a code. It expires in 10 minutes. Wait at least 60 seconds before resending.</value>
+  </data>
+  <data name="Recovery_Result_Reset" xml:space="preserve">
+    <value>Password reset. Sign in with your new password. Previous sessions have been closed.</value>
+  </data>
+  <data name="Recovery_Result_MissingFields" xml:space="preserve">
+    <value>Complete all required fields.</value>
+  </data>
+  <data name="Recovery_Result_InvalidCode" xml:space="preserve">
+    <value>Incorrect, expired or already used code. After 5 failed attempts, request a new code.</value>
+  </data>
+  <data name="Recovery_Result_InvalidPassword" xml:space="preserve">
+    <value>Use 8 to 255 characters and at least one uppercase letter.</value>
+  </data>
+  <data name="Recovery_Result_ConfirmationMismatch" xml:space="preserve">
+    <value>The passwords do not match.</value>
+  </data>
+  <data name="Recovery_Result_RateLimited" xml:space="preserve">
+    <value>Too many requests. Please try again later.</value>
+  </data>
+  <data name="Recovery_Result_Unavailable" xml:space="preserve">
+    <value>Password recovery is temporarily unavailable. Please try again later.</value>
+  </data>
+  <data name="Recovery_Result_Unconfirmed" xml:space="preserve">
+    <value>The result could not be confirmed. If you were saving, try signing in with the new password before requesting another code. If you were requesting a code, check your email.</value>
+  </data>
+  <data name="Recovery_Result_DeliveryFailed" xml:space="preserve">
+    <value>The recovery email could not be sent. Try again later. Your password has not changed.</value>
+  </data>
+  <data name="Recovery_Result_NotSaved" xml:space="preserve">
+    <value>The new password could not be saved. Your previous password remains valid. You can try again.</value>
+  </data>
+  <data name="Recovery_Msg_Saving" xml:space="preserve">
+    <value>Saving. Closing this window may leave the result unconfirmed; try signing in with the new password before requesting another code.</value>
+  </data>
 </root>
