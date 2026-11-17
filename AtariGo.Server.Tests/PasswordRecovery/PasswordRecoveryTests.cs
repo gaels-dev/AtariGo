@@ -46,6 +46,32 @@ public sealed class PasswordRecoveryTests
         Assert.IsTrue(ended);
         Assert.IsTrue(game.RevocationToken.IsCancellationRequested);
         Assert.IsFalse(games.IsCurrent(game));
+        Assert.IsNotNull(host.Email.LastMessage);
+        Assert.AreEqual(string.Empty, host.Email.LastMessage.Body);
+        await AssertSavedStateAsync(host);
+    }
+
+    [TestMethod]
+    public async Task ResetPassword_PreviouslyIssuedCode_ResetsWithoutSendingAnotherEmail()
+    {
+        // Arrange
+        await using RecoveryTestHost host = await RecoveryTestHost.CreateAsync();
+        await using AtariGoDbContext context = host.Database.CreateContext();
+        DateTime now = host.Clock.GetUtcNow().UtcDateTime;
+        context.AuthenticationCodes.Add(new AuthenticationCode
+        {
+            UserId = 1, CodeType = "PasswordReset", CreatedAt = now,
+            ExpiresAt = now.AddMinutes(10),
+            CodeHash = "07DD21B1608634684E89426287BCC831AF61CDE9A01EB47F1C15B7E960124612"
+        });
+        await context.SaveChangesAsync();
+        // Act
+        PasswordRecoveryResponse result = await host.ResetAsync(host.CreateReset("01234567"));
+        // Assert
+        Assert.AreEqual(RecoveryStatus.Reset, result.Status);
+        Assert.AreEqual(0, host.Email.Codes.Count);
+        Assert.IsNotNull(await context.AuthenticationCodes.AsNoTracking()
+            .Select(code => code.UsedAt).SingleAsync());
         await AssertSavedStateAsync(host);
     }
 
@@ -112,6 +138,8 @@ public sealed class PasswordRecoveryTests
             (await host.ResetAsync(host.CreateReset())).Status);
         host.Email.FailDelivery = true;
         Assert.AreEqual(RecoveryStatus.DeliveryFailed, (await host.RequestAsync()).Status);
+        Assert.IsNotNull(host.Email.LastMessage);
+        Assert.AreEqual(string.Empty, host.Email.LastMessage.Body);
         host.Services.GetRequiredService<IOptions<PasswordRecoveryOptions>>()
             .Value.AccountRequestsPerHour = 3;
         host.Clock.Advance(TimeSpan.FromSeconds(60));

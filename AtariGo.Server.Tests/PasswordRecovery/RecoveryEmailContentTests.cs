@@ -7,7 +7,7 @@ namespace AtariGo.Server.Tests.PasswordRecovery;
 public sealed class RecoveryEmailContentTests
 {
     [TestMethod]
-    public void GetBody_SupportedAndUnknownCultures_FormatsLocalizedCodeWithEnglishFallback()
+    public void CreateMessage_SupportedAndUnknownCultures_FormatsLocalizedEmailWithEnglishFallback()
     {
         // Arrange
         var cases = new[]
@@ -20,15 +20,15 @@ public sealed class RecoveryEmailContentTests
         };
         foreach ((string culture, string expectedBody, string expectedSubject) in cases)
         {
-            var message = new RecoveryEmailMessage { CultureName = culture, Code = "12345678" };
             // Act
-            string body = RecoveryEmailContent.GetBody(message);
-            string subject = RecoveryEmailContent.GetSubject(culture);
+            EmailMessage message = RecoveryEmailContent.CreateMessage("owner@example.test",
+                "12345678", culture);
             // Assert
-            StringAssert.Contains(body, expectedBody);
-            StringAssert.Contains(body, message.Code);
-            StringAssert.Contains(subject, expectedSubject);
-            Assert.IsFalse(body.Contains("{0}", StringComparison.Ordinal));
+            Assert.AreEqual("owner@example.test", message.Recipient);
+            StringAssert.Contains(message.Body, expectedBody);
+            StringAssert.Contains(message.Body, "12345678");
+            StringAssert.Contains(message.Subject, expectedSubject);
+            Assert.IsFalse(message.Body.Contains("{0}", StringComparison.Ordinal));
         }
     }
 }

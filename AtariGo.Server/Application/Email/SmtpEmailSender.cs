@@ -1,7 +1,8 @@
+using Microsoft.Extensions.Options;
+
 using MailKit;
 using MailKit.Net.Smtp;
 using MailKit.Security;
-using Microsoft.Extensions.Options;
 using MimeKit;
 
 namespace AtariGo.Server.Application.Email;
@@ -12,13 +13,22 @@ public sealed class SmtpEmailSender : IEmailSender
     private const int SmtpTimeoutMilliseconds = 8000;
     private readonly SmtpOptions _options;
     private readonly ILogger<SmtpEmailSender> _logger;
+    private readonly Func<ISmtpClient> _createClient;
 
     public SmtpEmailSender(IOptions<SmtpOptions> options, ILogger<SmtpEmailSender> logger)
+        : this(options, logger, CreateSmtpClient)
+    {
+    }
+
+    public SmtpEmailSender(IOptions<SmtpOptions> options, ILogger<SmtpEmailSender> logger,
+        Func<ISmtpClient> createClient)
     {
         ArgumentNullException.ThrowIfNull(options);
         ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(createClient);
         _options = options.Value;
         _logger = logger;
+        _createClient = createClient;
     }
 
     public bool IsConfigured => !string.IsNullOrWhiteSpace(_options.Host)
@@ -27,9 +37,10 @@ public sealed class SmtpEmailSender : IEmailSender
         && !string.IsNullOrWhiteSpace(_options.Password)
         && _options.Port is > 0 and <= MaximumPort;
 
-    public async Task SendRecoveryCodeAsync(RecoveryEmailMessage message,
+    public async Task SendAsync(EmailMessage message,
         CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(message);
         try
         {
             await SendMessageAsync(message, cancellationToken);
@@ -39,26 +50,31 @@ public sealed class SmtpEmailSender : IEmailSender
             or System.Net.Sockets.SocketException
             or System.Security.Authentication.AuthenticationException)
         {
-            _logger.LogWarning("Recovery email delivery failed with {ErrorType}.",
+            _logger.LogWarning("Email delivery failed with {ErrorType}.",
                 exception.GetType().Name);
             throw;
         }
     }
 
-    private async Task SendMessageAsync(RecoveryEmailMessage recovery,
+    private async Task SendMessageAsync(EmailMessage email,
         CancellationToken cancellationToken)
     {
         using var message = new MimeMessage();
         message.From.Add(new MailboxAddress("Atari Go", _options.Sender));
-        message.To.Add(MailboxAddress.Parse(recovery.Recipient));
-        message.Subject = RecoveryEmailContent.GetSubject(recovery.CultureName);
-        message.Body = new TextPart("plain") { Text = RecoveryEmailContent.GetBody(recovery) };
-        using var client = new SmtpClient { Timeout = SmtpTimeoutMilliseconds };
+        message.To.Add(MailboxAddress.Parse(email.Recipient));
+        message.Subject = email.Subject;
+        message.Body = new TextPart("plain") { Text = email.Body };
+        using ISmtpClient client = _createClient();
         SecureSocketOptions security = _options.Port == SmtpOptions.ImplicitTlsPort
             ? SecureSocketOptions.SslOnConnect : SecureSocketOptions.StartTls;
         await client.ConnectAsync(_options.Host, _options.Port, security, cancellationToken);
         await client.AuthenticateAsync(_options.UserName, _options.Password, cancellationToken);
         await client.SendAsync(message, cancellationToken);
         await client.DisconnectAsync(true, cancellationToken);
+    }
+
+    private static ISmtpClient CreateSmtpClient()
+    {
+        return new SmtpClient { Timeout = SmtpTimeoutMilliseconds };
     }
 }

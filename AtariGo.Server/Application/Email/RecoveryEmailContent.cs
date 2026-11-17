@@ -8,15 +8,31 @@ public static class RecoveryEmailContent
     private static readonly ResourceManager resourceManager = new ResourceManager(
         "AtariGo.Server.Properties.RecoveryEmail", typeof(RecoveryEmailContent).Assembly);
 
+    public static EmailMessage CreateMessage(string recipient, string code, string cultureName)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(recipient);
+        ArgumentNullException.ThrowIfNull(code);
+        ArgumentNullException.ThrowIfNull(cultureName);
+        return new EmailMessage
+        {
+            Recipient = recipient,
+            Subject = GetSubject(cultureName),
+            Body = GetBody(code, cultureName)
+        };
+    }
+
     public static string GetSubject(string cultureName)
     {
+        ArgumentNullException.ThrowIfNull(cultureName);
         return GetText("Recovery_Email_Subject", cultureName);
     }
 
-    public static string GetBody(RecoveryEmailMessage message)
+    public static string GetBody(string code, string cultureName)
     {
-        string template = GetText("Recovery_Email_Body", message.CultureName);
-        return string.Format(CultureInfo.InvariantCulture, template, message.Code);
+        ArgumentNullException.ThrowIfNull(code);
+        ArgumentNullException.ThrowIfNull(cultureName);
+        string template = GetText("Recovery_Email_Body", cultureName);
+        return string.Format(CultureInfo.InvariantCulture, template, code);
     }
 
     private static string GetText(string key, string cultureName)

@@ -4,5 +4,5 @@ public interface IEmailSender
 {
     bool IsConfigured { get; }
 
-    Task SendRecoveryCodeAsync(RecoveryEmailMessage message, CancellationToken cancellationToken);
+    Task SendAsync(EmailMessage message, CancellationToken cancellationToken);
 }

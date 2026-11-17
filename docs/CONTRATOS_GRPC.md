@@ -109,6 +109,17 @@ El cliente comunica su cultura actual al solicitar el código. El correo utiliza
 localizadas `Properties/RecoveryEmail*.resx` del cliente, embebidas también en el servidor sin
 una dependencia de WPF. Se admiten español, alemán e inglés; otras culturas usan inglés.
 
+`RecoveryEmailContent` prepara destinatario, asunto y cuerpo en un `EmailMessage` antes del
+envío. El contrato interno `IEmailSender.SendAsync` recibe ese mensaje preparado; el transporte
+SMTP comparte configuración y TLS, sin seleccionar plantillas ni aplicar reglas de recuperación.
+El cuerpo con el código se descarta al terminar el intento de envío, incluso si falla.
+
+`RecoveryCodeProtector` conserva la política de recuperación y utiliza el componente compartido
+`Security/AuthenticationCodeProtector` para generar y proteger los códigos. El alcance incluye
+usuario, propósito y, cuando se requiera, un vínculo con una operación concreta. Recuperación
+mantiene el formato HMAC previo y la clave `PasswordRecovery:HmacKey`, por lo que este refactor
+no invalida códigos emitidos ni requiere cambiar secretos o el esquema de la base de datos.
+
 El código tiene ocho dígitos aleatorios, caduca a los diez minutos y admite cinco intentos
 incorrectos. Reenviar invalida el anterior; hay al menos sesenta segundos entre envíos.
 El guardado confirmado consume el código, actualiza el hash y la fecha UTC y revoca las

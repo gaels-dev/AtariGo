@@ -47,7 +47,7 @@ public sealed class RecoveryCodeDelivery
         }
         try
         {
-            await _email.SendRecoveryCodeAsync(delivery.Message, cancellationToken);
+            await _email.SendAsync(delivery.Message, cancellationToken);
         }
         catch (Exception exception) when (IsDeliveryFailure(exception))
         {
@@ -56,7 +56,7 @@ public sealed class RecoveryCodeDelivery
         }
         finally
         {
-            delivery.Message.Code = string.Empty;
+            delivery.Message.Body = string.Empty;
         }
         return RecoveryResult.Accepted;
     }
@@ -94,10 +94,7 @@ public sealed class RecoveryCodeDelivery
         return new RecoveryDelivery
         {
             CodeId = code.AuthenticationCodeId,
-            Message = new RecoveryEmailMessage
-            {
-                Recipient = user.Email, Code = value, CultureName = command.CultureName
-            }
+            Message = RecoveryEmailContent.CreateMessage(user.Email, value, command.CultureName)
         };
     }
 

@@ -6,5 +6,5 @@ public sealed class RecoveryDelivery
 {
     public long CodeId { get; init; }
 
-    public RecoveryEmailMessage Message { get; init; } = new RecoveryEmailMessage();
+    public EmailMessage Message { get; init; } = new EmailMessage();
 }
