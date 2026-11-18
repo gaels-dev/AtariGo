@@ -1043,4 +1043,22 @@
   <data name="LoginVerification_Result_RateLimited" xml:space="preserve"><value>Zu viele Anfragen. Warte, bevor du einen neuen Code anforderst.</value></data>
   <data name="LoginVerification_Result_Unavailable" xml:space="preserve"><value>Die Anmeldebestätigung ist nicht verfügbar. Versuche es später erneut.</value></data>
   <data name="LoginVerification_Result_Unconfirmed" xml:space="preserve"><value>Das Ergebnis konnte nicht bestätigt werden. Prüfe beim Anfordern deine E-Mails. Beginne nach einer unbestätigten Anmeldung erneut. Es gab keine automatische Wiederholung.</value></data>
+  <data name="RoomInvitations_Btn_SendEmail" xml:space="preserve">
+    <value>Per E-Mail senden</value>
+  </data>
+  <data name="RoomInvitations_Lbl_EmailFriend" xml:space="preserve">
+    <value>Raumcode an diesen Freund senden:</value>
+  </data>
+  <data name="RoomInvitations_Msg_EmailAccepted" xml:space="preserve">
+    <value>Der Mailserver hat die Einladung angenommen. Dein Freund kann mit dem Code beitreten, solange der Raum verfügbar ist.</value>
+  </data>
+  <data name="RoomInvitations_Err_EmailUnconfirmed" xml:space="preserve">
+    <value>Der E-Mail-Versand konnte nicht bestätigt werden. Frage deinen Freund, bevor du es erneut versuchst.</value>
+  </data>
+  <data name="RoomInvitations_Err_EmailUnavailable" xml:space="preserve">
+    <value>Der E-Mail-Versand ist nicht verfügbar. Versuche es später erneut.</value>
+  </data>
+  <data name="RoomInvitations_Err_RateLimited" xml:space="preserve">
+    <value>Warte {0} Sekunden vor einem weiteren E-Mail-Versuch.</value>
+  </data>
 </root>

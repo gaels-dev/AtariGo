@@ -183,6 +183,163 @@ public sealed class RoomInvitationsGrpcServiceTests
         Assert.HasCount(0, hidden.Invitations);
     }
 
+    [TestMethod]
+    public async Task SendRoomInvitation_OfflineFriend_EmailsCodeAndAllowsJoining()
+    {
+        // Arrange
+        var sender = new RecordingRoomInvitationEmailSender();
+        await using SocialGrpcTestHost server =
+            await SocialGrpcTestHost.StartAsync(emailSender: sender);
+        await using AtariGoDbContext database = server.Database.CreateContext();
+        await AddFriendshipAsync(database);
+        using GrpcChannel channel = GrpcChannel.ForAddress(server.Address);
+        var rooms = new Contracts.Rooms.RoomsClient(channel);
+        var invitations = new Contracts.RoomInvitations.RoomInvitationsClient(channel);
+        CallOptions host = Options("host", CancellationToken.None);
+        CreatePrivateRoomResponse created = await rooms.CreatePrivateRoomAsync(CreateRoom(), host);
+
+        // Act
+        SendRoomInvitationResponse sent = await invitations.SendRoomInvitationAsync(
+            EmailRequest(created.Room.RoomId), host);
+        SendRoomInvitationResponse repeated = await invitations.SendRoomInvitationAsync(
+            EmailRequest(created.Room.RoomId), host);
+        JoinRoomResponse joined = await rooms.JoinRoomAsync(new JoinRoomRequest
+        {
+            InvitationCode = created.Room.InvitationCode
+        }, Options("guest", CancellationToken.None));
+
+        // Assert
+        Assert.AreEqual(RoomInvitationDeliveryStatus.EmailAccepted, sent.DeliveryStatus);
+        Assert.AreEqual(RoomInvitationDeliveryStatus.RateLimited, repeated.DeliveryStatus);
+        Assert.IsTrue(repeated.RetryAfterSeconds > 0);
+        Assert.HasCount(1, sender.Messages);
+        Assert.AreEqual("player@example.test", sender.Messages[0].Recipient);
+        StringAssert.Contains(sender.Messages[0].Body, created.Room.InvitationCode);
+        StringAssert.Contains(sender.Messages[0].Body, "Host");
+        StringAssert.Contains(sender.Messages[0].Body, "Código de sala");
+        Assert.HasCount(2, joined.Room.Participants);
+    }
+
+    [TestMethod]
+    [DataRow(false, true, RoomInvitationDeliveryStatus.EmailUnavailable)]
+    [DataRow(true, true, RoomInvitationDeliveryStatus.EmailUnconfirmed)]
+    public async Task SendRoomInvitation_EmailFailure_DoesNotReportDelivery(
+        bool configured, bool failDelivery, RoomInvitationDeliveryStatus expected)
+    {
+        // Arrange
+        var sender = new RecordingRoomInvitationEmailSender
+        {
+            IsConfigured = configured, FailDelivery = failDelivery
+        };
+        await using SocialGrpcTestHost server =
+            await SocialGrpcTestHost.StartAsync(emailSender: sender);
+        await using AtariGoDbContext database = server.Database.CreateContext();
+        await AddFriendshipAsync(database);
+        using GrpcChannel channel = GrpcChannel.ForAddress(server.Address);
+        CallOptions host = Options("host", CancellationToken.None);
+        CreatePrivateRoomResponse room = await new Contracts.Rooms.RoomsClient(channel)
+            .CreatePrivateRoomAsync(CreateRoom(), host);
+        var invitations = new Contracts.RoomInvitations.RoomInvitationsClient(channel);
+
+        // Act
+        SendRoomInvitationResponse response = await invitations.SendRoomInvitationAsync(
+            EmailRequest(room.Room.RoomId), host);
+        SendRoomInvitationResponse repeated = await invitations.SendRoomInvitationAsync(
+            EmailRequest(room.Room.RoomId), host);
+
+        // Assert
+        Assert.AreEqual(expected, response.DeliveryStatus);
+        Assert.AreEqual(configured ? RoomInvitationDeliveryStatus.RateLimited : expected,
+            repeated.DeliveryStatus);
+        Assert.HasCount(configured ? 1 : 0, sender.Messages);
+    }
+
+    [TestMethod]
+    public async Task SendRoomInvitation_EmailPending_DoesNotBlockRoomClosure()
+    {
+        // Arrange
+        var completion = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var sender = new RecordingRoomInvitationEmailSender
+        {
+            Started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously),
+            Completion = completion.Task
+        };
+        await using SocialGrpcTestHost server =
+            await SocialGrpcTestHost.StartAsync(emailSender: sender);
+        await using AtariGoDbContext database = server.Database.CreateContext();
+        await AddFriendshipAsync(database);
+        using GrpcChannel channel = GrpcChannel.ForAddress(server.Address);
+        var rooms = new Contracts.Rooms.RoomsClient(channel);
+        CallOptions host = Options("host", CancellationToken.None);
+        CreatePrivateRoomResponse room = await rooms.CreatePrivateRoomAsync(CreateRoom(), host);
+        var invitations = new Contracts.RoomInvitations.RoomInvitationsClient(channel);
+
+        // Act
+        Task<SendRoomInvitationResponse> pending = invitations.SendRoomInvitationAsync(
+            EmailRequest(room.Room.RoomId), host).ResponseAsync;
+        await sender.Started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        LeaveRoomResponse left;
+        try
+        {
+            left = await rooms.LeaveRoomAsync(new LeaveRoomRequest { RoomId = room.Room.RoomId },
+                host).ResponseAsync.WaitAsync(TimeSpan.FromSeconds(2));
+        }
+        finally
+        {
+            completion.TrySetResult();
+        }
+        await pending;
+        ListRoomInvitationsResponse listed = await invitations.ListRoomInvitationsAsync(
+            new ListRoomInvitationsRequest(), Options("guest", CancellationToken.None));
+
+        // Assert
+        Assert.AreEqual(RoomState.Closed, left.UpdatedRoom.State);
+        Assert.AreEqual(RoomInvitationState.Unavailable, listed.Invitations.Single().State);
+    }
+
+    [TestMethod]
+    [DataRow("other", false)]
+    [DataRow("host", true)]
+    public async Task SendRoomInvitation_InvalidEmailPermission_DoesNotContactSender(
+        string token, bool closeRoom)
+    {
+        // Arrange
+        var sender = new RecordingRoomInvitationEmailSender();
+        await using SocialGrpcTestHost server =
+            await SocialGrpcTestHost.StartAsync(emailSender: sender);
+        await using AtariGoDbContext database = server.Database.CreateContext();
+        await AddFriendshipAsync(database);
+        using GrpcChannel channel = GrpcChannel.ForAddress(server.Address);
+        var rooms = new Contracts.Rooms.RoomsClient(channel);
+        CallOptions host = Options("host", CancellationToken.None);
+        CreatePrivateRoomResponse room = await rooms.CreatePrivateRoomAsync(CreateRoom(), host);
+        if (closeRoom)
+        {
+            await rooms.LeaveRoomAsync(new LeaveRoomRequest { RoomId = room.Room.RoomId }, host);
+        }
+        var invitations = new Contracts.RoomInvitations.RoomInvitationsClient(channel);
+
+        // Act
+        RpcException failure = await Assert.ThrowsExactlyAsync<RpcException>(async () =>
+            await invitations.SendRoomInvitationAsync(EmailRequest(room.Room.RoomId),
+                Options(token, CancellationToken.None)));
+
+        // Assert
+        Assert.AreEqual(closeRoom ? StatusCode.FailedPrecondition : StatusCode.PermissionDenied,
+            failure.StatusCode);
+        Assert.HasCount(0, sender.Messages);
+    }
+
+    private static SendRoomInvitationRequest EmailRequest(int roomId)
+    {
+        return new SendRoomInvitationRequest
+        {
+            RoomId = roomId, RecipientUserId = 2,
+            DeliveryChannel = RoomInvitationDeliveryChannel.Email, CultureName = "es-MX"
+        };
+    }
+
     private static Task AddFriendshipAsync(AtariGoDbContext database)
     {
         return database.Database.ExecuteSqlRawAsync(

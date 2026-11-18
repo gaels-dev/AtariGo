@@ -24,6 +24,7 @@ public sealed class RoomInvitationsViewModel : ViewModelBase, IDisposable
         new HashSet<FriendItemViewModel>();
     private readonly int _roomId;
     private RoomInvitationItemViewModel? _selectedInvitation;
+    private FriendItemViewModel? _selectedEmailFriend;
     private Task? _refreshTask;
     private bool _refreshRequested;
     private bool _isBusy;
@@ -51,11 +52,21 @@ public sealed class RoomInvitationsViewModel : ViewModelBase, IDisposable
         OpenCommand = new RelayCommand(Open);
         CloseCommand = new RelayCommand(Close);
         SendCommand = new AsyncRelayCommand(SendAsync, HandleMutationFailure, _lifetime.Token);
+        SendEmailCommand = new AsyncRelayCommand(
+            SendEmailAsync, HandleMutationFailure, _lifetime.Token);
         AcceptCommand = new AsyncRelayCommand(AcceptAsync, HandleMutationFailure, _lifetime.Token);
         RejectCommand = new AsyncRelayCommand(RejectAsync, HandleMutationFailure, _lifetime.Token);
+        if (IsOutgoing && context.EmailRecipientUserId > 0)
+        {
+            SelectedEmailFriend = _friends.FirstOrDefault(
+                friend => friend.UserId == context.EmailRecipientUserId);
+            IsOpen = true;
+        }
     }
 
     public ObservableCollection<FriendItemViewModel> OnlineFriends { get; } = new();
+
+    public ObservableCollection<FriendItemViewModel> EmailFriends => _friends;
 
     public ObservableCollection<RoomInvitationItemViewModel> Invitations { get; } = new();
 
@@ -69,6 +80,10 @@ public sealed class RoomInvitationsViewModel : ViewModelBase, IDisposable
         Text("Btn_Open"), Invitations.Count(invitation => invitation.IsPending));
 
     public string SendLabel => Text("Btn_Send");
+
+    public string SendEmailLabel => Text("Btn_SendEmail");
+
+    public string EmailFriendLabel => Text("Lbl_EmailFriend");
 
     public string AcceptLabel => Text("Btn_Accept");
 
@@ -137,6 +152,19 @@ public sealed class RoomInvitationsViewModel : ViewModelBase, IDisposable
 
     public bool CanSend => CanInteract && IsOutgoing && IsRoomAvailable;
 
+    public bool CanSendEmail => CanSend && SelectedEmailFriend is not null
+        && _friends.Contains(SelectedEmailFriend);
+
+    public FriendItemViewModel? SelectedEmailFriend
+    {
+        get => _selectedEmailFriend;
+        set
+        {
+            SetProperty(ref _selectedEmailFriend, value);
+            OnPropertyChanged(nameof(CanSendEmail));
+        }
+    }
+
     public bool CanRespond => CanInteract && IsIncoming && IsAcceptanceAllowed
         && SelectedInvitation is { IsPending: true };
 
@@ -145,6 +173,8 @@ public sealed class RoomInvitationsViewModel : ViewModelBase, IDisposable
     public ICommand CloseCommand { get; }
 
     public ICommand SendCommand { get; }
+
+    public ICommand SendEmailCommand { get; }
 
     public ICommand AcceptCommand { get; }
 
@@ -251,17 +281,32 @@ public sealed class RoomInvitationsViewModel : ViewModelBase, IDisposable
             return;
         }
 
+        await SendInvitationAsync(friend, RoomInvitationDeliveryChannel.InApp);
+    }
+
+    private async Task SendEmailAsync(object? parameter)
+    {
+        if (CanSendEmail && SelectedEmailFriend is FriendItemViewModel friend)
+        {
+            await SendInvitationAsync(friend, RoomInvitationDeliveryChannel.Email);
+        }
+    }
+
+    private async Task SendInvitationAsync(FriendItemViewModel friend,
+        RoomInvitationDeliveryChannel channel)
+    {
         var request = new SendRoomInvitationRequest
         {
-            RoomId = _roomId, RecipientUserId = friend.UserId
+            RoomId = _roomId, RecipientUserId = friend.UserId,
+            DeliveryChannel = channel, CultureName = CultureInfo.CurrentUICulture.Name
         };
         SetBusy(true);
         try
         {
-            await _client.SendAsync(request, _lifetime.Token);
+            SendRoomInvitationResponse response = await _client.SendAsync(request, _lifetime.Token);
             if (!_isDisposed)
             {
-                Message = Text("Msg_Sent");
+                Message = GetSendMessage(response, channel);
             }
         }
         finally
@@ -336,6 +381,7 @@ public sealed class RoomInvitationsViewModel : ViewModelBase, IDisposable
         OnPropertyChanged(nameof(CanInteract));
         OnPropertyChanged(nameof(CanOpen));
         OnPropertyChanged(nameof(CanSend));
+        OnPropertyChanged(nameof(CanSendEmail));
         OnPropertyChanged(nameof(CanRespond));
     }
 
@@ -361,6 +407,7 @@ public sealed class RoomInvitationsViewModel : ViewModelBase, IDisposable
         }
 
         UpdateOnlineFriends();
+        OnPropertyChanged(nameof(CanSendEmail));
     }
 
     private void OnFriendPresenceChanged(object? sender, PropertyChangedEventArgs args)
@@ -423,5 +470,34 @@ public sealed class RoomInvitationsViewModel : ViewModelBase, IDisposable
         string resourceKey = "RoomInvitations_" + key;
         return Properties.Resources.ResourceManager.GetString(
             resourceKey, CultureInfo.CurrentUICulture) ?? resourceKey;
+    }
+
+    private static string GetSendMessage(SendRoomInvitationResponse response,
+        RoomInvitationDeliveryChannel channel)
+    {
+        if (response.DeliveryStatus == RoomInvitationDeliveryStatus.RateLimited)
+        {
+            return string.Format(CultureInfo.CurrentCulture,
+                Text("Err_RateLimited"), response.RetryAfterSeconds);
+        }
+        RoomInvitationDeliveryStatus status = response.DeliveryStatus;
+        if (channel == RoomInvitationDeliveryChannel.Email
+            && status == RoomInvitationDeliveryStatus.InApp)
+        {
+            status = RoomInvitationDeliveryStatus.EmailUnconfirmed;
+        }
+        if (status == RoomInvitationDeliveryStatus.Unspecified)
+        {
+            status = channel == RoomInvitationDeliveryChannel.Email
+                ? RoomInvitationDeliveryStatus.EmailUnconfirmed
+                : RoomInvitationDeliveryStatus.InApp;
+        }
+        string key = status switch
+        {
+            RoomInvitationDeliveryStatus.EmailAccepted => "Msg_EmailAccepted",
+            RoomInvitationDeliveryStatus.InApp => "Msg_Sent",
+            _ => "Err_" + status
+        };
+        return Text(key);
     }
 }

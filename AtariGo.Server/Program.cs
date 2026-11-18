@@ -74,6 +74,8 @@ builder.Services.AddSingleton<IRoomInvitationNotifier>(provider =>
     provider.GetRequiredService<ISessionConnectionRegistry>());
 builder.Services.AddSingleton<IRoomsService, RoomsService>();
 builder.Services.AddScoped<IRoomInvitationsService, RoomInvitationsService>();
+builder.Services.AddSingleton<RoomInvitationEmailLimiter>();
+builder.Services.AddScoped<RoomInvitationEmailDeliveryService>();
 builder.Services.AddHostedService<RoomStateExpiryService>();
 builder.Services.AddSingleton<ISessionConnectionRegistry, SessionConnectionRegistry>();
 builder.Services.AddSingleton<RegistrationValidator>();

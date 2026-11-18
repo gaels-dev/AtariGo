@@ -14,6 +14,8 @@ namespace AtariGo.Client.Tests.Services
 
         public DialogViewModelBase? OpenedDialog { get; private set; }
 
+        public object? LastNavigationArgument { get; private set; }
+
         public IReadOnlyList<string> Calls
         {
             get
@@ -26,6 +28,7 @@ namespace AtariGo.Client.Tests.Services
         {
             ArgumentNullException.ThrowIfNull(targetMethod);
             _calls.Add(targetMethod.Name);
+            LastNavigationArgument = args?.FirstOrDefault();
             if (targetMethod.Name == nameof(INavigationService.NavigateToMainWindow))
             {
                 SessionContext = args?[0] as ClientSessionContext;

@@ -26,6 +26,8 @@ namespace AtariGo.Client.Services
 
         void NavigateToCreatePrivateRoom();
 
+        void NavigateToCreatePrivateRoomForInvitation(int recipientUserId);
+
         void NavigateToJoinPrivateRoom();
 
         void NavigateToPrivateRoomLobby(

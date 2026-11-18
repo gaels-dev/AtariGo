@@ -13,8 +13,32 @@ service RoomInvitations {
 message SendRoomInvitationRequest {
   int32 room_id = 1;
   int32 recipient_user_id = 2;
+  RoomInvitationDeliveryChannel delivery_channel = 3;
+  string culture_name = 4;
 }
-message SendRoomInvitationResponse { RoomInvitation invitation = 1; }
+message SendRoomInvitationResponse {
+  RoomInvitation invitation = 1;
+  RoomInvitationDeliveryStatus delivery_status = 2;
+  int32 retry_after_seconds = 3;
+}
+enum RoomInvitationDeliveryChannel {
+  ROOM_INVITATION_DELIVERY_CHANNEL_IN_APP = 0;
+  ROOM_INVITATION_DELIVERY_CHANNEL_EMAIL = 1;
+}
+enum RoomInvitationDeliveryStatus {
+  ROOM_INVITATION_DELIVERY_STATUS_UNSPECIFIED = 0;
+  ROOM_INVITATION_DELIVERY_STATUS_IN_APP = 1;
+  ROOM_INVITATION_DELIVERY_STATUS_EMAIL_ACCEPTED = 2;
+  ROOM_INVITATION_DELIVERY_STATUS_EMAIL_UNCONFIRMED = 3;
+  ROOM_INVITATION_DELIVERY_STATUS_EMAIL_UNAVAILABLE = 4;
+  ROOM_INVITATION_DELIVERY_STATUS_RATE_LIMITED = 5;
+  ROOM_INVITATION_DELIVERY_STATUS_NOT_FRIENDS = 6;
+  ROOM_INVITATION_DELIVERY_STATUS_RECIPIENT_OFFLINE = 7;
+  ROOM_INVITATION_DELIVERY_STATUS_ROOM_UNAVAILABLE = 8;
+  ROOM_INVITATION_DELIVERY_STATUS_PERMISSION_DENIED = 9;
+  ROOM_INVITATION_DELIVERY_STATUS_NOT_FOUND = 10;
+  ROOM_INVITATION_DELIVERY_STATUS_UNCONFIRMED = 11;
+}
 message ListRoomInvitationsRequest { int32 room_id = 1; }
 message ListRoomInvitationsResponse { repeated RoomInvitation invitations = 1; }
 message RespondRoomInvitationRequest {

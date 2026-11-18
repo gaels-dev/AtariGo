@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 using AtariGo.Server.Application.Friends;
+using AtariGo.Server.Application.Email;
 using AtariGo.Server.Application.Friendships;
 using AtariGo.Server.Application.RoomInvitations;
 using AtariGo.Server.Application.Rooms;
@@ -34,7 +35,8 @@ internal sealed class SocialGrpcTestHost : IAsyncDisposable
 
     public static async Task<SocialGrpcTestHost> StartAsync(
         IFriendService? friendService = null,
-        IFriendshipsService? friendshipsService = null)
+        IFriendshipsService? friendshipsService = null,
+        IEmailSender? emailSender = null)
     {
         SocialTestDatabase database = await SocialTestDatabase.CreateAsync();
         WebApplicationBuilder builder = WebApplication.CreateBuilder();
@@ -60,6 +62,15 @@ internal sealed class SocialGrpcTestHost : IAsyncDisposable
             provider.GetRequiredService<ISessionConnectionRegistry>());
         builder.Services.AddSingleton<IRoomsService, RoomsService>();
         builder.Services.AddScoped<IRoomInvitationsService, RoomInvitationsService>();
+        builder.Services.AddOptions<SmtpOptions>();
+        builder.Services.AddSingleton<IEmailSender, SmtpEmailSender>();
+        if (emailSender is not null)
+        {
+            builder.Services.AddSingleton(emailSender);
+        }
+        builder.Services.AddSingleton<EmailDeliveryService>();
+        builder.Services.AddSingleton<RoomInvitationEmailLimiter>();
+        builder.Services.AddScoped<RoomInvitationEmailDeliveryService>();
         builder.Services.AddSingleton<FriendMutationCoordinator>();
         builder.Services.AddSingleton(TimeProvider.System);
         WebApplication app = builder.Build();

@@ -45,6 +45,8 @@ namespace AtariGo.Client.ViewModels
 
         public IReadOnlyList<int> CaptureGoals { get; }
 
+        public int EmailRecipientUserId { get; init; }
+
         public int SelectedCaptureGoal
         {
             get
@@ -88,7 +90,10 @@ namespace AtariGo.Client.ViewModels
                 configuration, cancellationToken);
             cancellationToken.ThrowIfCancellationRequested();
             _navigationService.NavigateToPrivateRoomLobby(
-                new PrivateRoomNavigationContext(room, IsHost: true));
+                new PrivateRoomNavigationContext(room, IsHost: true)
+                {
+                    EmailRecipientUserId = EmailRecipientUserId
+                });
         }
 
         private void ShowFailure(Exception exception)

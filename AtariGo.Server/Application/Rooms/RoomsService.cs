@@ -164,12 +164,13 @@ public sealed class RoomsService : IRoomsService
                 return new RoomInvitationResult(RoomInvitationOperationStatus.RoomUnavailable);
             }
 
-            if (!_invitationNotifier.IsUserConnected(recipient.UserId))
+            if (!command.SendByEmail && !_invitationNotifier.IsUserConnected(recipient.UserId))
             {
                 return new RoomInvitationResult(RoomInvitationOperationStatus.RecipientOffline);
             }
 
-            DateTimeOffset expiresAt = _timeProvider.GetUtcNow().Add(invitationLifetime);
+            DateTimeOffset expiresAt = command.SendByEmail
+                ? room.ExpiresAt : _timeProvider.GetUtcNow().Add(invitationLifetime);
             if (expiresAt > room.ExpiresAt)
             {
                 expiresAt = room.ExpiresAt;
@@ -177,6 +178,10 @@ public sealed class RoomsService : IRoomsService
 
             RoomInvitationEntry invitation = _invitations.Create(
                 room.Snapshot, recipient, expiresAt);
+            if (command.SendByEmail)
+            {
+                invitation = _invitations.ExtendExpiration(invitation, expiresAt);
+            }
             return new RoomInvitationResult(RoomInvitationOperationStatus.Success, invitation);
         }
     }
@@ -680,11 +685,11 @@ public sealed class RoomsService : IRoomsService
             }
         }
 
-        return snapshot ?? await CloseExpiredRoom(entry, nextSnapshot)
+        return snapshot ?? await CloseExpiredRoomAsync(entry, nextSnapshot)
             .WaitAsync(cancellationToken);
     }
 
-    private Task<PrivateRoom> CloseExpiredRoom(RoomEntry entry, Task<PrivateRoom> nextSnapshot)
+    private Task<PrivateRoom> CloseExpiredRoomAsync(RoomEntry entry, Task<PrivateRoom> nextSnapshot)
     {
         lock (_roomLock)
         {

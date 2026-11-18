@@ -25,9 +25,22 @@ public sealed class GrpcRoomInvitationsClient : IRoomInvitationsClient
     public async Task<SendRoomInvitationResponse> SendAsync(
         SendRoomInvitationRequest request, CancellationToken cancellationToken)
     {
-        using AsyncUnaryCall<SendRoomInvitationResponse> call =
-            _client.SendRoomInvitationAsync(request, Options(cancellationToken));
-        return await call.ResponseAsync;
+        ArgumentNullException.ThrowIfNull(request);
+        try
+        {
+            using AsyncUnaryCall<SendRoomInvitationResponse> call =
+                _client.SendRoomInvitationAsync(request, Options(cancellationToken));
+            return await call.ResponseAsync;
+        }
+        catch (Exception exception) when (exception is RpcException or OperationCanceledException)
+        {
+            RoomInvitationDeliveryStatus status = RoomInvitationDeliveryStatus.Unconfirmed;
+            if (exception is RpcException failure)
+            {
+                status = MapSendFailure(failure);
+            }
+            return new SendRoomInvitationResponse { DeliveryStatus = status };
+        }
     }
 
     public async Task<ListRoomInvitationsResponse> ListAsync(
@@ -58,5 +71,18 @@ public sealed class GrpcRoomInvitationsClient : IRoomInvitationsClient
     {
         var headers = new Metadata { { "authorization", $"Bearer {_sessionToken}" } };
         return GrpcCallPolicy.CreateOptions(token, headers);
+    }
+
+    private static RoomInvitationDeliveryStatus MapSendFailure(RpcException failure)
+    {
+        return failure.Status.Detail switch
+        {
+            "NotFriends" => RoomInvitationDeliveryStatus.NotFriends,
+            "RecipientOffline" => RoomInvitationDeliveryStatus.RecipientOffline,
+            "RoomUnavailable" => RoomInvitationDeliveryStatus.RoomUnavailable,
+            "PermissionDenied" => RoomInvitationDeliveryStatus.PermissionDenied,
+            "NotFound" => RoomInvitationDeliveryStatus.NotFound,
+            _ => RoomInvitationDeliveryStatus.Unconfirmed
+        };
     }
 }

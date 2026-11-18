@@ -1,6 +1,5 @@
 using System.Reflection;
 
-
 using Grpc.Core;
 
 using AtariGo.Client.Models;
@@ -15,6 +14,110 @@ namespace AtariGo.Client.Tests.ViewModels;
 [TestCategory("Unit")]
 public sealed class RoomInvitationsViewModelTests
 {
+    [TestMethod]
+    public async Task SendEmailCommand_SelectedOfflineFriend_WaitsForConfirmationAndSendsOnlyOnce()
+    {
+        // Arrange
+        var client = new StubRoomInvitationsClient
+        {
+            SendHandler = () => Task.FromResult(new SendRoomInvitationResponse
+            {
+                DeliveryStatus = RoomInvitationDeliveryStatus.EmailAccepted
+            })
+        };
+        var context = new RoomInvitationsNavigationContext(42) { EmailRecipientUserId = 7 };
+        var friend = new FriendItemViewModel(7, "Offline", false);
+        context.Friends.Add(friend);
+        using RoomInvitationsViewModel model = Create(client, context);
+        Assert.AreEqual(0, client.SendCount);
+
+        // Act
+        await CommandExecution.ExecuteAsync(model.SendEmailCommand, null);
+
+        // Assert
+        Assert.IsTrue(model.IsOpen);
+        Assert.AreSame(friend, model.SelectedEmailFriend);
+        Assert.AreEqual(1, client.SendCount);
+        Assert.AreEqual(7, client.Sent?.RecipientUserId);
+        Assert.AreEqual(42, client.Sent?.RoomId);
+        Assert.AreEqual(RoomInvitationDeliveryChannel.Email, client.Sent?.DeliveryChannel);
+        Assert.AreNotEqual(string.Empty, model.Message);
+    }
+
+    [TestMethod]
+    public async Task SendEmailCommand_FriendshipRemovedOrRoomFull_DoesNotSend()
+    {
+        // Arrange
+        var client = new StubRoomInvitationsClient();
+        var context = new RoomInvitationsNavigationContext(42) { EmailRecipientUserId = 7 };
+        context.Friends.Add(new FriendItemViewModel(7, "Friend", false));
+        using RoomInvitationsViewModel model = Create(client, context);
+
+        // Act
+        model.IsRoomAvailable = false;
+        await CommandExecution.ExecuteAsync(model.SendEmailCommand, null);
+        model.IsRoomAvailable = true;
+        context.Friends.Clear();
+        await CommandExecution.ExecuteAsync(model.SendEmailCommand, null);
+
+        // Assert
+        Assert.AreEqual(0, client.SendCount);
+        Assert.IsFalse(model.CanSendEmail);
+    }
+
+    [TestMethod]
+    public async Task SendEmailCommand_DisposedDuringDelivery_DiscardsLateResponse()
+    {
+        // Arrange
+        var completion = new TaskCompletionSource<SendRoomInvitationResponse>();
+        var client = new StubRoomInvitationsClient { SendHandler = () => completion.Task };
+        var context = new RoomInvitationsNavigationContext(42) { EmailRecipientUserId = 7 };
+        context.Friends.Add(new FriendItemViewModel(7, "Friend", false));
+        using RoomInvitationsViewModel model = Create(client, context);
+
+        // Act
+        Task sending = CommandExecution.ExecuteAsync(model.SendEmailCommand, null);
+        model.Dispose();
+        completion.SetResult(new SendRoomInvitationResponse
+        {
+            DeliveryStatus = RoomInvitationDeliveryStatus.EmailAccepted
+        });
+        await sending;
+
+        // Assert
+        Assert.AreEqual(string.Empty, model.Message);
+        Assert.IsFalse(model.CanSendEmail);
+        Assert.AreEqual(1, client.SendCount);
+    }
+
+    [TestMethod]
+    [DataRow(RoomInvitationDeliveryStatus.Unspecified)]
+    [DataRow(RoomInvitationDeliveryStatus.InApp)]
+    public async Task SendEmailCommand_LegacyServer_DoesNotClaimEmailDelivery(
+        RoomInvitationDeliveryStatus status)
+    {
+        // Arrange
+        var client = new StubRoomInvitationsClient
+        {
+            SendHandler = () => Task.FromResult(new SendRoomInvitationResponse
+            {
+                DeliveryStatus = status
+            })
+        };
+        var context = new RoomInvitationsNavigationContext(42) { EmailRecipientUserId = 7 };
+        context.Friends.Add(new FriendItemViewModel(7, "Friend", false));
+        using RoomInvitationsViewModel model = Create(client, context);
+
+        // Act
+        await CommandExecution.ExecuteAsync(model.SendEmailCommand, null);
+
+        // Assert
+        Assert.AreEqual(Properties.Resources.ResourceManager.GetString(
+            "RoomInvitations_Err_EmailUnconfirmed",
+            System.Globalization.CultureInfo.CurrentUICulture),
+            model.Message);
+    }
+
     [TestMethod]
     public async Task SendCommand_FriendRow_SendsOnlyTheClickedConnectedFriend()
     {

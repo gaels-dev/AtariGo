@@ -228,6 +228,8 @@ namespace AtariGo.Client.ViewModels
 
         public ICommand InviteFriendCommand { get; private set; } = null!;
 
+        public ICommand InviteFriendByEmailCommand { get; private set; } = null!;
+
         public ICommand ManageFriendRequestsCommand { get; private set; } = null!;
 
         public string ManageFriendRequestsLabel => GetLocalizedMessage(
@@ -264,7 +266,18 @@ namespace AtariGo.Client.ViewModels
                 navigationService.NavigateToCreatePrivateRoom);
             JoinWithCodeCommand = new RelayCommand(navigationService.NavigateToJoinPrivateRoom);
             InviteFriendCommand = new RelayCommand(navigationService.NavigateToCreatePrivateRoom);
+            InviteFriendByEmailCommand = new RelayCommand(parameter =>
+                OpenEmailInvitation(navigationService, parameter));
             RemoveFriendCommand = FriendRemoval.RemoveCommand;
+        }
+
+        private void OpenEmailInvitation(INavigationService navigation, object? parameter)
+        {
+            if (parameter is FriendItemViewModel friend && !IsGuest && !friend.IsOnline
+                && Friends.Contains(friend) && friend.UserId > 0)
+            {
+                navigation.NavigateToCreatePrivateRoomForInvitation(friend.UserId);
+            }
         }
 
         private void InitializeAccountCommands(

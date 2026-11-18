@@ -53,6 +53,18 @@ internal sealed class RoomInvitationRegistry
         return entry;
     }
 
+    public RoomInvitationEntry ExtendExpiration(RoomInvitationEntry entry, DateTimeOffset expiresAt)
+    {
+        if (expiresAt <= entry.ExpiresAt)
+        {
+            return entry;
+        }
+        RoomInvitationEntry updated = entry with { ExpiresAt = expiresAt };
+        _entries[entry.InvitationId] = updated;
+        Notify(updated);
+        return updated;
+    }
+
     public IReadOnlyList<RoomInvitationEntry> List(int userId, int? roomId)
     {
         return _entries.Values.Where(entry => roomId is null

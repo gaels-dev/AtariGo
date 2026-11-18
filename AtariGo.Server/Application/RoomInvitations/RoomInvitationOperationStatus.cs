@@ -9,5 +9,9 @@ public enum RoomInvitationOperationStatus
     RecipientOffline,
     RoomUnavailable,
     InvitationUnavailable,
-    AlreadyInRoom
+    AlreadyInRoom,
+    EmailAccepted,
+    EmailUnconfirmed,
+    EmailUnavailable,
+    RateLimited
 }

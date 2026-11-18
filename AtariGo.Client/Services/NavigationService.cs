@@ -61,6 +61,12 @@ namespace AtariGo.Client.Services
             Dispatch(ShowCreatePrivateRoom);
         }
 
+        public void NavigateToCreatePrivateRoomForInvitation(int recipientUserId)
+        {
+            ArgumentOutOfRangeException.ThrowIfNegativeOrZero(recipientUserId);
+            Dispatch(() => ShowCreatePrivateRoom(recipientUserId));
+        }
+
         public void NavigateToJoinPrivateRoom()
         {
             Dispatch(ShowJoinPrivateRoom);
@@ -255,6 +261,11 @@ namespace AtariGo.Client.Services
 
         private void ShowCreatePrivateRoom()
         {
+            ShowCreatePrivateRoom(0);
+        }
+
+        private void ShowCreatePrivateRoom(int emailRecipientUserId)
+        {
             MainViewModel? mainViewModel = GetMainViewModel();
             if (mainViewModel is null || string.IsNullOrWhiteSpace(mainViewModel.SessionToken))
             {
@@ -262,7 +273,10 @@ namespace AtariGo.Client.Services
             }
 
             var roomsClient = new GrpcRoomsClient(mainViewModel.SessionToken);
-            mainViewModel.CurrentViewModel = new CreatePrivateRoomViewModel(this, roomsClient);
+            mainViewModel.CurrentViewModel = new CreatePrivateRoomViewModel(this, roomsClient)
+            {
+                EmailRecipientUserId = emailRecipientUserId
+            };
         }
 
         private void ShowJoinPrivateRoom()
@@ -293,7 +307,8 @@ namespace AtariGo.Client.Services
                 var invitationContext = new RoomInvitationsNavigationContext(
                     navigationContext.Room.RoomId)
                 {
-                    Friends = mainViewModel.Friends
+                    Friends = mainViewModel.Friends,
+                    EmailRecipientUserId = navigationContext.EmailRecipientUserId
                 };
                 lobby.AttachInvitations(new RoomInvitationsViewModel(
                     this,

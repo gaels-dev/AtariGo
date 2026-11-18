@@ -1,6 +1,5 @@
 using Microsoft.Extensions.Logging.Abstractions;
 
-
 using AtariGo.Server.Application.RoomInvitations;
 using AtariGo.Server.Application.Rooms;
 using AtariGo.Server.Application.Sessions;
@@ -159,7 +158,7 @@ public sealed class RoomsServiceTests
     }
 
     [TestMethod]
-    public void RemoveExpiredRoomsAndInvitations_ExpiredEntries_NotifiesAndEventuallyReleasesMemory()
+    public void RemoveExpiredRoomsAndInvitations_ExpiredEntries_NotifiesAndReleasesMemory()
     {
         // Arrange
         var connections = new SessionConnectionRegistry();
@@ -182,6 +181,31 @@ public sealed class RoomsServiceTests
         Assert.IsTrue(notified);
         Assert.AreEqual(RoomInvitationStatus.Expired, state);
         Assert.HasCount(0, rooms.ListRoomInvitations(2, null));
+    }
+
+    [TestMethod]
+    public void SendRoomInvitation_EmailToOfflineFriend_ExpiresWithRoom()
+    {
+        // Arrange
+        var time = new ManualTimeProvider();
+        var rooms = new RoomsService(time, new SessionConnectionRegistry(),
+            NullLogger<RoomsService>.Instance);
+        PrivateRoom room = CreateRoom(rooms);
+        var command = new SendRoomInvitationCommand(room.RoomId, 2) { SendByEmail = true };
+
+        // Act
+        RoomInvitationResult result = rooms.SendRoomInvitation(
+            command, new LobbyParticipant(2, "Friend"), 1);
+        time.Advance(TimeSpan.FromMinutes(3));
+        RoomInvitationStatus beforeExpiry = rooms.ListRoomInvitations(2, null).Single().State;
+        time.Advance(TimeSpan.FromMinutes(57));
+        rooms.RemoveExpiredRoomsAndInvitations();
+
+        // Assert
+        Assert.AreEqual(RoomInvitationOperationStatus.Success, result.Status);
+        Assert.AreEqual(RoomInvitationStatus.Pending, beforeExpiry);
+        Assert.AreNotEqual(RoomInvitationStatus.Pending,
+            rooms.ListRoomInvitations(2, null).Single().State);
     }
 
     private static SessionConnectionLease Connect(SessionConnectionRegistry registry, int userId)

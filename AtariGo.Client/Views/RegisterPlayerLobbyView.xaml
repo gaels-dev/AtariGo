@@ -523,7 +523,9 @@
                                                         </Button.Style>
                                                     </Button>
                                                     <Button Content="{x:Static properties:Resources.RegisterPlayerLobby_Btn_Email}"
-                                                            IsEnabled="False"
+                                                            Command="{Binding DataContext.InviteFriendByEmailCommand,
+                                                                RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                            CommandParameter="{Binding}"
                                                             Width="58"
                                                             Height="26"
                                                             FontSize="10"

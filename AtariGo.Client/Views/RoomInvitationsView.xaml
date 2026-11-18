@@ -70,6 +70,15 @@
                 </TextBlock.Style>
             </TextBlock>
         </Grid>
+        <StackPanel Margin="0,8,0,12" Visibility="{Binding IsOutgoing,
+                    Converter={StaticResource BooleanToVisibilityConverter}}">
+            <TextBlock Text="{Binding EmailFriendLabel}" Margin="0,0,0,6"/>
+            <ComboBox ItemsSource="{Binding EmailFriends}" DisplayMemberPath="Username"
+                      SelectedItem="{Binding SelectedEmailFriend}" Height="32"
+                      IsEnabled="{Binding CanSend}"/>
+            <Button Content="{Binding SendEmailLabel}" Command="{Binding SendEmailCommand}"
+                    IsEnabled="{Binding CanSendEmail}" Margin="0,8,0,0"/>
+        </StackPanel>
         <StackPanel Visibility="{Binding IsIncoming,
                     Converter={StaticResource BooleanToVisibilityConverter}}">
             <ListBox x:Name="IncomingInvitationsList" ItemsSource="{Binding Invitations}"

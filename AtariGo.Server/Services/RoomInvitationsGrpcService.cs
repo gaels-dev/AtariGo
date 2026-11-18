@@ -10,6 +10,7 @@ namespace AtariGo.Server.Services;
 public sealed class RoomInvitationsGrpcService : RoomInvitations.RoomInvitationsBase
 {
     private const int InboxRoomId = 0;
+    private const int MaximumCultureNameLength = 64;
 
     private readonly ISessionService _sessions;
     private readonly IRoomInvitationsService _roomInvitationsService;
@@ -94,17 +95,63 @@ public sealed class RoomInvitationsGrpcService : RoomInvitations.RoomInvitations
         };
     }
 
+    private static RoomInvitationDeliveryStatus MapDelivery(RoomInvitationResult result)
+    {
+        return result.Status switch
+        {
+            RoomInvitationOperationStatus.EmailAccepted =>
+                RoomInvitationDeliveryStatus.EmailAccepted,
+            RoomInvitationOperationStatus.EmailUnconfirmed =>
+                RoomInvitationDeliveryStatus.EmailUnconfirmed,
+            RoomInvitationOperationStatus.EmailUnavailable =>
+                RoomInvitationDeliveryStatus.EmailUnavailable,
+            RoomInvitationOperationStatus.RateLimited => RoomInvitationDeliveryStatus.RateLimited,
+            _ => RoomInvitationDeliveryStatus.InApp
+        };
+    }
+
     public override async Task<SendRoomInvitationResponse> SendRoomInvitation(
         SendRoomInvitationRequest request, ServerCallContext context)
     {
         LobbyParticipant sender = await AuthenticateAsync(context);
-        var command = new SendRoomInvitationCommand(request.RoomId, request.RecipientUserId);
+        if (request.RoomId <= 0 || request.RecipientUserId <= 0
+            || !Enum.IsDefined(request.DeliveryChannel)
+            || request.CultureName.Length > MaximumCultureNameLength)
+        {
+            throw new RpcException(new Status(StatusCode.InvalidArgument, "InvalidInvitation"));
+        }
+        var command = new SendRoomInvitationCommand(request.RoomId, request.RecipientUserId)
+        {
+            SendByEmail = request.DeliveryChannel == RoomInvitationDeliveryChannel.Email,
+            CultureName = request.CultureName
+        };
         RoomInvitationResult result = await _roomInvitationsService.SendAsync(
             command, sender, context.CancellationToken);
-        return new SendRoomInvitationResponse
+        _logger.LogInformation("Invitation send in room {RoomId}: {Status}.",
+            request.RoomId, result.Status);
+        var response = new SendRoomInvitationResponse
         {
-            Invitation = MapInvitation(RequireInvitation(result))
+            DeliveryStatus = MapDelivery(result), RetryAfterSeconds = result.RetryAfterSeconds
         };
+        if (result.Status == RoomInvitationOperationStatus.Success)
+        {
+            response.Invitation = MapInvitation(RequireInvitation(result));
+        }
+        else if (result.Status is RoomInvitationOperationStatus.EmailAccepted
+            or RoomInvitationOperationStatus.EmailUnconfirmed
+            or RoomInvitationOperationStatus.EmailUnavailable
+            or RoomInvitationOperationStatus.RateLimited)
+        {
+            if (result.Invitation is not null)
+            {
+                response.Invitation = MapInvitation(result.Invitation);
+            }
+        }
+        else
+        {
+            RequireInvitation(result);
+        }
+        return response;
     }
 
     public override async Task<ListRoomInvitationsResponse> ListRoomInvitations(
