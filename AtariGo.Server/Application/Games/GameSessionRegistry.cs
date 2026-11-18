@@ -119,6 +119,7 @@ public sealed class GameSessionRegistry : IGameSessionRegistry
 
     public bool IsCurrent(GameSessionConnection connection)
     {
+        ArgumentNullException.ThrowIfNull(connection);
         if (!_sessions.TryGetValue(connection.GameId, out GameSessionState? state))
         {
             return false;
@@ -143,6 +144,7 @@ public sealed class GameSessionRegistry : IGameSessionRegistry
 
     public void PublishProgress(long gameId, GameRuntimeState progress, long version)
     {
+        ArgumentNullException.ThrowIfNull(progress);
         if (!_sessions.TryGetValue(gameId, out GameSessionState? state))
         {
             return;
@@ -160,6 +162,8 @@ public sealed class GameSessionRegistry : IGameSessionRegistry
 
     public void PublishActionResult(GameSessionConnection connection, GameActionResult result)
     {
+        ArgumentNullException.ThrowIfNull(connection);
+        ArgumentNullException.ThrowIfNull(result);
         if (!_sessions.TryGetValue(connection.GameId, out GameSessionState? state))
         {
             return;
@@ -181,6 +185,23 @@ public sealed class GameSessionRegistry : IGameSessionRegistry
                 if (entry.Value.Connections.Count == 0 && entry.Value.LastActivityUtc < cutoff)
                 {
                     _sessions.TryRemove(entry);
+                }
+            }
+        }
+    }
+
+    public void DisconnectUser(int userId)
+    {
+        string playerKey = GameSessionRules.CreateUserKey(userId);
+        foreach (GameSessionState state in _sessions.Values)
+        {
+            lock (state.SyncRoot)
+            {
+                if (state.Connections.TryGetValue(playerKey, out GameSessionConnection? connection))
+                {
+                    connection.Revoke();
+                    state.RemoveConnection(connection);
+                    PublishSnapshots(state);
                 }
             }
         }
@@ -226,23 +247,6 @@ public sealed class GameSessionRegistry : IGameSessionRegistry
                 ChatMessage = chatMessage
             };
             state.Publish(entry.Value, delivery);
-        }
-    }
-
-    public void DisconnectUser(int userId)
-    {
-        string playerKey = GameSessionRules.CreateUserKey(userId);
-        foreach (GameSessionState state in _sessions.Values)
-        {
-            lock (state.SyncRoot)
-            {
-                if (state.Connections.TryGetValue(playerKey, out GameSessionConnection? connection))
-                {
-                    connection.Revoke();
-                    state.RemoveConnection(connection);
-                    PublishSnapshots(state);
-                }
-            }
         }
     }
 

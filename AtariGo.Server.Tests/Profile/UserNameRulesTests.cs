@@ -14,9 +14,10 @@ public sealed class UserNameRulesTests
     [DataRow("guest-Player", false)]
     [DataRow("123456789012345", true)]
     [DataRow("1234567890123456", false)]
-    public void IsValid_AppliesRegistrationAndProfileNameRules(
+    public void IsValid_RegistrationOrProfileName_ReturnsExpectedValidity(
         string userName, bool expected)
     {
+        // Arrange: inputs are supplied by DataRow.
         // Act
         bool valid = UserNameRules.IsValid(userName);
 

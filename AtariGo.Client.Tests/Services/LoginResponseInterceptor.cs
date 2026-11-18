@@ -9,11 +9,20 @@ public sealed class LoginResponseInterceptor : Interceptor
 {
     public Task<LoginResponse> Response { get; set; } = Task.FromResult(new LoginResponse());
 
-    public int Calls { get; private set; }
+    public int Calls
+    {
+        get; private set;
+    }
 
-    public object? Request { get; private set; }
+    public object? Request
+    {
+        get; private set;
+    }
 
-    public CallOptions Options { get; private set; }
+    public CallOptions Options
+    {
+        get; private set;
+    }
 
     public override AsyncUnaryCall<TResponse> AsyncUnaryCall<TRequest, TResponse>(TRequest request,
         ClientInterceptorContext<TRequest, TResponse> context,

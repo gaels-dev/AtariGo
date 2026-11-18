@@ -63,9 +63,15 @@ public sealed class GuestRegistrationDialogViewModel : ViewModelBase, IDisposabl
     public string BackLabel => GetLocalizedMessage(
         "GuestRegistration_Back");
 
-    public ICommand EnterCommand { get; }
+    public ICommand EnterCommand
+    {
+        get;
+    }
 
-    public ICommand BackCommand { get; }
+    public ICommand BackCommand
+    {
+        get;
+    }
 
     public void Dispose()
     {

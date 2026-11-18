@@ -8,8 +8,6 @@ namespace AtariGo.Client.Services;
 
 public sealed class GrpcMatchmakingClient : IGuestIdentityClient, IMatchmakingClient
 {
-    private const string GuestCredentialHeader = "x-guest-credential";
-
     private readonly Matchmaking.MatchmakingClient _client;
     private readonly string? _sessionToken;
     private readonly string? _guestCredential;
@@ -43,6 +41,7 @@ public sealed class GrpcMatchmakingClient : IGuestIdentityClient, IMatchmakingCl
         string displayName,
         CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(displayName);
         var request = new CreateGuestIdentityRequest
         {
             DisplayName = displayName
@@ -57,10 +56,8 @@ public sealed class GrpcMatchmakingClient : IGuestIdentityClient, IMatchmakingCl
         string guestCredential,
         CancellationToken cancellationToken)
     {
-        var headers = new Metadata
-        {
-            { GuestCredentialHeader, guestCredential }
-        };
+        ArgumentNullException.ThrowIfNull(guestCredential);
+        Metadata headers = GrpcCallPolicy.CreateHeaders(null, guestCredential);
         await _client.RevokeGuestIdentityAsync(
             new RevokeGuestIdentityRequest(),
             GrpcCallPolicy.CreateOptions(cancellationToken, headers)).ResponseAsync;
@@ -70,29 +67,14 @@ public sealed class GrpcMatchmakingClient : IGuestIdentityClient, IMatchmakingCl
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         CallOptions options = new CallOptions(
-            headers: CreateHeaders(),
+            headers: GrpcCallPolicy.CreateHeaders(_sessionToken, _guestCredential),
             cancellationToken: cancellationToken);
         using AsyncServerStreamingCall<MatchmakingEvent> call =
             _client.SearchPublicMatch(new SearchPublicMatchRequest(), options);
-        while (await call.ResponseStream.MoveNext(cancellationToken))
+        while (await GrpcCallPolicy.ExecuteAsync(
+            () => call.ResponseStream.MoveNext(cancellationToken)))
         {
             yield return call.ResponseStream.Current;
         }
-    }
-
-    private Metadata CreateHeaders()
-    {
-        var headers = new Metadata();
-        if (!string.IsNullOrWhiteSpace(_sessionToken))
-        {
-            headers.Add("authorization", $"Bearer {_sessionToken}");
-        }
-
-        if (!string.IsNullOrWhiteSpace(_guestCredential))
-        {
-            headers.Add(GuestCredentialHeader, _guestCredential);
-        }
-
-        return headers;
     }
 }

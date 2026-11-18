@@ -19,9 +19,18 @@ public sealed class RegistrationResultDialogViewModel : ViewModelBase
         CloseCommand = new RelayCommand(_close);
     }
 
-    public string Message { get; }
+    public string Message
+    {
+        get;
+    }
 
-    public string CloseButtonText { get; }
+    public string CloseButtonText
+    {
+        get;
+    }
 
-    public ICommand CloseCommand { get; }
+    public ICommand CloseCommand
+    {
+        get;
+    }
 }

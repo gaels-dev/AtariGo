@@ -1,4 +1,3 @@
-
 using Grpc.Core;
 using Grpc.Core.Interceptors;
 
@@ -12,7 +11,7 @@ namespace AtariGo.Client.Tests.Services;
 public sealed class GrpcFriendshipsClientTests
 {
     [TestMethod]
-    public async Task RemoveFriendship_TwoSessions_PreservesIdentityDeadlineAndCancellation()
+    public async Task RemoveFriendship_TwoSessions_PreservesIdentityDeadlineAndCancellationAsync()
     {
         // Arrange
         using var connection = new GrpcClientConnection(new Uri("https://localhost:7061"));

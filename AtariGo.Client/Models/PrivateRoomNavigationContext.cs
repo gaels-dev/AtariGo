@@ -4,5 +4,8 @@ namespace AtariGo.Client.Models;
 
 public sealed record PrivateRoomNavigationContext(RoomSnapshot Room, bool IsHost)
 {
-    public int EmailRecipientUserId { get; init; }
+    public int EmailRecipientUserId
+    {
+        get; init;
+    }
 }

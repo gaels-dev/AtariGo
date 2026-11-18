@@ -40,8 +40,10 @@ internal sealed class SocialTestSessionService : ISessionService
             .Where(user => friendIds.Contains(user.UserId))
             .Select(user => new FriendPresenceEntry(user.UserId, user.UserName, false))
             .ToListAsync(cancellationToken);
-        return new SessionConnectionInfo(
-            identity.UserId, identity.UserId, identity.UserName, friends);
+        return new SessionConnectionInfo(identity.UserId, identity.UserId, identity.UserName)
+        {
+            Friends = friends
+        };
     }
 
     public Task CloseConnectionAsync(long sessionId, CancellationToken cancellationToken)

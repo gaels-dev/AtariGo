@@ -12,9 +12,18 @@ public sealed class AuthenticationCodeScope
         Binding = binding;
     }
 
-    public int UserId { get; }
+    public int UserId
+    {
+        get;
+    }
 
-    public string Purpose { get; }
+    public string Purpose
+    {
+        get;
+    }
 
-    public string Binding { get; }
+    public string Binding
+    {
+        get;
+    }
 }

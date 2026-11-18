@@ -3,25 +3,49 @@ namespace AtariGo.Server.Data.Entities;
 
 public partial class GamePlayer
 {
-    public long GamePlayerId { get; set; }
+    public long GamePlayerId
+    {
+        get; set;
+    }
 
-    public long GameId { get; set; }
+    public long GameId
+    {
+        get; set;
+    }
 
-    public int? UserId { get; set; }
+    public int? UserId
+    {
+        get; set;
+    }
 
-    public string? GuestName { get; set; }
+    public string? GuestName
+    {
+        get; set;
+    }
 
     public string StoneColor { get; set; } = null!;
 
-    public byte TurnOrder { get; set; }
+    public byte TurnOrder
+    {
+        get; set;
+    }
 
-    public int CapturedStones { get; set; }
+    public int CapturedStones
+    {
+        get; set;
+    }
 
     public string Result { get; set; } = null!;
 
-    public DateTime JoinedAt { get; set; }
+    public DateTime JoinedAt
+    {
+        get; set;
+    }
 
-    public DateTime? LeftAt { get; set; }
+    public DateTime? LeftAt
+    {
+        get; set;
+    }
 
     public virtual Game Game { get; set; } = null!;
 
@@ -31,5 +55,8 @@ public partial class GamePlayer
 
     public virtual ICollection<Move> Moves { get; set; } = new List<Move>();
 
-    public virtual User? User { get; set; }
+    public virtual User? User
+    {
+        get; set;
+    }
 }

@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using System.IO;
 
-
 using AtariGo.Client.Services;
 
 namespace AtariGo.Client.Tests.Services;

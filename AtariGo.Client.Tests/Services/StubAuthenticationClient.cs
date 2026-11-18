@@ -13,18 +13,30 @@ public sealed class StubAuthenticationClient : IAuthenticationClient
         _login = login;
     }
 
-    public Func<CancellationToken, Task<LoginAttemptResult>> Verify { get; set; } =
+    public Func<CancellationToken, Task<LoginAttemptResult>> Verify
+    {
+        get; set;
+    } =
         _ => Task.FromResult(new LoginAttemptResult { Status = LoginAttemptStatus.InvalidCode });
 
-    public Func<CancellationToken, Task<LoginAttemptResult>> Resend { get; set; } =
+    public Func<CancellationToken, Task<LoginAttemptResult>> Resend
+    {
+        get; set;
+    } =
         _ => Task.FromResult(new LoginAttemptResult
         {
             Status = LoginAttemptStatus.ChallengeRequired
         });
 
-    public int VerificationCalls { get; private set; }
+    public int VerificationCalls
+    {
+        get; private set;
+    }
 
-    public int CancellationCalls { get; private set; }
+    public int CancellationCalls
+    {
+        get; private set;
+    }
 
     public Task<LoginAttemptResult> LoginAsync(string identifier, string password,
         CancellationToken cancellationToken = default)

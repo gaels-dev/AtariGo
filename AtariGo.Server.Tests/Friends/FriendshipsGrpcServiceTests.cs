@@ -16,7 +16,8 @@ public sealed class FriendshipsGrpcServiceTests
     private const int TestTimeoutSeconds = 10;
 
     [TestMethod]
-    public async Task RemoveFriendship_TwoConnectedClients_ReceiveRemovalAndReconnectWithoutFriend()
+    public async Task
+        RemoveFriendship_TwoConnectedClients_ReceiveRemovalAndReconnectWithoutFriendAsync()
     {
         // Arrange
         await using SocialGrpcTestHost server = await SocialGrpcTestHost.StartAsync();
@@ -59,7 +60,7 @@ public sealed class FriendshipsGrpcServiceTests
     }
 
     [TestMethod]
-    public async Task RemoveFriendship_InvalidSessionOrTarget_ReturnsControlledGrpcStatus()
+    public async Task RemoveFriendship_InvalidSessionOrTarget_ReturnsControlledGrpcStatusAsync()
     {
         // Arrange
         await using SocialGrpcTestHost server = await SocialGrpcTestHost.StartAsync();
@@ -93,7 +94,7 @@ public sealed class FriendshipsGrpcServiceTests
     [DataRow("range", StatusCode.Unknown)]
     [DataRow("targetArgument", StatusCode.InvalidArgument)]
     [DataRow("targetRange", StatusCode.InvalidArgument)]
-    public async Task RemoveFriendship_Failure_ReturnsSafeStatusWithoutRepeating(
+    public async Task RemoveFriendship_Failure_ReturnsSafeStatusWithoutRepeatingAsync(
         string failureKind, StatusCode expectedStatus)
     {
         // Arrange
@@ -117,7 +118,7 @@ public sealed class FriendshipsGrpcServiceTests
     [TestMethod]
     [DataRow(StatusCode.Cancelled)]
     [DataRow(StatusCode.PermissionDenied)]
-    public async Task RemoveFriendship_GrpcFailure_PreservesOriginalStatus(StatusCode status)
+    public async Task RemoveFriendship_GrpcFailure_PreservesOriginalStatusAsync(StatusCode status)
     {
         // Arrange
         var service = new FailingFriendshipsService(() =>
@@ -141,7 +142,7 @@ public sealed class FriendshipsGrpcServiceTests
     [TestMethod]
     [DataRow(0)]
     [DataRow(-1)]
-    public async Task RemoveFriendship_NonpositiveIdentifier_ReturnsInvalidArgument(
+    public async Task RemoveFriendship_NonpositiveIdentifier_ReturnsInvalidArgumentAsync(
         int friendUserId)
     {
         // Arrange
@@ -160,7 +161,7 @@ public sealed class FriendshipsGrpcServiceTests
     }
 
     [TestMethod]
-    public async Task RemoveFriendship_DeleteFails_PreservesPairAndReleasesCoordinator()
+    public async Task RemoveFriendship_DeleteFails_PreservesPairAndReleasesCoordinatorAsync()
     {
         // Arrange
         await using SocialGrpcTestHost server = await SocialGrpcTestHost.StartAsync();

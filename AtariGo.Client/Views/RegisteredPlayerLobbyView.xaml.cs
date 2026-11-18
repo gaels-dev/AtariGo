@@ -2,9 +2,9 @@ using System.Windows.Controls;
 
 namespace AtariGo.Client.Views
 {
-    public partial class RegisterPlayerLobbyView : UserControl
+    public partial class RegisteredPlayerLobbyView : UserControl
     {
-        public RegisterPlayerLobbyView()
+        public RegisteredPlayerLobbyView()
         {
             InitializeComponent();
         }

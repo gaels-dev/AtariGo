@@ -24,8 +24,9 @@ public sealed class GrpcProfileClient : IProfileClient
 
     public async Task<UserProfile> GetProfileAsync(CancellationToken cancellationToken)
     {
-        GetProfileResponse response = await _client.GetProfileAsync(
-            new GetProfileRequest(), CreateOptions(cancellationToken)).ResponseAsync;
+        GetProfileResponse response = await GrpcCallPolicy.ExecuteAsync(() =>
+            _client.GetProfileAsync(new GetProfileRequest(),
+                CreateOptions(cancellationToken)).ResponseAsync);
         return response.Profile;
     }
 
@@ -33,15 +34,13 @@ public sealed class GrpcProfileClient : IProfileClient
         UpdateProfileRequest request, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
-        return _client.UpdateProfileAsync(request, CreateOptions(cancellationToken)).ResponseAsync;
+        return GrpcCallPolicy.ExecuteAsync(() => _client.UpdateProfileAsync(
+            request, CreateOptions(cancellationToken)).ResponseAsync);
     }
 
     private CallOptions CreateOptions(CancellationToken cancellationToken)
     {
-        Metadata headers = new Metadata
-        {
-            { "authorization", $"Bearer {_sessionToken}" }
-        };
+        Metadata headers = GrpcCallPolicy.CreateHeaders(_sessionToken);
         return GrpcCallPolicy.CreateOptions(cancellationToken, headers);
     }
 }

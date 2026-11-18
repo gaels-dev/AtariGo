@@ -16,7 +16,7 @@ namespace AtariGo.Server.Tests.Authentication;
 public sealed class AuthenticationGrpcServiceTests
 {
     [TestMethod]
-    public async Task Login_ExistingSchema_CompletesWithoutAddingTablesOrColumns()
+    public async Task Login_ExistingSchema_CompletesWithoutAddingTablesOrColumnsAsync()
     {
         await using RecoveryTestHost host = await RecoveryTestHost.CreateAsync();
         await using AtariGoDbContext context = host.Database.CreateContext();
@@ -37,7 +37,7 @@ public sealed class AuthenticationGrpcServiceTests
     }
 
     [TestMethod]
-    public async Task VerifyLoginCode_ServerRestart_RequiresNewCredentialsAndNewCode()
+    public async Task VerifyLoginCode_ServerRestart_RequiresNewCredentialsAndNewCodeAsync()
     {
         await using RecoveryTestHost host = await RecoveryTestHost.CreateAsync();
         LoginResponse previous = await LoginAsync(host);
@@ -55,7 +55,7 @@ public sealed class AuthenticationGrpcServiceTests
     }
 
     [TestMethod]
-    public async Task VerifyLoginCode_CodeFromAnotherAttempt_DoesNotAuthorizeAccess()
+    public async Task VerifyLoginCode_CodeFromAnotherAttempt_DoesNotAuthorizeAccessAsync()
     {
         await using RecoveryTestHost host = await RecoveryTestHost.CreateAsync();
         LoginResponse first = await LoginAsync(host);
@@ -72,7 +72,7 @@ public sealed class AuthenticationGrpcServiceTests
     }
 
     [TestMethod]
-    public async Task ResendLoginCode_PreviousDeliveryFailsLate_DoesNotInvalidateNewerCode()
+    public async Task ResendLoginCode_PreviousDeliveryFailsLate_DoesNotInvalidateNewerCodeAsync()
     {
         await using RecoveryTestHost host = await RecoveryTestHost.CreateAsync();
         LoginResponse pending = await LoginAsync(host);
@@ -105,7 +105,7 @@ public sealed class AuthenticationGrpcServiceTests
     }
 
     [TestMethod]
-    public async Task ResendLoginCode_CancelledDuringDelivery_CannotRestoreCancelledAttempt()
+    public async Task ResendLoginCode_CancelledDuringDelivery_CannotRestoreCancelledAttemptAsync()
     {
         await using RecoveryTestHost host = await RecoveryTestHost.CreateAsync();
         LoginResponse pending = await LoginAsync(host);
@@ -136,7 +136,7 @@ public sealed class AuthenticationGrpcServiceTests
     }
 
     [TestMethod]
-    public async Task ResendLoginCode_CodeWriteFails_PreservesPreviousCodeAndPendingState()
+    public async Task ResendLoginCode_CodeWriteFails_PreservesPreviousCodeAndPendingStateAsync()
     {
         await using RecoveryTestHost host = await RecoveryTestHost.CreateAsync();
         LoginResponse pending = await LoginAsync(host);
@@ -157,7 +157,7 @@ public sealed class AuthenticationGrpcServiceTests
     }
 
     [TestMethod]
-    public async Task ResendLoginCode_PasswordRecoveredAfterMailFailure_RejectsOldAttempt()
+    public async Task ResendLoginCode_PasswordRecoveredAfterMailFailure_RejectsOldAttemptAsync()
     {
         await using RecoveryTestHost host = await RecoveryTestHost.CreateAsync();
         host.Email.FailDelivery = true;
@@ -176,7 +176,8 @@ public sealed class AuthenticationGrpcServiceTests
     }
 
     [TestMethod]
-    public async Task VerifyLoginCode_LastEmissionNearIssuanceDeadline_RetainsTenMinuteLifetime()
+    public async Task
+        VerifyLoginCode_LastEmissionNearIssuanceDeadline_RetainsTenMinuteLifetimeAsync()
     {
         await using RecoveryTestHost host = await RecoveryTestHost.CreateAsync();
         LoginResponse pending = await LoginAsync(host);
@@ -190,7 +191,7 @@ public sealed class AuthenticationGrpcServiceTests
     }
 
     [TestMethod]
-    public async Task Login_PendingStoreAtCapacity_DeniesNewAttemptAndPreservesExistingOne()
+    public async Task Login_PendingStoreAtCapacity_DeniesNewAttemptAndPreservesExistingOneAsync()
     {
         await using RecoveryTestHost host = await RecoveryTestHost.CreateAsync();
         host.Services.GetRequiredService<Microsoft.Extensions.Options.IOptions<
@@ -209,7 +210,7 @@ public sealed class AuthenticationGrpcServiceTests
     }
 
     [TestMethod]
-    public async Task Login_CustomResendDelay_ReturnsConfiguredDeadline()
+    public async Task Login_CustomResendDelay_ReturnsConfiguredDeadlineAsync()
     {
         await using RecoveryTestHost host = await RecoveryTestHost.CreateAsync();
         host.Services.GetRequiredService<Microsoft.Extensions.Options.IOptions<
@@ -227,7 +228,7 @@ public sealed class AuthenticationGrpcServiceTests
     [TestMethod]
     [DataRow(true)]
     [DataRow(false)]
-    public async Task Login_MissingEmailConfiguration_DeniesAccessWithoutPenalizingPlayer(
+    public async Task Login_MissingEmailConfiguration_DeniesAccessWithoutPenalizingPlayerAsync(
         bool missingSmtp)
     {
         await using RecoveryTestHost host = await RecoveryTestHost.CreateAsync();
@@ -251,7 +252,7 @@ public sealed class AuthenticationGrpcServiceTests
     }
 
     [TestMethod]
-    public async Task ResendLoginCode_ConcurrentConfirmation_ProducesOnlyOneAuthorizedSession()
+    public async Task ResendLoginCode_ConcurrentConfirmation_ProducesOnlyOneAuthorizedSessionAsync()
     {
         await using RecoveryTestHost host = await RecoveryTestHost.CreateAsync();
         LoginResponse pending = await LoginAsync(host);
@@ -274,7 +275,7 @@ public sealed class AuthenticationGrpcServiceTests
     }
 
     [TestMethod]
-    public async Task Login_CorrectPassword_RequiresCodeAndConsumesItExactlyOnce()
+    public async Task Login_CorrectPassword_RequiresCodeAndConsumesItExactlyOnceAsync()
     {
         await using RecoveryTestHost host = await RecoveryTestHost.CreateAsync();
         LoginResponse pending = await LoginAsync(host);
@@ -296,7 +297,7 @@ public sealed class AuthenticationGrpcServiceTests
     }
 
     [TestMethod]
-    public async Task Login_UnknownAccountAndWrongPassword_UseSamePublicResponse()
+    public async Task Login_UnknownAccountAndWrongPassword_UseSamePublicResponseAsync()
     {
         await using RecoveryTestHost host = await RecoveryTestHost.CreateAsync();
         LoginResponse unknown = await LoginAsync(host, "Missing", "Wrong8");
@@ -310,7 +311,8 @@ public sealed class AuthenticationGrpcServiceTests
     }
 
     [TestMethod]
-    public async Task VerifyLoginCode_CombinedFailures_LocksForFifteenMinutesAndResetsAfterExpiry()
+    public async Task
+        VerifyLoginCode_CombinedFailures_LocksForFifteenMinutesAndResetsAfterExpiryAsync()
     {
         await using RecoveryTestHost host = await RecoveryTestHost.CreateAsync();
         await LoginAsync(host, "Owner", "Wrong8");
@@ -333,7 +335,8 @@ public sealed class AuthenticationGrpcServiceTests
     }
 
     [TestMethod]
-    public async Task VerifyLoginCode_ExpiredAndResentCodes_PreserveAttemptsAndReplacePreviousCode()
+    public async Task
+        VerifyLoginCode_ExpiredAndResentCodes_PreserveAttemptsAndReplacePreviousCodeAsync()
     {
         await using RecoveryTestHost host = await RecoveryTestHost.CreateAsync();
         LoginResponse pending = await LoginAsync(host);
@@ -354,7 +357,7 @@ public sealed class AuthenticationGrpcServiceTests
     }
 
     [TestMethod]
-    public async Task ResendLoginCode_DeliveryFailsTwice_ClosesAttemptWithoutPenalizingPlayer()
+    public async Task ResendLoginCode_DeliveryFailsTwice_ClosesAttemptWithoutPenalizingPlayerAsync()
     {
         await using RecoveryTestHost host = await RecoveryTestHost.CreateAsync();
         host.Email.FailDelivery = true;
@@ -373,7 +376,8 @@ public sealed class AuthenticationGrpcServiceTests
     }
 
     [TestMethod]
-    public async Task VerifyLoginCode_SessionWriteFails_RollsBackConsumptionAndAllowsManualRetry()
+    public async Task
+        VerifyLoginCode_SessionWriteFails_RollsBackConsumptionAndAllowsManualRetryAsync()
     {
         await using RecoveryTestHost host = await RecoveryTestHost.CreateAsync();
         LoginResponse pending = await LoginAsync(host);
@@ -395,15 +399,20 @@ public sealed class AuthenticationGrpcServiceTests
     }
 
     [TestMethod]
-    public async Task Login_ActiveSuspension_ShowsReasonAndDeadlineWithoutSendingCode()
+    public async Task Login_ActiveSuspension_ShowsReasonAndDeadlineWithoutSendingCodeAsync()
     {
         await using RecoveryTestHost host = await RecoveryTestHost.CreateAsync();
         await using AtariGoDbContext context = host.Database.CreateContext();
         DateTime now = host.Clock.GetUtcNow().UtcDateTime;
         context.Sanctions.Add(new Sanction
         {
-            UserId = 1, AdministratorId = 2, SanctionType = "TemporarySuspension",
-            Reason = "Test suspension", StartedAt = now, EndsAt = now.AddDays(1), State = "Active"
+            UserId = 1,
+            AdministratorId = 2,
+            SanctionType = "TemporarySuspension",
+            Reason = "Test suspension",
+            StartedAt = now,
+            EndsAt = now.AddDays(1),
+            State = "Active"
         });
         await context.SaveChangesAsync();
         LoginResponse result = await LoginAsync(host);
@@ -414,7 +423,7 @@ public sealed class AuthenticationGrpcServiceTests
     }
 
     [TestMethod]
-    public async Task VerifyLoginCode_AccountSuspendedAfterIssuance_DoesNotCreateSession()
+    public async Task VerifyLoginCode_AccountSuspendedAfterIssuance_DoesNotCreateSessionAsync()
     {
         await using RecoveryTestHost host = await RecoveryTestHost.CreateAsync();
         LoginResponse pending = await LoginAsync(host);
@@ -428,7 +437,7 @@ public sealed class AuthenticationGrpcServiceTests
     }
 
     [TestMethod]
-    public async Task VerifyLoginCode_PasswordChanged_InvalidatesPendingLogin()
+    public async Task VerifyLoginCode_PasswordChanged_InvalidatesPendingLoginAsync()
     {
         await using RecoveryTestHost host = await RecoveryTestHost.CreateAsync();
         LoginResponse pending = await LoginAsync(host);
@@ -451,7 +460,7 @@ public sealed class AuthenticationGrpcServiceTests
     }
 
     [TestMethod]
-    public async Task VerifyLoginCode_PasswordRecovered_InvalidatesPendingLogin()
+    public async Task VerifyLoginCode_PasswordRecovered_InvalidatesPendingLoginAsync()
     {
         await using RecoveryTestHost host = await RecoveryTestHost.CreateAsync();
         LoginResponse pending = await LoginAsync(host);
@@ -464,7 +473,7 @@ public sealed class AuthenticationGrpcServiceTests
     }
 
     [TestMethod]
-    public async Task CancelLogin_ValidAttempt_InvalidatesCodeAndDoesNotCountFailure()
+    public async Task CancelLogin_ValidAttempt_InvalidatesCodeAndDoesNotCountFailureAsync()
     {
         await using RecoveryTestHost host = await RecoveryTestHost.CreateAsync();
         LoginResponse pending = await LoginAsync(host);
@@ -482,7 +491,7 @@ public sealed class AuthenticationGrpcServiceTests
     }
 
     [TestMethod]
-    public async Task ResendLoginCode_TooSoonOrAfterIssuanceWindow_DoesNotSendEmail()
+    public async Task ResendLoginCode_TooSoonOrAfterIssuanceWindow_DoesNotSendEmailAsync()
     {
         await using RecoveryTestHost host = await RecoveryTestHost.CreateAsync();
         LoginResponse pending = await LoginAsync(host);
@@ -502,7 +511,9 @@ public sealed class AuthenticationGrpcServiceTests
         var client = new Contracts.Authentication.AuthenticationClient(host.Channel);
         return client.LoginAsync(new LoginRequest
         {
-            Identifier = identifier, Password = password, CultureName = "es-MX"
+            Identifier = identifier,
+            Password = password,
+            CultureName = "es-MX"
         }, deadline: DateTime.UtcNow.AddSeconds(30)).ResponseAsync;
     }
 
@@ -511,7 +522,8 @@ public sealed class AuthenticationGrpcServiceTests
         var client = new Contracts.Authentication.AuthenticationClient(host.Channel);
         return client.VerifyLoginCodeAsync(new VerifyLoginCodeRequest
         {
-            ChallengeToken = token, Code = code
+            ChallengeToken = token,
+            Code = code
         }, deadline: DateTime.UtcNow.AddSeconds(30)).ResponseAsync;
     }
 
@@ -520,7 +532,8 @@ public sealed class AuthenticationGrpcServiceTests
         var client = new Contracts.Authentication.AuthenticationClient(host.Channel);
         return client.ResendLoginCodeAsync(new ResendLoginCodeRequest
         {
-            ChallengeToken = token, CultureName = "es-MX"
+            ChallengeToken = token,
+            CultureName = "es-MX"
         }, deadline: DateTime.UtcNow.AddSeconds(30)).ResponseAsync;
     }
 }

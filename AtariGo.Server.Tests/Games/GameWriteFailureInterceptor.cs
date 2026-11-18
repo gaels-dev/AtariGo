@@ -6,9 +6,15 @@ namespace AtariGo.Server.Tests.Games;
 
 internal sealed class GameWriteFailureInterceptor : DbCommandInterceptor
 {
-    public bool FailMoveWrite { get; set; }
+    public bool FailMoveWrite
+    {
+        get; set;
+    }
 
-    public bool SawReceiptWrite { get; private set; }
+    public bool SawReceiptWrite
+    {
+        get; private set;
+    }
 
     public override ValueTask<InterceptionResult<DbDataReader>> ReaderExecutingAsync(
         DbCommand command, CommandEventData eventData,

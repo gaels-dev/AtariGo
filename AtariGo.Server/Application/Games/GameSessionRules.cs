@@ -1,10 +1,11 @@
+using AtariGo.GameLogic.Models;
 
 namespace AtariGo.Server.Application.Games;
 
 public static class GameSessionRules
 {
     public const int MaximumPendingEvents = 128;
-    public const int BoardSize = 9;
+    public const int BoardSize = GameState.BoardSize;
     public const int PlayerCount = 2;
     public const int MaximumChatMessageLength = 100;
     public const int MaximumChatHistoryCount = 100;

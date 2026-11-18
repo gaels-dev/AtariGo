@@ -57,7 +57,8 @@ public sealed class LoginAttemptService
         {
             return new LoginOperationResult(LoginStatus.AccountRestricted)
             {
-                RestrictionReason = sanction.Reason, RetryAt = sanction.EndsAt
+                RestrictionReason = sanction.Reason,
+                RetryAt = sanction.EndsAt
             };
         }
         return user.State == DatabaseValues.AccountStates.Active

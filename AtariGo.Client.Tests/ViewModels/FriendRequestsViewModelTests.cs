@@ -1,6 +1,5 @@
 using System.Reflection;
 
-
 using AtariGo.Client.Services;
 using AtariGo.Client.Tests.Services;
 using AtariGo.Client.ViewModels;
@@ -13,7 +12,7 @@ namespace AtariGo.Client.Tests.ViewModels;
 public sealed class FriendRequestsViewModelTests
 {
     [TestMethod]
-    public async Task Dispose_PendingInitialLoad_CancelsRequestAndIgnoresLateResults()
+    public async Task Dispose_PendingInitialLoad_CancelsRequestAndIgnoresLateResultsAsync()
     {
         // Arrange
         INavigationService navigation = DispatchProxy.Create<INavigationService,
@@ -44,7 +43,7 @@ public sealed class FriendRequestsViewModelTests
     }
 
     [TestMethod]
-    public async Task Accept_ResponseAfterRemoval_DoesNotReinsertFriend()
+    public async Task Accept_ResponseAfterRemoval_DoesNotReinsertFriendAsync()
     {
         // Arrange
         INavigationService navigation = DispatchProxy.Create<INavigationService,
@@ -52,12 +51,15 @@ public sealed class FriendRequestsViewModelTests
         var incoming = new GetIncomingFriendRequestsResponse();
         incoming.Requests.Add(new IncomingFriendRequest
         {
-            RequestId = 1, RequesterUserId = 2, RequesterUserName = "Player"
+            RequestId = 1,
+            RequesterUserId = 2,
+            RequesterUserName = "Player"
         });
         var pending = new TaskCompletionSource<RespondToFriendRequestResponse>();
         var client = new StubFriendClient
         {
-            IncomingResponse = Task.FromResult(incoming), Response = pending.Task
+            IncomingResponse = Task.FromResult(incoming),
+            Response = pending.Task
         };
         var context = new FriendRequestsContext();
         using var viewModel = new FriendRequestsViewModel(navigation, context, client);

@@ -48,8 +48,10 @@ public sealed class LoginCodeDeliveryService
         string value = AuthenticationCodeProtector.CreateCode();
         var code = new AuthenticationCode
         {
-            UserId = pending.UserId, CodeType = LoginVerificationOptions.Purpose,
-            CodeHash = _protector.Protect(CreateScope(pending), value), CreatedAt = now,
+            UserId = pending.UserId,
+            CodeType = LoginVerificationOptions.Purpose,
+            CodeHash = _protector.Protect(CreateScope(pending), value),
+            CreatedAt = now,
             ExpiresAt = now.Add(LoginVerificationOptions.CodeLifetime)
         };
         _dbContext.AuthenticationCodes.Add(code);

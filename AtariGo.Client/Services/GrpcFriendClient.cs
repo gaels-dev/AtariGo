@@ -1,4 +1,3 @@
-
 using Grpc.Core;
 
 using AtariGo.Contracts;
@@ -29,36 +28,37 @@ public sealed class GrpcFriendClient : IFriendClient
         string query,
         CancellationToken cancellationToken = default)
     {
-        return _client.SearchUsersAsync(
+        ArgumentNullException.ThrowIfNull(query);
+        return GrpcCallPolicy.ExecuteAsync(() => _client.SearchUsersAsync(
             new SearchUsersRequest { Query = query },
             GrpcCallPolicy.CreateOptions(
                 cancellationToken,
-                CreateAuthorizationHeaders())).ResponseAsync;
+                GrpcCallPolicy.CreateHeaders(_sessionToken))).ResponseAsync);
     }
 
     public Task<SendFriendRequestResponse> SendFriendRequestAsync(
         int recipientUserId,
         CancellationToken cancellationToken = default)
     {
-        return _client.SendFriendRequestAsync(
+        return GrpcCallPolicy.ExecuteAsync(() => _client.SendFriendRequestAsync(
             new SendFriendRequestRequest
             {
                 RecipientUserId = recipientUserId
             },
             GrpcCallPolicy.CreateOptions(
                 cancellationToken,
-                CreateAuthorizationHeaders())).ResponseAsync;
+                GrpcCallPolicy.CreateHeaders(_sessionToken))).ResponseAsync);
     }
 
     public Task<GetIncomingFriendRequestsResponse>
         GetIncomingFriendRequestsAsync(
             CancellationToken cancellationToken = default)
     {
-        return _client.GetIncomingFriendRequestsAsync(
+        return GrpcCallPolicy.ExecuteAsync(() => _client.GetIncomingFriendRequestsAsync(
             new GetIncomingFriendRequestsRequest(),
             GrpcCallPolicy.CreateOptions(
                 cancellationToken,
-                CreateAuthorizationHeaders())).ResponseAsync;
+                GrpcCallPolicy.CreateHeaders(_sessionToken))).ResponseAsync);
     }
 
     public Task<RespondToFriendRequestResponse>
@@ -67,7 +67,7 @@ public sealed class GrpcFriendClient : IFriendClient
             bool accept,
             CancellationToken cancellationToken = default)
     {
-        return _client.RespondToFriendRequestAsync(
+        return GrpcCallPolicy.ExecuteAsync(() => _client.RespondToFriendRequestAsync(
             new RespondToFriendRequestRequest
             {
                 RequestId = requestId,
@@ -75,38 +75,31 @@ public sealed class GrpcFriendClient : IFriendClient
             },
             GrpcCallPolicy.CreateOptions(
                 cancellationToken,
-                CreateAuthorizationHeaders())).ResponseAsync;
+                GrpcCallPolicy.CreateHeaders(_sessionToken))).ResponseAsync);
     }
 
     public Task<ListFriendRequestsBySenderResponse> ListFriendRequestsBySenderAsync(
         string pageToken,
         CancellationToken cancellationToken = default)
     {
-        return _client.ListFriendRequestsBySenderAsync(
+        ArgumentNullException.ThrowIfNull(pageToken);
+        return GrpcCallPolicy.ExecuteAsync(() => _client.ListFriendRequestsBySenderAsync(
             new ListFriendRequestsBySenderRequest
             {
                 Filter = FriendRequestFilter.Pending,
                 Page = new PageRequest { PageToken = pageToken }
             },
             GrpcCallPolicy.CreateOptions(cancellationToken,
-                CreateAuthorizationHeaders())).ResponseAsync;
+                GrpcCallPolicy.CreateHeaders(_sessionToken))).ResponseAsync);
     }
 
     public Task<CancelFriendRequestResponse> CancelFriendRequestAsync(
         long requestId,
         CancellationToken cancellationToken = default)
     {
-        return _client.CancelFriendRequestAsync(
+        return GrpcCallPolicy.ExecuteAsync(() => _client.CancelFriendRequestAsync(
             new CancelFriendRequestRequest { RequestId = requestId },
             GrpcCallPolicy.CreateOptions(cancellationToken,
-                CreateAuthorizationHeaders())).ResponseAsync;
-    }
-
-    private Metadata CreateAuthorizationHeaders()
-    {
-        return new Metadata
-        {
-            { "authorization", $"Bearer {_sessionToken}" }
-        };
+                GrpcCallPolicy.CreateHeaders(_sessionToken))).ResponseAsync);
     }
 }

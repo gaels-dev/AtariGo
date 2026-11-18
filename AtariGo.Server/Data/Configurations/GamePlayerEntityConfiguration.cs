@@ -26,10 +26,10 @@ public sealed class GamePlayerEntityConfiguration : IEntityTypeConfiguration<Gam
             .HasFilter("([UserId] IS NOT NULL)");
 
         entity.HasIndex(gamePlayer => new
-            {
-                gamePlayer.GameId,
-                gamePlayer.GuestIdentityId
-            }, "UX_GamePlayers_Game_GuestIdentity")
+        {
+            gamePlayer.GameId,
+            gamePlayer.GuestIdentityId
+        }, "UX_GamePlayers_Game_GuestIdentity")
             .IsUnique()
             .HasFilter("([GuestIdentityId] IS NOT NULL)");
 

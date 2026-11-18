@@ -19,7 +19,8 @@ public sealed class RoomInvitationEmailContentTests
         // Arrange
         var invitation = new RoomInvitationEntry(1, 42, DateTimeOffset.MaxValue)
         {
-            RoomCode = "ABCDEF1234", Sender = new LobbyParticipant(1, "Host"),
+            RoomCode = "ABCDEF1234",
+            Sender = new LobbyParticipant(1, "Host"),
             Recipient = new LobbyParticipant(2, "Friend")
         };
 

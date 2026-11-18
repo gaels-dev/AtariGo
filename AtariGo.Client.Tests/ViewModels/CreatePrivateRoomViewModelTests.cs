@@ -12,7 +12,7 @@ namespace AtariGo.Client.Tests.ViewModels;
 public sealed class CreatePrivateRoomViewModelTests
 {
     [TestMethod]
-    public async Task CreateRoomCommand_ConfirmedByServer_OpensPrivateLobby()
+    public async Task CreateRoomCommand_ConfirmedByServer_OpensPrivateLobbyAsync()
     {
         // Arrange
         INavigationService navigation =
@@ -35,7 +35,7 @@ public sealed class CreatePrivateRoomViewModelTests
     }
 
     [TestMethod]
-    public async Task CreateRoomCommand_EmailRecipient_PreservesSelectionInPrivateLobby()
+    public async Task CreateRoomCommand_EmailRecipient_PreservesSelectionInPrivateLobbyAsync()
     {
         // Arrange
         INavigationService navigation =

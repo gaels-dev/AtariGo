@@ -76,7 +76,10 @@ public sealed class GameCommandService
         if (previous is not null)
         {
             GameOperationResult advanced = await AdvanceAsync(operation, areBothConnected);
-            outcome = advanced with { ActionResult = previous };
+            outcome = advanced with
+            {
+                ActionResult = previous
+            };
         }
         else
         {
@@ -96,9 +99,15 @@ public sealed class GameCommandService
         {
             nextVersion++;
         }
-        result = result with { Version = nextVersion };
+        result = result with
+        {
+            Version = nextVersion
+        };
         await _store.SaveActionAsync(context, result, operation.Progress);
-        return CreateResult(operation.Game, context.Runtime) with { ActionResult = result };
+        return CreateResult(operation.Game, context.Runtime) with
+        {
+            ActionResult = result
+        };
     }
 
     private static GameActionContext CreateActionContext(GameOperationContext operation,

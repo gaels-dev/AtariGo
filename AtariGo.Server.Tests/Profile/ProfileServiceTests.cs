@@ -1,7 +1,6 @@
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 
-using AtariGo.Server.Application.Authentication;
 using AtariGo.Server.Application.Leaderboard;
 using AtariGo.Server.Application.Profile;
 using AtariGo.Server.Data;
@@ -13,7 +12,7 @@ namespace AtariGo.Server.Tests.Profile;
 public sealed class ProfileServiceTests
 {
     [TestMethod]
-    public async Task GetAsync_ReturnsProfileWithCompletedWins()
+    public async Task GetAsync_CompletedGames_ReturnsProfileWithWinsAsync()
     {
         // Arrange
         await using SqliteConnection connection = await CreateDatabaseAsync();
@@ -32,7 +31,7 @@ public sealed class ProfileServiceTests
     }
 
     [TestMethod]
-    public async Task UpdateAsync_SavesUserNameAndAvatarTogether()
+    public async Task UpdateAsync_ValidProfile_SavesUserNameAndAvatarTogetherAsync()
     {
         // Arrange
         await using SqliteConnection connection = await CreateDatabaseAsync();
@@ -55,7 +54,7 @@ public sealed class ProfileServiceTests
     }
 
     [TestMethod]
-    public async Task UpdateAsync_RejectsInvalidAndTakenNamesWithoutChangingProfile()
+    public async Task UpdateAsync_InvalidOrTakenName_PreservesProfileAsync()
     {
         // Arrange
         await using SqliteConnection connection = await CreateDatabaseAsync();
@@ -81,7 +80,7 @@ public sealed class ProfileServiceTests
     }
 
     [TestMethod]
-    public async Task UpdateAsync_RequiresCompletedWinsForLockedAvatars()
+    public async Task UpdateAsync_LockedAvatar_RequiresCompletedWinsAsync()
     {
         // Arrange
         await using SqliteConnection connection = await CreateDatabaseAsync();
@@ -115,7 +114,7 @@ public sealed class ProfileServiceTests
     }
 
     [TestMethod]
-    public async Task LeaderboardService_IncludesSavedAvatar()
+    public async Task GetTopPlayersAsync_UpdatedProfile_IncludesSavedAvatarAsync()
     {
         // Arrange
         await using SqliteConnection connection = await CreateDatabaseAsync();

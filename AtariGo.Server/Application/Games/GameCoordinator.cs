@@ -1,3 +1,5 @@
+using AtariGo.Server.Concurrency;
+
 namespace AtariGo.Server.Application.Games;
 
 public sealed class GameCoordinator : IDisposable, IAsyncDisposable
@@ -21,7 +23,7 @@ public sealed class GameCoordinator : IDisposable, IAsyncDisposable
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(definition);
-        using GameOperationLease lease = await _operations.EnterAsync(
+        using AsyncOperationLease lease = await _operations.EnterAsync(
             definition.GameId, cancellationToken);
         using IServiceScope scope = _scopeFactory.CreateScope();
         GameCommandService commands = scope.ServiceProvider
@@ -52,7 +54,7 @@ public sealed class GameCoordinator : IDisposable, IAsyncDisposable
     {
         ArgumentNullException.ThrowIfNull(connection);
         ArgumentNullException.ThrowIfNull(command);
-        using GameOperationLease lease = await _operations.EnterAsync(
+        using AsyncOperationLease lease = await _operations.EnterAsync(
             connection.GameId, cancellationToken);
         if (!_registry.IsCurrent(connection))
         {
@@ -72,7 +74,7 @@ public sealed class GameCoordinator : IDisposable, IAsyncDisposable
 
     public async Task AdvanceAsync(long gameId, CancellationToken cancellationToken)
     {
-        using GameOperationLease lease = await _operations.EnterAsync(gameId, cancellationToken);
+        using AsyncOperationLease lease = await _operations.EnterAsync(gameId, cancellationToken);
         using IServiceScope scope = _scopeFactory.CreateScope();
         GameCommandService commands = scope.ServiceProvider
             .GetRequiredService<GameCommandService>();

@@ -7,5 +7,8 @@ public sealed record RoomInvitationResult(
     RoomInvitationEntry? Invitation = null,
     PrivateRoom? Room = null)
 {
-    public int RetryAfterSeconds { get; init; }
+    public int RetryAfterSeconds
+    {
+        get; init;
+    }
 }

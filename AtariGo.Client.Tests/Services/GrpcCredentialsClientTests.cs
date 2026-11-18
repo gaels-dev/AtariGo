@@ -13,7 +13,7 @@ namespace AtariGo.Client.Tests.Services;
 public sealed class GrpcCredentialsClientTests
 {
     [TestMethod]
-    public async Task ChangePassword_TransportFailures_PreservesOptionsAndNeverRetries()
+    public async Task ChangePassword_TransportFailures_PreservesOptionsAndNeverRetriesAsync()
     {
         // Arrange
         using var connection = new GrpcClientConnection(new Uri("https://localhost:7061"));

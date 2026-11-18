@@ -1,6 +1,5 @@
 using Microsoft.Extensions.Logging.Abstractions;
 
-
 using AtariGo.Server.Application.Rooms;
 using AtariGo.Server.Application.Sessions;
 
@@ -13,7 +12,7 @@ public sealed class RoomsServiceTests
     private const long SavedGameId = 42;
 
     [TestMethod]
-    public async Task ReserveStart_ConcurrentRequests_PublishesOnlyConfirmedGame()
+    public async Task ReserveStart_ConcurrentRequests_PublishesOnlyConfirmedGameAsync()
     {
         // Arrange
         var service = new RoomsService(
@@ -72,7 +71,7 @@ public sealed class RoomsServiceTests
     }
 
     [TestMethod]
-    public void CancelStart_ReservationReleasedForRetry()
+    public void CancelStart_ActiveReservation_ReleasesForRetry()
     {
         // Arrange
         var service = new RoomsService(
@@ -95,7 +94,7 @@ public sealed class RoomsServiceTests
     }
 
     [TestMethod]
-    public async Task UpdateRoomConfiguration_Host_UpdatesBothObserversAndStartConfiguration()
+    public async Task UpdateRoomConfiguration_Host_UpdatesBothObserversAndStartConfigurationAsync()
     {
         // Arrange
         var service = new RoomsService(
@@ -207,7 +206,7 @@ public sealed class RoomsServiceTests
     }
 
     [TestMethod]
-    public async Task UpdateRoomConfiguration_UpdateBeforeStart_RejectsStaleStartAndUpdate()
+    public async Task UpdateRoomConfiguration_UpdateBeforeStart_RejectsStaleStartAndUpdateAsync()
     {
         // Arrange
         var service = new RoomsService(
@@ -249,7 +248,10 @@ public sealed class RoomsServiceTests
         RoomOperationResult reserved = service.UpdateRoomConfiguration(command, room.Host.UserId);
         RoomOperationResult started = service.CompleteStart(reservation, SavedGameId);
         RoomOperationResult completed = service.UpdateRoomConfiguration(
-            command with { ExpectedVersion = started.Room!.Version }, room.Host.UserId);
+            command with
+            {
+                ExpectedVersion = started.Room!.Version
+            }, room.Host.UserId);
 
         // Assert
         Assert.AreEqual(RoomOperationStatus.StartInProgress, reserved.Status);
@@ -274,7 +276,10 @@ public sealed class RoomsServiceTests
         service.LeaveRoom(room.Host.UserId, room.RoomId);
         RoomOperationResult closed = service.UpdateRoomConfiguration(command, room.Host.UserId);
         RoomOperationResult unknown = service.UpdateRoomConfiguration(
-            command with { RoomId = int.MaxValue }, room.Host.UserId);
+            command with
+            {
+                RoomId = int.MaxValue
+            }, room.Host.UserId);
 
         // Assert
         Assert.AreEqual(RoomOperationStatus.Success, unchanged.Status);

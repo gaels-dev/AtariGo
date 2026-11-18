@@ -5,10 +5,8 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Windows.Input;
 
-using Grpc.Core;
-
-using AtariGo.Client.Commands;
 using AtariGo.Client.Models;
+using AtariGo.Client.Commands;
 using AtariGo.Client.Services;
 using AtariGo.Contracts;
 
@@ -168,17 +166,35 @@ public sealed class RoomInvitationsViewModel : ViewModelBase, IDisposable
     public bool CanRespond => CanInteract && IsIncoming && IsAcceptanceAllowed
         && SelectedInvitation is { IsPending: true };
 
-    public ICommand OpenCommand { get; }
+    public ICommand OpenCommand
+    {
+        get;
+    }
 
-    public ICommand CloseCommand { get; }
+    public ICommand CloseCommand
+    {
+        get;
+    }
 
-    public ICommand SendCommand { get; }
+    public ICommand SendCommand
+    {
+        get;
+    }
 
-    public ICommand SendEmailCommand { get; }
+    public ICommand SendEmailCommand
+    {
+        get;
+    }
 
-    public ICommand AcceptCommand { get; }
+    public ICommand AcceptCommand
+    {
+        get;
+    }
 
-    public ICommand RejectCommand { get; }
+    public ICommand RejectCommand
+    {
+        get;
+    }
 
     public void RequestRefresh()
     {
@@ -297,8 +313,10 @@ public sealed class RoomInvitationsViewModel : ViewModelBase, IDisposable
     {
         var request = new SendRoomInvitationRequest
         {
-            RoomId = _roomId, RecipientUserId = friend.UserId,
-            DeliveryChannel = channel, CultureName = CultureInfo.CurrentUICulture.Name
+            RoomId = _roomId,
+            RecipientUserId = friend.UserId,
+            DeliveryChannel = channel,
+            CultureName = CultureInfo.CurrentUICulture.Name
         };
         SetBusy(true);
         try
@@ -334,7 +352,8 @@ public sealed class RoomInvitationsViewModel : ViewModelBase, IDisposable
 
         var request = new RespondRoomInvitationRequest
         {
-            InvitationId = SelectedInvitation!.Invitation.InvitationId, Accept = accept
+            InvitationId = SelectedInvitation!.Invitation.InvitationId,
+            Accept = accept
         };
         SetBusy(true);
         try
@@ -439,12 +458,7 @@ public sealed class RoomInvitationsViewModel : ViewModelBase, IDisposable
 
     private static string GetMutationFailureKey(Exception exception)
     {
-        if (exception is not RpcException failure)
-        {
-            return "Err_Unconfirmed";
-        }
-
-        return failure.Status.Detail switch
+        return GrpcClientFailures.GetErrorCode(exception) switch
         {
             "NotFriends" => "Err_NotFriends",
             "RecipientOffline" => "Err_RecipientOffline",
@@ -461,7 +475,7 @@ public sealed class RoomInvitationsViewModel : ViewModelBase, IDisposable
     {
         if (!_isDisposed)
         {
-            Message = GrpcFailureMessages.GetMessage(exception);
+            Message = ClientFailureMessages.GetMessage(exception);
         }
     }
 

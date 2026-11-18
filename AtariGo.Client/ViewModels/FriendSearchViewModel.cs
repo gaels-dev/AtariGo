@@ -2,8 +2,7 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Windows.Input;
 
-using Grpc.Core;
-
+using AtariGo.Client.Models;
 using AtariGo.Client.Commands;
 using AtariGo.Client.Properties;
 using AtariGo.Client.Services;
@@ -81,13 +80,24 @@ namespace AtariGo.Client.ViewModels
 
         public ObservableCollection<FriendSearchResultViewModel>
             SearchResults
-        { get; }
+        {
+            get;
+        }
 
-        public ICommand SearchCommand { get; }
+        public ICommand SearchCommand
+        {
+            get;
+        }
 
-        public ICommand AddFriendCommand { get; }
+        public ICommand AddFriendCommand
+        {
+            get;
+        }
 
-        public ICommand BackCommand { get; }
+        public ICommand BackCommand
+        {
+            get;
+        }
 
         public void Dispose()
         {
@@ -173,6 +183,12 @@ namespace AtariGo.Client.ViewModels
 
             _lifetimeToken.ThrowIfCancellationRequested();
 
+            ApplyRequestResponse(response, player);
+        }
+
+        private void ApplyRequestResponse(SendFriendRequestResponse response,
+            FriendSearchResultViewModel player)
+        {
             StatusMessage = response.Status switch
             {
                 FriendRequestStatus.Sent =>
@@ -209,10 +225,10 @@ namespace AtariGo.Client.ViewModels
                 return;
             }
 
-            _ = GrpcFailureMessages.GetMessage(exception);
+            _ = ClientFailureMessages.GetMessage(exception);
 
-            StatusMessage = exception is RpcException rpcException
-                && rpcException.StatusCode == StatusCode.Unauthenticated
+            ClientFailureReason reason = GrpcClientFailures.GetReason(exception);
+            StatusMessage = reason == ClientFailureReason.SessionExpired
                     ? GetLocalizedMessage("FriendSearch_Err_SessionExpired")
                     : GetLocalizedMessage("FriendSearch_Err_Service");
         }

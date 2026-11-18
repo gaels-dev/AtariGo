@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 
+using AtariGo.Server.Concurrency;
 using AtariGo.Server.Data;
 using AtariGo.Server.Data.Entities;
 using AtariGo.Server.Security;
@@ -53,7 +54,8 @@ public sealed class LoginChallengeService
         IssuedSessionToken token = _tokens.Create();
         var pending = new PendingLogin
         {
-            UserId = user.UserId, TokenHash = token.Hash,
+            UserId = user.UserId,
+            TokenHash = token.Hash,
             IssueUntil = _attempts.UtcNow.Add(LoginVerificationOptions.IssuanceLifetime)
         };
         LoginCodeDelivery delivery = _delivery.Prepare(user, pending, cultureName);
@@ -61,7 +63,10 @@ public sealed class LoginChallengeService
         return new LoginPreparation(CreatePendingResult(context) with
         {
             ChallengeToken = token.Value
-        }, delivery) { StartsLogin = true };
+        }, delivery)
+        {
+            StartsLogin = true
+        };
     }
 
     public async Task<LoginOperationResult> SendAsync(LoginPreparation preparation,
@@ -92,7 +97,7 @@ public sealed class LoginChallengeService
     {
         ArgumentNullException.ThrowIfNull(command);
         string hash = GetTokenHash(command.ChallengeToken);
-        using PendingLoginLease lease = await _pending.EnterAsync(hash, cancellationToken);
+        using AsyncOperationLease lease = await _pending.EnterAsync(hash, cancellationToken);
         _dbContext.ChangeTracker.Clear();
         await using IDbContextTransaction transaction = await _dbContext.Database
             .BeginTransactionAsync(cancellationToken);
@@ -110,7 +115,7 @@ public sealed class LoginChallengeService
         ArgumentNullException.ThrowIfNull(command);
         LoginPreparation preparation;
         string hash = GetTokenHash(command.ChallengeToken);
-        using (PendingLoginLease lease = await _pending.EnterAsync(hash, cancellationToken))
+        using (AsyncOperationLease lease = await _pending.EnterAsync(hash, cancellationToken))
         {
             _dbContext.ChangeTracker.Clear();
             await using IDbContextTransaction transaction = await _dbContext.Database
@@ -125,7 +130,7 @@ public sealed class LoginChallengeService
     public async Task CancelAsync(string token, CancellationToken cancellationToken)
     {
         string hash = GetTokenHash(token);
-        using PendingLoginLease lease = await _pending.EnterAsync(hash, cancellationToken);
+        using AsyncOperationLease lease = await _pending.EnterAsync(hash, cancellationToken);
         _dbContext.ChangeTracker.Clear();
         await using IDbContextTransaction transaction = await _dbContext.Database
             .BeginTransactionAsync(cancellationToken);
@@ -141,7 +146,7 @@ public sealed class LoginChallengeService
         bool sent, CancellationToken cancellationToken)
     {
         string hash = GetTokenHash(preparation.Result.ChallengeToken);
-        using PendingLoginLease lease = await _pending.EnterAsync(hash, cancellationToken);
+        using AsyncOperationLease lease = await _pending.EnterAsync(hash, cancellationToken);
         _dbContext.ChangeTracker.Clear();
         await using IDbContextTransaction transaction = await _dbContext.Database
             .BeginTransactionAsync(cancellationToken);
@@ -251,13 +256,17 @@ public sealed class LoginChallengeService
         IssuedSessionToken token = _tokens.Create();
         _dbContext.Sessions.Add(new Session
         {
-            UserId = context.User.UserId, SessionTokenHash = token.Hash,
-            StartedAt = now, LastActivityAt = now, ExpiresAt = now.Add(sessionLifetime),
+            UserId = context.User.UserId,
+            SessionTokenHash = token.Hash,
+            StartedAt = now,
+            LastActivityAt = now,
+            ExpiresAt = now.Add(sessionLifetime),
             State = DatabaseValues.SessionStates.Active
         });
         return new LoginOperationResult(LoginStatus.Success)
         {
-            UserId = context.User.UserId, UserName = context.User.UserName,
+            UserId = context.User.UserId,
+            UserName = context.User.UserName,
             SessionToken = token.Value
         };
     }
@@ -302,7 +311,10 @@ public sealed class LoginChallengeService
                 && item.CodeType == LoginVerificationOptions.Purpose, cancellationToken);
         if (user?.Credential is null || code is null || code.UsedAt is not null)
         {
-            _pending.Publish(pending with { IsClosed = true });
+            _pending.Publish(pending with
+            {
+                IsClosed = true
+            });
             return null;
         }
         return new PendingLoginContext(user, pending, code);
@@ -315,7 +327,10 @@ public sealed class LoginChallengeService
         await transaction.CommitAsync(cancellationToken);
         if (context is not null)
         {
-            _pending.Publish(context.Pending with { CodeId = context.Code.AuthenticationCodeId });
+            _pending.Publish(context.Pending with
+            {
+                CodeId = context.Code.AuthenticationCodeId
+            });
         }
     }
 
@@ -327,7 +342,10 @@ public sealed class LoginChallengeService
 
     private void Close(PendingLoginContext context)
     {
-        context.Pending = context.Pending with { IsClosed = true };
+        context.Pending = context.Pending with
+        {
+            IsClosed = true
+        };
         context.Code.UsedAt = _attempts.UtcNow;
     }
 
@@ -338,7 +356,8 @@ public sealed class LoginChallengeService
         string masked = separator > 0 ? email[..1] + "***" + email[separator..] : "***";
         return new LoginOperationResult(LoginStatus.ChallengeRequired)
         {
-            MaskedEmail = masked, CodeExpiresAt = context.Code.ExpiresAt,
+            MaskedEmail = masked,
+            CodeExpiresAt = context.Code.ExpiresAt,
             RetryAt = context.Code.CreatedAt.Add(_delivery.ResendDelay)
         };
     }

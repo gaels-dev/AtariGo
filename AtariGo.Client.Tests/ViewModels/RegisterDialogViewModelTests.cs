@@ -1,7 +1,6 @@
 using System.Globalization;
 using System.Reflection;
 
-
 using AtariGo.Client.Properties;
 using AtariGo.Client.Services;
 using AtariGo.Client.Tests.Services;

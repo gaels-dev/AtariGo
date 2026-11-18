@@ -96,7 +96,12 @@ public sealed class GameRulesEngine
         {
             winner = player;
         }
-        return state with { BlackCaptures = black, WhiteCaptures = white, Winner = winner };
+        return state with
+        {
+            BlackCaptures = black,
+            WhiteCaptures = white,
+            Winner = winner
+        };
     }
 
     private static string EncodeBoard(StoneColor[] board)

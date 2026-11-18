@@ -74,8 +74,10 @@ public sealed class AuthenticationGrpcService : Authentication.AuthenticationBas
     {
         var response = new LoginResponse
         {
-            Result = MapStatus(result.Status), ChallengeToken = result.ChallengeToken,
-            MaskedEmail = result.MaskedEmail, RestrictionReason = result.RestrictionReason,
+            Result = MapStatus(result.Status),
+            ChallengeToken = result.ChallengeToken,
+            MaskedEmail = result.MaskedEmail,
+            RestrictionReason = result.RestrictionReason,
             CodeExpiresAtUnixSeconds = ToUnixSeconds(result.CodeExpiresAt),
             RetryAtUnixSeconds = ToUnixSeconds(result.RetryAt)
         };
@@ -104,7 +106,8 @@ public sealed class AuthenticationGrpcService : Authentication.AuthenticationBas
     {
         var command = new LoginCommand
         {
-            Identifier = request.Identifier, Password = request.Password,
+            Identifier = request.Identifier,
+            Password = request.Password,
             CultureName = request.CultureName
         };
         try

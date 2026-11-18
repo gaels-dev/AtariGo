@@ -6,7 +6,6 @@ using AtariGo.Contracts;
 using AtariGo.Server.Application.Games;
 using AtariGo.Server.Application.Matchmaking;
 using AtariGo.Server.Application.Sessions;
-
 using SessionSnapshotModel = AtariGo.Server.Application.Games.GameSessionSnapshot;
 using ProtoSessionSnapshot = AtariGo.Contracts.GameSessionSnapshot;
 using ProtoChatRejectionReason = AtariGo.Contracts.ChatMessageRejectionReason;
@@ -425,6 +424,19 @@ public sealed class GameSessionGrpcService : GameSession.GameSessionBase
         return GameStoneState.Empty;
     }
 
+    private static void RequireActiveConnection(GameSessionConnection connection)
+    {
+        if (connection.IsRevoked)
+        {
+            throw SessionRequestAuthentication.CreateUnauthenticatedException();
+        }
+        if (connection.IsReplaced)
+        {
+            throw new RpcException(new Status(StatusCode.AlreadyExists,
+                "This player opened a newer game connection."));
+        }
+    }
+
     public override async Task Connect(
         IAsyncStreamReader<GameSessionClientEvent> requestStream,
         IServerStreamWriter<GameSessionServerEvent> responseStream,
@@ -499,19 +511,6 @@ public sealed class GameSessionGrpcService : GameSession.GameSessionBase
                 _coordinator.Disconnect(connection);
                 connection.Dispose();
             }
-        }
-    }
-
-    private static void RequireActiveConnection(GameSessionConnection connection)
-    {
-        if (connection.IsRevoked)
-        {
-            throw SessionRequestAuthentication.CreateUnauthenticatedException();
-        }
-        if (connection.IsReplaced)
-        {
-            throw new RpcException(new Status(StatusCode.AlreadyExists,
-                "This player opened a newer game connection."));
         }
     }
 }

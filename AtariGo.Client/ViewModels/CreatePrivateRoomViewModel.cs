@@ -43,9 +43,15 @@ namespace AtariGo.Client.ViewModels
                 _navigationService.NavigateToMainMenu);
         }
 
-        public IReadOnlyList<int> CaptureGoals { get; }
+        public IReadOnlyList<int> CaptureGoals
+        {
+            get;
+        }
 
-        public int EmailRecipientUserId { get; init; }
+        public int EmailRecipientUserId
+        {
+            get; init;
+        }
 
         public int SelectedCaptureGoal
         {
@@ -65,9 +71,15 @@ namespace AtariGo.Client.ViewModels
             private set => SetProperty(ref _errorMessage, value);
         }
 
-        public ICommand CreateRoomCommand { get; }
+        public ICommand CreateRoomCommand
+        {
+            get;
+        }
 
-        public ICommand CancelCommand { get; }
+        public ICommand CancelCommand
+        {
+            get;
+        }
 
         public void Dispose()
         {
@@ -98,7 +110,7 @@ namespace AtariGo.Client.ViewModels
 
         private void ShowFailure(Exception exception)
         {
-            ErrorMessage = GrpcFailureMessages.GetMessage(exception);
+            ErrorMessage = ClientFailureMessages.GetMessage(exception);
         }
     }
 }

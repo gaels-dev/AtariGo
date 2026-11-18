@@ -26,9 +26,15 @@ internal sealed class GameplaySessionTestContext : IAsyncDisposable
 
     public StubGameSessionClient Client { get; } = new StubGameSessionClient();
 
-    public GameplaySession Session { get; }
+    public GameplaySession Session
+    {
+        get;
+    }
 
-    public ConcurrentQueue<GameplaySessionUpdate> Updates { get; } =
+    public ConcurrentQueue<GameplaySessionUpdate> Updates
+    {
+        get;
+    } =
         new ConcurrentQueue<GameplaySessionUpdate>();
 
     public async Task StartAsync(long version = 1)

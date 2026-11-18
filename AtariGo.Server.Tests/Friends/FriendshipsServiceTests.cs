@@ -15,7 +15,7 @@ namespace AtariGo.Server.Tests.Friends;
 public sealed class FriendshipsServiceTests
 {
     [TestMethod]
-    public async Task RemoveFriendship_ExistingPair_RemovesOnlyPairAndNotifiesBothUsers()
+    public async Task RemoveFriendship_ExistingPair_RemovesOnlyPairAndNotifiesBothUsersAsync()
     {
         // Arrange
         await using SocialTestDatabase database = await SocialTestDatabase.CreateAsync();
@@ -23,11 +23,19 @@ public sealed class FriendshipsServiceTests
         await SeedFriendshipsAsync(context);
         using var mutations = new FriendMutationCoordinator();
         var registry = new SessionConnectionRegistry();
-        using SessionConnectionLease host = registry.Register(new SessionConnectionInfo(
-            1, 1, "Host", new[] { new FriendPresenceEntry(2, "GuestPlayer", false) }));
-        using SessionConnectionLease guest = registry.Register(new SessionConnectionInfo(
-            2, 2, "GuestPlayer", new[] { new FriendPresenceEntry(1, "Host", true) }));
-        while (host.OutboundEvents.Reader.TryRead(out _)) { }
+        using SessionConnectionLease host = registry.Register(
+            new SessionConnectionInfo(1, 1, "Host")
+            {
+                Friends = new[] { new FriendPresenceEntry(2, "GuestPlayer", false) }
+            });
+        using SessionConnectionLease guest = registry.Register(
+            new SessionConnectionInfo(2, 2, "GuestPlayer")
+            {
+                Friends = new[] { new FriendPresenceEntry(1, "Host", true) }
+            });
+        while (host.OutboundEvents.Reader.TryRead(out _))
+        {
+        }
         FriendshipsService service = CreateService(context, registry, mutations);
 
         // Act
@@ -50,7 +58,7 @@ public sealed class FriendshipsServiceTests
     }
 
     [TestMethod]
-    public async Task RemoveFriendship_InvalidSession_PreservesFriendships()
+    public async Task RemoveFriendship_InvalidSession_PreservesFriendshipsAsync()
     {
         // Arrange
         await using SocialTestDatabase database = await SocialTestDatabase.CreateAsync();
@@ -73,7 +81,7 @@ public sealed class FriendshipsServiceTests
     [DataRow(0, typeof(ArgumentOutOfRangeException))]
     [DataRow(-1, typeof(ArgumentOutOfRangeException))]
     [DataRow(1, typeof(ArgumentException))]
-    public async Task RemoveFriendship_InvalidTarget_RejectsWithoutDeleting(
+    public async Task RemoveFriendship_InvalidTarget_RejectsWithoutDeletingAsync(
         int friendUserId, Type expectedExceptionType)
     {
         // Arrange

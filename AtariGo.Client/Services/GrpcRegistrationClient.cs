@@ -1,4 +1,3 @@
-
 using Grpc.Core;
 
 using AtariGo.Client.Models;
@@ -26,9 +25,10 @@ namespace AtariGo.Client.Services
             string confirmationText,
             CancellationToken cancellationToken = default)
         {
+            ArgumentNullException.ThrowIfNull(confirmationText);
             ArgumentNullException.ThrowIfNull(registrationDraft);
 
-            return _client.RegisterAccountAsync(
+            return GrpcCallPolicy.ExecuteAsync(() => _client.RegisterAccountAsync(
                 new RegisterAccountRequest
                 {
                     UserName = registrationDraft.UserName,
@@ -37,7 +37,7 @@ namespace AtariGo.Client.Services
                     PasswordConfirmation = registrationDraft.PasswordConfirmation,
                     ConfirmationText = confirmationText
                 },
-                GrpcCallPolicy.CreateOptions(cancellationToken)).ResponseAsync;
+                GrpcCallPolicy.CreateOptions(cancellationToken)).ResponseAsync);
         }
     }
 }

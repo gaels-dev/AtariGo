@@ -7,15 +7,33 @@ public sealed record GameplaySessionUpdate(
     ClientFailureReason Failure,
     bool HasPendingAction)
 {
-    public GameSessionServerEvent? ServerEvent { get; init; }
+    public GameSessionServerEvent? ServerEvent
+    {
+        get; init;
+    }
 
-    public bool IsMatchingActionResult { get; init; }
+    public bool IsMatchingActionResult
+    {
+        get; init;
+    }
 
-    public bool IsSurrenderResult { get; init; }
+    public bool IsSurrenderResult
+    {
+        get; init;
+    }
 
-    public bool ChatSendFailed { get; init; }
+    public bool ChatSendFailed
+    {
+        get; init;
+    }
 
-    public bool InvalidSnapshot { get; init; }
+    public bool InvalidSnapshot
+    {
+        get; init;
+    }
 
-    public bool ConnectionStarted { get; init; }
+    public bool ConnectionStarted
+    {
+        get; init;
+    }
 }

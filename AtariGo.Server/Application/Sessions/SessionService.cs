@@ -66,11 +66,10 @@ public sealed class SessionService : ISessionService
         IReadOnlyList<FriendPresenceEntry> friends =
             await FindFriendsAsync(session.UserId, cancellationToken);
 
-        return new SessionConnectionInfo(
-            session.SessionId,
-            session.UserId,
-            session.User.UserName,
-            friends);
+        return new SessionConnectionInfo(session.SessionId, session.UserId, session.User.UserName)
+        {
+            Friends = friends
+        };
     }
 
     public async Task CloseConnectionAsync(

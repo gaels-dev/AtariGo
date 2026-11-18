@@ -1,4 +1,3 @@
-
 using Grpc.Core;
 using Grpc.Core.Interceptors;
 
@@ -25,7 +24,7 @@ namespace AtariGo.Client.Tests.Services
                 context.Method.Name,
                 context.Options,
                 request));
-            var response = (TResponse)(Activator.CreateInstance(typeof(TResponse))
+            TResponse response = (TResponse)(Activator.CreateInstance(typeof(TResponse))
                 ?? throw new InvalidOperationException("A response instance is required."));
 
             return new AsyncUnaryCall<TResponse>(

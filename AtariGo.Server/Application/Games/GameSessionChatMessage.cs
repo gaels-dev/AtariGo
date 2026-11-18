@@ -8,5 +8,8 @@ public sealed record GameSessionChatMessage
 
     public string Text { get; init; } = string.Empty;
 
-    public long SentAtUnixMilliseconds { get; init; }
+    public long SentAtUnixMilliseconds
+    {
+        get; init;
+    }
 }

@@ -61,9 +61,15 @@ public sealed class GameHistoryViewModel : ViewModelBase, IDisposable
 
     public string BackLabel => Localize("GameHistory_Btn_Back");
 
-    public ICommand RefreshCommand { get; }
+    public ICommand RefreshCommand
+    {
+        get;
+    }
 
-    public ICommand BackCommand { get; }
+    public ICommand BackCommand
+    {
+        get;
+    }
 
     public void Dispose()
     {

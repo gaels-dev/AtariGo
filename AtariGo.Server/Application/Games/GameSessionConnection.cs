@@ -17,28 +17,46 @@ public sealed class GameSessionConnection : IDisposable
         EventWriter = events.Writer;
     }
 
-    public bool IsReplaced { get; internal set; }
+    public bool IsReplaced
+    {
+        get; internal set;
+    }
 
-    public bool IsRevoked { get; internal set; }
+    public bool IsRevoked
+    {
+        get; internal set;
+    }
 
     public CancellationToken RevocationToken => _revocation.Token;
 
-    public long GameId { get; }
-
-    public string PlayerKey { get; }
-
-    public ChannelReader<GameSessionDelivery> Events { get; }
-
-    internal ChannelWriter<GameSessionDelivery> EventWriter { get; }
-
-    internal void Revoke()
+    public long GameId
     {
-        IsRevoked = true;
-        _revocation.Cancel();
+        get;
+    }
+
+    public string PlayerKey
+    {
+        get;
+    }
+
+    public ChannelReader<GameSessionDelivery> Events
+    {
+        get;
+    }
+
+    internal ChannelWriter<GameSessionDelivery> EventWriter
+    {
+        get;
     }
 
     public void Dispose()
     {
         _revocation.Dispose();
+    }
+
+    internal void Revoke()
+    {
+        IsRevoked = true;
+        _revocation.Cancel();
     }
 }

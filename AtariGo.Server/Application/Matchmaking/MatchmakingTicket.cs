@@ -12,13 +12,25 @@ public sealed class MatchmakingTicket
         Notifications = Channel.CreateUnbounded<MatchmakingEvent>();
     }
 
-    public MatchmakingPlayer Player { get; }
+    public MatchmakingPlayer Player
+    {
+        get;
+    }
 
     public ChannelReader<MatchmakingEvent> Events => Notifications.Reader;
 
-    internal Channel<MatchmakingEvent> Notifications { get; }
+    internal Channel<MatchmakingEvent> Notifications
+    {
+        get;
+    }
 
-    internal LinkedListNode<MatchmakingTicket>? QueueNode { get; set; }
+    internal LinkedListNode<MatchmakingTicket>? QueueNode
+    {
+        get; set;
+    }
 
-    internal PublicMatchState? Match { get; set; }
+    internal PublicMatchState? Match
+    {
+        get; set;
+    }
 }

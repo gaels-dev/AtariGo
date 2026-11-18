@@ -20,7 +20,8 @@ namespace AtariGo.Server.Tests.PasswordRecovery;
 public sealed class PasswordRecoveryTests
 {
     [TestMethod]
-    public async Task ResetPassword_ValidCode_ChangesCredentialRevokesConnectionsAndRejectsReuse()
+    public async Task
+        ResetPassword_ValidCode_ChangesCredentialRevokesConnectionsAndRejectsReuseAsync()
     {
         await using RecoveryTestHost host = await RecoveryTestHost.CreateAsync();
         await host.RequestAsync("Owner@example.test");
@@ -49,14 +50,16 @@ public sealed class PasswordRecoveryTests
     }
 
     [TestMethod]
-    public async Task ResetPassword_PreviouslyIssuedCode_ResetsWithoutSendingAnotherEmail()
+    public async Task ResetPassword_PreviouslyIssuedCode_ResetsWithoutSendingAnotherEmailAsync()
     {
         await using RecoveryTestHost host = await RecoveryTestHost.CreateAsync();
         await using AtariGoDbContext context = host.Database.CreateContext();
         DateTime now = host.Clock.GetUtcNow().UtcDateTime;
         context.AuthenticationCodes.Add(new AuthenticationCode
         {
-            UserId = 1, CodeType = "PasswordReset", CreatedAt = now,
+            UserId = 1,
+            CodeType = "PasswordReset",
+            CreatedAt = now,
             ExpiresAt = now.AddMinutes(10),
             CodeHash = "07DD21B1608634684E89426287BCC831AF61CDE9A01EB47F1C15B7E960124612"
         });
@@ -70,7 +73,7 @@ public sealed class PasswordRecoveryTests
     }
 
     [TestMethod]
-    public async Task ResetPassword_InvalidCodesAndPasswords_PreservesCredential()
+    public async Task ResetPassword_InvalidCodesAndPasswords_PreservesCredentialAsync()
     {
         await using RecoveryTestHost host = await RecoveryTestHost.CreateAsync();
         await host.RequestAsync();
@@ -109,7 +112,7 @@ public sealed class PasswordRecoveryTests
     }
 
     [TestMethod]
-    public async Task RequestPasswordRecovery_ResendExpiryAndDeliveryFailure_ProtectsCodes()
+    public async Task RequestPasswordRecovery_ResendExpiryAndDeliveryFailure_ProtectsCodesAsync()
     {
         await using RecoveryTestHost host = await RecoveryTestHost.CreateAsync();
         await host.RequestAsync("Unknown");
@@ -148,7 +151,7 @@ public sealed class PasswordRecoveryTests
     }
 
     [TestMethod]
-    public async Task ResetPassword_FailedWriteAndConcurrentRequests_PreservesAtomicity()
+    public async Task ResetPassword_FailedWriteAndConcurrentRequests_PreservesAtomicityAsync()
     {
         await using RecoveryTestHost host = await RecoveryTestHost.CreateAsync();
         await host.RequestAsync();
@@ -174,7 +177,10 @@ public sealed class PasswordRecoveryTests
     {
         return new GameSessionDefinition
         {
-            GameId = 1, CaptureGoal = 1, GameTimeSeconds = 300, TurnTimeSeconds = 30,
+            GameId = 1,
+            CaptureGoal = 1,
+            GameTimeSeconds = 300,
+            TurnTimeSeconds = 30,
             Player = new GameSessionParticipant("user:1", "Owner", "Black"),
             Opponent = new GameSessionParticipant("user:2", "Other", "White")
         };
@@ -201,11 +207,13 @@ public sealed class PasswordRecoveryTests
             .GetRequiredService<IAuthenticationService>();
         Assert.AreEqual(LoginStatus.InvalidCredentials, (await login.LoginAsync(new LoginCommand
         {
-            Identifier = "Owner", Password = RecoveryTestHost.OriginalPassword
+            Identifier = "Owner",
+            Password = RecoveryTestHost.OriginalPassword
         }, CancellationToken.None)).Status);
         Assert.AreEqual(LoginStatus.ChallengeRequired, (await login.LoginAsync(new LoginCommand
         {
-            Identifier = "Owner", Password = RecoveryTestHost.NewPassword
+            Identifier = "Owner",
+            Password = RecoveryTestHost.NewPassword
         }, CancellationToken.None)).Status);
     }
 }

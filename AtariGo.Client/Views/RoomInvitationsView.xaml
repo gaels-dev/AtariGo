@@ -39,7 +39,7 @@
                                 </Grid.ColumnDefinitions>
                                 <Ellipse Width="10" Height="10" Fill="#2E7D32"
                                          VerticalAlignment="Center" Margin="0,0,10,0"/>
-                                <TextBlock Grid.Column="1" Text="{Binding Username}"
+                                <TextBlock Grid.Column="1" Text="{Binding UserName}"
                                            FontSize="14" Foreground="#2C2A29"
                                            VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
                                 <Button Grid.Column="2" Margin="12,0,0,0"
@@ -73,7 +73,7 @@
         <StackPanel Margin="0,8,0,12" Visibility="{Binding IsOutgoing,
                     Converter={StaticResource BooleanToVisibilityConverter}}">
             <TextBlock Text="{Binding EmailFriendLabel}" Margin="0,0,0,6"/>
-            <ComboBox ItemsSource="{Binding EmailFriends}" DisplayMemberPath="Username"
+            <ComboBox ItemsSource="{Binding EmailFriends}" DisplayMemberPath="UserName"
                       SelectedItem="{Binding SelectedEmailFriend}" Height="32"
                       IsEnabled="{Binding CanSend}"/>
             <Button Content="{Binding SendEmailLabel}" Command="{Binding SendEmailCommand}"

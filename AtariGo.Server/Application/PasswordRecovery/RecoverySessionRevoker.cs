@@ -18,6 +18,7 @@ public sealed class RecoverySessionRevoker
 
     public void Disconnect(int userId, IReadOnlyList<long> sessionIds)
     {
+        ArgumentNullException.ThrowIfNull(sessionIds);
         foreach (long sessionId in sessionIds)
         {
             _sessions.DisconnectSession(sessionId);

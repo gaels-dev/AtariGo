@@ -24,7 +24,8 @@ public sealed class LoginVerificationDialogViewTests
         {
             var pending = new LoginAttemptResult
             {
-                Status = LoginAttemptStatus.ChallengeRequired, ChallengeToken = "pending"
+                Status = LoginAttemptStatus.ChallengeRequired,
+                ChallengeToken = "pending"
             };
             var client = new StubAuthenticationClient(_ => Task.FromResult(pending));
             using var model = new LoginVerificationDialogViewModel(client, pending, _ => { });

@@ -29,7 +29,7 @@ public sealed class GameHistoryGrpcServiceTests
     private const int RequestTimeoutSeconds = 10;
 
     [TestMethod]
-    public async Task ListGamesByPlayer_SqlServer_EnforcesOwnershipLimitAndReadOnlyAccess()
+    public async Task ListGamesByPlayer_SqlServer_EnforcesOwnershipLimitAndReadOnlyAccessAsync()
     {
         // Arrange
         await using SqlServerTestDatabase database = await SqlServerTestDatabase.CreateAsync();
@@ -71,7 +71,7 @@ public sealed class GameHistoryGrpcServiceTests
     }
 
     [TestMethod]
-    public async Task ListGamesByPlayer_IncompleteSummary_ReturnsErrorWithoutPartialHistory()
+    public async Task ListGamesByPlayer_IncompleteSummary_ReturnsErrorWithoutPartialHistoryAsync()
     {
         // Arrange
         await using SqlServerTestDatabase database = await SqlServerTestDatabase.CreateAsync();
@@ -168,21 +168,29 @@ public sealed class GameHistoryGrpcServiceTests
         {
             game.Room = new Room
             {
-                CreatorId = ownerId, InvitationCode = "H" + index.ToString("D5"),
-                State = "Active", CreatedAt = date
+                CreatorId = ownerId,
+                InvitationCode = "H" + index.ToString("D5"),
+                State = "Active",
+                CreatedAt = date
             };
         }
         game.GamePlayers.Add(new GamePlayer
         {
-            UserId = ownerId, StoneColor = "Black", TurnOrder = 1,
-            JoinedAt = date, Result = "Surrendered"
+            UserId = ownerId,
+            StoneColor = "Black",
+            TurnOrder = 1,
+            JoinedAt = date,
+            Result = "Surrendered"
         });
         game.GamePlayers.Add(new GamePlayer
         {
             UserId = isGuest ? null : 2,
             GuestIdentityId = isGuest ? Guid.NewGuid() : null,
             GuestName = isGuest ? "Guest-Rival" : null,
-            StoneColor = "White", TurnOrder = 2, JoinedAt = date, Result = "Won"
+            StoneColor = "White",
+            TurnOrder = 2,
+            JoinedAt = date,
+            Result = "Won"
         });
         return game;
     }

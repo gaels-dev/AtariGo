@@ -28,7 +28,7 @@ public sealed class MatchmakingGrpcServiceTests
     private const string GuestCredentialHeader = "x-guest-credential";
 
     [TestMethod]
-    public async Task SearchPublicMatch_PlayerLeavesCountdown_RequeuesRemainingPlayer()
+    public async Task SearchPublicMatch_PlayerLeavesCountdown_RequeuesRemainingPlayerAsync()
     {
         // Arrange
         await using WebApplication app = await StartServerAsync();
@@ -83,7 +83,7 @@ public sealed class MatchmakingGrpcServiceTests
     }
 
     [TestMethod]
-    public async Task SearchPublicMatch_CountdownCompletes_ReturnsTheSameGameToBothPlayers()
+    public async Task SearchPublicMatch_CountdownCompletes_ReturnsTheSameGameToBothPlayersAsync()
     {
         // Arrange
         ControlledPublicGameLifecycleService lifecycle = new ControlledPublicGameLifecycleService();
@@ -122,7 +122,7 @@ public sealed class MatchmakingGrpcServiceTests
     }
 
     [TestMethod]
-    public async Task SearchPublicMatch_AlreadySearching_ReturnsFailedPrecondition()
+    public async Task SearchPublicMatch_AlreadySearching_ReturnsFailedPreconditionAsync()
     {
         // Arrange
         await using WebApplication app = await StartServerAsync();

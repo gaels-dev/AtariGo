@@ -14,7 +14,7 @@ public sealed class FriendDirectoryGrpcServiceTests
     private const int TestTimeoutSeconds = 10;
 
     [TestMethod]
-    public async Task SentRequests_AuthenticatedSender_ListsAndCancelsOnlyOwnedRequests()
+    public async Task SentRequests_AuthenticatedSender_ListsAndCancelsOnlyOwnedRequestsAsync()
     {
         // Arrange
         await using SocialGrpcTestHost server = await SocialGrpcTestHost.StartAsync();
@@ -62,7 +62,7 @@ public sealed class FriendDirectoryGrpcServiceTests
     }
 
     [TestMethod]
-    public async Task ListSentRequests_InvalidPageOrSession_ReturnsControlledGrpcStatus()
+    public async Task ListSentRequests_InvalidPageOrSession_ReturnsControlledGrpcStatusAsync()
     {
         // Arrange
         await using SocialGrpcTestHost server = await SocialGrpcTestHost.StartAsync();
@@ -91,7 +91,7 @@ public sealed class FriendDirectoryGrpcServiceTests
     [TestMethod]
     [DataRow(0L)]
     [DataRow(-1L)]
-    public async Task RespondToFriendRequest_InvalidIdentifier_ReturnsInvalidArgument(
+    public async Task RespondToFriendRequest_InvalidIdentifier_ReturnsInvalidArgumentAsync(
         long requestId)
     {
         // Arrange
@@ -121,7 +121,7 @@ public sealed class FriendDirectoryGrpcServiceTests
     [DataRow("search", "argument", StatusCode.Unknown)]
     [DataRow("respond", "range", StatusCode.Unknown)]
     [DataRow("search", "query", StatusCode.InvalidArgument)]
-    public async Task FriendOperation_Failure_ReturnsSafeStatusWithoutRepeating(
+    public async Task FriendOperation_Failure_ReturnsSafeStatusWithoutRepeatingAsync(
         string operationName, string failureKind, StatusCode expectedStatus)
     {
         // Arrange
@@ -143,7 +143,7 @@ public sealed class FriendDirectoryGrpcServiceTests
     [TestMethod]
     [DataRow(StatusCode.Cancelled)]
     [DataRow(StatusCode.PermissionDenied)]
-    public async Task FriendOperation_GrpcFailure_PreservesOriginalStatus(StatusCode status)
+    public async Task FriendOperation_GrpcFailure_PreservesOriginalStatusAsync(StatusCode status)
     {
         // Arrange
         var service = new FailingFriendService(() =>
@@ -198,15 +198,22 @@ public sealed class FriendDirectoryGrpcServiceTests
             "search" => client.SearchUsersAsync(new SearchUsersRequest { Query = "Al" },
                 options).ResponseAsync,
             "send" => client.SendFriendRequestAsync(new SendFriendRequestRequest
-                { RecipientUserId = 2 }, options).ResponseAsync,
+            {
+                RecipientUserId = 2
+            }, options).ResponseAsync,
             "respond" => client.RespondToFriendRequestAsync(new RespondToFriendRequestRequest
-                { RequestId = 1, Accept = true }, options).ResponseAsync,
+            {
+                RequestId = 1,
+                Accept = true
+            }, options).ResponseAsync,
             "incoming" => client.GetIncomingFriendRequestsAsync(
                 new GetIncomingFriendRequestsRequest(), options).ResponseAsync,
             "sent" => client.ListFriendRequestsBySenderAsync(
                 new ListFriendRequestsBySenderRequest(), options).ResponseAsync,
             "cancel" => client.CancelFriendRequestAsync(new CancelFriendRequestRequest
-                { RequestId = 1 }, options).ResponseAsync,
+            {
+                RequestId = 1
+            }, options).ResponseAsync,
             _ => throw new ArgumentOutOfRangeException(nameof(operationName))
         };
     }

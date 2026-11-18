@@ -1,11 +1,12 @@
 using System.Net;
 
-using Grpc.Core;
-using Grpc.Net.Client;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.DependencyInjection;
+
+using Grpc.Core;
+using Grpc.Net.Client;
 
 using AtariGo.Contracts;
 using AtariGo.Server.Application.Games;
@@ -24,7 +25,7 @@ public sealed class RoomsGrpcServiceTests
     private const int TestTimeoutSeconds = 10;
 
     [TestMethod]
-    public async Task WatchRoom_TwoClients_ObserveSameParticipantsAndClosure()
+    public async Task WatchRoom_TwoClients_ObserveSameParticipantsAndClosureAsync()
     {
         // Arrange
         await using WebApplication app = await StartServerAsync();
@@ -77,7 +78,7 @@ public sealed class RoomsGrpcServiceTests
     }
 
     [TestMethod]
-    public async Task JoinRoom_ConcurrentRequests_AssignsExactlyOneOpponent()
+    public async Task JoinRoom_ConcurrentRequests_AssignsExactlyOneOpponentAsync()
     {
         // Arrange
         await using WebApplication app = await StartServerAsync();
@@ -101,7 +102,8 @@ public sealed class RoomsGrpcServiceTests
     }
 
     [TestMethod]
-    public async Task JoinRoom_InvalidAccess_RejectsUnknownCodeUnauthenticatedCallerAndGuessedId()
+    public async Task
+        JoinRoom_InvalidAccess_RejectsUnknownCodeUnauthenticatedCallerAndGuessedIdAsync()
     {
         // Arrange
         await using WebApplication app = await StartServerAsync();
@@ -128,7 +130,7 @@ public sealed class RoomsGrpcServiceTests
     }
 
     [TestMethod]
-    public async Task StartGame_TwoClients_ReceiveTheSameGameId()
+    public async Task StartGame_TwoClients_ReceiveTheSameGameIdAsync()
     {
         // Arrange
         await using WebApplication app = await StartServerAsync();
@@ -173,7 +175,7 @@ public sealed class RoomsGrpcServiceTests
     }
 
     [TestMethod]
-    public async Task UpdateRoomConfiguration_TwoClients_ReceiveConfirmedConfiguration()
+    public async Task UpdateRoomConfiguration_TwoClients_ReceiveConfirmedConfigurationAsync()
     {
         // Arrange
         await using WebApplication app = await StartServerAsync();
@@ -197,7 +199,9 @@ public sealed class RoomsGrpcServiceTests
             ExpectedVersion = joined.Room.Version,
             Configuration = new RoomConfiguration
             {
-                CaptureGoal = 3, GameTimeSeconds = 600, TurnTimeSeconds = 30
+                CaptureGoal = 3,
+                GameTimeSeconds = 600,
+                TurnTimeSeconds = 30
             }
         };
 
@@ -229,7 +233,7 @@ public sealed class RoomsGrpcServiceTests
     [DataRow("host", StatusCode.InvalidArgument)]
     [DataRow("stale", StatusCode.Aborted)]
     [DataRow("missing", StatusCode.InvalidArgument)]
-    public async Task UpdateRoomConfiguration_InvalidRequest_ReturnsControlledStatus(
+    public async Task UpdateRoomConfiguration_InvalidRequest_ReturnsControlledStatusAsync(
         string scenario, StatusCode expected)
     {
         // Arrange

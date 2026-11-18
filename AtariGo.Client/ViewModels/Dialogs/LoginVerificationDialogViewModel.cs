@@ -67,11 +67,20 @@ public sealed class LoginVerificationDialogViewModel : ViewModelBase, IDisposabl
 
     public string CancelLabel => LoginAttemptMessages.GetText("LoginVerification_Btn_Cancel");
 
-    public ICommand ConfirmCommand { get; }
+    public ICommand ConfirmCommand
+    {
+        get;
+    }
 
-    public ICommand ResendCommand { get; }
+    public ICommand ResendCommand
+    {
+        get;
+    }
 
-    public ICommand CancelCommand { get; }
+    public ICommand CancelCommand
+    {
+        get;
+    }
 
     public void Dispose()
     {

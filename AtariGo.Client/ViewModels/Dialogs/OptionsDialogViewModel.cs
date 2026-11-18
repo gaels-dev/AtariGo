@@ -52,9 +52,15 @@ namespace AtariGo.Client.ViewModels.Dialogs
             _ => "es"
         };
 
-        public IReadOnlyList<string> Languages { get; }
+        public IReadOnlyList<string> Languages
+        {
+            get;
+        }
 
-        public ICommand SaveAndCloseCommand { get; }
+        public ICommand SaveAndCloseCommand
+        {
+            get;
+        }
 
         private void SaveAndClose()
         {

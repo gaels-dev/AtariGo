@@ -25,9 +25,15 @@ internal sealed class GameSessionTestCallContext : ServerCallContext
 
     protected override Metadata ResponseTrailersCore { get; } = new Metadata();
 
-    protected override Status StatusCore { get; set; }
+    protected override Status StatusCore
+    {
+        get; set;
+    }
 
-    protected override WriteOptions? WriteOptionsCore { get; set; }
+    protected override WriteOptions? WriteOptionsCore
+    {
+        get; set;
+    }
 
     protected override AuthContext AuthContextCore => new AuthContext(null,
         new Dictionary<string, List<AuthProperty>>());

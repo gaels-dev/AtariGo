@@ -13,7 +13,7 @@ namespace AtariGo.Server.Tests.Rooms;
 public sealed class GameLifecycleServiceTests
 {
     [TestMethod]
-    public async Task StartGameAsync_PersistenceFails_ClearsTrackedGraphAndReleasesRoom()
+    public async Task StartGameAsync_PersistenceFails_ClearsTrackedGraphAndReleasesRoomAsync()
     {
         // Arrange
         DbContextOptions<AtariGoDbContext> options = new DbContextOptionsBuilder<AtariGoDbContext>()

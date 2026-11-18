@@ -36,7 +36,7 @@ public sealed class CredentialsGrpcServiceTests
     private const int DynamicPort = 0;
 
     [TestMethod]
-    public async Task ChangePassword_AuthenticatedRequest_ChangesHashAndPreservesSession()
+    public async Task ChangePassword_AuthenticatedRequest_ChangesHashAndPreservesSessionAsync()
     {
         await using SqlServerTestDatabase database = await SqlServerTestDatabase.CreateAsync();
         await SeedAsync(database);
@@ -52,12 +52,14 @@ public sealed class CredentialsGrpcServiceTests
             .GetRequiredService<IAuthenticationService>();
         LoginOperationResult oldLogin = await authentication.LoginAsync(new LoginCommand
         {
-            Identifier = "Owner", Password = OriginalPassword
+            Identifier = "Owner",
+            Password = OriginalPassword
         },
             CancellationToken.None);
         LoginOperationResult newLogin = await authentication.LoginAsync(new LoginCommand
         {
-            Identifier = "Owner", Password = NewPassword
+            Identifier = "Owner",
+            Password = NewPassword
         },
             CancellationToken.None);
         SessionIdentity? session = await scope.ServiceProvider.GetRequiredService<ISessionService>()
@@ -76,7 +78,7 @@ public sealed class CredentialsGrpcServiceTests
     }
 
     [TestMethod]
-    public async Task ChangePassword_InvalidRequests_LeavesCredentialUntouched()
+    public async Task ChangePassword_InvalidRequests_LeavesCredentialUntouchedAsync()
     {
         await using SqlServerTestDatabase database = await SqlServerTestDatabase.CreateAsync();
         await SeedAsync(database);
@@ -102,7 +104,9 @@ public sealed class CredentialsGrpcServiceTests
         {
             var request = new ChangePasswordRequest
             {
-                CurrentPassword = current, NewPassword = password, Confirmation = confirmation
+                CurrentPassword = current,
+                NewPassword = password,
+                Confirmation = confirmation
             };
             Assert.AreEqual(expected, (await SendAsync(client, request, "owner")).Status);
         }
@@ -121,7 +125,7 @@ public sealed class CredentialsGrpcServiceTests
     }
 
     [TestMethod]
-    public async Task ChangePassword_ConflictAndWriteFailure_PreservesConfirmedCredential()
+    public async Task ChangePassword_ConflictAndWriteFailure_PreservesConfirmedCredentialAsync()
     {
         await using SqlServerTestDatabase database = await SqlServerTestDatabase.CreateAsync();
         await SeedAsync(database);
@@ -162,7 +166,8 @@ public sealed class CredentialsGrpcServiceTests
     {
         return new ChangePasswordRequest
         {
-            CurrentPassword = OriginalPassword, NewPassword = NewPassword,
+            CurrentPassword = OriginalPassword,
+            NewPassword = NewPassword,
             Confirmation = NewPassword
         };
     }
@@ -220,7 +225,9 @@ public sealed class CredentialsGrpcServiceTests
         owner.Sessions.Add(new AtariGo.Server.Data.Entities.Session
         {
             SessionTokenHash = new SessionTokenProvider().Hash("owner"),
-            State = "Active", StartedAt = DateTime.UtcNow, LastActivityAt = DateTime.UtcNow,
+            State = "Active",
+            StartedAt = DateTime.UtcNow,
+            LastActivityAt = DateTime.UtcNow,
             ExpiresAt = DateTime.UtcNow.AddHours(1)
         });
         context.Users.Add(owner);
@@ -232,7 +239,10 @@ public sealed class CredentialsGrpcServiceTests
     {
         var user = new User
         {
-            UserName = name, Email = name + "@example.test", State = "Active", RoleId = roleId,
+            UserName = name,
+            Email = name + "@example.test",
+            State = "Active",
+            RoleId = roleId,
             RegistrationDate = DateTime.UtcNow
         };
         user.Credential = new Credential

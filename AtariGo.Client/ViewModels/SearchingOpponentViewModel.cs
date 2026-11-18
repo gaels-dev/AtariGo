@@ -3,10 +3,8 @@ using System.Globalization;
 using System.Windows.Input;
 using System.Windows.Threading;
 
-using Grpc.Core;
-
-using AtariGo.Client.Commands;
 using AtariGo.Client.Models;
+using AtariGo.Client.Commands;
 using AtariGo.Client.Properties;
 using AtariGo.Client.Services;
 using AtariGo.Contracts;
@@ -96,7 +94,10 @@ public sealed class SearchingOpponentViewModel : ViewModelBase, IDisposable
         }
     }
 
-    public ICommand CancelCommand { get; }
+    public ICommand CancelCommand
+    {
+        get;
+    }
 
     public Task SearchTask => _searchTask;
 
@@ -138,7 +139,7 @@ public sealed class SearchingOpponentViewModel : ViewModelBase, IDisposable
             StopCountdown();
             Trace.TraceInformation("Public matchmaking search was cancelled.");
         }
-        catch (RpcException exception)
+        catch (Exception exception)
             when (GrpcCallPolicy.IsRequestedCancellation(
                 exception,
                 cancellationToken))
@@ -146,11 +147,11 @@ public sealed class SearchingOpponentViewModel : ViewModelBase, IDisposable
             StopCountdown();
             Trace.TraceInformation("Public matchmaking stream was cancelled.");
         }
-        catch (RpcException exception)
+        catch (Exception exception) when (GrpcClientFailures.IsTransportFailure(exception))
         {
             StopCountdown();
             CountdownSeconds = 0;
-            StatusMessage = GrpcFailureMessages.GetMessage(exception);
+            StatusMessage = ClientFailureMessages.GetMessage(exception);
         }
     }
 

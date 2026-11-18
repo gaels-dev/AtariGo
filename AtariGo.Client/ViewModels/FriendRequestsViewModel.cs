@@ -3,8 +3,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Windows.Input;
 
-using Grpc.Core;
-
+using AtariGo.Client.Models;
 using AtariGo.Client.Commands;
 using AtariGo.Client.Properties;
 using AtariGo.Client.Services;
@@ -51,7 +50,9 @@ public sealed class FriendRequestsViewModel : ViewModelBase, IDisposable
     }
 
     public ObservableCollection<IncomingFriendRequestViewModel> Requests
-    { get; }
+    {
+        get;
+    }
 
     public string StatusMessage
     {
@@ -80,17 +81,29 @@ public sealed class FriendRequestsViewModel : ViewModelBase, IDisposable
     public string BackLabel => GetLocalizedMessage(
         "FriendSearch_Btn_Back");
 
-    public SentFriendRequestsViewModel Sent { get; }
+    public SentFriendRequestsViewModel Sent
+    {
+        get;
+    }
 
     public string IncomingLabel => GetLocalizedMessage("FriendRequests_Tab_Incoming");
 
     public string SentLabel => GetLocalizedMessage("FriendRequests_Tab_Sent");
 
-    public Task Initialization { get; }
+    public Task Initialization
+    {
+        get;
+    }
 
-    public ICommand RefreshCommand { get; }
+    public ICommand RefreshCommand
+    {
+        get;
+    }
 
-    public ICommand BackCommand { get; }
+    public ICommand BackCommand
+    {
+        get;
+    }
 
     public void Dispose()
     {
@@ -255,10 +268,10 @@ public sealed class FriendRequestsViewModel : ViewModelBase, IDisposable
             return;
         }
 
-        _ = GrpcFailureMessages.GetMessage(exception);
+        _ = ClientFailureMessages.GetMessage(exception);
 
-        StatusMessage = exception is RpcException rpcException
-            && rpcException.StatusCode == StatusCode.Unauthenticated
+        ClientFailureReason reason = GrpcClientFailures.GetReason(exception);
+        StatusMessage = reason == ClientFailureReason.SessionExpired
                 ? GetLocalizedMessage(
                     "FriendRequests_Err_SessionExpired")
                 : GetLocalizedMessage("FriendRequests_Err_Service");

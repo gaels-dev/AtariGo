@@ -9,7 +9,7 @@ namespace AtariGo.Client.Tests.ViewModels;
 public sealed class LoginVerificationDialogViewModelTests
 {
     [TestMethod]
-    public async Task ConfirmCommand_UnconfirmedResult_ClearsCodeAndNeverRetriesAutomatically()
+    public async Task ConfirmCommand_UnconfirmedResult_ClearsCodeAndNeverRetriesAutomaticallyAsync()
     {
         StubAuthenticationClient client = CreateClient();
         client.Verify = _ => Task.FromResult(new LoginAttemptResult
@@ -29,7 +29,7 @@ public sealed class LoginVerificationDialogViewModelTests
     }
 
     [TestMethod]
-    public async Task Dispose_PendingConfirmation_CancelsAndDiscardsLateSuccess()
+    public async Task Dispose_PendingConfirmation_CancelsAndDiscardsLateSuccessAsync()
     {
         var response = new TaskCompletionSource<LoginAttemptResult>(
             TaskCreationOptions.RunContinuationsAsynchronously);
@@ -48,7 +48,8 @@ public sealed class LoginVerificationDialogViewModelTests
         model.Dispose();
         response.SetResult(new LoginAttemptResult
         {
-            Status = LoginAttemptStatus.Success, SessionToken = "session"
+            Status = LoginAttemptStatus.Success,
+            SessionToken = "session"
         });
         await running;
         Assert.IsTrue(captured.IsCancellationRequested);
@@ -57,7 +58,7 @@ public sealed class LoginVerificationDialogViewModelTests
     }
 
     [TestMethod]
-    public async Task CancelCommand_ValidAttempt_ClosesDialogAndRequestsServerCancellation()
+    public async Task CancelCommand_ValidAttempt_ClosesDialogAndRequestsServerCancellationAsync()
     {
         StubAuthenticationClient client = CreateClient();
         int completions = 0;
@@ -72,7 +73,7 @@ public sealed class LoginVerificationDialogViewModelTests
     }
 
     [TestMethod]
-    public async Task ConfirmCommand_InvalidCode_DoesNotSendRequest()
+    public async Task ConfirmCommand_InvalidCode_DoesNotSendRequestAsync()
     {
         StubAuthenticationClient client = CreateClient();
         using var model = new LoginVerificationDialogViewModel(client, Pending(), _ => { });
@@ -83,7 +84,8 @@ public sealed class LoginVerificationDialogViewModelTests
     }
 
     [TestMethod]
-    public async Task ResendCommand_UnconfirmedDelivery_AllowsEnteringCodeWithoutAutomaticRetry()
+    public async Task
+        ResendCommand_UnconfirmedDelivery_AllowsEnteringCodeWithoutAutomaticRetryAsync()
     {
         StubAuthenticationClient client = CreateClient();
         client.Resend = _ => Task.FromResult(new LoginAttemptResult
@@ -106,7 +108,8 @@ public sealed class LoginVerificationDialogViewModelTests
     {
         return new LoginAttemptResult
         {
-            Status = LoginAttemptStatus.ChallengeRequired, ChallengeToken = "pending-token",
+            Status = LoginAttemptStatus.ChallengeRequired,
+            ChallengeToken = "pending-token",
             MaskedEmail = "p***@example.test"
         };
     }

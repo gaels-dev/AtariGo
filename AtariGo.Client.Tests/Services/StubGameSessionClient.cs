@@ -6,9 +6,15 @@ internal sealed class StubGameSessionClient : IGameSessionClient
 {
     public Queue<StubGameSessionStream> Streams { get; } = new();
 
-    public int ConnectCount { get; private set; }
+    public int ConnectCount
+    {
+        get; private set;
+    }
 
-    public Exception? ConnectFailure { get; set; }
+    public Exception? ConnectFailure
+    {
+        get; set;
+    }
 
     public Task<IGameSessionStream> ConnectAsync(long gameId, CancellationToken cancellationToken)
     {

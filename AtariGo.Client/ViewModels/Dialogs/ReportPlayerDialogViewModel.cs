@@ -33,7 +33,10 @@ namespace AtariGo.Client.ViewModels.Dialogs
             set => SetProperty(ref _targetPlayerName, value);
         }
 
-        public IReadOnlyList<string> Reasons { get; }
+        public IReadOnlyList<string> Reasons
+        {
+            get;
+        }
 
         public string SelectedReason
         {
@@ -47,8 +50,14 @@ namespace AtariGo.Client.ViewModels.Dialogs
             set => SetProperty(ref _details, value);
         }
 
-        public ICommand SubmitCommand { get; }
+        public ICommand SubmitCommand
+        {
+            get;
+        }
 
-        public ICommand CancelCommand { get; }
+        public ICommand CancelCommand
+        {
+            get;
+        }
     }
 }

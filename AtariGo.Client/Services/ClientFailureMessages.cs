@@ -1,13 +1,12 @@
 using System.Diagnostics;
 using System.Globalization;
 
-using Grpc.Core;
-
+using AtariGo.Client.Models;
 using AtariGo.Client.Properties;
 
 namespace AtariGo.Client.Services
 {
-    public static class GrpcFailureMessages
+    public static class ClientFailureMessages
     {
         public static string GetMessage(Exception exception)
         {
@@ -15,13 +14,7 @@ namespace AtariGo.Client.Services
             Trace.TraceWarning("Client request failed. Exception type: {0}.",
                 exception.GetType().Name);
 
-            string resourceKey = exception is RpcException rpcException
-                ? GetResourceKey(rpcException.StatusCode)
-                : "Connection_Err_RequestFailed";
-            if (exception is RpcException failure)
-            {
-                Trace.TraceWarning("Client request failed. RPC status: {0}.", failure.StatusCode);
-            }
+            string resourceKey = GetResourceKey(GrpcClientFailures.GetReason(exception));
 
             return GetLocalizedMessage(resourceKey);
         }
@@ -29,11 +22,12 @@ namespace AtariGo.Client.Services
         public static string GetRoomJoinMessage(Exception exception)
         {
             string message = GetMessage(exception);
-            if (exception is RpcException { StatusCode: StatusCode.NotFound })
+            ClientFailureReason reason = GrpcClientFailures.GetReason(exception);
+            if (reason == ClientFailureReason.NotFound)
             {
                 message = GetLocalizedMessage("JoinPrivateRoom_Err_UnknownCode");
             }
-            else if (exception is RpcException { StatusCode: StatusCode.ResourceExhausted })
+            else if (reason == ClientFailureReason.CapacityExceeded)
             {
                 message = GetLocalizedMessage("JoinPrivateRoom_Err_Full");
             }
@@ -41,30 +35,31 @@ namespace AtariGo.Client.Services
             return message;
         }
 
-        public static string GetRegistrationMessage(RpcException exception)
+        public static string GetRegistrationMessage(Exception exception)
         {
             ArgumentNullException.ThrowIfNull(exception);
-            Trace.TraceWarning("Registration request failed. RPC status: {0}.",
-                exception.StatusCode);
+            ClientFailureReason reason = GrpcClientFailures.GetReason(exception);
+            Trace.TraceWarning("Registration request failed. Reason: {0}.", reason);
 
-            string resourceKey = exception.StatusCode switch
+            string resourceKey = reason switch
             {
-                StatusCode.DeadlineExceeded or StatusCode.Unavailable or StatusCode.Cancelled
+                ClientFailureReason.Timeout or ClientFailureReason.Unavailable
+                    or ClientFailureReason.Cancelled
                     => "Registration_Err_Unconfirmed",
-                _ => GetResourceKey(exception.StatusCode)
+                _ => GetResourceKey(reason)
             };
 
             return GetLocalizedMessage(resourceKey);
         }
 
-        public static string GetResourceKey(StatusCode statusCode)
+        public static string GetResourceKey(ClientFailureReason reason)
         {
-            return statusCode switch
+            return reason switch
             {
-                StatusCode.DeadlineExceeded => "Connection_Err_Timeout",
-                StatusCode.Unavailable => "Connection_Err_Unavailable",
-                StatusCode.Unauthenticated => "Connection_Err_SessionExpired",
-                StatusCode.Cancelled => "Connection_Err_Cancelled",
+                ClientFailureReason.Timeout => "Connection_Err_Timeout",
+                ClientFailureReason.Unavailable => "Connection_Err_Unavailable",
+                ClientFailureReason.SessionExpired => "Connection_Err_SessionExpired",
+                ClientFailureReason.Cancelled => "Connection_Err_Cancelled",
                 _ => "Connection_Err_RequestFailed"
             };
         }

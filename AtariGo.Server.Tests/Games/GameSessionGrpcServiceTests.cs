@@ -10,7 +10,6 @@ using AtariGo.Server.Data;
 using AtariGo.Server.Data.Entities;
 using AtariGo.Server.Services;
 using AtariGo.Server.Tests.Rooms;
-
 using GameSessionSnapshot = AtariGo.Contracts.GameSessionSnapshot;
 
 namespace AtariGo.Server.Tests.Games;
@@ -20,7 +19,7 @@ namespace AtariGo.Server.Tests.Games;
 public sealed class GameSessionGrpcServiceTests
 {
     [TestMethod]
-    public async Task Connect_TwoAuthenticatedClients_ShareMovesCapturesAndFinalResult()
+    public async Task Connect_TwoAuthenticatedClients_ShareMovesCapturesAndFinalResultAsync()
     {
         // Arrange
         await using GameplayGrpcTestHost host = await GameplayGrpcTestHost.StartAsync();
@@ -57,7 +56,7 @@ public sealed class GameSessionGrpcServiceTests
     }
 
     [TestMethod]
-    public async Task Connect_WrongGuest_CannotJoinAnotherPlayersGame()
+    public async Task Connect_WrongGuest_CannotJoinAnotherPlayersGameAsync()
     {
         // Arrange
         await using GameplayGrpcTestHost host = await GameplayGrpcTestHost.StartAsync();
@@ -76,7 +75,7 @@ public sealed class GameSessionGrpcServiceTests
     }
 
     [TestMethod]
-    public async Task Connect_ReplacedConnection_ReportsReplacementAndKeepsNewStreamUsable()
+    public async Task Connect_ReplacedConnection_ReportsReplacementAndKeepsNewStreamUsableAsync()
     {
         // Arrange
         await using GameplayGrpcTestHost host = await GameplayGrpcTestHost.StartAsync();
@@ -109,7 +108,7 @@ public sealed class GameSessionGrpcServiceTests
     }
 
     [TestMethod]
-    public async Task Connect_TransportFailure_ReportsUnavailableWithoutChangingResult()
+    public async Task Connect_TransportFailure_ReportsUnavailableWithoutChangingResultAsync()
     {
         // Arrange
         await using GameplayTestDatabase database = await GameplayTestDatabase.CreateAsync();
@@ -135,7 +134,7 @@ public sealed class GameSessionGrpcServiceTests
     }
 
     [TestMethod]
-    public async Task Connect_BothTasksFail_PreservesFirstFailureDuringCleanup()
+    public async Task Connect_BothTasksFail_PreservesFirstFailureDuringCleanupAsync()
     {
         // Arrange
         await using GameplayTestDatabase database = await GameplayTestDatabase.CreateAsync();

@@ -2,8 +2,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Windows.Input;
 
-using Grpc.Core;
-
+using AtariGo.Client.Models;
 using AtariGo.Client.Commands;
 using AtariGo.Client.Properties;
 using AtariGo.Client.Services;
@@ -131,19 +130,40 @@ public sealed class ProfileCustomizationViewModel : ViewModelBase, IDisposable
         private set => SetProperty(ref _statusMessage, value);
     }
 
-    public ICommand LoadCommand { get; }
+    public ICommand LoadCommand
+    {
+        get;
+    }
 
-    public ICommand UpdateProfileCommand { get; }
+    public ICommand UpdateProfileCommand
+    {
+        get;
+    }
 
-    public ICommand ChangePasswordCommand { get; }
+    public ICommand ChangePasswordCommand
+    {
+        get;
+    }
 
-    public ICommand SelectAvatarCommand { get; }
+    public ICommand SelectAvatarCommand
+    {
+        get;
+    }
 
-    public ICommand OpenAvatarPickerCommand { get; }
+    public ICommand OpenAvatarPickerCommand
+    {
+        get;
+    }
 
-    public ICommand CloseAvatarPickerCommand { get; }
+    public ICommand CloseAvatarPickerCommand
+    {
+        get;
+    }
 
-    public ICommand BackCommand { get; }
+    public ICommand BackCommand
+    {
+        get;
+    }
 
     public void Dispose()
     {
@@ -165,9 +185,9 @@ public sealed class ProfileCustomizationViewModel : ViewModelBase, IDisposable
             ApplyProfile(profile);
             IsLoaded = true;
         }
-        catch (RpcException exception)
+        catch (Exception exception) when (GrpcClientFailures.IsTransportFailure(exception))
         {
-            HandleRpcFailure(exception);
+            HandleRequestFailure(exception);
         }
     }
 
@@ -189,9 +209,9 @@ public sealed class ProfileCustomizationViewModel : ViewModelBase, IDisposable
             _token.ThrowIfCancellationRequested();
             ApplyUpdateResponse(response);
         }
-        catch (RpcException exception)
+        catch (Exception exception) when (GrpcClientFailures.IsTransportFailure(exception))
         {
-            HandleRpcFailure(exception);
+            HandleRequestFailure(exception);
         }
     }
 
@@ -243,15 +263,15 @@ public sealed class ProfileCustomizationViewModel : ViewModelBase, IDisposable
         _onProfileConfirmed(profile);
     }
 
-    private void HandleRpcFailure(RpcException exception)
+    private void HandleRequestFailure(Exception exception)
     {
         if (_isDisposed || _token.IsCancellationRequested)
         {
             return;
         }
         Trace.TraceWarning("Profile request failed with status {0}.",
-            exception.StatusCode);
-        string key = exception.StatusCode == StatusCode.Unauthenticated
+            GrpcClientFailures.GetReason(exception));
+        string key = GrpcClientFailures.GetReason(exception) == ClientFailureReason.SessionExpired
             ? "Connection_Err_SessionExpired" : "ProfileCustomization_Err_Unavailable";
         StatusMessage = Localize(key);
     }

@@ -15,7 +15,8 @@ public sealed class SmtpEmailSenderTests
     [TestMethod]
     [DataRow(465, SecureSocketOptions.SslOnConnect)]
     [DataRow(587, SecureSocketOptions.StartTls)]
-    public async Task SendAsync_GenericMessage_PreservesContentUsesTlsAndPropagatesCancellation(
+    public async Task
+        SendAsync_GenericMessage_PreservesContentUsesTlsAndPropagatesCancellationAsync(
         int port, SecureSocketOptions security)
     {
         using var client = new RecordingSmtpClient();
@@ -25,7 +26,8 @@ public sealed class SmtpEmailSenderTests
             NullLogger<SmtpEmailSender>.Instance, () => client);
         var message = new EmailMessage
         {
-            Recipient = "player@example.test", Subject = "Custom subject ä",
+            Recipient = "player@example.test",
+            Subject = "Custom subject ä",
             Body = "Custom message unrelated to password recovery.\nCódigo: 01234567"
         };
         await sender.SendAsync(message, cancellation.Token);
@@ -46,7 +48,7 @@ public sealed class SmtpEmailSenderTests
     }
 
     [TestMethod]
-    public async Task SendAsync_FailedSend_PropagatesFailureAndDisposesClient()
+    public async Task SendAsync_FailedSend_PropagatesFailureAndDisposesClientAsync()
     {
         using var client = new RecordingSmtpClient { ShouldFailSend = true };
         var sender = new SmtpEmailSender(Options.Create(CreateOptions(465)),
@@ -59,7 +61,7 @@ public sealed class SmtpEmailSenderTests
     }
 
     [TestMethod]
-    public async Task SendAsync_CancelledRequest_PropagatesCancellationAndDisposesClient()
+    public async Task SendAsync_CancelledRequest_PropagatesCancellationAndDisposesClientAsync()
     {
         using var client = new RecordingSmtpClient();
         using var cancellation = new CancellationTokenSource();
@@ -89,8 +91,11 @@ public sealed class SmtpEmailSenderTests
     {
         return new SmtpOptions
         {
-            Host = "smtp.example.test", Port = port, Sender = "sender@example.test",
-            UserName = "smtp-user", Password = "Test application password"
+            Host = "smtp.example.test",
+            Port = port,
+            Sender = "sender@example.test",
+            UserName = "smtp-user",
+            Password = "Test application password"
         };
     }
 }

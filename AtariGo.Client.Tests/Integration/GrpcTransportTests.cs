@@ -1,7 +1,6 @@
 using System.Net;
 using System.Net.Sockets;
 
-
 using AtariGo.Client.Services;
 
 namespace AtariGo.Client.Tests.Integration
@@ -14,7 +13,7 @@ namespace AtariGo.Client.Tests.Integration
         private const int TestCompletionSeconds = 5;
 
         [TestMethod]
-        public async Task RunRealtimeAsync_CancellingOwner_StopsLongLivedStream()
+        public async Task RunRealtimeAsync_CancellingOwner_StopsLongLivedStreamAsync()
         {
             // Arrange
             using var cancellation = new CancellationTokenSource();
@@ -44,6 +43,9 @@ namespace AtariGo.Client.Tests.Integration
                 cancellation.Cancel();
                 await streamTask.WaitAsync(
                     TimeSpan.FromSeconds(TestCompletionSeconds));
+
+                // Assert
+                Assert.IsTrue(streamTask.IsCompletedSuccessfully);
             }
             finally
             {

@@ -19,7 +19,8 @@ public sealed class SqlServerGameplayTests
     [TestMethod]
     [DataRow(false)]
     [DataRow(true)]
-    public async Task Scripts_FreshSchemaAndRepeatedUpgrade_PreserveGameAndAcceptMoves(bool direct)
+    public async Task
+        Scripts_FreshSchemaAndRepeatedUpgrade_PreserveGameAndAcceptMovesAsync(bool direct)
     {
         // Arrange
         await using SqlServerTestDatabase database = await SqlServerTestDatabase.CreateAsync();
@@ -39,19 +40,28 @@ public sealed class SqlServerGameplayTests
             GameSessionRules.CreateGuestKey(whiteId), "White", "White");
         GameSessionConnection black = await coordinator.ConnectAsync(new GameSessionDefinition
         {
-            GameId = gameId, CaptureGoal = 1, TurnTimeSeconds = 30,
-            Player = blackPlayer, Opponent = whitePlayer
+            GameId = gameId,
+            CaptureGoal = 1,
+            TurnTimeSeconds = 30,
+            Player = blackPlayer,
+            Opponent = whitePlayer
         }, CancellationToken.None);
         await coordinator.ConnectAsync(new GameSessionDefinition
         {
-            GameId = gameId, CaptureGoal = 1, TurnTimeSeconds = 30,
-            Player = whitePlayer, Opponent = blackPlayer
+            GameId = gameId,
+            CaptureGoal = 1,
+            TurnTimeSeconds = 30,
+            Player = whitePlayer,
+            Opponent = blackPlayer
         }, CancellationToken.None);
         await using AtariGoDbContext read = database.CreateContext();
         long version = (await read.Games.AsNoTracking().SingleAsync()).StateVersion;
         await coordinator.ProcessAsync(black, new GameActionCommand
         {
-            ActionId = Guid.NewGuid().ToString("N"), ExpectedVersion = version, Row = 0, Column = 1
+            ActionId = Guid.NewGuid().ToString("N"),
+            ExpectedVersion = version,
+            Row = 0,
+            Column = 1
         }, CancellationToken.None);
         // Assert
         Assert.AreEqual(1, await read.Games.CountAsync());
@@ -64,7 +74,8 @@ public sealed class SqlServerGameplayTests
     [TestMethod]
     [DataRow(false)]
     [DataRow(true)]
-    public async Task Scripts_LegacyUnplayedGame_BackfillsWithoutDeletingParticipants(bool direct)
+    public async Task
+        Scripts_LegacyUnplayedGame_BackfillsWithoutDeletingParticipantsAsync(bool direct)
     {
         // Arrange
         await using SqlServerTestDatabase database = await SqlServerTestDatabase.CreateAsync();
@@ -88,7 +99,7 @@ public sealed class SqlServerGameplayTests
     [TestMethod]
     [DataRow(false)]
     [DataRow(true)]
-    public async Task Scripts_LegacyActiveGameWithMoves_RollsBackWithoutResettingBoardHistory(
+    public async Task Scripts_LegacyActiveGameWithMoves_RollsBackWithoutResettingBoardHistoryAsync(
         bool direct)
     {
         // Arrange
@@ -101,7 +112,11 @@ public sealed class SqlServerGameplayTests
             .Select(player => player.GamePlayerId).FirstAsync();
         context.Moves.Add(new Move
         {
-            GamePlayerId = playerId, TurnNumber = 1, Row = 0, Column = 0, PlayedAt = DateTime.UtcNow
+            GamePlayerId = playerId,
+            TurnNumber = 1,
+            Row = 0,
+            Column = 0,
+            PlayedAt = DateTime.UtcNow
         });
         await context.SaveChangesAsync();
         await database.RestoreLegacySchemaAsync();
@@ -119,7 +134,8 @@ public sealed class SqlServerGameplayTests
     }
 
     [TestMethod]
-    public async Task Scripts_DirectUpgrade_MissingGuestIdentity_AddsColumnAndPreservesBaseTables()
+    public async Task
+        Scripts_DirectUpgrade_MissingGuestIdentity_AddsColumnAndPreservesBaseTablesAsync()
     {
         // Arrange
         await using SqlServerTestDatabase database = await SqlServerTestDatabase.CreateAsync();
@@ -147,7 +163,8 @@ public sealed class SqlServerGameplayTests
     [TestMethod]
     [DataRow(false)]
     [DataRow(true)]
-    public async Task Scripts_PreviousDeployment_MigratesBoardAndResponsesWithoutDuplicateEvents(
+    public async Task
+        Scripts_PreviousDeployment_MigratesBoardAndResponsesWithoutDuplicateEventsAsync(
         bool finishBySurrender)
     {
         // Arrange
@@ -159,13 +176,11 @@ public sealed class SqlServerGameplayTests
         long gameId = await SeedAsync(before, ids);
         (GameSessionConnection Black, GameSessionConnection White) players =
             await ConnectPlayersAsync(before, gameId, ids);
-        GameActionCommand move = new GameActionCommand
-        {
-            ActionId = Guid.NewGuid().ToString("N"), ExpectedVersion = 1, Row = 0, Column = 1
-        };
+        GameActionCommand move = CreateMove(1, 0, 1);
         GameActionCommand rejected = move with
         {
-            ActionId = Guid.NewGuid().ToString("N"), ExpectedVersion = 2
+            ActionId = Guid.NewGuid().ToString("N"),
+            ExpectedVersion = 2
         };
         GameCoordinator coordinator = before.GetRequiredService<GameCoordinator>();
         await coordinator.ProcessAsync(players.Black, move, CancellationToken.None);
@@ -174,7 +189,8 @@ public sealed class SqlServerGameplayTests
         {
             await coordinator.ProcessAsync(players.White, new GameActionCommand
             {
-                ActionId = Guid.NewGuid().ToString("N"), IsSurrender = true
+                ActionId = Guid.NewGuid().ToString("N"),
+                IsSurrender = true
             }, CancellationToken.None);
         }
         await using AtariGoDbContext context = database.CreateContext();
@@ -210,7 +226,7 @@ public sealed class SqlServerGameplayTests
     }
 
     [TestMethod]
-    public async Task Scripts_UnlinkedSavedAction_RollsBackAndPreservesPreviousTables()
+    public async Task Scripts_UnlinkedSavedAction_RollsBackAndPreservesPreviousTablesAsync()
     {
         // Arrange
         await using SqlServerTestDatabase database = await SqlServerTestDatabase.CreateAsync();
@@ -223,7 +239,10 @@ public sealed class SqlServerGameplayTests
         await provider.GetRequiredService<GameCoordinator>().ProcessAsync(players.Black,
             new GameActionCommand
             {
-                ActionId = Guid.NewGuid().ToString("N"), ExpectedVersion = 1, Row = 0, Column = 0
+                ActionId = Guid.NewGuid().ToString("N"),
+                ExpectedVersion = 1,
+                Row = 0,
+                Column = 0
             }, CancellationToken.None);
         await database.RestorePreviousDeploymentAsync();
         await using AtariGoDbContext context = database.CreateContext();
@@ -284,14 +303,30 @@ public sealed class SqlServerGameplayTests
             GameSessionRules.CreateGuestKey(ids.White), "White", "White");
         GameSessionDefinition definition = new GameSessionDefinition
         {
-            GameId = gameId, CaptureGoal = 1, TurnTimeSeconds = 30,
-            Player = black, Opponent = white
+            GameId = gameId,
+            CaptureGoal = 1,
+            TurnTimeSeconds = 30,
+            Player = black,
+            Opponent = white
         };
         GameSessionConnection blackConnection = await coordinator.ConnectAsync(
             definition, CancellationToken.None);
         GameSessionConnection whiteConnection = await coordinator.ConnectAsync(
-            definition with { Player = white, Opponent = black }, CancellationToken.None);
+            definition with
+            {
+                Player = white,
+                Opponent = black
+            }, CancellationToken.None);
         return (blackConnection, whiteConnection);
+    }
+
+    private static GameActionCommand CreateMove(int version, int row, int column)
+    {
+        return new GameActionCommand
+        {
+            ActionId = Guid.NewGuid().ToString("N"), ExpectedVersion = version,
+            Row = row, Column = column
+        };
     }
 
     private static ServiceCollection CreateServices(string connectionString,
@@ -318,18 +353,28 @@ public sealed class SqlServerGameplayTests
         DateTime now = provider.GetRequiredService<TimeProvider>().GetUtcNow().UtcDateTime;
         Game game = new Game
         {
-            GameType = "Public", State = "InProgress", StartedAt = now,
+            GameType = "Public",
+            State = "InProgress",
+            StartedAt = now,
             GameConfiguration = new GameConfiguration { CaptureGoal = 1, TurnTimeSeconds = 30 }
         };
         game.GamePlayers.Add(new GamePlayer
         {
-            GuestIdentityId = ids.Black, GuestName = "Black", StoneColor = "Black",
-            TurnOrder = 1, JoinedAt = now, Result = "Pending"
+            GuestIdentityId = ids.Black,
+            GuestName = "Black",
+            StoneColor = "Black",
+            TurnOrder = 1,
+            JoinedAt = now,
+            Result = "Pending"
         });
         game.GamePlayers.Add(new GamePlayer
         {
-            GuestIdentityId = ids.White, GuestName = "White", StoneColor = "White",
-            TurnOrder = 2, JoinedAt = now, Result = "Pending"
+            GuestIdentityId = ids.White,
+            GuestName = "White",
+            StoneColor = "White",
+            TurnOrder = 2,
+            JoinedAt = now,
+            Result = "Pending"
         });
         GamePersistenceService.Initialize(game, 1, now);
         context.Games.Add(game);

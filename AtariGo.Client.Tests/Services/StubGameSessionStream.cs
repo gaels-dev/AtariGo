@@ -14,13 +14,26 @@ internal sealed class StubGameSessionStream : IGameSessionStream
         Channel.CreateUnbounded<GameSessionServerEvent>();
 
     public ConcurrentQueue<GameSessionClientEvent> Sent { get; } = new();
-    public bool FailSend { get; set; }
 
-    public Exception? SendFailure { get; set; }
+    public bool FailSend
+    {
+        get; set;
+    }
 
-    public bool IsDisposed { get; private set; }
+    public Exception? SendFailure
+    {
+        get; set;
+    }
 
-    public CancellationToken ReadCancellation { get; private set; }
+    public bool IsDisposed
+    {
+        get; private set;
+    }
+
+    public CancellationToken ReadCancellation
+    {
+        get; private set;
+    }
 
     public void Publish(GameSessionServerEvent serverEvent)
     {

@@ -1,4 +1,4 @@
-<UserControl x:Class="AtariGo.Client.Views.RegisterPlayerLobbyView"
+<UserControl x:Class="AtariGo.Client.Views.RegisteredPlayerLobbyView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -486,7 +486,7 @@
                                                             </Style>
                                                         </Ellipse.Style>
                                                     </Ellipse>
-                                                    <TextBlock Grid.Column="1" Text="{Binding Username}"
+                                                    <TextBlock Grid.Column="1" Text="{Binding UserName}"
                                                                TextTrimming="CharacterEllipsis"
                                                                FontWeight="SemiBold"
                                                                FontSize="13"

@@ -28,6 +28,8 @@ internal sealed class RoomInvitationRegistry
         LobbyParticipant recipient,
         DateTimeOffset expiresAt)
     {
+        ArgumentNullException.ThrowIfNull(room);
+        ArgumentNullException.ThrowIfNull(recipient);
         RoomInvitationEntry? pending = _entries.Values.FirstOrDefault(invitation =>
             invitation.RoomId == room.RoomId && invitation.Recipient.UserId == recipient.UserId
             && invitation.State == RoomInvitationStatus.Pending);
@@ -55,11 +57,15 @@ internal sealed class RoomInvitationRegistry
 
     public RoomInvitationEntry ExtendExpiration(RoomInvitationEntry entry, DateTimeOffset expiresAt)
     {
+        ArgumentNullException.ThrowIfNull(entry);
         if (expiresAt <= entry.ExpiresAt)
         {
             return entry;
         }
-        RoomInvitationEntry updated = entry with { ExpiresAt = expiresAt };
+        RoomInvitationEntry updated = entry with
+        {
+            ExpiresAt = expiresAt
+        };
         _entries[entry.InvitationId] = updated;
         Notify(updated);
         return updated;
@@ -77,7 +83,11 @@ internal sealed class RoomInvitationRegistry
         RoomInvitationEntry entry,
         RoomInvitationStatus nextStatus)
     {
-        RoomInvitationEntry updated = entry with { State = nextStatus };
+        ArgumentNullException.ThrowIfNull(entry);
+        RoomInvitationEntry updated = entry with
+        {
+            State = nextStatus
+        };
         _entries[entry.InvitationId] = updated;
         Notify(updated);
         return updated;

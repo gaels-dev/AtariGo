@@ -1,4 +1,3 @@
-
 using AtariGo.Contracts;
 using AtariGo.Server.Application.Matchmaking;
 

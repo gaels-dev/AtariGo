@@ -42,7 +42,10 @@ public sealed class FriendRemovalViewModel : ViewModelBase, IDisposable
         private set => SetProperty(ref _statusMessage, value);
     }
 
-    public ICommand RemoveCommand { get; }
+    public ICommand RemoveCommand
+    {
+        get;
+    }
 
     public void Dispose()
     {
@@ -73,7 +76,7 @@ public sealed class FriendRemovalViewModel : ViewModelBase, IDisposable
             throw new InvalidOperationException("An authenticated friendships client is required.");
         }
 
-        if (!await ConfirmAsync(friend.Username))
+        if (!await ConfirmAsync(friend.UserName))
         {
             return;
         }
@@ -135,7 +138,7 @@ public sealed class FriendRemovalViewModel : ViewModelBase, IDisposable
             return;
         }
 
-        _ = GrpcFailureMessages.GetMessage(exception);
+        _ = ClientFailureMessages.GetMessage(exception);
         StatusMessage = Localize("FriendList_Err_Unconfirmed");
     }
 

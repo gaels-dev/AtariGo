@@ -1,5 +1,3 @@
-
-
 using Grpc.Core;
 using Grpc.Core.Interceptors;
 
@@ -15,7 +13,29 @@ namespace AtariGo.Client.Tests.Services
         private const int LeaderboardLimit = 10;
 
         [TestMethod]
-        public async Task RpcAdapters_ApplyDeadlinesAndStreamingCancellation()
+        [DataRow(StatusCode.Unauthenticated, ClientFailureReason.SessionExpired)]
+        [DataRow(StatusCode.Unavailable, ClientFailureReason.Unavailable)]
+        [DataRow(StatusCode.NotFound, ClientFailureReason.NotFound)]
+        public async Task ExecuteAsync_TransportFailure_ExposesApplicationReasonAsync(
+            StatusCode status, ClientFailureReason expected)
+        {
+            // Arrange
+            var transport = new RpcException(new Status(status, "BusinessCode"));
+
+            // Act
+            ClientRequestException failure =
+                await Assert.ThrowsExactlyAsync<ClientRequestException>(
+                    () => GrpcCallPolicy.ExecuteAsync(() => Task.FromException<int>(transport)));
+
+            // Assert
+            Assert.AreEqual(expected, failure.Reason);
+            Assert.AreEqual("BusinessCode", failure.ErrorCode);
+            Assert.AreSame(transport, failure.InnerException);
+            Assert.IsFalse(failure.Message.Contains("BusinessCode", StringComparison.Ordinal));
+        }
+
+        [TestMethod]
+        public async Task RpcAdapters_UnaryAndStreamingCalls_ApplyLifetimePolicyAsync()
         {
             // Arrange
             using var connection = new GrpcClientConnection(new Uri("https://localhost:7061"));

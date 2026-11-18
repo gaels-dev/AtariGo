@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 
+using AtariGo.Server.Concurrency;
 using AtariGo.Server.Application.Sessions;
 using AtariGo.Server.Application.Social;
 using AtariGo.Server.Data;
@@ -52,7 +53,7 @@ public sealed class FriendshipsService : IFriendshipsService
                 "A user cannot remove themselves as a friend.", nameof(friendUserId));
         }
 
-        using FriendMutationLease lease = await _mutations.EnterAsync(cancellationToken);
+        using AsyncOperationLease lease = await _mutations.EnterAsync(cancellationToken);
         int firstUserId = Math.Min(identity.UserId, friendUserId);
         int secondUserId = Math.Max(identity.UserId, friendUserId);
         int removed = await _dbContext.Friendships

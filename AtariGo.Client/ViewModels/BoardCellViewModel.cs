@@ -1,36 +1,28 @@
-using System.Windows.Input;
-
-using AtariGo.Client.Commands;
 using AtariGo.Client.Models;
 
 namespace AtariGo.Client.ViewModels
 {
     public class BoardCellViewModel : ViewModelBase
     {
-        private int _row;
-        private int _column;
         private StoneColor _stone;
         private bool _isLastMove;
 
-        public BoardCellViewModel(int row, int column, Action<BoardCellViewModel> onCellClicked)
+        public BoardCellViewModel(int row, int column)
         {
-            _row = row;
-            _column = column;
+            Row = row;
+            Column = column;
             _stone = StoneColor.None;
 
-            CellClickCommand = new RelayCommand(() => onCellClicked(this));
         }
 
         public int Row
         {
-            get => _row;
-            set => SetProperty(ref _row, value);
+            get;
         }
 
         public int Column
         {
-            get => _column;
-            set => SetProperty(ref _column, value);
+            get;
         }
 
         public StoneColor Stone
@@ -45,6 +37,5 @@ namespace AtariGo.Client.ViewModels
             set => SetProperty(ref _isLastMove, value);
         }
 
-        public ICommand CellClickCommand { get; }
     }
 }

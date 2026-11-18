@@ -1,11 +1,11 @@
-namespace AtariGo.Server.Application.Games;
+namespace AtariGo.Server.Concurrency;
 
-public sealed class GameOperationLease : IDisposable
+public sealed class AsyncOperationLease : IDisposable
 {
     private readonly SemaphoreSlim _gate;
-    private GameOperationGate? _owner;
+    private AsyncOperationGate? _owner;
 
-    internal GameOperationLease(GameOperationGate owner, SemaphoreSlim gate)
+    internal AsyncOperationLease(AsyncOperationGate owner, SemaphoreSlim gate)
     {
         ArgumentNullException.ThrowIfNull(owner);
         ArgumentNullException.ThrowIfNull(gate);

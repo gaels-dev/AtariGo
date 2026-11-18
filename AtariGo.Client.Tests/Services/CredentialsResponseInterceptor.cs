@@ -7,12 +7,21 @@ namespace AtariGo.Client.Tests.Services;
 
 public sealed class CredentialsResponseInterceptor : Interceptor
 {
-    public Task<ChangePasswordResponse> Response { get; set; } =
+    public Task<ChangePasswordResponse> Response
+    {
+        get; set;
+    } =
         Task.FromResult(new ChangePasswordResponse { Status = PasswordChangeStatus.Changed });
 
-    public CallOptions Options { get; private set; }
+    public CallOptions Options
+    {
+        get; private set;
+    }
 
-    public int Calls { get; private set; }
+    public int Calls
+    {
+        get; private set;
+    }
 
     public override AsyncUnaryCall<TResponse> AsyncUnaryCall<TRequest, TResponse>(
         TRequest request, ClientInterceptorContext<TRequest, TResponse> context,

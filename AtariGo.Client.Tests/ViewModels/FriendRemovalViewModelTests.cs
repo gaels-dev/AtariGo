@@ -1,6 +1,5 @@
 using System.Reflection;
 
-
 using Grpc.Core;
 
 using AtariGo.Client.Services;
@@ -17,7 +16,7 @@ public sealed class FriendRemovalViewModelTests
     [TestMethod]
     [DataRow(RemoveFriendshipStatus.Removed)]
     [DataRow(RemoveFriendshipStatus.AlreadyAbsent)]
-    public async Task Remove_Confirmed_RemovesRealFriendAfterServerResponse(
+    public async Task Remove_Confirmed_RemovesRealFriendAfterServerResponseAsync(
         RemoveFriendshipStatus status)
     {
         // Arrange
@@ -42,7 +41,7 @@ public sealed class FriendRemovalViewModelTests
     }
 
     [TestMethod]
-    public async Task Remove_Declined_PreservesFriendAndDoesNotCallServer()
+    public async Task Remove_Declined_PreservesFriendAndDoesNotCallServerAsync()
     {
         // Arrange
         INavigationService navigation = DispatchProxy.Create<INavigationService,
@@ -63,7 +62,7 @@ public sealed class FriendRemovalViewModelTests
     }
 
     [TestMethod]
-    public async Task Remove_ServerUnavailable_PreservesFriendAndReportsUnconfirmedResult()
+    public async Task Remove_ServerUnavailable_PreservesFriendAndReportsUnconfirmedResultAsync()
     {
         // Arrange
         INavigationService navigation = DispatchProxy.Create<INavigationService,
@@ -87,7 +86,7 @@ public sealed class FriendRemovalViewModelTests
     }
 
     [TestMethod]
-    public async Task Dispose_PendingRemoval_CancelsAndIgnoresLateResponse()
+    public async Task Dispose_PendingRemoval_CancelsAndIgnoresLateResponseAsync()
     {
         // Arrange
         INavigationService navigation = DispatchProxy.Create<INavigationService,

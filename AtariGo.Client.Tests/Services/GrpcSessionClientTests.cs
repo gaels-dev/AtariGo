@@ -1,4 +1,3 @@
-
 using Grpc.Core;
 using Grpc.Core.Interceptors;
 
@@ -13,7 +12,7 @@ namespace AtariGo.Client.Tests.Services
         private const int TestCompletionSeconds = 5;
 
         [TestMethod]
-        public async Task RunRealtimeAsync_UsesSessionTokenOnStream()
+        public async Task RunRealtimeAsync_AuthenticatedSession_UsesTokenOnStreamAsync()
         {
             // Arrange
             using var connection = new GrpcClientConnection(
@@ -40,7 +39,7 @@ namespace AtariGo.Client.Tests.Services
         }
 
         [TestMethod]
-        public async Task LogoutAsync_UsesOnlyItsOwnSessionToken()
+        public async Task LogoutAsync_TwoSessions_PreservesEachTokenAsync()
         {
             // Arrange
             using var connection = new GrpcClientConnection(

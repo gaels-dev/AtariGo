@@ -11,9 +11,15 @@ namespace AtariGo.Client.Tests.Services
             Request = request;
         }
 
-        public string MethodName { get; }
+        public string MethodName
+        {
+            get;
+        }
 
-        public CallOptions Options { get; }
+        public CallOptions Options
+        {
+            get;
+        }
 
         public Metadata Headers
         {
@@ -23,6 +29,9 @@ namespace AtariGo.Client.Tests.Services
             }
         }
 
-        public object? Request { get; }
+        public object? Request
+        {
+            get;
+        }
     }
 }

@@ -85,7 +85,8 @@ public sealed class PasswordRecoveryGrpcService : PasswordRecovery.PasswordRecov
         }
         var command = new RecoveryRequestCommand
         {
-            Identifier = request.Identifier, CultureName = request.CultureName
+            Identifier = request.Identifier,
+            CultureName = request.CultureName
         };
         return ExecuteAsync(() => _recovery.RequestAsync(command, context.CancellationToken));
     }

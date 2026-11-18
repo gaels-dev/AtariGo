@@ -112,7 +112,11 @@ public sealed class ProfileService : IProfileService
     {
         int wins = await GetWinsAsync(user.UserId, cancellationToken);
         int avatarId = user.Profile?.AvatarId ?? DatabaseValues.AvatarIds.Default;
-        return new UserProfileSnapshot(user.UserName, user.Email, wins, avatarId);
+        return new UserProfileSnapshot(user.UserName, user.Email)
+        {
+            Wins = wins,
+            AvatarId = avatarId
+        };
     }
 
     private async Task<bool> IsAvatarLockedAsync(ProfileUpdateInput input,

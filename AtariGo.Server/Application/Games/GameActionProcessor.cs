@@ -89,7 +89,10 @@ public sealed class GameActionProcessor
         GameState board = context.Runtime.Board;
         context.Runtime = context.Runtime with
         {
-            Board = board with { Winner = GameRulesEngine.GetOpponent(context.PlayerColor) },
+            Board = board with
+            {
+                Winner = GameRulesEngine.GetOpponent(context.PlayerColor)
+            },
             Status = GameRuntimeState.Completed,
             EndReason = "Surrender"
         };

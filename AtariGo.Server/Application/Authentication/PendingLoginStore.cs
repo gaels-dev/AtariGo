@@ -1,5 +1,7 @@
 using Microsoft.Extensions.Options;
 
+using AtariGo.Server.Concurrency;
+
 namespace AtariGo.Server.Application.Authentication;
 
 public sealed class PendingLoginStore : IDisposable, IAsyncDisposable
@@ -7,13 +9,10 @@ public sealed class PendingLoginStore : IDisposable, IAsyncDisposable
     private const int GateCount = 128;
     private readonly Dictionary<string, PendingLogin> _pending =
         new Dictionary<string, PendingLogin>(StringComparer.Ordinal);
-    private readonly SemaphoreSlim[] _transitionGates = CreateGates();
+    private readonly AsyncOperationGate _transitions = new AsyncOperationGate(GateCount);
     private readonly object _sync = new object();
-    private readonly TaskCompletionSource _disposalCompletion = new TaskCompletionSource(
-        TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly TimeProvider _timeProvider;
     private readonly LoginVerificationOptions _options;
-    private int _pendingOperations;
     private bool _isDisposed;
 
     public PendingLoginStore(TimeProvider timeProvider, IOptions<LoginVerificationOptions> options)
@@ -71,26 +70,16 @@ public sealed class PendingLoginStore : IDisposable, IAsyncDisposable
         }
     }
 
-    public async Task<PendingLoginLease> EnterAsync(string tokenHash,
+    public Task<AsyncOperationLease> EnterAsync(string tokenHash,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(tokenHash);
-        int index = (int)((uint)StringComparer.Ordinal.GetHashCode(tokenHash) % GateCount);
         lock (_sync)
         {
             ObjectDisposedException.ThrowIf(_isDisposed, this);
-            _pendingOperations++;
         }
-        try
-        {
-            await _transitionGates[index].WaitAsync(cancellationToken);
-        }
-        catch
-        {
-            FinishOperation();
-            throw;
-        }
-        return new PendingLoginLease(this, index);
+        return _transitions.AcquireAsync(StringComparer.Ordinal.GetHashCode(tokenHash),
+            cancellationToken);
     }
 
     public void Dispose()
@@ -98,30 +87,15 @@ public sealed class PendingLoginStore : IDisposable, IAsyncDisposable
         lock (_sync)
         {
             _isDisposed = true;
-            TryFinishDisposal();
+            _pending.Clear();
         }
+        _transitions.Dispose();
     }
 
     public ValueTask DisposeAsync()
     {
         Dispose();
-        return new ValueTask(_disposalCompletion.Task);
-    }
-
-    internal void Exit(int gateIndex)
-    {
-        _transitionGates[gateIndex].Release();
-        FinishOperation();
-    }
-
-    private static SemaphoreSlim[] CreateGates()
-    {
-        SemaphoreSlim[] gates = new SemaphoreSlim[GateCount];
-        for (int index = 0; index < gates.Length; index++)
-        {
-            gates[index] = new SemaphoreSlim(1, 1);
-        }
-        return gates;
+        return _transitions.DisposeAsync();
     }
 
     private bool IsExpired(PendingLogin pending)
@@ -140,25 +114,4 @@ public sealed class PendingLoginStore : IDisposable, IAsyncDisposable
         }
     }
 
-    private void FinishOperation()
-    {
-        lock (_sync)
-        {
-            _pendingOperations--;
-            TryFinishDisposal();
-        }
-    }
-
-    private void TryFinishDisposal()
-    {
-        if (_isDisposed && _pendingOperations == 0 && !_disposalCompletion.Task.IsCompleted)
-        {
-            foreach (SemaphoreSlim gate in _transitionGates)
-            {
-                gate.Dispose();
-            }
-            _pending.Clear();
-            _disposalCompletion.SetResult();
-        }
-    }
 }

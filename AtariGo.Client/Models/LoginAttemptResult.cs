@@ -12,9 +12,15 @@ public sealed class LoginAttemptResult
 
     public string MaskedEmail { get; init; } = string.Empty;
 
-    public long CodeExpiresAtUnixSeconds { get; init; }
+    public long CodeExpiresAtUnixSeconds
+    {
+        get; init;
+    }
 
-    public long RetryAtUnixSeconds { get; init; }
+    public long RetryAtUnixSeconds
+    {
+        get; init;
+    }
 
     public string RestrictionReason { get; init; } = string.Empty;
 }

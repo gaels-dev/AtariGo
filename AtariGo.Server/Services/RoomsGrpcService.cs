@@ -26,6 +26,109 @@ public sealed class RoomsGrpcService : Rooms.RoomsBase
         _logger = logger;
     }
 
+    internal static PrivateRoom RequireRoom(RoomOperationResult result)
+    {
+        if (result.Status != RoomOperationStatus.Success)
+        {
+            throw CreateRoomFailure(result.Status);
+        }
+
+        return result.Room ?? throw new InvalidOperationException("Room result is missing.");
+    }
+
+    internal static RoomSnapshot MapRoom(PrivateRoom room)
+    {
+        var snapshot = new RoomSnapshot
+        {
+            RoomId = room.RoomId,
+            InvitationCode = room.InvitationCode,
+            Configuration = new RoomConfiguration
+            {
+                CaptureGoal = room.Configuration.CaptureGoal,
+                GameTimeSeconds = room.Configuration.GameTimeSeconds,
+                TurnTimeSeconds = room.Configuration.TurnTimeSeconds
+            },
+            Version = room.Version,
+            State = RoomState.Waiting
+        };
+
+        if (room.IsClosed)
+        {
+            snapshot.State = RoomState.Closed;
+        }
+
+        if (room.GameId is long gameId)
+        {
+            snapshot.GameId = gameId;
+            snapshot.State = RoomState.Started;
+        }
+
+        snapshot.Participants.Add(MapParticipant(room.Host, isHost: true));
+        if (room.Opponent is not null)
+        {
+            snapshot.Participants.Add(MapParticipant(room.Opponent, isHost: false));
+        }
+
+        return snapshot;
+    }
+
+    private async Task<LobbyParticipant> GetParticipantAsync(ServerCallContext context)
+    {
+        string sessionToken = SessionRequestAuthentication.GetSessionToken(context);
+        SessionIdentity? identity = await _sessionService.ValidateSessionAsync(
+            sessionToken, context.CancellationToken);
+        if (identity is null)
+        {
+            throw SessionRequestAuthentication.CreateUnauthenticatedException();
+        }
+
+        return new LobbyParticipant(identity.UserId, identity.UserName);
+    }
+
+    private static RpcException CreateRoomFailure(RoomOperationStatus status)
+    {
+        return status switch
+        {
+            RoomOperationStatus.InvalidConfiguration => new RpcException(new Status(
+                StatusCode.InvalidArgument, "Invalid room configuration.")),
+            RoomOperationStatus.AlreadyHosting => new RpcException(new Status(
+                StatusCode.FailedPrecondition, "Close the existing room first.")),
+            RoomOperationStatus.NotFound => new RpcException(new Status(
+                StatusCode.NotFound, "Room not found.")),
+            RoomOperationStatus.VersionMismatch => new RpcException(new Status(
+                StatusCode.Aborted, "The room version has changed.")),
+            RoomOperationStatus.Full => new RpcException(new Status(
+                StatusCode.ResourceExhausted, "The room is full.")),
+            _ => CreateRoomStateFailure(status)
+        };
+    }
+
+    private static RpcException CreateRoomStateFailure(RoomOperationStatus status)
+    {
+        return status switch
+        {
+            RoomOperationStatus.HostRequired => new RpcException(new Status(
+                StatusCode.PermissionDenied, "Only the host can update the configuration.")),
+            RoomOperationStatus.NotMember => new RpcException(new Status(
+                StatusCode.PermissionDenied, "Room membership is required.")),
+            RoomOperationStatus.CannotStart => new RpcException(new Status(
+                StatusCode.FailedPrecondition, "Two participants are required.")),
+            RoomOperationStatus.StartInProgress => new RpcException(new Status(
+                StatusCode.FailedPrecondition, "The room is starting or has started.")),
+            _ => new RpcException(new Status(StatusCode.Internal, "Room operation failed."))
+        };
+    }
+
+    private static RoomParticipant MapParticipant(LobbyParticipant participant, bool isHost)
+    {
+        return new RoomParticipant
+        {
+            UserId = participant.UserId,
+            UserName = participant.UserName,
+            IsHost = isHost
+        };
+    }
+
     public override async Task<CreatePrivateRoomResponse> CreatePrivateRoom(
         CreatePrivateRoomRequest request,
         ServerCallContext context)
@@ -89,109 +192,6 @@ public sealed class RoomsGrpcService : Rooms.RoomsBase
             await GetParticipantAsync(context);
             await responseStream.WriteAsync(MapRoom(room), context.CancellationToken);
         }
-    }
-
-    private async Task<LobbyParticipant> GetParticipantAsync(ServerCallContext context)
-    {
-        string sessionToken = SessionRequestAuthentication.GetSessionToken(context);
-        SessionIdentity? identity = await _sessionService.ValidateSessionAsync(
-            sessionToken, context.CancellationToken);
-        if (identity is null)
-        {
-            throw SessionRequestAuthentication.CreateUnauthenticatedException();
-        }
-
-        return new LobbyParticipant(identity.UserId, identity.UserName);
-    }
-
-    internal static PrivateRoom RequireRoom(RoomOperationResult result)
-    {
-        if (result.Status != RoomOperationStatus.Success)
-        {
-            throw CreateRoomFailure(result.Status);
-        }
-
-        return result.Room ?? throw new InvalidOperationException("Room result is missing.");
-    }
-
-    internal static RoomSnapshot MapRoom(PrivateRoom room)
-    {
-        var snapshot = new RoomSnapshot
-        {
-            RoomId = room.RoomId,
-            InvitationCode = room.InvitationCode,
-            Configuration = new RoomConfiguration
-            {
-                CaptureGoal = room.Configuration.CaptureGoal,
-                GameTimeSeconds = room.Configuration.GameTimeSeconds,
-                TurnTimeSeconds = room.Configuration.TurnTimeSeconds
-            },
-            Version = room.Version,
-            State = RoomState.Waiting
-        };
-
-        if (room.IsClosed)
-        {
-            snapshot.State = RoomState.Closed;
-        }
-
-        if (room.GameId is long gameId)
-        {
-            snapshot.GameId = gameId;
-            snapshot.State = RoomState.Started;
-        }
-
-        snapshot.Participants.Add(MapParticipant(room.Host, isHost: true));
-        if (room.Opponent is not null)
-        {
-            snapshot.Participants.Add(MapParticipant(room.Opponent, isHost: false));
-        }
-
-        return snapshot;
-    }
-
-    private static RpcException CreateRoomFailure(RoomOperationStatus status)
-    {
-        return status switch
-        {
-            RoomOperationStatus.InvalidConfiguration => new RpcException(new Status(
-                StatusCode.InvalidArgument, "Invalid room configuration.")),
-            RoomOperationStatus.AlreadyHosting => new RpcException(new Status(
-                StatusCode.FailedPrecondition, "Close the existing room first.")),
-            RoomOperationStatus.NotFound => new RpcException(new Status(
-                StatusCode.NotFound, "Room not found.")),
-            RoomOperationStatus.VersionMismatch => new RpcException(new Status(
-                StatusCode.Aborted, "The room version has changed.")),
-            RoomOperationStatus.Full => new RpcException(new Status(
-                StatusCode.ResourceExhausted, "The room is full.")),
-            _ => CreateRoomStateFailure(status)
-        };
-    }
-
-    private static RpcException CreateRoomStateFailure(RoomOperationStatus status)
-    {
-        return status switch
-        {
-            RoomOperationStatus.HostRequired => new RpcException(new Status(
-                StatusCode.PermissionDenied, "Only the host can update the configuration.")),
-            RoomOperationStatus.NotMember => new RpcException(new Status(
-                StatusCode.PermissionDenied, "Room membership is required.")),
-            RoomOperationStatus.CannotStart => new RpcException(new Status(
-                StatusCode.FailedPrecondition, "Two participants are required.")),
-            RoomOperationStatus.StartInProgress => new RpcException(new Status(
-                StatusCode.FailedPrecondition, "The room is starting or has started.")),
-            _ => new RpcException(new Status(StatusCode.Internal, "Room operation failed."))
-        };
-    }
-
-    private static RoomParticipant MapParticipant(LobbyParticipant participant, bool isHost)
-    {
-        return new RoomParticipant
-        {
-            UserId = participant.UserId,
-            UserName = participant.UserName,
-            IsHost = isHost
-        };
     }
 
     public override async Task<UpdateRoomConfigurationResponse> UpdateRoomConfiguration(

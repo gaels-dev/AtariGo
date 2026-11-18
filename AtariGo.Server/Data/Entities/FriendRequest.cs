@@ -3,17 +3,32 @@ namespace AtariGo.Server.Data.Entities;
 
 public partial class FriendRequest
 {
-    public long FriendRequestId { get; set; }
+    public long FriendRequestId
+    {
+        get; set;
+    }
 
-    public int RequesterId { get; set; }
+    public int RequesterId
+    {
+        get; set;
+    }
 
-    public int RecipientId { get; set; }
+    public int RecipientId
+    {
+        get; set;
+    }
 
     public string State { get; set; } = null!;
 
-    public DateTime RequestedAt { get; set; }
+    public DateTime RequestedAt
+    {
+        get; set;
+    }
 
-    public DateTime? RespondedAt { get; set; }
+    public DateTime? RespondedAt
+    {
+        get; set;
+    }
 
     public virtual User Recipient { get; set; } = null!;
 

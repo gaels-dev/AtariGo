@@ -21,21 +21,27 @@ public sealed class SessionConnectionLease : IDisposable
             });
     }
 
-    public SessionConnectionInfo ConnectionInfo { get; internal set; }
+    public SessionConnectionInfo ConnectionInfo
+    {
+        get; internal set;
+    }
 
-    public Channel<SessionServerEvent> OutboundEvents { get; }
+    public Channel<SessionServerEvent> OutboundEvents
+    {
+        get;
+    }
 
     public CancellationToken CancellationToken =>
         _connectionCancellation.Token;
+
+    public void Dispose()
+    {
+        _connectionCancellation.Dispose();
+    }
 
     internal void Stop()
     {
         OutboundEvents.Writer.TryComplete();
         _connectionCancellation.Cancel();
-    }
-
-    public void Dispose()
-    {
-        _connectionCancellation.Dispose();
     }
 }

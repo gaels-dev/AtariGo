@@ -15,10 +15,21 @@ internal sealed class ControlledGameSessionTransport :
     private int _disposeCount;
 
     public Task FirstWriteStarted => _started.Task;
+
     public int WriteCount => Volatile.Read(ref _writeCount);
+
     public int DisposeCount => Volatile.Read(ref _disposeCount);
-    public Exception? FirstWriteFailure { get; set; }
-    public WriteOptions? WriteOptions { get; set; }
+
+    public Exception? FirstWriteFailure
+    {
+        get; set;
+    }
+
+    public WriteOptions? WriteOptions
+    {
+        get; set;
+    }
+
     public GameSessionServerEvent Current { get; } = new GameSessionServerEvent();
 
     public AsyncDuplexStreamingCall<GameSessionClientEvent, GameSessionServerEvent> CreateCall()

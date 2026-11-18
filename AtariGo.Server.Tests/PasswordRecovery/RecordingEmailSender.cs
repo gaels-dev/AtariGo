@@ -10,17 +10,29 @@ internal sealed class RecordingEmailSender : IEmailSender
 
     public string ExpectedRecipient { get; init; } = "Owner@example.test";
 
-    public bool FailDelivery { get; set; }
+    public bool FailDelivery
+    {
+        get; set;
+    }
 
     public List<string> Codes { get; } = new List<string>();
 
-    public EmailMessage? LastMessage { get; private set; }
+    public EmailMessage? LastMessage
+    {
+        get; private set;
+    }
 
     public string LastAttemptedCode { get; private set; } = string.Empty;
 
-    public TaskCompletionSource? SendStarted { get; set; }
+    public TaskCompletionSource? SendStarted
+    {
+        get; set;
+    }
 
-    public Task? SendCompletion { get; set; }
+    public Task? SendCompletion
+    {
+        get; set;
+    }
 
     public async Task SendAsync(EmailMessage message,
         CancellationToken cancellationToken)

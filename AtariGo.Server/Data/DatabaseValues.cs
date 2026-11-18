@@ -19,14 +19,11 @@ public static class DatabaseValues
     {
         public const string Active = "Active";
         public const string Revoked = "Revoked";
-        public const string Expired = "Expired";
     }
 
     public static class FriendRequestStates
     {
         public const string Pending = "Pending";
-        public const string Accepted = "Accepted";
-        public const string Rejected = "Rejected";
     }
 
     public static class RoomStates

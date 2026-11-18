@@ -18,14 +18,15 @@ namespace AtariGo.Client.Tests.ViewModels
     public sealed class LoginViewModelTests
     {
         [TestMethod]
-        public async Task SubmitCommand_DirectSuccessWithoutCode_DoesNotNavigate()
+        public async Task SubmitCommand_DirectSuccessWithoutCode_DoesNotNavigateAsync()
         {
             INavigationService navigation = DispatchProxy.Create<INavigationService,
                 RecordingNavigationProxy>();
             var authentication = new StubAuthenticationClient(_ => Task.FromResult(
                 new LoginAttemptResult
                 {
-                    Status = LoginAttemptStatus.Success, SessionToken = "bypass"
+                    Status = LoginAttemptStatus.Success,
+                    SessionToken = "bypass"
                 }));
             var registration = new StubRegistrationClient(_ =>
                 Task.FromResult(new RegisterAccountResponse()));
@@ -41,7 +42,7 @@ namespace AtariGo.Client.Tests.ViewModels
         [TestMethod]
         [DataRow(StatusCode.DeadlineExceeded, "LoginVerification_Result_Unconfirmed")]
         [DataRow(StatusCode.Unavailable, "LoginVerification_Result_Unconfirmed")]
-        public async Task SubmitCommand_TransportFailure_ShowsUnconfirmedMessage(
+        public async Task SubmitCommand_TransportFailure_ShowsUnconfirmedMessageAsync(
             StatusCode statusCode,
             string expectedResourceKey)
         {
@@ -62,7 +63,7 @@ namespace AtariGo.Client.Tests.ViewModels
         }
 
         [TestMethod]
-        public async Task Dispose_PendingLoginSuccess_DoesNotNavigateToMainWindow()
+        public async Task Dispose_PendingLoginSuccess_DoesNotNavigateToMainWindowAsync()
         {
             INavigationService navigation = DispatchProxy.Create<INavigationService,
                 RecordingNavigationProxy>();
@@ -91,19 +92,22 @@ namespace AtariGo.Client.Tests.ViewModels
             Assert.IsFalse(((RecordingNavigationProxy)navigation).Calls
                 .Contains(nameof(INavigationService.NavigateToMainWindow)));
         }
+
         [TestMethod]
-        public async Task SubmitCommand_ConfirmedCode_PreservesSessionContextDuringNavigation()
+        public async Task SubmitCommand_ConfirmedCode_PreservesSessionContextDuringNavigationAsync()
         {
             INavigationService navigation = DispatchProxy.Create<INavigationService,
                 RecordingNavigationProxy>();
             var authentication = new StubAuthenticationClient(_ => Task.FromResult(
                 new LoginAttemptResult
-            {
-                Status = LoginAttemptStatus.ChallengeRequired, ChallengeToken = "pending"
-            }));
+                {
+                    Status = LoginAttemptStatus.ChallengeRequired,
+                    ChallengeToken = "pending"
+                }));
             authentication.Verify = _ => Task.FromResult(new LoginAttemptResult
             {
-                Status = LoginAttemptStatus.Success, UserName = "Player",
+                Status = LoginAttemptStatus.Success,
+                UserName = "Player",
                 SessionToken = "test-session"
             });
             var registration = new StubRegistrationClient(_ =>

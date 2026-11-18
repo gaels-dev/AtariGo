@@ -1,4 +1,3 @@
-
 using AtariGo.Client.Models;
 using AtariGo.Contracts;
 

@@ -9,14 +9,16 @@ namespace AtariGo.Client.Tests.ViewModels;
 public sealed class ChangePasswordDialogViewModelTests
 {
     [TestMethod]
-    public async Task SaveCommand_ValidationAndUnconfirmedResult_ClearsSecretsWithoutRetry()
+    public async Task SaveCommand_ValidationAndUnconfirmedResult_ClearsSecretsWithoutRetryAsync()
     {
         // Arrange
         var client = new StubCredentialsClient();
         using var model = new ChangePasswordDialogViewModel(client);
         var invalid = new PasswordChangeInput
         {
-            CurrentPassword = "OldPassword8", NewPassword = "short", Confirmation = "short"
+            CurrentPassword = "OldPassword8",
+            NewPassword = "short",
+            Confirmation = "short"
         };
         int clears = 0;
         model.PasswordsCleared += () => clears++;
@@ -39,7 +41,7 @@ public sealed class ChangePasswordDialogViewModelTests
     }
 
     [TestMethod]
-    public async Task Dispose_PendingChange_CancelsAndIgnoresLateSuccess()
+    public async Task Dispose_PendingChange_CancelsAndIgnoresLateSuccessAsync()
     {
         // Arrange
         var pending = new TaskCompletionSource<PasswordChangeResult>(
@@ -69,7 +71,8 @@ public sealed class ChangePasswordDialogViewModelTests
     {
         return new PasswordChangeInput
         {
-            CurrentPassword = "OldPassword8", NewPassword = " NewPassword9 ",
+            CurrentPassword = "OldPassword8",
+            NewPassword = " NewPassword9 ",
             Confirmation = " NewPassword9 "
         };
     }

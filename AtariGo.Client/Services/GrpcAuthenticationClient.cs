@@ -44,7 +44,8 @@ public sealed class GrpcAuthenticationClient : IAuthenticationClient
         ArgumentNullException.ThrowIfNull(password);
         var request = new LoginRequest
         {
-            Identifier = identifier, Password = password,
+            Identifier = identifier,
+            Password = password,
             CultureName = CultureInfo.CurrentUICulture.Name
         };
         try
@@ -82,7 +83,8 @@ public sealed class GrpcAuthenticationClient : IAuthenticationClient
         ArgumentNullException.ThrowIfNull(token);
         var request = new ResendLoginCodeRequest
         {
-            ChallengeToken = token, CultureName = CultureInfo.CurrentUICulture.Name
+            ChallengeToken = token,
+            CultureName = CultureInfo.CurrentUICulture.Name
         };
         return ExecuteAsync(() => _client.ResendLoginCodeAsync(request,
             GrpcCallPolicy.CreateOptions(cancellationToken)).ResponseAsync);
@@ -110,9 +112,12 @@ public sealed class GrpcAuthenticationClient : IAuthenticationClient
             LoginResponse response = await operation();
             return new LoginAttemptResult
             {
-                Status = MapStatus(response.Result), UserName = response.UserName,
-                SessionToken = response.SessionToken, ChallengeToken = response.ChallengeToken,
-                MaskedEmail = response.MaskedEmail, RestrictionReason = response.RestrictionReason,
+                Status = MapStatus(response.Result),
+                UserName = response.UserName,
+                SessionToken = response.SessionToken,
+                ChallengeToken = response.ChallengeToken,
+                MaskedEmail = response.MaskedEmail,
+                RestrictionReason = response.RestrictionReason,
                 CodeExpiresAtUnixSeconds = response.CodeExpiresAtUnixSeconds,
                 RetryAtUnixSeconds = response.RetryAtUnixSeconds
             };

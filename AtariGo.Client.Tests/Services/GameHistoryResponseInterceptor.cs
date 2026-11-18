@@ -7,10 +7,16 @@ namespace AtariGo.Client.Tests.Services;
 
 public sealed class GameHistoryResponseInterceptor : Interceptor
 {
-    public Task<ListGamesByPlayerResponse> Response { get; set; } =
+    public Task<ListGamesByPlayerResponse> Response
+    {
+        get; set;
+    } =
         Task.FromResult(new ListGamesByPlayerResponse());
 
-    public CallOptions Options { get; private set; }
+    public CallOptions Options
+    {
+        get; private set;
+    }
 
     public override AsyncUnaryCall<TResponse> AsyncUnaryCall<TRequest, TResponse>(
         TRequest request, ClientInterceptorContext<TRequest, TResponse> context,

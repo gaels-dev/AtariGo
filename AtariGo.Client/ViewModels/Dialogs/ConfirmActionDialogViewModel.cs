@@ -44,8 +44,14 @@ namespace AtariGo.Client.ViewModels.Dialogs
             set => SetProperty(ref _cancelButtonText, value);
         }
 
-        public ICommand ConfirmCommand { get; }
+        public ICommand ConfirmCommand
+        {
+            get;
+        }
 
-        public ICommand CancelCommand { get; }
+        public ICommand CancelCommand
+        {
+            get;
+        }
     }
 }

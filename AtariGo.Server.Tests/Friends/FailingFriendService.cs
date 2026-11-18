@@ -11,7 +11,10 @@ internal sealed class FailingFriendService : IFriendService
         _failOperation = failOperation;
     }
 
-    public int InvocationCount { get; private set; }
+    public int InvocationCount
+    {
+        get; private set;
+    }
 
     public async Task<IReadOnlyList<FriendCandidateEntry>?> SearchUsersAsync(
         string sessionToken, string query, CancellationToken cancellationToken)

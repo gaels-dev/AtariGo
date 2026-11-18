@@ -1,3 +1,4 @@
+using AtariGo.Server.Concurrency;
 using AtariGo.Server.Application.Social;
 
 namespace AtariGo.Server.Tests.Friends;
@@ -9,12 +10,12 @@ public sealed class FriendMutationCoordinatorTests
     private static readonly TimeSpan completionTimeout = TimeSpan.FromSeconds(5);
 
     [TestMethod]
-    public async Task DisposeAsync_ActiveAndQueuedLeases_WaitsForBothAndRejectsNewEntries()
+    public async Task DisposeAsync_ActiveAndQueuedLeases_WaitsForBothAndRejectsNewEntriesAsync()
     {
         // Arrange
         await using FriendMutationCoordinator coordinator = new FriendMutationCoordinator();
-        using FriendMutationLease held = await coordinator.EnterAsync(CancellationToken.None);
-        Task<FriendMutationLease> queued = coordinator.EnterAsync(CancellationToken.None);
+        using AsyncOperationLease held = await coordinator.EnterAsync(CancellationToken.None);
+        Task<AsyncOperationLease> queued = coordinator.EnterAsync(CancellationToken.None);
         // Act
         coordinator.Dispose();
         Task closing = coordinator.DisposeAsync().AsTask();
@@ -23,7 +24,7 @@ public sealed class FriendMutationCoordinatorTests
         Assert.IsFalse(closing.IsCompleted);
         held.Dispose();
         held.Dispose();
-        using FriendMutationLease next = await queued.WaitAsync(completionTimeout);
+        using AsyncOperationLease next = await queued.WaitAsync(completionTimeout);
         Assert.IsFalse(closing.IsCompleted);
         next.Dispose();
         next.Dispose();
@@ -33,13 +34,13 @@ public sealed class FriendMutationCoordinatorTests
     }
 
     [TestMethod]
-    public async Task DisposeAsync_CancelledWaiter_WaitsOnlyForActiveLease()
+    public async Task DisposeAsync_CancelledWaiter_WaitsOnlyForActiveLeaseAsync()
     {
         // Arrange
         await using FriendMutationCoordinator coordinator = new FriendMutationCoordinator();
-        using FriendMutationLease held = await coordinator.EnterAsync(CancellationToken.None);
+        using AsyncOperationLease held = await coordinator.EnterAsync(CancellationToken.None);
         using CancellationTokenSource cancellation = new CancellationTokenSource();
-        Task<FriendMutationLease> queued = coordinator.EnterAsync(cancellation.Token);
+        Task<AsyncOperationLease> queued = coordinator.EnterAsync(cancellation.Token);
         // Act
         Task closing = coordinator.DisposeAsync().AsTask();
         cancellation.Cancel();
@@ -54,21 +55,21 @@ public sealed class FriendMutationCoordinatorTests
     }
 
     [TestMethod]
-    public async Task EnterAsync_CancelledWaiter_DoesNotReleaseAnotherLeasesPermit()
+    public async Task EnterAsync_CancelledWaiter_DoesNotReleaseAnotherLeasesPermitAsync()
     {
         // Arrange
         await using FriendMutationCoordinator coordinator = new FriendMutationCoordinator();
-        using FriendMutationLease held = await coordinator.EnterAsync(CancellationToken.None);
+        using AsyncOperationLease held = await coordinator.EnterAsync(CancellationToken.None);
         using CancellationTokenSource cancellation = new CancellationTokenSource();
-        Task<FriendMutationLease> cancelled = coordinator.EnterAsync(cancellation.Token);
+        Task<AsyncOperationLease> cancelled = coordinator.EnterAsync(cancellation.Token);
         // Act
         cancellation.Cancel();
         await Assert.ThrowsAsync<OperationCanceledException>(
             () => cancelled.WaitAsync(completionTimeout));
-        Task<FriendMutationLease> next = coordinator.EnterAsync(CancellationToken.None);
+        Task<AsyncOperationLease> next = coordinator.EnterAsync(CancellationToken.None);
         bool waitedForOwner = !next.IsCompleted;
         held.Dispose();
-        using FriendMutationLease acquired = await next.WaitAsync(completionTimeout);
+        using AsyncOperationLease acquired = await next.WaitAsync(completionTimeout);
         // Assert
         Assert.IsTrue(waitedForOwner);
     }

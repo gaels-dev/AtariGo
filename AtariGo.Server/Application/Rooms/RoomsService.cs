@@ -45,6 +45,8 @@ public sealed class RoomsService : IRoomsService
         LobbyParticipant host,
         LobbyConfiguration configuration)
     {
+        ArgumentNullException.ThrowIfNull(host);
+        ArgumentNullException.ThrowIfNull(configuration);
         if (!IsValidConfiguration(configuration))
         {
             return new RoomOperationResult(RoomOperationStatus.InvalidConfiguration);
@@ -121,6 +123,8 @@ public sealed class RoomsService : IRoomsService
 
     public RoomOperationResult JoinRoom(LobbyParticipant participant, RoomLocator locator)
     {
+        ArgumentNullException.ThrowIfNull(participant);
+        ArgumentNullException.ThrowIfNull(locator);
         lock (_roomLock)
         {
             RemoveExpiredRooms();
@@ -146,6 +150,8 @@ public sealed class RoomsService : IRoomsService
         LobbyParticipant recipient,
         int senderId)
     {
+        ArgumentNullException.ThrowIfNull(command);
+        ArgumentNullException.ThrowIfNull(recipient);
         lock (_roomLock)
         {
             RemoveExpiredRooms();
@@ -199,6 +205,8 @@ public sealed class RoomsService : IRoomsService
         RespondRoomInvitationCommand command,
         LobbyParticipant participant)
     {
+        ArgumentNullException.ThrowIfNull(command);
+        ArgumentNullException.ThrowIfNull(participant);
         lock (_roomLock)
         {
             RemoveExpiredRooms();
@@ -312,7 +320,11 @@ public sealed class RoomsService : IRoomsService
             }
             else
             {
-                entry.Publish(room with { Opponent = null, Version = room.Version + 1 });
+                entry.Publish(room with
+                {
+                    Opponent = null,
+                    Version = room.Version + 1
+                });
             }
 
             return new RoomOperationResult(RoomOperationStatus.Success, entry.Snapshot);
@@ -411,6 +423,7 @@ public sealed class RoomsService : IRoomsService
         RoomObservation observation,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(observation);
         RoomEntry? entry = FindRoomById(observation.RoomId);
         if (entry is null)
         {
@@ -430,7 +443,10 @@ public sealed class RoomsService : IRoomsService
                 && IsMember(snapshot, observation.UserId);
             if (snapshot is not null)
             {
-                observation = observation with { FromVersion = snapshot.Version };
+                observation = observation with
+                {
+                    FromVersion = snapshot.Version
+                };
             }
         }
     }
@@ -458,7 +474,11 @@ public sealed class RoomsService : IRoomsService
             return new RoomOperationResult(RoomOperationStatus.AlreadyHosting);
         }
 
-        entry.Publish(room with { Opponent = participant, Version = room.Version + 1 });
+        entry.Publish(room with
+        {
+            Opponent = participant,
+            Version = room.Version + 1
+        });
         _invitations.Invalidate(room.RoomId, acceptedInvitationId);
         return new RoomOperationResult(RoomOperationStatus.Success, entry.Snapshot);
     }
@@ -721,6 +741,10 @@ public sealed class RoomsService : IRoomsService
         _invitations.Invalidate(room.RoomId);
         _rooms.Remove(room.RoomId);
         _codes.Remove(room.InvitationCode);
-        entry.Publish(room with { IsClosed = true, Version = room.Version + 1 });
+        entry.Publish(room with
+        {
+            IsClosed = true,
+            Version = room.Version + 1
+        });
     }
 }

@@ -12,9 +12,15 @@ public sealed class RoomInvitationItemViewModel
         PlayerName = invitation.SenderName;
     }
 
-    public RoomInvitation Invitation { get; }
+    public RoomInvitation Invitation
+    {
+        get;
+    }
 
-    public string PlayerName { get; }
+    public string PlayerName
+    {
+        get;
+    }
 
     public string RoomCode => Invitation.RoomCode;
 

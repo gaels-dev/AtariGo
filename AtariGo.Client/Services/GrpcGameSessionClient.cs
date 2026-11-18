@@ -6,8 +6,6 @@ namespace AtariGo.Client.Services;
 
 public sealed class GrpcGameSessionClient : IGameSessionClient
 {
-    private const string GuestCredentialHeader = "x-guest-credential";
-
     private readonly GameSession.GameSessionClient _client;
     private readonly string? _sessionToken;
     private readonly string? _guestCredential;
@@ -42,7 +40,7 @@ public sealed class GrpcGameSessionClient : IGameSessionClient
         long gameId,
         CancellationToken cancellationToken)
     {
-        Metadata headers = CreateHeaders();
+        Metadata headers = GrpcCallPolicy.CreateHeaders(_sessionToken, _guestCredential);
         CallOptions options = new CallOptions(
             headers: headers,
             cancellationToken: cancellationToken);
@@ -65,21 +63,5 @@ public sealed class GrpcGameSessionClient : IGameSessionClient
                 call.Dispose();
             }
         }
-    }
-
-    private Metadata CreateHeaders()
-    {
-        Metadata headers = new Metadata();
-        if (!string.IsNullOrWhiteSpace(_sessionToken))
-        {
-            headers.Add("authorization", $"Bearer {_sessionToken}");
-        }
-
-        if (!string.IsNullOrWhiteSpace(_guestCredential))
-        {
-            headers.Add(GuestCredentialHeader, _guestCredential);
-        }
-
-        return headers;
     }
 }

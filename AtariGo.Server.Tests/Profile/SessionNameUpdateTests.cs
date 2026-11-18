@@ -8,14 +8,20 @@ namespace AtariGo.Server.Tests.Profile;
 public sealed class SessionNameUpdateTests
 {
     [TestMethod]
-    public void UpdateUserName_NotifiesConnectedFriendAndUpdatesSnapshot()
+    public void UpdateUserName_ConnectedFriend_NotifiesAndUpdatesSnapshot()
     {
         // Arrange
         SessionConnectionRegistry registry = new SessionConnectionRegistry();
-        using SessionConnectionLease first = registry.Register(new SessionConnectionInfo(
-            10, 1, "First", new[] { new FriendPresenceEntry(2, "Second", false) }));
-        using SessionConnectionLease second = registry.Register(new SessionConnectionInfo(
-            20, 2, "Second", new[] { new FriendPresenceEntry(1, "First", true) }));
+        using SessionConnectionLease first = registry.Register(
+            new SessionConnectionInfo(10, 1, "First")
+            {
+                Friends = new[] { new FriendPresenceEntry(2, "Second", false) }
+            });
+        using SessionConnectionLease second = registry.Register(
+            new SessionConnectionInfo(20, 2, "Second")
+            {
+                Friends = new[] { new FriendPresenceEntry(1, "First", true) }
+            });
         while (second.OutboundEvents.Reader.TryRead(out _))
         {
         }

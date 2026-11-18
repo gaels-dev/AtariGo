@@ -19,7 +19,7 @@ namespace AtariGo.Client.Tests.Views;
 public sealed class ProfileCustomizationViewTests
 {
     [STATestMethod]
-    public void View_InitializesAndRendersAvatarChoices()
+    public void View_DefaultProfile_RendersAvatarChoices()
     {
         // Arrange
         INavigationService navigation = DispatchProxy.Create<INavigationService,
@@ -57,7 +57,7 @@ public sealed class ProfileCustomizationViewTests
     }
 
     [STATestMethod]
-    public async Task View_ExpandedPickerRendersAllAvatarResources()
+    public async Task View_ExpandedPicker_RendersAllAvatarResourcesAsync()
     {
         // Arrange
         INavigationService navigation = DispatchProxy.Create<INavigationService,
@@ -93,7 +93,7 @@ public sealed class ProfileCustomizationViewTests
     }
 
     [STATestMethod]
-    public void View_UsesSharedRoundedButtonStyle()
+    public void View_ActionButtons_UseSharedRoundedStyle()
     {
         // Arrange
         INavigationService navigation = DispatchProxy.Create<INavigationService,

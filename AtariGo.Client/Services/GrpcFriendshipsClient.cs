@@ -26,9 +26,9 @@ public sealed class GrpcFriendshipsClient : IFriendshipsClient
         int friendUserId,
         CancellationToken cancellationToken = default)
     {
-        return _client.RemoveFriendshipAsync(
+        return GrpcCallPolicy.ExecuteAsync(() => _client.RemoveFriendshipAsync(
             new RemoveFriendshipRequest { FriendUserId = friendUserId },
             GrpcCallPolicy.CreateOptions(cancellationToken,
-                new Metadata { { "authorization", $"Bearer {_sessionToken}" } })).ResponseAsync;
+                GrpcCallPolicy.CreateHeaders(_sessionToken))).ResponseAsync);
     }
 }

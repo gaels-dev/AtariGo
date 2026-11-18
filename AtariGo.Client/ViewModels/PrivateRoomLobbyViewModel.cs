@@ -50,9 +50,15 @@ public sealed class PrivateRoomLobbyViewModel : ViewModelBase, IDisposable
         _session.Updated += HandleSessionUpdate;
     }
 
-    public RoomInvitationsViewModel? RoomInvitations { get; private set; }
+    public RoomInvitationsViewModel? RoomInvitations
+    {
+        get; private set;
+    }
 
-    public bool IsHost { get; }
+    public bool IsHost
+    {
+        get;
+    }
 
     public bool IsGuest => !IsHost;
 
@@ -64,7 +70,10 @@ public sealed class PrivateRoomLobbyViewModel : ViewModelBase, IDisposable
 
     public int TurnTimeSeconds => _room.Configuration.TurnTimeSeconds;
 
-    public IReadOnlyList<int> CaptureGoals { get; } = new[]
+    public IReadOnlyList<int> CaptureGoals
+    {
+        get;
+    } = new[]
     {
         GameRules.DefaultCaptureGoal,
         GameRules.IntermediateCaptureGoal,
@@ -93,8 +102,6 @@ public sealed class PrivateRoomLobbyViewModel : ViewModelBase, IDisposable
 
     public string CaptureGoalLabel => GetMessage("PrivateRoom_Lbl_CaptureGoal");
 
-    public string GameTimeLabel => GetMessage("PrivateRoom_Lbl_GameTimeSeconds");
-
     public string TurnTimeLabel => GetMessage("PrivateRoom_Lbl_TurnTimeSeconds");
 
     public string StartGameLabel => GetMessage("PrivateRoom_Btn_StartGame");
@@ -111,9 +118,15 @@ public sealed class PrivateRoomLobbyViewModel : ViewModelBase, IDisposable
         private set => SetProperty(ref _errorMessage, value);
     }
 
-    public ICommand StartGameCommand { get; }
+    public ICommand StartGameCommand
+    {
+        get;
+    }
 
-    public ICommand LeaveRoomCommand { get; }
+    public ICommand LeaveRoomCommand
+    {
+        get;
+    }
 
     public void AttachInvitations(RoomInvitationsViewModel invitations)
     {

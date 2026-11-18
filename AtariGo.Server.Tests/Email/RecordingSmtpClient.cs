@@ -12,15 +12,27 @@ internal sealed class RecordingSmtpClient : SmtpClient
 {
     public string Host { get; private set; } = string.Empty;
 
-    public int Port { get; private set; }
+    public int Port
+    {
+        get; private set;
+    }
 
-    public SecureSocketOptions Security { get; private set; }
+    public SecureSocketOptions Security
+    {
+        get; private set;
+    }
 
-    public CancellationToken ConnectToken { get; private set; }
+    public CancellationToken ConnectToken
+    {
+        get; private set;
+    }
 
     public string UserName { get; private set; } = string.Empty;
 
-    public CancellationToken AuthenticationToken { get; private set; }
+    public CancellationToken AuthenticationToken
+    {
+        get; private set;
+    }
 
     public string Sender { get; private set; } = string.Empty;
 
@@ -30,13 +42,25 @@ internal sealed class RecordingSmtpClient : SmtpClient
 
     public string Body { get; private set; } = string.Empty;
 
-    public CancellationToken SendToken { get; private set; }
+    public CancellationToken SendToken
+    {
+        get; private set;
+    }
 
-    public bool IsDisconnected { get; private set; }
+    public bool IsDisconnected
+    {
+        get; private set;
+    }
 
-    public bool IsDisposed { get; private set; }
+    public bool IsDisposed
+    {
+        get; private set;
+    }
 
-    public bool ShouldFailSend { get; init; }
+    public bool ShouldFailSend
+    {
+        get; init;
+    }
 
     public override Task ConnectAsync(string host, int port, SecureSocketOptions options,
         CancellationToken cancellationToken = default)

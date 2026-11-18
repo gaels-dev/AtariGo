@@ -38,7 +38,7 @@ public sealed class RoomsServiceTests
     }
 
     [TestMethod]
-    public async Task RespondRoomInvitation_ConcurrentAcceptances_AssignsOnlyOneOpponent()
+    public async Task RespondRoomInvitation_ConcurrentAcceptances_AssignsOnlyOneOpponentAsync()
     {
         // Arrange
         var connections = new SessionConnectionRegistry();
@@ -210,8 +210,10 @@ public sealed class RoomsServiceTests
 
     private static SessionConnectionLease Connect(SessionConnectionRegistry registry, int userId)
     {
-        return registry.Register(new SessionConnectionInfo(userId, userId, "Player",
-            Array.Empty<FriendPresenceEntry>()));
+        return registry.Register(new SessionConnectionInfo(userId, userId, "Player")
+        {
+            Friends = Array.Empty<FriendPresenceEntry>()
+        });
     }
 
     private static PrivateRoom CreateRoom(RoomsService rooms)

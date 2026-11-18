@@ -1,20 +1,35 @@
-﻿
+
 
 namespace AtariGo.Server.Data.Entities;
 
 public partial class Session
 {
-    public long SessionId { get; set; }
+    public long SessionId
+    {
+        get; set;
+    }
 
-    public int UserId { get; set; }
+    public int UserId
+    {
+        get; set;
+    }
 
     public string SessionTokenHash { get; set; } = null!;
 
-    public DateTime StartedAt { get; set; }
+    public DateTime StartedAt
+    {
+        get; set;
+    }
 
-    public DateTime LastActivityAt { get; set; }
+    public DateTime LastActivityAt
+    {
+        get; set;
+    }
 
-    public DateTime ExpiresAt { get; set; }
+    public DateTime ExpiresAt
+    {
+        get; set;
+    }
 
     public string State { get; set; } = null!;
 

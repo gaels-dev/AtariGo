@@ -15,7 +15,8 @@ namespace AtariGo.Client.Tests.ViewModels;
 public sealed class RoomInvitationsViewModelTests
 {
     [TestMethod]
-    public async Task SendEmailCommand_SelectedOfflineFriend_WaitsForConfirmationAndSendsOnlyOnce()
+    public async Task
+        SendEmailCommand_SelectedOfflineFriend_WaitsForConfirmationAndSendsOnlyOnceAsync()
     {
         // Arrange
         var client = new StubRoomInvitationsClient
@@ -45,7 +46,7 @@ public sealed class RoomInvitationsViewModelTests
     }
 
     [TestMethod]
-    public async Task SendEmailCommand_FriendshipRemovedOrRoomFull_DoesNotSend()
+    public async Task SendEmailCommand_FriendshipRemovedOrRoomFull_DoesNotSendAsync()
     {
         // Arrange
         var client = new StubRoomInvitationsClient();
@@ -66,7 +67,7 @@ public sealed class RoomInvitationsViewModelTests
     }
 
     [TestMethod]
-    public async Task SendEmailCommand_DisposedDuringDelivery_DiscardsLateResponse()
+    public async Task SendEmailCommand_DisposedDuringDelivery_DiscardsLateResponseAsync()
     {
         // Arrange
         var completion = new TaskCompletionSource<SendRoomInvitationResponse>();
@@ -93,7 +94,7 @@ public sealed class RoomInvitationsViewModelTests
     [TestMethod]
     [DataRow(RoomInvitationDeliveryStatus.Unspecified)]
     [DataRow(RoomInvitationDeliveryStatus.InApp)]
-    public async Task SendEmailCommand_LegacyServer_DoesNotClaimEmailDelivery(
+    public async Task SendEmailCommand_LegacyServer_DoesNotClaimEmailDeliveryAsync(
         RoomInvitationDeliveryStatus status)
     {
         // Arrange
@@ -119,7 +120,7 @@ public sealed class RoomInvitationsViewModelTests
     }
 
     [TestMethod]
-    public async Task SendCommand_FriendRow_SendsOnlyTheClickedConnectedFriend()
+    public async Task SendCommand_FriendRow_SendsOnlyTheClickedConnectedFriendAsync()
     {
         // Arrange
         var client = new StubRoomInvitationsClient();
@@ -162,7 +163,7 @@ public sealed class RoomInvitationsViewModelTests
     }
 
     [TestMethod]
-    public async Task OnlineFriends_PresenceAndMembershipChanges_UpdatesWithoutManualRefresh()
+    public async Task OnlineFriends_PresenceAndMembershipChanges_UpdatesWithoutManualRefreshAsync()
     {
         // Arrange
         var client = new StubRoomInvitationsClient();
@@ -189,7 +190,7 @@ public sealed class RoomInvitationsViewModelTests
     }
 
     [TestMethod]
-    public async Task SendCommand_FullRoom_DoesNotInvite()
+    public async Task SendCommand_FullRoom_DoesNotInviteAsync()
     {
         // Arrange
         var client = new StubRoomInvitationsClient();
@@ -206,7 +207,7 @@ public sealed class RoomInvitationsViewModelTests
     }
 
     [TestMethod]
-    public async Task AcceptCommand_ConfirmedResponse_OpensPrivateLobby()
+    public async Task AcceptCommand_ConfirmedResponse_OpensPrivateLobbyAsync()
     {
         // Arrange
         StubRoomInvitationsClient client = IncomingClient();
@@ -217,7 +218,10 @@ public sealed class RoomInvitationsViewModelTests
         INavigationService navigation =
             DispatchProxy.Create<INavigationService, RecordingNavigationProxy>();
         using var model = new RoomInvitationsViewModel(navigation, client,
-            new RoomInvitationsNavigationContext(0)) { IsAcceptanceAllowed = true };
+            new RoomInvitationsNavigationContext(0))
+        {
+            IsAcceptanceAllowed = true
+        };
         model.RequestRefresh();
         model.SelectedInvitation = model.Invitations[0];
 
@@ -232,7 +236,7 @@ public sealed class RoomInvitationsViewModelTests
     }
 
     [TestMethod]
-    public async Task AcceptCommand_PlayerBusyOrInvitationExpired_DoesNotAccept()
+    public async Task AcceptCommand_PlayerBusyOrInvitationExpired_DoesNotAcceptAsync()
     {
         // Arrange
         StubRoomInvitationsClient client = IncomingClient();
@@ -254,7 +258,7 @@ public sealed class RoomInvitationsViewModelTests
     }
 
     [TestMethod]
-    public async Task RejectCommand_SelectedInvitation_SendsDecision()
+    public async Task RejectCommand_SelectedInvitation_SendsDecisionAsync()
     {
         // Arrange
         StubRoomInvitationsClient client = IncomingClient();
@@ -273,7 +277,7 @@ public sealed class RoomInvitationsViewModelTests
     }
 
     [TestMethod]
-    public async Task SendCommand_TransportFailure_DoesNotReplayMutation()
+    public async Task SendCommand_TransportFailure_DoesNotReplayMutationAsync()
     {
         // Arrange
         var client = new StubRoomInvitationsClient
@@ -294,7 +298,7 @@ public sealed class RoomInvitationsViewModelTests
     }
 
     [TestMethod]
-    public async Task Dispose_PendingAcceptance_DoesNotNavigateAfterLateResponse()
+    public async Task Dispose_PendingAcceptance_DoesNotNavigateAfterLateResponseAsync()
     {
         // Arrange
         StubRoomInvitationsClient client = IncomingClient();
@@ -304,7 +308,10 @@ public sealed class RoomInvitationsViewModelTests
         INavigationService navigation =
             DispatchProxy.Create<INavigationService, RecordingNavigationProxy>();
         using var model = new RoomInvitationsViewModel(navigation, client,
-            new RoomInvitationsNavigationContext(0)) { IsAcceptanceAllowed = true };
+            new RoomInvitationsNavigationContext(0))
+        {
+            IsAcceptanceAllowed = true
+        };
         model.RequestRefresh();
         model.SelectedInvitation = model.Invitations[0];
         Task accepting = CommandExecution.ExecuteAsync(model.AcceptCommand, null);
@@ -322,7 +329,8 @@ public sealed class RoomInvitationsViewModelTests
     }
 
     [TestMethod]
-    public async Task RequestRefresh_NotificationDuringLoad_ReconcilesLatestStateAutomatically()
+    public async Task
+        RequestRefresh_NotificationDuringLoad_ReconcilesLatestStateAutomaticallyAsync()
     {
         // Arrange
         StubRoomInvitationsClient client = IncomingClient();
@@ -372,8 +380,12 @@ public sealed class RoomInvitationsViewModelTests
         var client = new StubRoomInvitationsClient();
         client.ListResponse.Invitations.Add(new RoomInvitation
         {
-            InvitationId = 7, RoomId = 42, RoomCode = "ROOMCODE", SenderName = "Host",
-            RecipientName = "Friend", State = RoomInvitationState.Pending
+            InvitationId = 7,
+            RoomId = 42,
+            RoomCode = "ROOMCODE",
+            SenderName = "Host",
+            RecipientName = "Friend",
+            State = RoomInvitationState.Pending
         });
         return client;
     }

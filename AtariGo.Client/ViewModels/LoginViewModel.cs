@@ -92,21 +92,45 @@ namespace AtariGo.Client.ViewModels
 
         public bool IsDialogVisible => _currentDialogViewModel is not null;
 
-        public ICommand ChangeLanguageCommand { get; }
+        public ICommand ChangeLanguageCommand
+        {
+            get;
+        }
 
-        public ICommand CancelLanguageCommand { get; }
+        public ICommand CancelLanguageCommand
+        {
+            get;
+        }
 
-        public ICommand ConfirmLanguageCommand { get; }
+        public ICommand ConfirmLanguageCommand
+        {
+            get;
+        }
 
-        public ICommand SubmitCommand { get; }
+        public ICommand SubmitCommand
+        {
+            get;
+        }
 
-        public ICommand GuestCommand { get; }
+        public ICommand GuestCommand
+        {
+            get;
+        }
 
-        public ICommand ExitCommand { get; }
+        public ICommand ExitCommand
+        {
+            get;
+        }
 
-        public ICommand OpenRegisterCommand { get; }
+        public ICommand OpenRegisterCommand
+        {
+            get;
+        }
 
-        public ICommand OpenForgotPasswordCommand { get; }
+        public ICommand OpenForgotPasswordCommand
+        {
+            get;
+        }
 
         public void Dispose()
         {

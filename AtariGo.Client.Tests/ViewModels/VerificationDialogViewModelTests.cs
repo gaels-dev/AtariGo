@@ -1,7 +1,6 @@
 using System.Globalization;
 using System.Reflection;
 
-
 using Grpc.Core;
 
 using AtariGo.Client.Models;
@@ -22,7 +21,7 @@ namespace AtariGo.Client.Tests.ViewModels
         [TestMethod]
         [DataRow(StatusCode.DeadlineExceeded)]
         [DataRow(StatusCode.Unavailable)]
-        public async Task ConfirmCommand_LostResponse_DoesNotReplayRegistration(
+        public async Task ConfirmCommand_LostResponse_DoesNotReplayRegistrationAsync(
             StatusCode statusCode)
         {
             // Arrange
@@ -51,7 +50,7 @@ namespace AtariGo.Client.Tests.ViewModels
         }
 
         [TestMethod]
-        public async Task CancelCommand_LateSuccessfulResponse_DoesNotShowRegistrationResult()
+        public async Task CancelCommand_LateSuccessfulResponse_DoesNotShowRegistrationResultAsync()
         {
             // Arrange
             INavigationService navigation = DispatchProxy.Create<INavigationService,

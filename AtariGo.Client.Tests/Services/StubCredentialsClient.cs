@@ -5,12 +5,21 @@ namespace AtariGo.Client.Tests.Services;
 
 public sealed class StubCredentialsClient : ICredentialsClient
 {
-    public Task<PasswordChangeResult> Response { get; set; } =
+    public Task<PasswordChangeResult> Response
+    {
+        get; set;
+    } =
         Task.FromResult(PasswordChangeResult.Changed);
 
-    public CancellationToken RequestToken { get; private set; }
+    public CancellationToken RequestToken
+    {
+        get; private set;
+    }
 
-    public int Calls { get; private set; }
+    public int Calls
+    {
+        get; private set;
+    }
 
     public Task<PasswordChangeResult> ChangePasswordAsync(PasswordChangeInput input,
         CancellationToken cancellationToken)

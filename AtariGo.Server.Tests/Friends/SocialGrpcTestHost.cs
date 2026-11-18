@@ -31,7 +31,10 @@ internal sealed class SocialGrpcTestHost : IAsyncDisposable
 
     public string Address => _app.Urls.Single();
 
-    public SocialTestDatabase Database { get; }
+    public SocialTestDatabase Database
+    {
+        get;
+    }
 
     public static async Task<SocialGrpcTestHost> StartAsync(
         IFriendService? friendService = null,

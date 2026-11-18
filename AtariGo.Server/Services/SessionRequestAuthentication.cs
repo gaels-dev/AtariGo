@@ -9,6 +9,7 @@ internal static class SessionRequestAuthentication
 
     public static string GetSessionToken(ServerCallContext context)
     {
+        ArgumentNullException.ThrowIfNull(context);
         string? authorization = context.RequestHeaders.GetValue(
             AuthorizationHeader);
         if (authorization is null

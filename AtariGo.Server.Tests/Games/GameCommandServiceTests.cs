@@ -13,7 +13,7 @@ namespace AtariGo.Server.Tests.Games;
 public sealed class GameCommandServiceTests
 {
     [TestMethod]
-    public async Task AdvanceAsync_WaitingWithOnePlayer_PreservesGraceDeadlineAndVersion()
+    public async Task AdvanceAsync_WaitingWithOnePlayer_PreservesGraceDeadlineAndVersionAsync()
     {
         // Arrange
         await using GameplayTestDatabase database = await GameplayTestDatabase.CreateAsync();
@@ -32,7 +32,7 @@ public sealed class GameCommandServiceTests
     }
 
     [TestMethod]
-    public async Task AdvanceAsync_GraceExpired_DoesNotStartWhenBothPlayersAreConnected()
+    public async Task AdvanceAsync_GraceExpired_DoesNotStartWhenBothPlayersAreConnectedAsync()
     {
         // Arrange
         await using GameplayTestDatabase database = await GameplayTestDatabase.CreateAsync();
@@ -54,7 +54,7 @@ public sealed class GameCommandServiceTests
     }
 
     [TestMethod]
-    public async Task ProcessAsync_RepeatedAction_ReadsConnectionStateAfterReceiptLookup()
+    public async Task ProcessAsync_RepeatedAction_ReadsConnectionStateAfterReceiptLookupAsync()
     {
         // Arrange
         GameActionLookupInterceptor interceptor = new GameActionLookupInterceptor();
@@ -78,7 +78,7 @@ public sealed class GameCommandServiceTests
     }
 
     [TestMethod]
-    public async Task ProcessAsync_ValidMove_PersistsWithoutPublishingToConnections()
+    public async Task ProcessAsync_ValidMove_PersistsWithoutPublishingToConnectionsAsync()
     {
         // Arrange
         await using GameplayTestDatabase database = await GameplayTestDatabase.CreateAsync();
@@ -102,7 +102,8 @@ public sealed class GameCommandServiceTests
     }
 
     [TestMethod]
-    public async Task ProcessAsync_ActionIdReusedForDifferentMove_ReturnsConflictWithoutNewMove()
+    public async Task
+        ProcessAsync_ActionIdReusedForDifferentMove_ReturnsConflictWithoutNewMoveAsync()
     {
         // Arrange
         await using GameplayTestDatabase database = await GameplayTestDatabase.CreateAsync();
@@ -115,7 +116,10 @@ public sealed class GameCommandServiceTests
             .GetRequiredService<GameCommandService>();
         // Act
         GameOperationResult result = await commands.ProcessAsync(black,
-            move with { Column = 2 }, () => true);
+            move with
+            {
+                Column = 2
+            }, () => true);
         // Assert
         Assert.IsFalse(result.ActionResult!.IsAccepted);
         Assert.AreEqual("ActionConflict", result.ActionResult.Rejection);
@@ -125,7 +129,7 @@ public sealed class GameCommandServiceTests
     }
 
     [TestMethod]
-    public async Task ProcessAsync_InvalidActionId_ReturnsRejectionWithoutSaving()
+    public async Task ProcessAsync_InvalidActionId_ReturnsRejectionWithoutSavingAsync()
     {
         // Arrange
         await using GameplayTestDatabase database = await GameplayTestDatabase.CreateAsync();
@@ -144,7 +148,7 @@ public sealed class GameCommandServiceTests
     }
 
     [TestMethod]
-    public async Task ProcessAsync_MoveWriteFails_RollsBackAndDoesNotPublish()
+    public async Task ProcessAsync_MoveWriteFails_RollsBackAndDoesNotPublishAsync()
     {
         // Arrange
         GameWriteFailureInterceptor interceptor = new GameWriteFailureInterceptor();

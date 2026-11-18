@@ -8,6 +8,7 @@ namespace AtariGo.Server.Configuration
 
         public static bool Validate(IConfiguration configuration, ILogger logger)
         {
+            ArgumentNullException.ThrowIfNull(logger);
             bool isValid = true;
             try
             {

@@ -15,9 +15,18 @@ public sealed class LoginCodeDelivery
         Message = message;
     }
 
-    public PendingLogin Pending { get; }
+    public PendingLogin Pending
+    {
+        get;
+    }
 
-    public AuthenticationCode Code { get; }
+    public AuthenticationCode Code
+    {
+        get;
+    }
 
-    public EmailMessage Message { get; }
+    public EmailMessage Message
+    {
+        get;
+    }
 }

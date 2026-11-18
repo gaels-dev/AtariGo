@@ -109,7 +109,10 @@ public sealed class SessionConnectionRegistry : ISessionConnectionRegistry
                 return;
             }
 
-            connection.ConnectionInfo = connection.ConnectionInfo with { UserName = userName };
+            connection.ConnectionInfo = connection.ConnectionInfo with
+            {
+                UserName = userName
+            };
             foreach (FriendPresenceEntry friend in connection.ConnectionInfo.Friends)
             {
                 UpdateFriendName(friend.UserId, userId, userName);
@@ -277,7 +280,10 @@ public sealed class SessionConnectionRegistry : ISessionConnectionRegistry
         {
             Friends = friendConnection.ConnectionInfo.Friends
                 .Select(friend => friend.UserId == userId
-                    ? friend with { UserName = userName } : friend)
+                    ? friend with
+                    {
+                        UserName = userName
+                    } : friend)
                 .ToList()
         };
         QueuePresenceEvent(friendConnection,

@@ -68,9 +68,15 @@ public sealed class RegisterDialogViewModel : ViewModelBase
     public string ConfirmPasswordLabel =>
         GetLocalizedMessage("Register_Lbl_ConfirmPassword");
 
-    public ICommand RegisterCommand { get; }
+    public ICommand RegisterCommand
+    {
+        get;
+    }
 
-    public ICommand CancelCommand { get; }
+    public ICommand CancelCommand
+    {
+        get;
+    }
 
     public void ClearSensitiveData()
     {

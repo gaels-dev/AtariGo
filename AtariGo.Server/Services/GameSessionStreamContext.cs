@@ -1,4 +1,3 @@
-
 using Grpc.Core;
 
 using AtariGo.Contracts;
@@ -19,9 +18,18 @@ public sealed class GameSessionStreamContext
         CancellationToken = cancellationToken;
     }
 
-    public IAsyncStreamReader<GameSessionClientEvent> RequestStream { get; }
+    public IAsyncStreamReader<GameSessionClientEvent> RequestStream
+    {
+        get;
+    }
 
-    public IServerStreamWriter<GameSessionServerEvent> ResponseStream { get; }
+    public IServerStreamWriter<GameSessionServerEvent> ResponseStream
+    {
+        get;
+    }
 
-    public CancellationToken CancellationToken { get; }
+    public CancellationToken CancellationToken
+    {
+        get;
+    }
 }

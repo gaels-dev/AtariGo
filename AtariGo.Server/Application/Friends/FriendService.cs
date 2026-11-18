@@ -3,6 +3,7 @@ using System.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 
+using AtariGo.Server.Concurrency;
 using AtariGo.Server.Application.Sessions;
 using AtariGo.Server.Application.Social;
 using AtariGo.Server.Data;
@@ -81,7 +82,7 @@ public sealed class FriendService : IFriendService
             return null;
         }
 
-        using FriendMutationLease lease = await _mutations.EnterAsync(cancellationToken);
+        using AsyncOperationLease lease = await _mutations.EnterAsync(cancellationToken);
         SendFriendRequestResult? rejection =
             await FindFriendRequestRejectionAsync(
                 requesterId.Value,
@@ -140,7 +141,7 @@ public sealed class FriendService : IFriendService
             return null;
         }
 
-        using FriendMutationLease lease = await _mutations.EnterAsync(cancellationToken);
+        using AsyncOperationLease lease = await _mutations.EnterAsync(cancellationToken);
         return await ApplyFriendRequestResponseAsync(
             command, recipientId.Value, cancellationToken);
     }
@@ -202,7 +203,7 @@ public sealed class FriendService : IFriendService
             return null;
         }
 
-        using FriendMutationLease lease = await _mutations.EnterAsync(cancellationToken);
+        using AsyncOperationLease lease = await _mutations.EnterAsync(cancellationToken);
         int removed = await _dbContext.FriendRequests
             .Where(friendRequest => friendRequest.FriendRequestId == requestId
                 && friendRequest.RequesterId == identity.UserId

@@ -43,7 +43,7 @@ public sealed class GrpcCredentialsClient : ICredentialsClient
         PasswordChangeResult result;
         try
         {
-            var headers = new Metadata { { "authorization", $"Bearer {_sessionToken}" } };
+            Metadata headers = GrpcCallPolicy.CreateHeaders(_sessionToken);
             ChangePasswordResponse response = await _client.ChangePasswordAsync(request,
                 GrpcCallPolicy.CreateOptions(cancellationToken, headers)).ResponseAsync;
             result = MapStatus(response.Status);

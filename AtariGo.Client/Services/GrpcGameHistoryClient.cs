@@ -33,7 +33,7 @@ public sealed class GrpcGameHistoryClient : IGameHistoryClient
         GameHistoryQueryResult result;
         try
         {
-            var headers = new Metadata { { "authorization", $"Bearer {_sessionToken}" } };
+            Metadata headers = GrpcCallPolicy.CreateHeaders(_sessionToken);
             ListGamesByPlayerResponse response = await _client.ListGamesByPlayerAsync(
                 new ListGamesByPlayerRequest(),
                 GrpcCallPolicy.CreateOptions(cancellationToken, headers)).ResponseAsync;

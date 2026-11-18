@@ -13,7 +13,7 @@ namespace AtariGo.Client.Tests.Services;
 public sealed class GrpcPasswordRecoveryClientTests
 {
     [TestMethod]
-    public async Task ResetAsync_LostResponse_UsesDeadlineClearsRequestAndNeverRetries()
+    public async Task ResetAsync_LostResponse_UsesDeadlineClearsRequestAndNeverRetriesAsync()
     {
         // Arrange
         using var connection = new GrpcClientConnection(new Uri("https://localhost:7061"));

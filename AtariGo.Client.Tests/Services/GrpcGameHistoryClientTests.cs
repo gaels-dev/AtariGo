@@ -12,7 +12,7 @@ namespace AtariGo.Client.Tests.Services;
 public sealed class GrpcGameHistoryClientTests
 {
     [TestMethod]
-    public async Task ListGamesByPlayer_TransportAndInvalidSummary_ReturnsControlledFailures()
+    public async Task ListGamesByPlayer_TransportAndInvalidSummary_ReturnsControlledFailuresAsync()
     {
         // Arrange
         using var connection = new GrpcClientConnection(new Uri("https://localhost:7061"));
@@ -26,9 +26,13 @@ public sealed class GrpcGameHistoryClientTests
         var validResponse = new ListGamesByPlayerResponse();
         validResponse.Entries.Add(new GameHistorySummary
         {
-            GameId = 2, PlayedAtUnixMilliseconds = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
-            OpponentName = "Guest-Rival", Result = "Won", State = "Completed",
-            StoneColor = "Black", OpponentStoneColor = "White"
+            GameId = 2,
+            PlayedAtUnixMilliseconds = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+            OpponentName = "Guest-Rival",
+            Result = "Won",
+            State = "Completed",
+            StoneColor = "Black",
+            OpponentStoneColor = "White"
         });
         interceptor.Response = Task.FromResult(validResponse);
         GameHistoryQueryResult valid = await client.ListGamesByPlayerAsync(cancellation.Token);

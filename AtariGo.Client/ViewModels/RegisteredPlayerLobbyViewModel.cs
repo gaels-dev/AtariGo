@@ -6,8 +6,6 @@ using System.Globalization;
 using System.Windows.Data;
 using System.Windows.Input;
 
-using Grpc.Core;
-
 using AtariGo.Client.Commands;
 using AtariGo.Client.Properties;
 using AtariGo.Client.Services;
@@ -15,7 +13,7 @@ using AtariGo.Contracts;
 
 namespace AtariGo.Client.ViewModels
 {
-    public class RegisterPlayerLobbyViewModel : ViewModelBase, IDisposable
+    public class RegisteredPlayerLobbyViewModel : ViewModelBase, IDisposable
     {
         private const int LeaderboardLimit = 10;
         private const string DefaultPlayerName = "Player";
@@ -29,13 +27,12 @@ namespace AtariGo.Client.ViewModels
         private string _playerName;
         private int _playerWins;
         private int? _playerAvatarId;
-        private bool _isGuest;
         private bool _isLeaderboardLoading;
         private string _leaderboardStatus = string.Empty;
         private string _presenceStatus = string.Empty;
         private string _friendSearchText = string.Empty;
 
-        public RegisterPlayerLobbyViewModel(
+        public RegisteredPlayerLobbyViewModel(
             INavigationService navigationService,
             ILeaderboardClient? leaderboardClient = null,
             RegisteredLobbyContext? context = null)
@@ -48,7 +45,6 @@ namespace AtariGo.Client.ViewModels
             _avatarLoaded = context?.AvatarLoaded;
             _playerName = DefaultPlayerName;
             _playerAvatarId = context?.InitialAvatarId;
-            _isGuest = false;
             RoomInvitations = context?.RoomInvitations;
             Friends = context?.Friends ?? new ObservableCollection<FriendItemViewModel>();
             FriendRemoval = new FriendRemovalViewModel(navigationService,
@@ -76,15 +72,29 @@ namespace AtariGo.Client.ViewModels
 
         public ObservableCollection<LeaderboardEntry>
             LeaderboardEntries
-        { get; } = new();
+        {
+            get;
+        } = new();
 
-        public ObservableCollection<FriendItemViewModel> Friends { get; }
+        public ObservableCollection<FriendItemViewModel> Friends
+        {
+            get;
+        }
 
-        public RoomInvitationsViewModel? RoomInvitations { get; }
+        public RoomInvitationsViewModel? RoomInvitations
+        {
+            get;
+        }
 
-        public ICollectionView FilteredFriends { get; }
+        public ICollectionView FilteredFriends
+        {
+            get;
+        }
 
-        public FriendRemovalViewModel FriendRemoval { get; }
+        public FriendRemovalViewModel FriendRemoval
+        {
+            get;
+        }
 
         public string FriendSearchText
         {
@@ -198,18 +208,6 @@ namespace AtariGo.Client.ViewModels
 
         public bool HasPlayerAvatar => PlayerAvatarId.HasValue;
 
-        public bool IsGuest
-        {
-            get
-            {
-                return _isGuest;
-            }
-            set
-            {
-                SetProperty(ref _isGuest, value);
-            }
-        }
-
         public ICommand PlayMultiplayerCommand { get; private set; } = null!;
 
         public ICommand CreatePrivateRoomCommand { get; private set; } = null!;
@@ -273,7 +271,7 @@ namespace AtariGo.Client.ViewModels
 
         private void OpenEmailInvitation(INavigationService navigation, object? parameter)
         {
-            if (parameter is FriendItemViewModel friend && !IsGuest && !friend.IsOnline
+            if (parameter is FriendItemViewModel friend && !friend.IsOnline
                 && Friends.Contains(friend) && friend.UserId > 0)
             {
                 navigation.NavigateToCreatePrivateRoomForInvitation(friend.UserId);
@@ -313,7 +311,7 @@ namespace AtariGo.Client.ViewModels
 
             string query = FriendSearchText.Trim();
             return string.IsNullOrEmpty(query)
-                || friend.Username.Contains(
+                || friend.UserName.Contains(
                     query,
                     StringComparison.OrdinalIgnoreCase);
         }
@@ -345,10 +343,10 @@ namespace AtariGo.Client.ViewModels
             {
                 Trace.TraceInformation("Leaderboard refresh cancelled because its view was left.");
             }
-            catch (Exception exception)
+            catch (Exception exception) when (GrpcClientFailures.IsTransportFailure(exception))
             {
                 LeaderboardEntries.Clear();
-                LeaderboardStatus = GrpcFailureMessages.GetMessage(exception);
+                LeaderboardStatus = ClientFailureMessages.GetMessage(exception);
             }
             finally
             {
@@ -371,10 +369,10 @@ namespace AtariGo.Client.ViewModels
             {
                 Trace.TraceInformation("Lobby profile load was cancelled.");
             }
-            catch (RpcException exception)
+            catch (Exception exception) when (GrpcClientFailures.IsTransportFailure(exception))
             {
                 Trace.TraceWarning("Lobby profile load failed with status {0}.",
-                    exception.StatusCode);
+                    GrpcClientFailures.GetReason(exception));
             }
         }
 
@@ -393,12 +391,12 @@ namespace AtariGo.Client.ViewModels
 
         private void HandleLeaderboardFailure(Exception exception)
         {
-            LeaderboardStatus = GrpcFailureMessages.GetMessage(exception);
+            LeaderboardStatus = ClientFailureMessages.GetMessage(exception);
         }
 
         private void HandleSessionFailure(Exception exception)
         {
-            PresenceStatus = GrpcFailureMessages.GetMessage(exception);
+            PresenceStatus = ClientFailureMessages.GetMessage(exception);
         }
 
         private static string GetLocalizedMessage(

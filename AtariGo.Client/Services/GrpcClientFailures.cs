@@ -11,9 +11,29 @@ public static class GrpcClientFailures
         ArgumentNullException.ThrowIfNull(exception);
         return exception switch
         {
+            ClientRequestException request => request.Reason,
+            RpcException { StatusCode: StatusCode.ResourceExhausted } =>
+                ClientFailureReason.CapacityExceeded,
             RpcException rpcException => MapStatus(rpcException.StatusCode),
             OperationCanceledException => ClientFailureReason.Timeout,
             _ => ClientFailureReason.RequestFailed
+        };
+    }
+
+    public static bool IsTransportFailure(Exception exception)
+    {
+        ArgumentNullException.ThrowIfNull(exception);
+        return exception is RpcException or ClientRequestException or OperationCanceledException;
+    }
+
+    public static string GetErrorCode(Exception exception)
+    {
+        ArgumentNullException.ThrowIfNull(exception);
+        return exception switch
+        {
+            ClientRequestException request => request.ErrorCode,
+            RpcException rpc => rpc.Status.Detail,
+            _ => string.Empty
         };
     }
 

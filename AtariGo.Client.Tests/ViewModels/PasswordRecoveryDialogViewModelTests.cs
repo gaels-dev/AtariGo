@@ -12,7 +12,7 @@ namespace AtariGo.Client.Tests.ViewModels;
 public sealed class PasswordRecoveryDialogViewModelTests
 {
     [TestMethod]
-    public async Task ResetCommand_UnconfirmedResult_ClearsSecretsAndPreventsRetry()
+    public async Task ResetCommand_UnconfirmedResult_ClearsSecretsAndPreventsRetryAsync()
     {
         // Arrange
         var client = new StubPasswordRecoveryClient
@@ -42,7 +42,7 @@ public sealed class PasswordRecoveryDialogViewModelTests
     }
 
     [TestMethod]
-    public async Task CancelCommand_PendingReset_CancelsAndDiscardsLateSuccess()
+    public async Task CancelCommand_PendingReset_CancelsAndDiscardsLateSuccessAsync()
     {
         // Arrange
         var pending = new TaskCompletionSource<PasswordRecoveryResult>(
@@ -75,7 +75,9 @@ public sealed class PasswordRecoveryDialogViewModelTests
     {
         return new PasswordRecoveryInput
         {
-            Identifier = "Owner", Code = "12345678", NewPassword = " NewPassword9 ",
+            Identifier = "Owner",
+            Code = "12345678",
+            NewPassword = " NewPassword9 ",
             Confirmation = " NewPassword9 "
         };
     }

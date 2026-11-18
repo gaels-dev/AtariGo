@@ -23,15 +23,27 @@ public sealed class AvatarOptionViewModel : ViewModelBase
             ? string.Empty : string.Format(CultureInfo.CurrentUICulture, format, RequiredWins);
     }
 
-    public int AvatarId { get; }
+    public int AvatarId
+    {
+        get;
+    }
 
-    public int RequiredWins { get; }
+    public int RequiredWins
+    {
+        get;
+    }
 
-    public bool IsUnlocked { get; }
+    public bool IsUnlocked
+    {
+        get;
+    }
 
     public bool IsLocked => !IsUnlocked;
 
-    public string UnlockRequirement { get; }
+    public string UnlockRequirement
+    {
+        get;
+    }
 
     public bool IsSelected
     {

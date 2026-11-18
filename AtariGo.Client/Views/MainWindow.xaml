@@ -16,8 +16,8 @@
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
 
-        <DataTemplate DataType="{x:Type vm:RegisterPlayerLobbyViewModel}">
-            <views:RegisterPlayerLobbyView/>
+        <DataTemplate DataType="{x:Type vm:RegisteredPlayerLobbyViewModel}">
+            <views:RegisteredPlayerLobbyView/>
         </DataTemplate>
 
         <DataTemplate DataType="{x:Type vm:GuestLobbyViewModel}">
@@ -56,9 +56,6 @@
             <views:FriendRequestsView/>
         </DataTemplate>
 
-        <DataTemplate DataType="{x:Type vm:FriendListViewModel}">
-            <views:FriendListView/>
-        </DataTemplate>
 
         <DataTemplate DataType="{x:Type vm:GameHistoryViewModel}">
             <views:GameHistoryView/>

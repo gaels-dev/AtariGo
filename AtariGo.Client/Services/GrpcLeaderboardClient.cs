@@ -1,4 +1,3 @@
-
 using Grpc.Core;
 
 using AtariGo.Contracts;
@@ -24,9 +23,9 @@ namespace AtariGo.Client.Services
             int limit,
             CancellationToken cancellationToken = default)
         {
-            return _client.GetTopPlayersAsync(
+            return GrpcCallPolicy.ExecuteAsync(() => _client.GetTopPlayersAsync(
                 new GetTopPlayersRequest { Limit = limit },
-                GrpcCallPolicy.CreateOptions(cancellationToken)).ResponseAsync;
+                GrpcCallPolicy.CreateOptions(cancellationToken)).ResponseAsync);
         }
     }
 }

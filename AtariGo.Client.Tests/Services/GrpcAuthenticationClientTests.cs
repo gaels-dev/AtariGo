@@ -12,7 +12,7 @@ namespace AtariGo.Client.Tests.Services;
 public sealed class GrpcAuthenticationClientTests
 {
     [TestMethod]
-    public async Task VerifyLoginCodeAsync_LostResponse_ClearsSecretsAndDoesNotRetry()
+    public async Task VerifyLoginCodeAsync_LostResponse_ClearsSecretsAndDoesNotRetryAsync()
     {
         using var connection = new GrpcClientConnection(new Uri("https://localhost:7061"));
         var interceptor = new LoginResponseInterceptor
@@ -35,14 +35,15 @@ public sealed class GrpcAuthenticationClientTests
     }
 
     [TestMethod]
-    public async Task LoginAsync_ChallengeResponse_PreservesPendingDataAndClearsPassword()
+    public async Task LoginAsync_ChallengeResponse_PreservesPendingDataAndClearsPasswordAsync()
     {
         using var connection = new GrpcClientConnection(new Uri("https://localhost:7061"));
         var interceptor = new LoginResponseInterceptor
         {
             Response = Task.FromResult(new LoginResponse
             {
-                Result = LoginResult.ChallengeRequired, ChallengeToken = "pending-token",
+                Result = LoginResult.ChallengeRequired,
+                ChallengeToken = "pending-token",
                 MaskedEmail = "p***@example.test"
             })
         };

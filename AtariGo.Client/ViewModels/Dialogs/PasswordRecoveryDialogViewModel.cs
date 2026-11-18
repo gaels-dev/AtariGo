@@ -90,11 +90,20 @@ public sealed class PasswordRecoveryDialogViewModel : ViewModelBase, IDisposable
     public string CancelLabel => Localize(_isFinished ? "ChangePassword_Btn_Close"
         : "ChangePassword_Btn_Cancel");
 
-    public ICommand RequestCommand { get; }
+    public ICommand RequestCommand
+    {
+        get;
+    }
 
-    public ICommand ResetCommand { get; }
+    public ICommand ResetCommand
+    {
+        get;
+    }
 
-    public ICommand CancelCommand { get; }
+    public ICommand CancelCommand
+    {
+        get;
+    }
 
     public void Dispose()
     {

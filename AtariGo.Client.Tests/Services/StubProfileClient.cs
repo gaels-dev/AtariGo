@@ -5,7 +5,10 @@ namespace AtariGo.Client.Tests.Services;
 
 internal sealed class StubProfileClient : IProfileClient
 {
-    public UserProfile Profile { get; set; } = new UserProfile
+    public UserProfile Profile
+    {
+        get; set;
+    } = new UserProfile
     {
         UserName = "PlayerOne",
         Email = "first@example.test",
@@ -13,7 +16,10 @@ internal sealed class StubProfileClient : IProfileClient
         AvatarId = 1
     };
 
-    public UpdateProfileResponse UpdateResponse { get; set; } = new UpdateProfileResponse
+    public UpdateProfileResponse UpdateResponse
+    {
+        get; set;
+    } = new UpdateProfileResponse
     {
         Status = ProfileUpdateStatus.Updated,
         Profile = new UserProfile
@@ -25,9 +31,15 @@ internal sealed class StubProfileClient : IProfileClient
         }
     };
 
-    public UpdateProfileRequest? LastRequest { get; private set; }
+    public UpdateProfileRequest? LastRequest
+    {
+        get; private set;
+    }
 
-    public Task<UserProfile>? ProfileResponse { get; set; }
+    public Task<UserProfile>? ProfileResponse
+    {
+        get; set;
+    }
 
     public Task<UserProfile> GetProfileAsync(CancellationToken cancellationToken)
     {

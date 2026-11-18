@@ -2,9 +2,15 @@ namespace AtariGo.Client.Models;
 
 public sealed record GameHistoryEntry
 {
-    public long GameId { get; init; }
+    public long GameId
+    {
+        get; init;
+    }
 
-    public DateTimeOffset PlayedAtUtc { get; init; }
+    public DateTimeOffset PlayedAtUtc
+    {
+        get; init;
+    }
 
     public string OpponentName { get; init; } = string.Empty;
 

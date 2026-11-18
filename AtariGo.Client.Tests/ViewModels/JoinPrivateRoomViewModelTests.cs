@@ -1,6 +1,5 @@
 using System.Reflection;
 
-
 using AtariGo.Client.Services;
 using AtariGo.Client.Tests.Services;
 using AtariGo.Client.ViewModels;
@@ -12,7 +11,7 @@ namespace AtariGo.Client.Tests.ViewModels;
 public sealed class JoinPrivateRoomViewModelTests
 {
     [TestMethod]
-    public async Task JoinCommand_CodeWithSurroundingSpaces_SendsTrimmedCode()
+    public async Task JoinCommand_CodeWithSurroundingSpaces_SendsTrimmedCodeAsync()
     {
         // Arrange
         INavigationService navigation =
@@ -28,7 +27,7 @@ public sealed class JoinPrivateRoomViewModelTests
 
         // Assert
         Assert.AreEqual("AABBCCDDEE", client.JoinedCode);
-        var recorder = (RecordingNavigationProxy)navigation;
+        RecordingNavigationProxy recorder = (RecordingNavigationProxy)navigation;
         CollectionAssert.AreEqual(
             new[] { nameof(INavigationService.NavigateToPrivateRoomLobby) },
             recorder.Calls.ToArray());

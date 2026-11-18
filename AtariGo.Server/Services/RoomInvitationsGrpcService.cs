@@ -131,7 +131,8 @@ public sealed class RoomInvitationsGrpcService : RoomInvitations.RoomInvitations
             request.RoomId, result.Status);
         var response = new SendRoomInvitationResponse
         {
-            DeliveryStatus = MapDelivery(result), RetryAfterSeconds = result.RetryAfterSeconds
+            DeliveryStatus = MapDelivery(result),
+            RetryAfterSeconds = result.RetryAfterSeconds
         };
         if (result.Status == RoomInvitationOperationStatus.Success)
         {

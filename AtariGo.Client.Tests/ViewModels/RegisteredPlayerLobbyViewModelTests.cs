@@ -9,10 +9,38 @@ namespace AtariGo.Client.Tests.ViewModels;
 
 [TestClass]
 [TestCategory("Unit")]
-public sealed class RegisterPlayerLobbyProfileTests
+public sealed class RegisteredPlayerLobbyViewModelTests
 {
     [TestMethod]
-    public void Constructor_LoadsWinsAndAvatarFromProfile()
+    public void InviteFriendByEmailCommand_OfflineFriend_OpensCreationWithRecipient()
+    {
+        // Arrange
+        INavigationService navigation =
+            DispatchProxy.Create<INavigationService, RecordingNavigationProxy>();
+        var context = new RegisteredLobbyContext();
+        var leaderboard = new EmptyLeaderboardClient();
+        var friend = new FriendItemViewModel(7, "Friend", false);
+        context.Friends.Add(friend);
+        using var model = new RegisteredPlayerLobbyViewModel(
+            navigation, leaderboard, context);
+
+        // Act
+        model.InviteFriendByEmailCommand.Execute(friend);
+        friend.IsOnline = true;
+        model.InviteFriendByEmailCommand.Execute(friend);
+        model.InviteFriendByEmailCommand.Execute(new FriendItemViewModel(8, "Other", false));
+
+        // Assert
+        RecordingNavigationProxy recorder = (RecordingNavigationProxy)navigation;
+        CollectionAssert.AreEqual(new[]
+        {
+            nameof(INavigationService.NavigateToCreatePrivateRoomForInvitation)
+        }, recorder.Calls.ToArray());
+        Assert.AreEqual(7, recorder.LastNavigationArgument);
+    }
+
+    [TestMethod]
+    public void Constructor_AvailableProfile_LoadsWinsAndAvatar()
     {
         // Arrange
         INavigationService navigation = DispatchProxy.Create<INavigationService,
@@ -33,7 +61,7 @@ public sealed class RegisterPlayerLobbyProfileTests
         };
 
         // Act
-        using RegisterPlayerLobbyViewModel model = new RegisterPlayerLobbyViewModel(
+        using RegisteredPlayerLobbyViewModel model = new RegisteredPlayerLobbyViewModel(
             navigation, new EmptyLeaderboardClient(), context);
 
         // Assert
@@ -42,7 +70,7 @@ public sealed class RegisterPlayerLobbyProfileTests
     }
 
     [TestMethod]
-    public async Task Constructor_UsesCachedAvatarUntilProfileArrives()
+    public async Task Constructor_PendingProfile_UsesCachedAvatarAsync()
     {
         // Arrange
         INavigationService navigation = DispatchProxy.Create<INavigationService,
@@ -61,7 +89,7 @@ public sealed class RegisterPlayerLobbyProfileTests
         };
 
         // Act
-        using RegisterPlayerLobbyViewModel model = new RegisterPlayerLobbyViewModel(
+        using RegisteredPlayerLobbyViewModel model = new RegisteredPlayerLobbyViewModel(
             navigation, new EmptyLeaderboardClient(), context);
         int? initialAvatarId = model.PlayerAvatarId;
         bool initiallyVisible = model.HasPlayerAvatar;
@@ -78,7 +106,7 @@ public sealed class RegisterPlayerLobbyProfileTests
     }
 
     [TestMethod]
-    public async Task Constructor_WithoutCachedAvatarWaitsForProfile()
+    public async Task Constructor_MissingCachedAvatar_WaitsForProfileAsync()
     {
         // Arrange
         INavigationService navigation = DispatchProxy.Create<INavigationService,
@@ -96,7 +124,7 @@ public sealed class RegisterPlayerLobbyProfileTests
         };
 
         // Act
-        using RegisterPlayerLobbyViewModel model = new RegisterPlayerLobbyViewModel(
+        using RegisteredPlayerLobbyViewModel model = new RegisteredPlayerLobbyViewModel(
             navigation, new EmptyLeaderboardClient(), context);
         bool initiallyVisible = model.HasPlayerAvatar;
         pendingProfile.SetResult(new UserProfile { Wins = 3, AvatarId = 2 });

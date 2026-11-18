@@ -18,6 +18,7 @@ public sealed class AccountCredentialStore
 
     public Task<User?> LockAccountAsync(string identifier, CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(identifier);
         string normalized = identifier.Trim();
         if (normalized.Length is 0 or > MaximumIdentifierLength)
         {

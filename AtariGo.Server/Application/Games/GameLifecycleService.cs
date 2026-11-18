@@ -67,23 +67,6 @@ public sealed class GameLifecycleService : IGameLifecycleService
         return completed;
     }
 
-    private RoomOperationResult CompleteStartWithRetry(
-        RoomStartReservation reservation,
-        long gameId)
-    {
-        RoomOperationResult completed;
-        try
-        {
-            completed = _roomsService.CompleteStart(reservation, gameId);
-        }
-        catch (InvalidOperationException)
-        {
-            completed = _roomsService.CompleteStart(reservation, gameId);
-        }
-
-        return completed;
-    }
-
     public async Task<long> StartPublicGameAsync(
         PublicMatchStartRequest request,
         CancellationToken cancellationToken)
@@ -110,6 +93,23 @@ public sealed class GameLifecycleService : IGameLifecycleService
         GamePersistenceService.Initialize(game, game.GameConfiguration.CaptureGoal, now);
         await _dbContext.SaveChangesAsync(cancellationToken);
         return game.GameId;
+    }
+
+    private RoomOperationResult CompleteStartWithRetry(
+        RoomStartReservation reservation,
+        long gameId)
+    {
+        RoomOperationResult completed;
+        try
+        {
+            completed = _roomsService.CompleteStart(reservation, gameId);
+        }
+        catch (InvalidOperationException)
+        {
+            completed = _roomsService.CompleteStart(reservation, gameId);
+        }
+
+        return completed;
     }
 
     private async Task<long> PersistGameAsync(

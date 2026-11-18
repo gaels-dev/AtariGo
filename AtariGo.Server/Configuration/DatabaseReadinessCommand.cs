@@ -12,6 +12,8 @@ namespace AtariGo.Server.Configuration
 
         public static async Task<int> RunAsync(IServiceProvider services, ILogger logger)
         {
+            ArgumentNullException.ThrowIfNull(services);
+            ArgumentNullException.ThrowIfNull(logger);
             int exitCode = FailureExitCode;
             using IServiceScope scope = services.CreateScope();
             using var cancellation = new CancellationTokenSource(

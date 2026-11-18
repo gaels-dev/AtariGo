@@ -14,9 +14,18 @@ public sealed class PendingLoginContext
         Code = code;
     }
 
-    public User User { get; }
+    public User User
+    {
+        get;
+    }
 
-    public PendingLogin Pending { get; set; }
+    public PendingLogin Pending
+    {
+        get; set;
+    }
 
-    public AuthenticationCode Code { get; set; }
+    public AuthenticationCode Code
+    {
+        get; set;
+    }
 }

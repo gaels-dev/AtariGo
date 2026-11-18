@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 
+using AtariGo.Server.Concurrency;
 using AtariGo.Server.Application.Rooms;
 using AtariGo.Server.Application.Social;
 using AtariGo.Server.Data;
@@ -51,7 +52,9 @@ public sealed class RoomInvitationsService : IRoomInvitationsService
         LobbyParticipant recipient,
         CancellationToken cancellationToken)
     {
-        using FriendMutationLease lease = await _mutations.EnterAsync(cancellationToken);
+        ArgumentNullException.ThrowIfNull(command);
+        ArgumentNullException.ThrowIfNull(recipient);
+        using AsyncOperationLease lease = await _mutations.EnterAsync(cancellationToken);
         RoomInvitationEntry? invitation = _roomsService.FindRoomInvitation(
             command.InvitationId, recipient.UserId);
         if (invitation is null)
@@ -78,7 +81,7 @@ public sealed class RoomInvitationsService : IRoomInvitationsService
         LobbyParticipant sender,
         CancellationToken cancellationToken)
     {
-        using FriendMutationLease lease = await _mutations.EnterAsync(cancellationToken);
+        using AsyncOperationLease lease = await _mutations.EnterAsync(cancellationToken);
         bool areFriends = await AreFriendsAsync(
             sender.UserId, command.RecipientUserId, cancellationToken);
         if (!areFriends)

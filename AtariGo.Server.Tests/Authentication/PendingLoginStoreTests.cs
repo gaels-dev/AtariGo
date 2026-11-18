@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Options;
 
+using AtariGo.Server.Concurrency;
 using AtariGo.Server.Application.Authentication;
 using AtariGo.Server.Tests.RoomInvitations;
 
@@ -53,43 +54,49 @@ public sealed class PendingLoginStoreTests
             Options.Create(new LoginVerificationOptions()));
         PendingLogin pending = CreatePending(clock, "first");
         store.TryAdd(pending);
-        store.Publish(pending with { IsClosed = true });
-        store.Publish(pending with { DeliveryStatus = LoginDeliveryStatus.Sent });
+        store.Publish(pending with
+        {
+            IsClosed = true
+        });
+        store.Publish(pending with
+        {
+            DeliveryStatus = LoginDeliveryStatus.Sent
+        });
         Assert.IsNull(store.Find("first"));
     }
 
     [TestMethod]
-    public async Task EnterAsync_CancelledWaiter_DoesNotReleaseAnotherOperationsPermit()
+    public async Task EnterAsync_CancelledWaiter_DoesNotReleaseAnotherOperationsPermitAsync()
     {
         await using var store = new PendingLoginStore(TimeProvider.System,
             Options.Create(new LoginVerificationOptions()));
-        using PendingLoginLease held = await store.EnterAsync("first", CancellationToken.None);
+        using AsyncOperationLease held = await store.EnterAsync("first", CancellationToken.None);
         using var cancellation = new CancellationTokenSource();
-        Task<PendingLoginLease> cancelled = store.EnterAsync("first", cancellation.Token);
+        Task<AsyncOperationLease> cancelled = store.EnterAsync("first", cancellation.Token);
         cancellation.Cancel();
         await Assert.ThrowsAsync<OperationCanceledException>(
             () => cancelled.WaitAsync(completionTimeout));
-        Task<PendingLoginLease> next = store.EnterAsync("first", CancellationToken.None);
+        Task<AsyncOperationLease> next = store.EnterAsync("first", CancellationToken.None);
         bool waitedForOwner = !next.IsCompleted;
         held.Dispose();
-        using PendingLoginLease acquired = await next.WaitAsync(completionTimeout);
+        using AsyncOperationLease acquired = await next.WaitAsync(completionTimeout);
         Assert.IsTrue(waitedForOwner);
     }
 
     [TestMethod]
-    public async Task DisposeAsync_ActiveAndQueuedOperations_WaitsAndRejectsNewOperations()
+    public async Task DisposeAsync_ActiveAndQueuedOperations_WaitsAndRejectsNewOperationsAsync()
     {
         await using var store = new PendingLoginStore(TimeProvider.System,
             Options.Create(new LoginVerificationOptions()));
-        using PendingLoginLease held = await store.EnterAsync("first", CancellationToken.None);
-        Task<PendingLoginLease> queued = store.EnterAsync("first", CancellationToken.None);
+        using AsyncOperationLease held = await store.EnterAsync("first", CancellationToken.None);
+        Task<AsyncOperationLease> queued = store.EnterAsync("first", CancellationToken.None);
         Task closing = store.DisposeAsync().AsTask();
         await Assert.ThrowsAsync<ObjectDisposedException>(
             () => store.EnterAsync("first", CancellationToken.None));
         bool waitedForOwner = !closing.IsCompleted;
         held.Dispose();
         held.Dispose();
-        using PendingLoginLease next = await queued.WaitAsync(completionTimeout);
+        using AsyncOperationLease next = await queued.WaitAsync(completionTimeout);
         bool waitedForQueue = !closing.IsCompleted;
         next.Dispose();
         next.Dispose();
@@ -103,7 +110,9 @@ public sealed class PendingLoginStoreTests
     {
         return new PendingLogin
         {
-            UserId = 1, TokenHash = hash, CodeId = 1,
+            UserId = 1,
+            TokenHash = hash,
+            CodeId = 1,
             IssueUntil = clock.GetUtcNow().UtcDateTime
                 .Add(LoginVerificationOptions.IssuanceLifetime)
         };

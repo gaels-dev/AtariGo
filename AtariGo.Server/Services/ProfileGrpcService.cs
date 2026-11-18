@@ -1,7 +1,8 @@
 using System.Data.Common;
 
-using Grpc.Core;
 using Microsoft.EntityFrameworkCore;
+
+using Grpc.Core;
 
 using AtariGo.Contracts;
 using AtariGo.Server.Application.Profile;
@@ -28,6 +29,57 @@ public sealed class ProfileGrpcService : Profile.ProfileBase
         _sessionService = sessionService;
         _connections = connections;
         _logger = logger;
+    }
+
+    private async Task<int> GetAuthenticatedUserIdAsync(ServerCallContext context)
+    {
+        string token = SessionRequestAuthentication.GetSessionToken(context);
+        SessionIdentity? identity = await _sessionService.ValidateSessionAsync(
+            token, context.CancellationToken);
+        if (identity is null)
+        {
+            throw SessionRequestAuthentication.CreateUnauthenticatedException();
+        }
+        return identity.UserId;
+    }
+
+    private RpcException CreateUnavailableException(Exception exception)
+    {
+        _logger.LogError(exception, "Profile request failed.");
+        return new RpcException(new Status(StatusCode.Unavailable,
+            "The profile is temporarily unavailable."));
+    }
+
+    private static UserProfile MapProfile(UserProfileSnapshot snapshot)
+    {
+        return new UserProfile
+        {
+            UserName = snapshot.UserName,
+            Email = snapshot.Email,
+            Wins = snapshot.Wins,
+            AvatarId = snapshot.AvatarId
+        };
+    }
+
+    private static AtariGo.Contracts.ProfileUpdateStatus MapStatus(
+        Application.Profile.ProfileUpdateStatus status)
+    {
+        return status switch
+        {
+            Application.Profile.ProfileUpdateStatus.Updated =>
+                AtariGo.Contracts.ProfileUpdateStatus.Updated,
+            Application.Profile.ProfileUpdateStatus.InvalidUserName =>
+                AtariGo.Contracts.ProfileUpdateStatus.InvalidUserName,
+            Application.Profile.ProfileUpdateStatus.UserNameTaken =>
+                AtariGo.Contracts.ProfileUpdateStatus.UserNameTaken,
+            Application.Profile.ProfileUpdateStatus.InvalidAvatar =>
+                AtariGo.Contracts.ProfileUpdateStatus.InvalidAvatar,
+            Application.Profile.ProfileUpdateStatus.AvatarLocked =>
+                AtariGo.Contracts.ProfileUpdateStatus.AvatarLocked,
+            Application.Profile.ProfileUpdateStatus.AccountUnavailable =>
+                AtariGo.Contracts.ProfileUpdateStatus.AccountUnavailable,
+            _ => AtariGo.Contracts.ProfileUpdateStatus.Unspecified
+        };
     }
 
     public override async Task<GetProfileResponse> GetProfile(
@@ -91,56 +143,5 @@ public sealed class ProfileGrpcService : Profile.ProfileBase
         {
             throw CreateUnavailableException(exception);
         }
-    }
-
-    private async Task<int> GetAuthenticatedUserIdAsync(ServerCallContext context)
-    {
-        string token = SessionRequestAuthentication.GetSessionToken(context);
-        SessionIdentity? identity = await _sessionService.ValidateSessionAsync(
-            token, context.CancellationToken);
-        if (identity is null)
-        {
-            throw SessionRequestAuthentication.CreateUnauthenticatedException();
-        }
-        return identity.UserId;
-    }
-
-    private RpcException CreateUnavailableException(Exception exception)
-    {
-        _logger.LogError(exception, "Profile request failed.");
-        return new RpcException(new Status(StatusCode.Unavailable,
-            "The profile is temporarily unavailable."));
-    }
-
-    private static UserProfile MapProfile(UserProfileSnapshot snapshot)
-    {
-        return new UserProfile
-        {
-            UserName = snapshot.UserName,
-            Email = snapshot.Email,
-            Wins = snapshot.Wins,
-            AvatarId = snapshot.AvatarId
-        };
-    }
-
-    private static AtariGo.Contracts.ProfileUpdateStatus MapStatus(
-        Application.Profile.ProfileUpdateStatus status)
-    {
-        return status switch
-        {
-            Application.Profile.ProfileUpdateStatus.Updated =>
-                AtariGo.Contracts.ProfileUpdateStatus.Updated,
-            Application.Profile.ProfileUpdateStatus.InvalidUserName =>
-                AtariGo.Contracts.ProfileUpdateStatus.InvalidUserName,
-            Application.Profile.ProfileUpdateStatus.UserNameTaken =>
-                AtariGo.Contracts.ProfileUpdateStatus.UserNameTaken,
-            Application.Profile.ProfileUpdateStatus.InvalidAvatar =>
-                AtariGo.Contracts.ProfileUpdateStatus.InvalidAvatar,
-            Application.Profile.ProfileUpdateStatus.AvatarLocked =>
-                AtariGo.Contracts.ProfileUpdateStatus.AvatarLocked,
-            Application.Profile.ProfileUpdateStatus.AccountUnavailable =>
-                AtariGo.Contracts.ProfileUpdateStatus.AccountUnavailable,
-            _ => AtariGo.Contracts.ProfileUpdateStatus.Unspecified
-        };
     }
 }

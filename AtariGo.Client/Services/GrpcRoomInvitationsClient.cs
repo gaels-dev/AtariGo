@@ -30,15 +30,11 @@ public sealed class GrpcRoomInvitationsClient : IRoomInvitationsClient
         {
             using AsyncUnaryCall<SendRoomInvitationResponse> call =
                 _client.SendRoomInvitationAsync(request, Options(cancellationToken));
-            return await call.ResponseAsync;
+            return await GrpcCallPolicy.ExecuteAsync(() => call.ResponseAsync);
         }
-        catch (Exception exception) when (exception is RpcException or OperationCanceledException)
+        catch (Exception exception) when (GrpcClientFailures.IsTransportFailure(exception))
         {
-            RoomInvitationDeliveryStatus status = RoomInvitationDeliveryStatus.Unconfirmed;
-            if (exception is RpcException failure)
-            {
-                status = MapSendFailure(failure);
-            }
+            RoomInvitationDeliveryStatus status = MapSendFailure(exception);
             return new SendRoomInvitationResponse { DeliveryStatus = status };
         }
     }
@@ -48,15 +44,16 @@ public sealed class GrpcRoomInvitationsClient : IRoomInvitationsClient
     {
         using AsyncUnaryCall<ListRoomInvitationsResponse> call = _client.ListRoomInvitationsAsync(
             new ListRoomInvitationsRequest { RoomId = roomId }, Options(cancellationToken));
-        return await call.ResponseAsync;
+        return await GrpcCallPolicy.ExecuteAsync(() => call.ResponseAsync);
     }
 
     public async Task<RespondRoomInvitationResponse> RespondAsync(
         RespondRoomInvitationRequest request, CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(request);
         using AsyncUnaryCall<RespondRoomInvitationResponse> call =
             _client.RespondRoomInvitationAsync(request, Options(cancellationToken));
-        return await call.ResponseAsync;
+        return await GrpcCallPolicy.ExecuteAsync(() => call.ResponseAsync);
     }
 
     public async Task<CancelRoomInvitationResponse> CancelAsync(
@@ -64,18 +61,18 @@ public sealed class GrpcRoomInvitationsClient : IRoomInvitationsClient
     {
         using AsyncUnaryCall<CancelRoomInvitationResponse> call = _client.CancelRoomInvitationAsync(
             new CancelRoomInvitationRequest { InvitationId = invitationId }, Options(token));
-        return await call.ResponseAsync;
+        return await GrpcCallPolicy.ExecuteAsync(() => call.ResponseAsync);
     }
 
     private CallOptions Options(CancellationToken token)
     {
-        var headers = new Metadata { { "authorization", $"Bearer {_sessionToken}" } };
+        Metadata headers = GrpcCallPolicy.CreateHeaders(_sessionToken);
         return GrpcCallPolicy.CreateOptions(token, headers);
     }
 
-    private static RoomInvitationDeliveryStatus MapSendFailure(RpcException failure)
+    private static RoomInvitationDeliveryStatus MapSendFailure(Exception failure)
     {
-        return failure.Status.Detail switch
+        return GrpcClientFailures.GetErrorCode(failure) switch
         {
             "NotFriends" => RoomInvitationDeliveryStatus.NotFriends,
             "RecipientOffline" => RoomInvitationDeliveryStatus.RecipientOffline,

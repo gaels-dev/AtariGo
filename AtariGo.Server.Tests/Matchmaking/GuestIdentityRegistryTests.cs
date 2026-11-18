@@ -1,4 +1,3 @@
-
 using AtariGo.Server.Application.Matchmaking;
 
 namespace AtariGo.Server.Tests.Matchmaking;

@@ -72,7 +72,11 @@ public sealed class GamePersistenceService
             ?? throw new InvalidOperationException("The persisted action result is missing.");
         if (entry.ActionRequestJson != JsonSerializer.Serialize(context.Command))
         {
-            result = result with { IsAccepted = false, Rejection = "ActionConflict" };
+            result = result with
+            {
+                IsAccepted = false,
+                Rejection = "ActionConflict"
+            };
         }
         return result;
     }

@@ -12,7 +12,10 @@ public sealed record GameRuntimeState
 
     public GameState Board { get; init; } = new GameState();
     public string Status { get; init; } = Waiting;
-    public DateTime DeadlineUtc { get; init; }
+    public DateTime DeadlineUtc
+    {
+        get; init;
+    }
     public string EndReason { get; init; } = string.Empty;
     public bool IsTerminal => Status == Completed || Status == Cancelled;
 }

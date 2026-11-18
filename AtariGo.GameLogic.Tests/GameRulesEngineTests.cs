@@ -1,4 +1,3 @@
-
 using AtariGo.GameLogic.Actions;
 using AtariGo.GameLogic.Models;
 using AtariGo.GameLogic.Rules;

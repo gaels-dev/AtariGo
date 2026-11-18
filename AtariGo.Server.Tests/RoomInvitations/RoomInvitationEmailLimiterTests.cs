@@ -19,7 +19,10 @@ public sealed class RoomInvitationEmailLimiterTests
         int first = limiter.TryReserve(invitation);
         limiter.Complete(invitation);
         time.Advance(TimeSpan.FromSeconds(59));
-        int early = limiter.TryReserve(invitation with { InvitationId = 2 });
+        int early = limiter.TryReserve(invitation with
+        {
+            InvitationId = 2
+        });
         time.Advance(TimeSpan.FromSeconds(1));
         int next = limiter.TryReserve(invitation);
 
@@ -58,7 +61,7 @@ public sealed class RoomInvitationEmailLimiterTests
     }
 
     [TestMethod]
-    public async Task TryReserve_ConcurrentCalls_AdmitsOnlyOnePendingDelivery()
+    public async Task TryReserve_ConcurrentCalls_AdmitsOnlyOnePendingDeliveryAsync()
     {
         // Arrange
         var time = new ManualTimeProvider();
@@ -83,7 +86,8 @@ public sealed class RoomInvitationEmailLimiterTests
     {
         return new RoomInvitationEntry(roomId, roomId, DateTimeOffset.MaxValue)
         {
-            RoomCode = "ABCDEF1234", Sender = new LobbyParticipant(senderId, "Host"),
+            RoomCode = "ABCDEF1234",
+            Sender = new LobbyParticipant(senderId, "Host"),
             Recipient = new LobbyParticipant(2, "Friend")
         };
     }

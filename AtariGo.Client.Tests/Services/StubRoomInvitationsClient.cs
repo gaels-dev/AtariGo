@@ -9,19 +9,40 @@ internal sealed class StubRoomInvitationsClient : IRoomInvitationsClient
 
     public RespondRoomInvitationResponse Response { get; set; } = new();
 
-    public SendRoomInvitationRequest? Sent { get; private set; }
+    public SendRoomInvitationRequest? Sent
+    {
+        get; private set;
+    }
 
-    public RespondRoomInvitationRequest? Decision { get; private set; }
+    public RespondRoomInvitationRequest? Decision
+    {
+        get; private set;
+    }
 
-    public int SendCount { get; private set; }
+    public int SendCount
+    {
+        get; private set;
+    }
 
-    public int ListCount { get; private set; }
+    public int ListCount
+    {
+        get; private set;
+    }
 
-    public Func<Task<SendRoomInvitationResponse>>? SendHandler { get; set; }
+    public Func<Task<SendRoomInvitationResponse>>? SendHandler
+    {
+        get; set;
+    }
 
-    public Func<Task<RespondRoomInvitationResponse>>? RespondHandler { get; set; }
+    public Func<Task<RespondRoomInvitationResponse>>? RespondHandler
+    {
+        get; set;
+    }
 
-    public Func<Task<ListRoomInvitationsResponse>>? ListHandler { get; set; }
+    public Func<Task<ListRoomInvitationsResponse>>? ListHandler
+    {
+        get; set;
+    }
 
     public Task<SendRoomInvitationResponse> SendAsync(
         SendRoomInvitationRequest request, CancellationToken cancellationToken)

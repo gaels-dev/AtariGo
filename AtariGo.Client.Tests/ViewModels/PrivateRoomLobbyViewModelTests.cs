@@ -16,7 +16,7 @@ namespace AtariGo.Client.Tests.ViewModels;
 public sealed class PrivateRoomLobbyViewModelTests
 {
     [TestMethod]
-    public async Task WatchRoomAsync_BackgroundUpdate_UsesCapturedUiContext()
+    public async Task WatchRoomAsync_BackgroundUpdate_UsesCapturedUiContextAsync()
     {
         // Arrange
         StubRoomsClient client = CreateWaitingClient();
@@ -47,7 +47,7 @@ public sealed class PrivateRoomLobbyViewModelTests
     }
 
     [TestMethod]
-    public async Task StartGameCommand_PendingConfiguration_ConfirmsBeforeStarting()
+    public async Task StartGameCommand_PendingConfiguration_ConfirmsBeforeStartingAsync()
     {
         // Arrange
         StubRoomsClient client = CreateWaitingClient();
@@ -71,7 +71,7 @@ public sealed class PrivateRoomLobbyViewModelTests
     }
 
     [TestMethod]
-    public async Task StartGameCommand_UnchangedConfiguration_DoesNotSendRedundantUpdate()
+    public async Task StartGameCommand_UnchangedConfiguration_DoesNotSendRedundantUpdateAsync()
     {
         // Arrange
         StubRoomsClient client = CreateWaitingClient();
@@ -87,7 +87,7 @@ public sealed class PrivateRoomLobbyViewModelTests
     }
 
     [TestMethod]
-    public async Task StartGameCommand_Opponent_DoesNotModifyOrStartRoom()
+    public async Task StartGameCommand_Opponent_DoesNotModifyOrStartRoomAsync()
     {
         // Arrange
         StubRoomsClient client = CreateWaitingClient();
@@ -103,7 +103,7 @@ public sealed class PrivateRoomLobbyViewModelTests
     }
 
     [TestMethod]
-    public async Task WatchRoomAsync_ParticipantsChange_PreservesPendingConfiguration()
+    public async Task WatchRoomAsync_ParticipantsChange_PreservesPendingConfigurationAsync()
     {
         // Arrange
         StubRoomsClient client = CreateWaitingClient();
@@ -127,7 +127,7 @@ public sealed class PrivateRoomLobbyViewModelTests
     }
 
     [TestMethod]
-    public async Task WatchRoomAsync_StartReceived_OpensSharedBoard()
+    public async Task WatchRoomAsync_StartReceived_OpensSharedBoardAsync()
     {
         // Arrange
         StubRoomsClient client = CreateWaitingClient();
@@ -151,7 +151,7 @@ public sealed class PrivateRoomLobbyViewModelTests
     }
 
     [TestMethod]
-    public async Task StartGameCommand_UpdateUnconfirmed_RecoversWithoutStartingOrReplaying()
+    public async Task StartGameCommand_UpdateUnconfirmed_RecoversWithoutStartingOrReplayingAsync()
     {
         // Arrange
         StubRoomsClient client = CreateWaitingClient();
@@ -176,7 +176,7 @@ public sealed class PrivateRoomLobbyViewModelTests
     }
 
     [TestMethod]
-    public async Task StartGameCommand_VersionConflict_RecoversAndRequiresAnotherClick()
+    public async Task StartGameCommand_VersionConflict_RecoversAndRequiresAnotherClickAsync()
     {
         // Arrange
         StubRoomsClient client = CreateWaitingClient();
@@ -199,7 +199,7 @@ public sealed class PrivateRoomLobbyViewModelTests
     }
 
     [TestMethod]
-    public async Task WatchRoomAsync_TransportFailure_ReconnectsAutomaticallyWithFullSnapshot()
+    public async Task WatchRoomAsync_TransportFailure_ReconnectsAutomaticallyWithFullSnapshotAsync()
     {
         // Arrange
         StubRoomsClient client = CreateWaitingClient();
@@ -225,7 +225,8 @@ public sealed class PrivateRoomLobbyViewModelTests
     }
 
     [TestMethod]
-    public async Task Dispose_PendingConfigurationConfirmation_DoesNotStartOrApplyLateResponse()
+    public async Task
+        Dispose_PendingConfigurationConfirmation_DoesNotStartOrApplyLateResponseAsync()
     {
         // Arrange
         StubRoomsClient client = CreateWaitingClient();
@@ -250,7 +251,7 @@ public sealed class PrivateRoomLobbyViewModelTests
     }
 
     [TestMethod]
-    public async Task LeaveRoomCommand_ConfirmedByServer_ReturnsToMenu()
+    public async Task LeaveRoomCommand_ConfirmedByServer_ReturnsToMenuAsync()
     {
         // Arrange
         StubRoomsClient client = CreateWaitingClient();
@@ -275,7 +276,9 @@ public sealed class PrivateRoomLobbyViewModelTests
         client.Room.State = RoomState.Waiting;
         client.Room.Configuration = new RoomConfiguration
         {
-            CaptureGoal = 1, GameTimeSeconds = 600, TurnTimeSeconds = 30
+            CaptureGoal = 1,
+            GameTimeSeconds = 600,
+            TurnTimeSeconds = 30
         };
         client.Room.Participants.Add(new RoomParticipant { UserName = "Host", IsHost = true });
         client.Room.Participants.Add(new RoomParticipant { UserName = "Guest" });

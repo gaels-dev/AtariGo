@@ -12,7 +12,7 @@ namespace AtariGo.Client.Tests.ViewModels;
 public sealed class GameHistoryViewModelTests
 {
     [TestMethod]
-    public async Task RefreshCommand_FailedRefresh_ClearsPreviousHistoryAndAllowsRetry()
+    public async Task RefreshCommand_FailedRefresh_ClearsPreviousHistoryAndAllowsRetryAsync()
     {
         // Arrange
         INavigationService navigation = DispatchProxy.Create<INavigationService,
@@ -42,7 +42,7 @@ public sealed class GameHistoryViewModelTests
     }
 
     [TestMethod]
-    public async Task Dispose_PendingQuery_CancelsAndIgnoresLateHistory()
+    public async Task Dispose_PendingQuery_CancelsAndIgnoresLateHistoryAsync()
     {
         // Arrange
         INavigationService navigation = DispatchProxy.Create<INavigationService,

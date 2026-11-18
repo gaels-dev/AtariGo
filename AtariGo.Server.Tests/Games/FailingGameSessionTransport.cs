@@ -16,11 +16,20 @@ internal sealed class FailingGameSessionTransport : IAsyncStreamReader<GameSessi
         _readFailure = readFailure;
     }
 
-    public GameSessionClientEvent Current { get; }
+    public GameSessionClientEvent Current
+    {
+        get;
+    }
 
-    public WriteOptions? WriteOptions { get; set; }
+    public WriteOptions? WriteOptions
+    {
+        get; set;
+    }
 
-    public Exception? WriteFailure { get; init; }
+    public Exception? WriteFailure
+    {
+        get; init;
+    }
 
     public Task<bool> MoveNext(CancellationToken cancellationToken)
     {

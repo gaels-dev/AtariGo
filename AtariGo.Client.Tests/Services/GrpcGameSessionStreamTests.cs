@@ -12,7 +12,7 @@ public sealed class GrpcGameSessionStreamTests
     private static readonly TimeSpan completionTimeout = TimeSpan.FromSeconds(5);
 
     [TestMethod]
-    public async Task DisposeAsync_ActiveAndQueuedSends_WaitsAndRejectsFurtherWrites()
+    public async Task DisposeAsync_ActiveAndQueuedSends_WaitsAndRejectsFurtherWritesAsync()
     {
         // Arrange
         ControlledGameSessionTransport transport = new ControlledGameSessionTransport();
@@ -43,7 +43,7 @@ public sealed class GrpcGameSessionStreamTests
     }
 
     [TestMethod]
-    public async Task DisposeAsync_CancelledWaiter_DoesNotDelayClosing()
+    public async Task DisposeAsync_CancelledWaiter_DoesNotDelayClosingAsync()
     {
         // Arrange
         ControlledGameSessionTransport transport = new ControlledGameSessionTransport();
@@ -65,7 +65,7 @@ public sealed class GrpcGameSessionStreamTests
     }
 
     [TestMethod]
-    public async Task DisposeAsync_FailingActiveWrite_PreservesTransportFailure()
+    public async Task DisposeAsync_FailingActiveWrite_PreservesTransportFailureAsync()
     {
         // Arrange
         ControlledGameSessionTransport transport = new ControlledGameSessionTransport
@@ -87,7 +87,7 @@ public sealed class GrpcGameSessionStreamTests
     }
 
     [TestMethod]
-    public async Task SendEventAsync_ConcurrentWrites_SerializesMessages()
+    public async Task SendEventAsync_ConcurrentWrites_SerializesMessagesAsync()
     {
         // Arrange
         ControlledGameSessionTransport transport = new ControlledGameSessionTransport();

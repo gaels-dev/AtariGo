@@ -3,8 +3,6 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Windows;
 
-using Grpc.Core;
-
 using AtariGo.Client.Models;
 using AtariGo.Client.Services;
 using AtariGo.Client.ViewModels.Dialogs;
@@ -23,7 +21,7 @@ namespace AtariGo.Client.ViewModels
         private DialogViewModelBase? _currentDialogViewModel;
         private CancellationTokenSource? _realtimeCancellation;
         private Task? _realtimeTask;
-        private bool _isGuest;
+        private readonly bool _isGuest;
         private string _playerName;
         private int? _playerAvatarId;
         private string _presenceStatusResourceKey = string.Empty;
@@ -65,7 +63,10 @@ namespace AtariGo.Client.ViewModels
 
         public event Action? LanguageChanged;
 
-        public RoomInvitationsViewModel? RoomInvitations { get; }
+        public RoomInvitationsViewModel? RoomInvitations
+        {
+            get;
+        }
 
         public ViewModelBase CurrentViewModel
         {
@@ -81,7 +82,8 @@ namespace AtariGo.Client.ViewModels
                     (previousViewModel as IDisposable)?.Dispose();
                     if (RoomInvitations is not null)
                     {
-                        RoomInvitations.IsAcceptanceAllowed = value is RegisterPlayerLobbyViewModel;
+                        RoomInvitations.IsAcceptanceAllowed =
+                            value is RegisteredPlayerLobbyViewModel;
                     }
                 }
             }
@@ -116,10 +118,6 @@ namespace AtariGo.Client.ViewModels
             {
                 return _isGuest;
             }
-            set
-            {
-                SetProperty(ref _isGuest, value);
-            }
         }
 
         public string PlayerName
@@ -140,11 +138,20 @@ namespace AtariGo.Client.ViewModels
             private set => SetProperty(ref _playerAvatarId, value);
         }
 
-        public string? SessionToken { get; }
+        public string? SessionToken
+        {
+            get;
+        }
 
-        public string? GuestCredential { get; }
+        public string? GuestCredential
+        {
+            get;
+        }
 
-        public ObservableCollection<FriendItemViewModel> Friends { get; } =
+        public ObservableCollection<FriendItemViewModel> Friends
+        {
+            get;
+        } =
             new();
 
         public void UpdatePlayerName(string playerName)
@@ -187,7 +194,7 @@ namespace AtariGo.Client.ViewModels
                 return;
             }
 
-            CurrentViewModel = new RegisterPlayerLobbyViewModel(
+            CurrentViewModel = new RegisteredPlayerLobbyViewModel(
                 _navigationService,
                 context: new RegisteredLobbyContext
                 {
@@ -201,8 +208,7 @@ namespace AtariGo.Client.ViewModels
                     RoomInvitations = RoomInvitations
                 })
             {
-                PlayerName = _playerName,
-                IsGuest = _isGuest
+                PlayerName = _playerName
             };
             SetPresenceStatus(_presenceStatusResourceKey);
         }
@@ -228,6 +234,7 @@ namespace AtariGo.Client.ViewModels
 
         public void NavigateToPublicGame(PublicMatchNavigationContext navigationContext)
         {
+            ArgumentNullException.ThrowIfNull(navigationContext);
             GameBoardViewModelContext boardContext = new GameBoardViewModelContext(
                 new GameplaySession(new GrpcGameSessionClient(SessionToken, GuestCredential)),
                 navigationContext.IsGuest,
@@ -255,34 +262,17 @@ namespace AtariGo.Client.ViewModels
                     GuestCredential,
                     CancellationToken.None);
             }
-            catch (RpcException exception)
+            catch (Exception exception) when (GrpcClientFailures.IsTransportFailure(exception))
             {
                 Trace.TraceWarning(
                     "Guest identity revocation failed with status {0}.",
-                    exception.StatusCode);
+                    GrpcClientFailures.GetReason(exception));
             }
-        }
-
-        public void NavigateToGameBoard(
-            bool isGuest = false,
-            int targetCaptures = GameRules.DefaultCaptureGoal)
-        {
-            GameBoardViewModel gameBoard =
-                new GameBoardViewModel(
-                    _navigationService,
-                    new GameBoardViewModelContext(
-                        null,
-                        isGuest,
-                        _playerName))
-                {
-                    TargetCaptures = targetCaptures
-                };
-
-            CurrentViewModel = gameBoard;
         }
 
         public void NavigateToSharedGame(PrivateRoomNavigationContext navigationContext)
         {
+            ArgumentNullException.ThrowIfNull(navigationContext);
             GameBoardViewModelContext boardContext = new GameBoardViewModelContext(
                 new GameplaySession(new GrpcGameSessionClient(SessionToken, null)),
                 false,
@@ -402,13 +392,13 @@ namespace AtariGo.Client.ViewModels
             });
         }
 
-        private void HandleRealtimeFailure(RpcException exception)
+        private void HandleRealtimeFailure(ClientFailureReason reason)
         {
             Trace.TraceWarning(
-                "Real-time connection failed. RPC status: {0}.",
-                exception.StatusCode);
+                "Real-time connection failed. Reason: {0}.",
+                reason);
             SetPresenceStatus(
-                GrpcFailureMessages.GetResourceKey(exception.StatusCode));
+                ClientFailureMessages.GetResourceKey(reason));
         }
 
         private void ApplySessionEvent(SessionServerEvent serverEvent)
@@ -482,8 +472,8 @@ namespace AtariGo.Client.ViewModels
             }
 
             friend.IsOnline = friendPresence.IsOnline;
-            friend.Username = friendPresence.UserName;
-            if (CurrentViewModel is RegisterPlayerLobbyViewModel lobby)
+            friend.UserName = friendPresence.UserName;
+            if (CurrentViewModel is RegisteredPlayerLobbyViewModel lobby)
             {
                 lobby.FilteredFriends.Refresh();
             }
@@ -493,7 +483,7 @@ namespace AtariGo.Client.ViewModels
         private void SetPresenceStatus(string resourceKey)
         {
             _presenceStatusResourceKey = resourceKey;
-            if (CurrentViewModel is RegisterPlayerLobbyViewModel lobby)
+            if (CurrentViewModel is RegisteredPlayerLobbyViewModel lobby)
             {
                 lobby.PresenceStatus = string.IsNullOrEmpty(resourceKey)
                     ? string.Empty
@@ -536,27 +526,27 @@ namespace AtariGo.Client.ViewModels
             {
                 Trace.TraceInformation("Logout wait cancelled because its window was closed.");
             }
-            catch (RpcException exception)
-                when (exception.StatusCode == StatusCode.Unauthenticated)
+            catch (Exception exception)
+                when (GrpcClientFailures.GetReason(exception) == ClientFailureReason.SessionExpired)
             {
                 if (!_isDisposed)
                 {
                     _navigationService.SignOut();
                 }
             }
-            catch (RpcException exception)
+            catch (Exception exception) when (GrpcClientFailures.IsTransportFailure(exception))
             {
                 HandleLogoutFailure(exception);
                 StartRealtimeConnection();
             }
         }
 
-        private void HandleLogoutFailure(RpcException exception)
+        private void HandleLogoutFailure(Exception exception)
         {
             Trace.TraceError(
                 "Session logout failed. RPC status: {0}.",
-                exception.StatusCode);
-            HandleRealtimeFailure(exception);
+                GrpcClientFailures.GetReason(exception));
+            HandleRealtimeFailure(GrpcClientFailures.GetReason(exception));
         }
 
         private async Task StopRealtimeConnectionAsync()

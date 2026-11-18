@@ -1,4 +1,3 @@
-using System.IO;
 
 using Microsoft.EntityFrameworkCore;
 
@@ -17,7 +16,7 @@ public sealed class GameCoordinatorLifetimeTests
     [TestMethod]
     [DataRow(false)]
     [DataRow(true)]
-    public async Task DisposeAsync_AdmittedOperations_DrainsBeforeClosing(bool cancelWaiter)
+    public async Task DisposeAsync_AdmittedOperations_DrainsBeforeClosingAsync(bool cancelWaiter)
     {
         // Arrange
         GameActionLookupInterceptor interceptor = new GameActionLookupInterceptor();
@@ -65,7 +64,7 @@ public sealed class GameCoordinatorLifetimeTests
     }
 
     [TestMethod]
-    public async Task DisposeAsync_FailingOperation_ReleasesItsGateBeforeClosing()
+    public async Task DisposeAsync_FailingOperation_ReleasesItsGateBeforeClosingAsync()
     {
         // Arrange
         GameActionLookupInterceptor interceptor = new GameActionLookupInterceptor();

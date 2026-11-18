@@ -1,5 +1,3 @@
-
-
 using Grpc.Core;
 using Grpc.Core.Interceptors;
 
@@ -12,7 +10,7 @@ namespace AtariGo.Client.Tests.Services;
 public sealed class GrpcFriendClientTests
 {
     [TestMethod]
-    public async Task Requests_AllFriendOperations_ForwardDeadlineCancellationAndToken()
+    public async Task Requests_AllFriendOperations_ForwardDeadlineCancellationAndTokenAsync()
     {
         // Arrange
         using var connection = new GrpcClientConnection(new Uri("https://localhost:7061"));
@@ -46,7 +44,7 @@ public sealed class GrpcFriendClientTests
     }
 
     [TestMethod]
-    public async Task SearchUsers_TwoSessionsOnOneInvoker_KeepAuthorizationSeparate()
+    public async Task SearchUsers_TwoSessionsOnOneInvoker_KeepAuthorizationSeparateAsync()
     {
         // Arrange
         using var connection = new GrpcClientConnection(new Uri("https://localhost:7061"));

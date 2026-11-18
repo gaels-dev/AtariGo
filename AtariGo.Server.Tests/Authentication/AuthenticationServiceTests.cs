@@ -22,7 +22,7 @@ public sealed class AuthenticationServiceTests
     [TestMethod]
     [DataRow(false)]
     [DataRow(true)]
-    public async Task LoginAsync_StoredCredentialAsPassword_RejectsWithoutCreatingSession(
+    public async Task LoginAsync_StoredCredentialAsPassword_RejectsWithoutCreatingSessionAsync(
         bool storesPlaintext)
     {
         await using SqlServerTestDatabase database = await SqlServerTestDatabase.CreateAsync();
@@ -37,7 +37,8 @@ public sealed class AuthenticationServiceTests
         AuthenticationService service = CreateService(context, pending);
         LoginOperationResult result = await service.LoginAsync(new LoginCommand
         {
-            Identifier = user.UserName, Password = stored
+            Identifier = user.UserName,
+            Password = stored
         },
             CancellationToken.None);
         Assert.AreEqual(LoginStatus.InvalidCredentials, result.Status);
@@ -50,7 +51,7 @@ public sealed class AuthenticationServiceTests
     [TestMethod]
     [DataRow(false)]
     [DataRow(true)]
-    public async Task LoginAsync_VerifiedPassword_RequiresCodeAndRefreshesHashWhenNeeded(
+    public async Task LoginAsync_VerifiedPassword_RequiresCodeAndRefreshesHashWhenNeededAsync(
         bool usesOlderHash)
     {
         await using SqlServerTestDatabase database = await SqlServerTestDatabase.CreateAsync();
@@ -70,7 +71,8 @@ public sealed class AuthenticationServiceTests
         AuthenticationService service = CreateService(context, pending);
         LoginOperationResult result = await service.LoginAsync(new LoginCommand
         {
-            Identifier = user.Email, Password = Password
+            Identifier = user.Email,
+            Password = Password
         },
             CancellationToken.None);
         string savedHash = await context.Credentials.AsNoTracking()
@@ -87,7 +89,9 @@ public sealed class AuthenticationServiceTests
     {
         return new User
         {
-            UserName = "Player", Email = "player@example.test", State = "Active",
+            UserName = "Player",
+            Email = "player@example.test",
+            State = "Active",
             RegistrationDate = DateTime.UtcNow
         };
     }

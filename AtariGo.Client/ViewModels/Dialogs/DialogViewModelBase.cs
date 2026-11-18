@@ -22,7 +22,10 @@ namespace AtariGo.Client.ViewModels.Dialogs
             set => SetProperty(ref _title, value);
         }
 
-        public ICommand CloseCommand { get; }
+        public ICommand CloseCommand
+        {
+            get;
+        }
 
         public void Close(bool? result = null)
         {

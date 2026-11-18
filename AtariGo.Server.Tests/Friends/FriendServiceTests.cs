@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 
+using AtariGo.Server.Concurrency;
 using AtariGo.Server.Application.Friends;
 using AtariGo.Server.Application.Sessions;
 using AtariGo.Server.Application.Social;
@@ -13,7 +14,7 @@ namespace AtariGo.Server.Tests.Friends;
 public sealed class FriendServiceTests
 {
     [TestMethod]
-    public async Task SearchUsers_ValidQuery_ExcludesRelatedAccountsAndOrdersMatches()
+    public async Task SearchUsers_ValidQuery_ExcludesRelatedAccountsAndOrdersMatchesAsync()
     {
         // Arrange
         await using SocialTestDatabase database = await SocialTestDatabase.CreateAsync();
@@ -37,7 +38,7 @@ public sealed class FriendServiceTests
     }
 
     [TestMethod]
-    public async Task SearchUsers_MoreThanMaximumMatches_ReturnsFirstTwentyInOrder()
+    public async Task SearchUsers_MoreThanMaximumMatches_ReturnsFirstTwentyInOrderAsync()
     {
         // Arrange
         await using SocialTestDatabase database = await SocialTestDatabase.CreateAsync();
@@ -58,7 +59,7 @@ public sealed class FriendServiceTests
     }
 
     [TestMethod]
-    public async Task SearchUsers_InvalidSession_ReturnsNull()
+    public async Task SearchUsers_InvalidSession_ReturnsNullAsync()
     {
         // Arrange
         await using SocialTestDatabase database = await SocialTestDatabase.CreateAsync();
@@ -78,7 +79,7 @@ public sealed class FriendServiceTests
     [DataRow("A")]
     [DataRow("ThisQueryIsTooLong")]
     [DataRow("  ")]
-    public async Task SearchUsers_QueryOutsideAllowedLength_ThrowsArgumentException(
+    public async Task SearchUsers_QueryOutsideAllowedLength_ThrowsArgumentExceptionAsync(
         string query)
     {
         // Arrange
@@ -93,7 +94,8 @@ public sealed class FriendServiceTests
     }
 
     [TestMethod]
-    public async Task ListFriendRequestsBySender_MultipleSenders_PagesOnlyOwnedPendingRequests()
+    public async Task
+        ListFriendRequestsBySender_MultipleSenders_PagesOnlyOwnedPendingRequestsAsync()
     {
         // Arrange
         await using SocialTestDatabase database = await SocialTestDatabase.CreateAsync();
@@ -119,7 +121,8 @@ public sealed class FriendServiceTests
     }
 
     [TestMethod]
-    public async Task CancelFriendRequest_OtherSenderAndRetry_ProtectsOwnershipAndIsIdempotent()
+    public async Task
+        CancelFriendRequest_OtherSenderAndRetry_ProtectsOwnershipAndIsIdempotentAsync()
     {
         // Arrange
         await using SocialTestDatabase database = await SocialTestDatabase.CreateAsync();
@@ -150,7 +153,7 @@ public sealed class FriendServiceTests
     [TestMethod]
     [DataRow(true)]
     [DataRow(false)]
-    public async Task CancelAndAccept_CompetingRequests_OnlyOneTransitionWins(bool cancelFirst)
+    public async Task CancelAndAccept_CompetingRequests_OnlyOneTransitionWinsAsync(bool cancelFirst)
     {
         // Arrange
         await using SocialTestDatabase database = await SocialTestDatabase.CreateAsync();
@@ -158,7 +161,7 @@ public sealed class FriendServiceTests
         await using AtariGoDbContext recipientContext = database.CreateContext();
         await SeedRequestsAsync(senderContext);
         using var mutations = new FriendMutationCoordinator();
-        using FriendMutationLease held = await mutations.EnterAsync(CancellationToken.None);
+        using AsyncOperationLease held = await mutations.EnterAsync(CancellationToken.None);
         FriendService sender = CreateService(senderContext, mutations);
         FriendService recipient = CreateService(recipientContext, mutations);
         var command = new RespondToFriendRequestCommand("guest", 1, true);
@@ -189,14 +192,15 @@ public sealed class FriendServiceTests
     }
 
     [TestMethod]
-    public async Task SendFriendRequest_CrossedConcurrentRequests_CreatesOnlyOnePendingRequest()
+    public async Task
+        SendFriendRequest_CrossedConcurrentRequests_CreatesOnlyOnePendingRequestAsync()
     {
         // Arrange
         await using SocialTestDatabase database = await SocialTestDatabase.CreateAsync();
         await using AtariGoDbContext firstContext = database.CreateContext();
         await using AtariGoDbContext secondContext = database.CreateContext();
         using var mutations = new FriendMutationCoordinator();
-        using FriendMutationLease held = await mutations.EnterAsync(CancellationToken.None);
+        using AsyncOperationLease held = await mutations.EnterAsync(CancellationToken.None);
         FriendService first = CreateService(firstContext, mutations);
         FriendService second = CreateService(secondContext, mutations);
 
@@ -217,7 +221,7 @@ public sealed class FriendServiceTests
     }
 
     [TestMethod]
-    public async Task Requests_InvalidSession_CannotListOrCancel()
+    public async Task Requests_InvalidSession_CannotListOrCancelAsync()
     {
         // Arrange
         await using SocialTestDatabase database = await SocialTestDatabase.CreateAsync();
@@ -239,7 +243,7 @@ public sealed class FriendServiceTests
     }
 
     [TestMethod]
-    public async Task RespondToFriendRequest_OtherRecipient_CannotAcceptOrReject()
+    public async Task RespondToFriendRequest_OtherRecipient_CannotAcceptOrRejectAsync()
     {
         // Arrange
         await using SocialTestDatabase database = await SocialTestDatabase.CreateAsync();
@@ -264,7 +268,8 @@ public sealed class FriendServiceTests
     [TestMethod]
     [DataRow(0L)]
     [DataRow(-1L)]
-    public async Task RespondToFriendRequest_InvalidIdentifier_RejectsWithoutChanges(long requestId)
+    public async Task
+        RespondToFriendRequest_InvalidIdentifier_RejectsWithoutChangesAsync(long requestId)
     {
         // Arrange
         await using SocialTestDatabase database = await SocialTestDatabase.CreateAsync();
@@ -288,7 +293,7 @@ public sealed class FriendServiceTests
     [TestMethod]
     [DataRow(true)]
     [DataRow(false)]
-    public async Task RespondToFriendRequest_SaveFails_RollsBackAcceptance(
+    public async Task RespondToFriendRequest_SaveFails_RollsBackAcceptanceAsync(
         bool failFriendshipInsert)
     {
         // Arrange
@@ -318,7 +323,7 @@ public sealed class FriendServiceTests
     [DataRow(true, false, FriendRequestResponseResult.Accepted)]
     [DataRow(false, false, FriendRequestResponseResult.Rejected)]
     [DataRow(true, true, FriendRequestResponseResult.AlreadyFriends)]
-    public async Task RespondToFriendRequest_ValidDecision_CompletesRequest(
+    public async Task RespondToFriendRequest_ValidDecision_CompletesRequestAsync(
         bool accept,
         bool alreadyFriends,
         FriendRequestResponseResult expectedResult)
@@ -354,7 +359,7 @@ public sealed class FriendServiceTests
     [DataRow(999, SendFriendRequestResult.UserNotFound)]
     [DataRow(2, SendFriendRequestResult.AlreadyFriends)]
     [DataRow(3, SendFriendRequestResult.AlreadyPending)]
-    public async Task SendFriendRequest_Rejected_PreservesExistingData(
+    public async Task SendFriendRequest_Rejected_PreservesExistingDataAsync(
         int recipientUserId, SendFriendRequestResult expectedResult)
     {
         // Arrange

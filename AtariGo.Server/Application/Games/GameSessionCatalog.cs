@@ -1,4 +1,3 @@
-
 using Microsoft.EntityFrameworkCore;
 
 using AtariGo.Server.Data;

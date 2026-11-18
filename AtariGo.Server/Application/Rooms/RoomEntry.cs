@@ -8,21 +8,37 @@ internal sealed class RoomEntry
         ExpiresAt = expiresAt;
     }
 
-    public PrivateRoom Snapshot { get; private set; }
+    public PrivateRoom Snapshot
+    {
+        get; private set;
+    }
 
-    public Guid? StartReservationId { get; set; }
+    public Guid? StartReservationId
+    {
+        get; set;
+    }
 
-    public Guid? CompletedStartReservationId { get; set; }
+    public Guid? CompletedStartReservationId
+    {
+        get; set;
+    }
 
     public bool IsStarting => StartReservationId is not null;
 
-    public DateTimeOffset ExpiresAt { get; }
+    public DateTimeOffset ExpiresAt
+    {
+        get;
+    }
 
-    public TaskCompletionSource<PrivateRoom> Changed { get; private set; } =
+    public TaskCompletionSource<PrivateRoom> Changed
+    {
+        get; private set;
+    } =
         CreateSignal();
 
     public void Publish(PrivateRoom snapshot)
     {
+        ArgumentNullException.ThrowIfNull(snapshot);
         TaskCompletionSource<PrivateRoom> previousSignal = Changed;
         Snapshot = snapshot;
         Changed = CreateSignal();

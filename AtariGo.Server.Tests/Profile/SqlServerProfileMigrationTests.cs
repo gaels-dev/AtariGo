@@ -13,7 +13,7 @@ namespace AtariGo.Server.Tests.Profile;
 public sealed class SqlServerProfileMigrationTests
 {
     [TestMethod]
-    public async Task UpgradeAvatarUnlocks_AllowsTwentyAndRejectsTwentyOne()
+    public async Task UpgradeAvatarUnlocks_AvatarRange_AllowsTwentyAndRejectsTwentyOneAsync()
     {
         // Arrange
         await using SqlServerTestDatabase database = await SqlServerTestDatabase.CreateAsync();
@@ -46,7 +46,7 @@ public sealed class SqlServerProfileMigrationTests
     }
 
     [TestMethod]
-    public async Task UpgradeProfile_BackfillsExistingUsersAndCanRunTwice()
+    public async Task UpgradeProfile_ExistingUsers_BackfillsAndSupportsReexecutionAsync()
     {
         // Arrange
         await using SqlServerTestDatabase database = await SqlServerTestDatabase.CreateAsync();

@@ -7,5 +7,8 @@ public sealed record PrivateRoomSessionUpdate(
     bool IsSynchronized,
     ClientFailureReason Failure)
 {
-    public bool IsStartRecovery { get; init; }
+    public bool IsStartRecovery
+    {
+        get; init;
+    }
 }

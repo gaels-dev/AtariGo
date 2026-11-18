@@ -1,3 +1,4 @@
+using AtariGo.Server.Concurrency;
 using AtariGo.Server.Application.Games;
 
 namespace AtariGo.Server.Tests.Games;
@@ -9,97 +10,97 @@ public sealed class GameOperationGateTests
     private static readonly TimeSpan completionTimeout = TimeSpan.FromSeconds(5);
 
     [TestMethod]
-    public async Task EnterAsync_SameGame_WaitsUntilLeaseIsReleased()
+    public async Task EnterAsync_SameGame_WaitsUntilLeaseIsReleasedAsync()
     {
         // Arrange
         await using GameOperationGate gate = new GameOperationGate();
-        using GameOperationLease active = await gate.EnterAsync(1, CancellationToken.None);
+        using AsyncOperationLease active = await gate.EnterAsync(1, CancellationToken.None);
         // Act
-        Task<GameOperationLease> pending = gate.EnterAsync(1, CancellationToken.None);
+        Task<AsyncOperationLease> pending = gate.EnterAsync(1, CancellationToken.None);
         bool wasWaiting = !pending.IsCompleted;
         active.Dispose();
-        using GameOperationLease next = await pending.WaitAsync(completionTimeout);
+        using AsyncOperationLease next = await pending.WaitAsync(completionTimeout);
         // Assert
         Assert.IsTrue(wasWaiting);
     }
 
     [TestMethod]
-    public async Task EnterAsync_IndependentGames_AcquiresBothLeases()
+    public async Task EnterAsync_IndependentGames_AcquiresBothLeasesAsync()
     {
         // Arrange
         await using GameOperationGate gate = new GameOperationGate();
-        using GameOperationLease first = await gate.EnterAsync(1, CancellationToken.None);
+        using AsyncOperationLease first = await gate.EnterAsync(1, CancellationToken.None);
         // Act
-        using GameOperationLease second = await gate.EnterAsync(2, CancellationToken.None)
+        using AsyncOperationLease second = await gate.EnterAsync(2, CancellationToken.None)
             .WaitAsync(completionTimeout);
         // Assert
         Assert.IsNotNull(second);
     }
 
     [TestMethod]
-    public async Task EnterAsync_CollidingGames_SharesTheSameGate()
+    public async Task EnterAsync_CollidingGames_SharesTheSameGateAsync()
     {
         // Arrange
         await using GameOperationGate gate = new GameOperationGate();
-        using GameOperationLease active = await gate.EnterAsync(1, CancellationToken.None);
+        using AsyncOperationLease active = await gate.EnterAsync(1, CancellationToken.None);
         // Act
-        Task<GameOperationLease> pending = gate.EnterAsync(129, CancellationToken.None);
+        Task<AsyncOperationLease> pending = gate.EnterAsync(129, CancellationToken.None);
         bool wasWaiting = !pending.IsCompleted;
         active.Dispose();
-        using GameOperationLease next = await pending.WaitAsync(completionTimeout);
+        using AsyncOperationLease next = await pending.WaitAsync(completionTimeout);
         // Assert
         Assert.IsTrue(wasWaiting);
     }
 
     [TestMethod]
-    public async Task EnterAsync_CancelledWait_DoesNotReleaseAnActiveLease()
+    public async Task EnterAsync_CancelledWait_DoesNotReleaseAnActiveLeaseAsync()
     {
         // Arrange
         await using GameOperationGate gate = new GameOperationGate();
-        using GameOperationLease active = await gate.EnterAsync(1, CancellationToken.None);
+        using AsyncOperationLease active = await gate.EnterAsync(1, CancellationToken.None);
         using CancellationTokenSource cancellation = new CancellationTokenSource();
-        Task<GameOperationLease> cancelled = gate.EnterAsync(1, cancellation.Token);
+        Task<AsyncOperationLease> cancelled = gate.EnterAsync(1, cancellation.Token);
         // Act
         cancellation.Cancel();
         await Assert.ThrowsAsync<OperationCanceledException>(() => cancelled);
-        Task<GameOperationLease> pending = gate.EnterAsync(1, CancellationToken.None);
+        Task<AsyncOperationLease> pending = gate.EnterAsync(1, CancellationToken.None);
         bool wasWaiting = !pending.IsCompleted;
         active.Dispose();
-        using GameOperationLease next = await pending.WaitAsync(completionTimeout);
+        using AsyncOperationLease next = await pending.WaitAsync(completionTimeout);
         // Assert
         Assert.IsTrue(wasWaiting);
     }
 
     [TestMethod]
-    public async Task Dispose_RepeatedLeaseDisposal_ReleasesOnlyOnce()
+    public async Task Dispose_RepeatedLeaseDisposal_ReleasesOnlyOnceAsync()
     {
         // Arrange
         await using GameOperationGate gate = new GameOperationGate();
-        GameOperationLease first = await gate.EnterAsync(1, CancellationToken.None);
+        AsyncOperationLease first = await gate.EnterAsync(1, CancellationToken.None);
         first.Dispose();
-        using GameOperationLease second = await gate.EnterAsync(1, CancellationToken.None);
+        using AsyncOperationLease second = await gate.EnterAsync(1, CancellationToken.None);
         // Act
         Parallel.Invoke(first.Dispose, first.Dispose);
-        Task<GameOperationLease> pending = gate.EnterAsync(1, CancellationToken.None);
+        Task<AsyncOperationLease> pending = gate.EnterAsync(1, CancellationToken.None);
         bool wasWaiting = !pending.IsCompleted;
         second.Dispose();
-        using GameOperationLease third = await pending.WaitAsync(completionTimeout);
+        using AsyncOperationLease third = await pending.WaitAsync(completionTimeout);
         // Assert
         Assert.IsTrue(wasWaiting);
     }
 
     [TestMethod]
-    public async Task DisposeAsync_AdmittedWaiter_DrainsBeforeClosing()
+    public async Task DisposeAsync_AdmittedWaiter_DrainsBeforeClosingAsync()
     {
         // Arrange
         await using GameOperationGate gate = new GameOperationGate();
-        using GameOperationLease active = await gate.EnterAsync(1, CancellationToken.None);
-        Task<GameOperationLease> pending = gate.EnterAsync(1, CancellationToken.None);
+        using AsyncOperationLease active = await gate.EnterAsync(1, CancellationToken.None);
+        Task<AsyncOperationLease> pending = gate.EnterAsync(1, CancellationToken.None);
         // Act
         Task closing = gate.DisposeAsync().AsTask();
         bool waitedForActive = !closing.IsCompleted;
         active.Dispose();
-        using GameOperationLease next = await pending.WaitAsync(completionTimeout);
+        using AsyncOperationLease next = await pending.WaitAsync(completionTimeout);
         bool waitedForPending = !closing.IsCompleted;
         next.Dispose();
         await closing.WaitAsync(completionTimeout);
@@ -112,13 +113,13 @@ public sealed class GameOperationGateTests
     }
 
     [TestMethod]
-    public async Task DisposeAsync_CancelledWaiter_DoesNotPreventClosing()
+    public async Task DisposeAsync_CancelledWaiter_DoesNotPreventClosingAsync()
     {
         // Arrange
         await using GameOperationGate gate = new GameOperationGate();
-        using GameOperationLease active = await gate.EnterAsync(1, CancellationToken.None);
+        using AsyncOperationLease active = await gate.EnterAsync(1, CancellationToken.None);
         using CancellationTokenSource cancellation = new CancellationTokenSource();
-        Task<GameOperationLease> pending = gate.EnterAsync(1, cancellation.Token);
+        Task<AsyncOperationLease> pending = gate.EnterAsync(1, cancellation.Token);
         // Act
         Task closing = gate.DisposeAsync().AsTask();
         cancellation.Cancel();

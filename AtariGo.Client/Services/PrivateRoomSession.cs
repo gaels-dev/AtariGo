@@ -1,8 +1,6 @@
 using System.Diagnostics;
 using System.IO;
 
-using Grpc.Core;
-
 using AtariGo.Client.Models;
 using AtariGo.Contracts;
 
@@ -89,8 +87,9 @@ public sealed class PrivateRoomSession : IPrivateRoomSession
                 await _client.StartGameAsync(request, token).ConfigureAwait(false);
             }
         }
-        catch (RpcException exception)
-            when (!GrpcCallPolicy.IsRequestedCancellation(exception, token))
+        catch (Exception exception)
+            when (GrpcClientFailures.IsTransportFailure(exception)
+                && !GrpcCallPolicy.IsRequestedCancellation(exception, token))
         {
             await RecoverStartAsync(GrpcClientFailures.GetReason(exception), token)
                 .ConfigureAwait(false);
@@ -111,12 +110,14 @@ public sealed class PrivateRoomSession : IPrivateRoomSession
             await _client.LeaveRoomAsync(_roomId, token).ConfigureAwait(false);
             left = true;
         }
-        catch (RpcException exception) when (exception.StatusCode == StatusCode.NotFound)
+        catch (Exception exception)
+            when (GrpcClientFailures.GetReason(exception) == ClientFailureReason.NotFound)
         {
             left = true;
         }
-        catch (RpcException exception)
-            when (!GrpcCallPolicy.IsRequestedCancellation(exception, token))
+        catch (Exception exception)
+            when (GrpcClientFailures.IsTransportFailure(exception)
+                && !GrpcCallPolicy.IsRequestedCancellation(exception, token))
         {
             ReportFailure(GrpcClientFailures.GetReason(exception), false, false);
         }
@@ -214,12 +215,13 @@ public sealed class PrivateRoomSession : IPrivateRoomSession
                 }
             }
         }
-        catch (RpcException exception)
-            when (!GrpcCallPolicy.IsRequestedCancellation(exception, token))
+        catch (Exception exception)
+            when (GrpcClientFailures.IsTransportFailure(exception)
+                && !GrpcCallPolicy.IsRequestedCancellation(exception, token))
         {
             ReportFailure(GrpcClientFailures.GetReason(exception), false, true);
-            finished = exception.StatusCode is StatusCode.Unauthenticated
-                or StatusCode.PermissionDenied or StatusCode.NotFound;
+            finished = GrpcClientFailures.GetReason(exception) is ClientFailureReason.SessionExpired
+                or ClientFailureReason.PermissionDenied or ClientFailureReason.NotFound;
         }
         catch (IOException)
         {

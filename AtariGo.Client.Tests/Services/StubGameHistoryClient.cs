@@ -5,10 +5,16 @@ namespace AtariGo.Client.Tests.Services;
 
 public sealed class StubGameHistoryClient : IGameHistoryClient
 {
-    public Task<GameHistoryQueryResult> Response { get; set; } =
+    public Task<GameHistoryQueryResult> Response
+    {
+        get; set;
+    } =
         Task.FromResult(new GameHistoryQueryResult());
 
-    public CancellationToken RequestToken { get; private set; }
+    public CancellationToken RequestToken
+    {
+        get; private set;
+    }
 
     public Task<GameHistoryQueryResult> ListGamesByPlayerAsync(CancellationToken cancellationToken)
     {

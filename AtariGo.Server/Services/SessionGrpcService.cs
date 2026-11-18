@@ -1,7 +1,6 @@
-
-
 using Grpc.Core;
 
+using AtariGo.Server.Concurrency;
 using AtariGo.Contracts;
 using AtariGo.Server.Application.Sessions;
 using AtariGo.Server.Application.Social;
@@ -36,7 +35,7 @@ public sealed class SessionGrpcService : Session.SessionBase
         string sessionToken,
         CancellationToken cancellationToken)
     {
-        using FriendMutationLease lease = await _mutations.EnterAsync(cancellationToken);
+        using AsyncOperationLease lease = await _mutations.EnterAsync(cancellationToken);
         SessionConnectionInfo? info = await _sessionService.OpenConnectionAsync(
             sessionToken, cancellationToken);
         if (info is null)

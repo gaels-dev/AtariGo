@@ -75,9 +75,15 @@ public sealed class ChangePasswordDialogViewModel : DialogViewModelBase, IDispos
     public string DismissLabel => HasSucceeded
         ? Localize("ChangePassword_Btn_Close") : Localize("ChangePassword_Btn_Cancel");
 
-    public ICommand SaveCommand { get; }
+    public ICommand SaveCommand
+    {
+        get;
+    }
 
-    public ICommand DismissCommand { get; }
+    public ICommand DismissCommand
+    {
+        get;
+    }
 
     public void Dispose()
     {

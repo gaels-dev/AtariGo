@@ -42,7 +42,10 @@ public sealed class SentFriendRequestsViewModel : ViewModelBase, IDisposable
 
     public string MoreLabel => Localize("FriendRequests_Btn_More");
 
-    public ICommand LoadMoreCommand { get; }
+    public ICommand LoadMoreCommand
+    {
+        get;
+    }
 
     public async Task LoadAsync(bool append = false)
     {
@@ -178,7 +181,7 @@ public sealed class SentFriendRequestsViewModel : ViewModelBase, IDisposable
             return;
         }
 
-        _ = GrpcFailureMessages.GetMessage(exception);
+        _ = ClientFailureMessages.GetMessage(exception);
         StatusMessage = Localize("FriendRequests_Err_Unconfirmed");
     }
 

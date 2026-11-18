@@ -17,6 +17,11 @@ public sealed class GameClockService : BackgroundService
     public GameClockService(IServiceScopeFactory scopeFactory, GameCoordinator coordinator,
         IGameSessionRegistry registry, TimeProvider timeProvider, ILogger<GameClockService> logger)
     {
+        ArgumentNullException.ThrowIfNull(scopeFactory);
+        ArgumentNullException.ThrowIfNull(coordinator);
+        ArgumentNullException.ThrowIfNull(registry);
+        ArgumentNullException.ThrowIfNull(timeProvider);
+        ArgumentNullException.ThrowIfNull(logger);
         _scopeFactory = scopeFactory;
         _coordinator = coordinator;
         _registry = registry;

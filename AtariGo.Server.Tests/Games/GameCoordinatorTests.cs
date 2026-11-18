@@ -13,7 +13,7 @@ namespace AtariGo.Server.Tests.Games;
 public sealed class GameCoordinatorTests
 {
     [TestMethod]
-    public async Task ProcessAsync_RepeatedAction_StoresOneMoveAndRestoresReceipt()
+    public async Task ProcessAsync_RepeatedAction_StoresOneMoveAndRestoresReceiptAsync()
     {
         // Arrange
         await using GameplayTestDatabase database = await GameplayTestDatabase.CreateAsync();
@@ -35,7 +35,7 @@ public sealed class GameCoordinatorTests
     }
 
     [TestMethod]
-    public async Task AdvanceAsync_ExpiredTurn_SwitchesAndResetsWithoutDefeat()
+    public async Task AdvanceAsync_ExpiredTurn_SwitchesAndResetsWithoutDefeatAsync()
     {
         // Arrange
         await using GameplayTestDatabase database = await GameplayTestDatabase.CreateAsync();
@@ -54,7 +54,7 @@ public sealed class GameCoordinatorTests
     }
 
     [TestMethod]
-    public async Task ProcessAsync_MoveArrivesAtDeadline_RejectsOldTurn()
+    public async Task ProcessAsync_MoveArrivesAtDeadline_RejectsOldTurnAsync()
     {
         // Arrange
         await using GameplayTestDatabase database = await GameplayTestDatabase.CreateAsync();
@@ -74,7 +74,7 @@ public sealed class GameCoordinatorTests
     }
 
     [TestMethod]
-    public async Task ProcessAsync_CaptureGoal_PersistsWinnerAndRejectsFurtherMoves()
+    public async Task ProcessAsync_CaptureGoal_PersistsWinnerAndRejectsFurtherMovesAsync()
     {
         // Arrange
         await using GameplayTestDatabase database = await GameplayTestDatabase.CreateAsync();
@@ -100,7 +100,7 @@ public sealed class GameCoordinatorTests
     }
 
     [TestMethod]
-    public async Task ConnectAsync_BothPlayersDisconnected_RestoresBoardAndDeadline()
+    public async Task ConnectAsync_BothPlayersDisconnected_RestoresBoardAndDeadlineAsync()
     {
         // Arrange
         await using GameplayTestDatabase database = await GameplayTestDatabase.CreateAsync();
@@ -125,7 +125,7 @@ public sealed class GameCoordinatorTests
     }
 
     [TestMethod]
-    public async Task ProcessAsync_Surrender_CompletesForBothPlayers()
+    public async Task ProcessAsync_Surrender_CompletesForBothPlayersAsync()
     {
         // Arrange
         await using GameplayTestDatabase database = await GameplayTestDatabase.CreateAsync();
@@ -148,7 +148,7 @@ public sealed class GameCoordinatorTests
     }
 
     [TestMethod]
-    public async Task AdvanceAsync_MissingOpponent_CancelsWithoutWinner()
+    public async Task AdvanceAsync_MissingOpponent_CancelsWithoutWinnerAsync()
     {
         // Arrange
         await using GameplayTestDatabase database = await GameplayTestDatabase.CreateAsync();
@@ -164,7 +164,7 @@ public sealed class GameCoordinatorTests
     }
 
     [TestMethod]
-    public async Task ProcessAsync_ConcurrentSameTurn_OnlyOneMoveIsAccepted()
+    public async Task ProcessAsync_ConcurrentSameTurn_OnlyOneMoveIsAcceptedAsync()
     {
         // Arrange
         GameActionLookupInterceptor interceptor = new GameActionLookupInterceptor();
@@ -211,7 +211,7 @@ public sealed class GameCoordinatorTests
     [DataRow(31, StoneColor.White, 2)]
     [DataRow(60, StoneColor.Black, 3)]
     [DataRow(61, StoneColor.Black, 3)]
-    public async Task ProcessAsync_TurnExpiresDuringLookup_RejectsAndPersistsTimeout(
+    public async Task ProcessAsync_TurnExpiresDuringLookup_RejectsAndPersistsTimeoutAsync(
         int elapsedSeconds, StoneColor expectedTurn, int expectedTurnNumber)
     {
         // Arrange
@@ -248,7 +248,7 @@ public sealed class GameCoordinatorTests
     }
 
     [TestMethod]
-    public async Task ProcessAsync_LookupFinishesBeforeDeadline_StartsFreshOpponentClock()
+    public async Task ProcessAsync_LookupFinishesBeforeDeadline_StartsFreshOpponentClockAsync()
     {
         // Arrange
         GameActionLookupInterceptor interceptor = new GameActionLookupInterceptor();
@@ -273,7 +273,7 @@ public sealed class GameCoordinatorTests
     }
 
     [TestMethod]
-    public async Task ProcessAsync_AcceptedRetryAfterExpiry_RestoresReceiptAndAdvancesClock()
+    public async Task ProcessAsync_AcceptedRetryAfterExpiry_RestoresReceiptAndAdvancesClockAsync()
     {
         // Arrange
         GameActionLookupInterceptor interceptor = new GameActionLookupInterceptor();

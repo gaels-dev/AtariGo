@@ -16,7 +16,7 @@ public sealed class PrivateRoomSessionTests
     private static readonly TimeSpan completionTimeout = TimeSpan.FromSeconds(5);
 
     [TestMethod]
-    public async Task WatchAsync_ConcurrentCalls_SharesOneObservation()
+    public async Task WatchAsync_ConcurrentCalls_SharesOneObservationAsync()
     {
         // Arrange
         StubRoomsClient client = CreateClient();
@@ -34,7 +34,7 @@ public sealed class PrivateRoomSessionTests
     }
 
     [TestMethod]
-    public async Task WatchAsync_StaleOrForeignSnapshots_KeepsLatestConfirmedRoom()
+    public async Task WatchAsync_StaleOrForeignSnapshots_KeepsLatestConfirmedRoomAsync()
     {
         // Arrange
         StubRoomsClient client = CreateClient();
@@ -65,7 +65,7 @@ public sealed class PrivateRoomSessionTests
     [DataRow(StatusCode.Unauthenticated, ClientFailureReason.SessionExpired)]
     [DataRow(StatusCode.PermissionDenied, ClientFailureReason.PermissionDenied)]
     [DataRow(StatusCode.NotFound, ClientFailureReason.NotFound)]
-    public async Task WatchAsync_PermanentFailure_ReportsApplicationReasonWithoutRetry(
+    public async Task WatchAsync_PermanentFailure_ReportsApplicationReasonWithoutRetryAsync(
         StatusCode statusCode, ClientFailureReason expected)
     {
         // Arrange
@@ -83,7 +83,7 @@ public sealed class PrivateRoomSessionTests
     }
 
     [TestMethod]
-    public async Task WatchAsync_DisposedOwner_CancelsObservationAndIgnoresLateSnapshot()
+    public async Task WatchAsync_DisposedOwner_CancelsObservationAndIgnoresLateSnapshotAsync()
     {
         // Arrange
         StubRoomsClient client = CreateClient();
@@ -112,7 +112,7 @@ public sealed class PrivateRoomSessionTests
     }
 
     [TestMethod]
-    public async Task StartGameAsync_StartReplyLost_RecoversStartedRoomWithoutReplaying()
+    public async Task StartGameAsync_StartReplyLost_RecoversStartedRoomWithoutReplayingAsync()
     {
         // Arrange
         StubRoomsClient client = CreateClient();
@@ -138,7 +138,7 @@ public sealed class PrivateRoomSessionTests
     }
 
     [TestMethod]
-    public async Task StartGameAsync_ConfirmationFails_RejectsStaleRecoverySnapshot()
+    public async Task StartGameAsync_ConfirmationFails_RejectsStaleRecoverySnapshotAsync()
     {
         // Arrange
         StubRoomsClient client = CreateClient();
@@ -178,7 +178,7 @@ public sealed class PrivateRoomSessionTests
     [TestMethod]
     [DataRow(StatusCode.NotFound, true, ClientFailureReason.None)]
     [DataRow(StatusCode.Unavailable, false, ClientFailureReason.Unavailable)]
-    public async Task LeaveAsync_RemoteFailure_ReturnsApplicationResult(
+    public async Task LeaveAsync_RemoteFailure_ReturnsApplicationResultAsync(
         StatusCode statusCode, bool expectedLeft, ClientFailureReason expectedFailure)
     {
         // Arrange
@@ -196,7 +196,7 @@ public sealed class PrivateRoomSessionTests
     }
 
     [TestMethod]
-    public async Task WatchAsync_CallerCancels_StopsWithoutReportingFailure()
+    public async Task WatchAsync_CallerCancels_StopsWithoutReportingFailureAsync()
     {
         // Arrange
         StubRoomsClient client = CreateClient();

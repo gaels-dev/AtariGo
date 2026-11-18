@@ -32,13 +32,6 @@ namespace AtariGo.Client.Services
             Dispatch(() => GetMainViewModel()?.NavigateToLobby());
         }
 
-        public void NavigateToGameBoard(
-            bool isGuest = false,
-            int targetCaptures = GameRules.DefaultCaptureGoal)
-        {
-            Dispatch(() => GetMainViewModel()?.NavigateToGameBoard(isGuest, targetCaptures));
-        }
-
         public void NavigateToSharedGame(PrivateRoomNavigationContext navigationContext)
         {
             ArgumentNullException.ThrowIfNull(navigationContext);
@@ -88,11 +81,6 @@ namespace AtariGo.Client.Services
             Dispatch(ShowFriendRequests);
         }
 
-        public void NavigateToFriendList()
-        {
-            Dispatch(ShowFriendList);
-        }
-
         public void NavigateToGameHistory()
         {
             Dispatch(ShowGameHistory);
@@ -105,6 +93,7 @@ namespace AtariGo.Client.Services
 
         public void OpenDialog(DialogViewModelBase dialog)
         {
+            ArgumentNullException.ThrowIfNull(dialog);
             Dispatch(() => GetMainViewModel()?.OpenDialog(dialog));
         }
 
@@ -135,6 +124,7 @@ namespace AtariGo.Client.Services
 
         public void OpenVerificationDialog(RegistrationDraft draft)
         {
+            ArgumentNullException.ThrowIfNull(draft);
             Dispatch(() => GetLoginViewModel()?.OpenVerificationDialog(draft));
         }
 
@@ -346,22 +336,6 @@ namespace AtariGo.Client.Services
                 Friends = mainViewModel.Friends
             };
             mainViewModel.CurrentViewModel = new FriendRequestsViewModel(this, context);
-        }
-
-        private void ShowFriendList()
-        {
-            MainViewModel? mainViewModel = GetMainViewModel();
-            if (mainViewModel is null)
-            {
-                return;
-            }
-
-            mainViewModel.CurrentViewModel = new FriendListViewModel(this,
-                new FriendListNavigationContext
-                {
-                    SessionToken = mainViewModel.SessionToken,
-                    Friends = mainViewModel.Friends
-                });
         }
 
         private void ShowGameHistory()

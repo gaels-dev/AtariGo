@@ -26,9 +26,11 @@ public sealed class GrpcPasswordRecoveryClient : IPasswordRecoveryClient
     public Task<PasswordRecoveryResult> RequestAsync(string identifier,
         CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(identifier);
         var request = new PasswordRecoveryRequest
         {
-            Identifier = identifier.Trim(), CultureName = CultureInfo.CurrentUICulture.Name
+            Identifier = identifier.Trim(),
+            CultureName = CultureInfo.CurrentUICulture.Name
         };
         return ExecuteAsync(() => _client.RequestPasswordRecoveryAsync(request,
             GrpcCallPolicy.CreateOptions(cancellationToken)).ResponseAsync);
@@ -37,6 +39,7 @@ public sealed class GrpcPasswordRecoveryClient : IPasswordRecoveryClient
     public async Task<PasswordRecoveryResult> ResetAsync(PasswordRecoveryInput input,
         CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(input);
         PasswordRecoveryResult? validation = input.Validate();
         if (validation.HasValue)
         {

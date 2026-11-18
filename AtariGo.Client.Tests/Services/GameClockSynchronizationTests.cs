@@ -1,4 +1,3 @@
-
 using AtariGo.Client.Services;
 
 namespace AtariGo.Client.Tests.Services;

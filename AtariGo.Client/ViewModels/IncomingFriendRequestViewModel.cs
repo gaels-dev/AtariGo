@@ -34,17 +34,32 @@ public sealed class IncomingFriendRequestViewModel : ViewModelBase
             _onError);
     }
 
-    public long RequestId { get; }
+    public long RequestId
+    {
+        get;
+    }
 
-    public int RequesterUserId { get; }
+    public int RequesterUserId
+    {
+        get;
+    }
 
-    public string RequesterUserName { get; }
+    public string RequesterUserName
+    {
+        get;
+    }
 
     public bool CanRespond => !_isResponding;
 
-    public ICommand AcceptCommand { get; }
+    public ICommand AcceptCommand
+    {
+        get;
+    }
 
-    public ICommand RejectCommand { get; }
+    public ICommand RejectCommand
+    {
+        get;
+    }
 
     private async Task RespondAsync(bool accept)
     {

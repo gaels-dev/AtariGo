@@ -1,3 +1,4 @@
+using AtariGo.Server.Application.Games;
 using AtariGo.Contracts;
 using AtariGo.Server.Data;
 
@@ -114,7 +115,7 @@ public sealed class InMemoryPublicMatchmakingQueue
 
     private void PairWaitingPlayers()
     {
-        if (_waiting.Count < 2)
+        if (_waiting.Count < GameSessionRules.PlayerCount)
         {
             return;
         }
@@ -129,7 +130,7 @@ public sealed class InMemoryPublicMatchmakingQueue
         DateTimeOffset countdownEndsAt = _timeProvider.GetUtcNow()
             .Add(countdownDuration);
         var match = new PublicMatchState(
-            Guid.NewGuid(), blackTicket, whiteTicket, countdownEndsAt);
+            blackTicket, whiteTicket, countdownEndsAt);
         blackTicket.Match = match;
         whiteTicket.Match = match;
         PublishCountdown(match);

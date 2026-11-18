@@ -41,8 +41,10 @@ public sealed class AuthenticationRequestLimiter : IDisposable
         return PartitionedRateLimiter.Create<string, string>(address =>
             RateLimitPartition.GetFixedWindowLimiter(address, _ => new FixedWindowRateLimiterOptions
             {
-                PermitLimit = limit, Window = AuthenticationCodeIssuanceService.RequestWindow,
-                QueueLimit = 0, AutoReplenishment = true
+                PermitLimit = limit,
+                Window = AuthenticationCodeIssuanceService.RequestWindow,
+                QueueLimit = 0,
+                AutoReplenishment = true
             }));
     }
 

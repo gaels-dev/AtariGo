@@ -55,17 +55,18 @@ public sealed class GrpcSessionClient : ISessionClient
         catch (OperationCanceledException)
             when (cancellationToken.IsCancellationRequested)
         {
+            System.Diagnostics.Trace.TraceInformation("Real-time session stopped by its owner.");
         }
     }
 
     public async Task LogoutAsync(
         CancellationToken cancellationToken = default)
     {
-        await _client.LogoutAsync(
+        await GrpcCallPolicy.ExecuteAsync(() => _client.LogoutAsync(
             new LogoutRequest(),
             GrpcCallPolicy.CreateOptions(
                 cancellationToken,
-                CreateAuthorizationHeaders())).ResponseAsync;
+                GrpcCallPolicy.CreateHeaders(_sessionToken))).ResponseAsync);
     }
 
     private async Task<bool> ConnectAndReceiveAsync(
@@ -110,7 +111,7 @@ public sealed class GrpcSessionClient : ISessionClient
             return false;
         }
 
-        callbacks.ConnectionFailed(exception);
+        callbacks.ConnectionFailed(GrpcClientFailures.GetReason(exception));
         return true;
     }
 
@@ -118,16 +119,8 @@ public sealed class GrpcSessionClient : ISessionClient
         CancellationToken cancellationToken)
     {
         return new CallOptions(
-            headers: CreateAuthorizationHeaders(),
+            headers: GrpcCallPolicy.CreateHeaders(_sessionToken),
             cancellationToken: cancellationToken);
-    }
-
-    private Metadata CreateAuthorizationHeaders()
-    {
-        return new Metadata
-        {
-            { "authorization", $"Bearer {_sessionToken}" }
-        };
     }
 
     private static TimeSpan GetNextReconnectDelay(TimeSpan currentDelay)

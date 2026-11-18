@@ -15,9 +15,18 @@ public sealed class OutgoingFriendRequestViewModel : ViewModelBase
         CancelCommand = cancelCommand;
     }
 
-    public long RequestId { get; }
+    public long RequestId
+    {
+        get;
+    }
 
-    public string RecipientUserName { get; }
+    public string RecipientUserName
+    {
+        get;
+    }
 
-    public ICommand CancelCommand { get; }
+    public ICommand CancelCommand
+    {
+        get;
+    }
 }

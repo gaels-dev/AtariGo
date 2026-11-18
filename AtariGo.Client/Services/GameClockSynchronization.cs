@@ -15,7 +15,10 @@ public sealed class GameClockSynchronization
         _timeProvider = timeProvider;
     }
 
-    public bool IsSynchronized { get; private set; }
+    public bool IsSynchronized
+    {
+        get; private set;
+    }
 
     public void BeginConnection()
     {

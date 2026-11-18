@@ -7,14 +7,26 @@ namespace AtariGo.Client.Tests.Services;
 
 public sealed class RecoveryResponseInterceptor : Interceptor
 {
-    public Task<PasswordRecoveryResponse> Response { get; set; } =
+    public Task<PasswordRecoveryResponse> Response
+    {
+        get; set;
+    } =
         Task.FromResult(new PasswordRecoveryResponse { Status = RecoveryStatus.NotSaved });
 
-    public int Calls { get; private set; }
+    public int Calls
+    {
+        get; private set;
+    }
 
-    public CallOptions Options { get; private set; }
+    public CallOptions Options
+    {
+        get; private set;
+    }
 
-    public ResetPasswordRequest? Request { get; private set; }
+    public ResetPasswordRequest? Request
+    {
+        get; private set;
+    }
 
     public override AsyncUnaryCall<TResponse> AsyncUnaryCall<TRequest, TResponse>(
         TRequest request, ClientInterceptorContext<TRequest, TResponse> context,

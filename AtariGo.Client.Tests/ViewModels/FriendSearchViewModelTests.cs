@@ -1,6 +1,5 @@
 using System.Reflection;
 
-
 using AtariGo.Client.Services;
 using AtariGo.Client.Tests.Services;
 using AtariGo.Client.ViewModels;
@@ -13,7 +12,7 @@ namespace AtariGo.Client.Tests.ViewModels;
 public sealed class FriendSearchViewModelTests
 {
     [TestMethod]
-    public async Task Dispose_PendingSearch_CancelsRequestAndIgnoresLateResults()
+    public async Task Dispose_PendingSearch_CancelsRequestAndIgnoresLateResultsAsync()
     {
         // Arrange
         INavigationService navigation = DispatchProxy.Create<INavigationService,

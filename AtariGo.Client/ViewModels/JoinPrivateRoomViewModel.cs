@@ -58,9 +58,15 @@ namespace AtariGo.Client.ViewModels
             }
         }
 
-        public ICommand JoinCommand { get; }
+        public ICommand JoinCommand
+        {
+            get;
+        }
 
-        public ICommand CancelCommand { get; }
+        public ICommand CancelCommand
+        {
+            get;
+        }
 
         public void Dispose()
         {
@@ -90,7 +96,7 @@ namespace AtariGo.Client.ViewModels
 
         private void ShowFailure(Exception exception)
         {
-            ErrorMessage = GrpcFailureMessages.GetRoomJoinMessage(exception);
+            ErrorMessage = ClientFailureMessages.GetRoomJoinMessage(exception);
         }
     }
 }

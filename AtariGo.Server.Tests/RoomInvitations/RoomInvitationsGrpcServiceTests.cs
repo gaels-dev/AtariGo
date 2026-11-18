@@ -14,7 +14,7 @@ namespace AtariGo.Server.Tests.RoomInvitations;
 public sealed class RoomInvitationsGrpcServiceTests
 {
     [TestMethod]
-    public async Task InvitationFlow_TwoClients_NotifiesAndAcceptsLatestConfiguration()
+    public async Task InvitationFlow_TwoClients_NotifiesAndAcceptsLatestConfigurationAsync()
     {
         // Arrange
         await using SocialGrpcTestHost server = await SocialGrpcTestHost.StartAsync();
@@ -39,22 +39,27 @@ public sealed class RoomInvitationsGrpcServiceTests
         SendRoomInvitationResponse sent = await invitations.SendRoomInvitationAsync(
             new SendRoomInvitationRequest
             {
-                RoomId = created.Room.RoomId, RecipientUserId = 2
+                RoomId = created.Room.RoomId,
+                RecipientUserId = 2
             }, host);
         bool received = await session.ResponseStream.MoveNext(timeout.Token);
         UpdateRoomConfigurationResponse updated = await rooms.UpdateRoomConfigurationAsync(
             new UpdateRoomConfigurationRequest
             {
-                RoomId = created.Room.RoomId, ExpectedVersion = created.Room.Version,
+                RoomId = created.Room.RoomId,
+                ExpectedVersion = created.Room.Version,
                 Configuration = new RoomConfiguration
                 {
-                    CaptureGoal = 3, GameTimeSeconds = 600, TurnTimeSeconds = 30
+                    CaptureGoal = 3,
+                    GameTimeSeconds = 600,
+                    TurnTimeSeconds = 30
                 }
             }, host);
         RespondRoomInvitationResponse accepted = await invitations.RespondRoomInvitationAsync(
             new RespondRoomInvitationRequest
             {
-                InvitationId = sent.Invitation.InvitationId, Accept = true
+                InvitationId = sent.Invitation.InvitationId,
+                Accept = true
             }, guest);
         using AsyncServerStreamingCall<RoomSnapshot> watch = rooms.WatchRoom(
             new WatchRoomRequest { RoomId = created.Room.RoomId }, host);
@@ -71,7 +76,7 @@ public sealed class RoomInvitationsGrpcServiceTests
     }
 
     [TestMethod]
-    public async Task RespondRoomInvitation_FriendshipRemoved_RejectsAndPreservesRoom()
+    public async Task RespondRoomInvitation_FriendshipRemoved_RejectsAndPreservesRoomAsync()
     {
         // Arrange
         await using SocialGrpcTestHost server = await SocialGrpcTestHost.StartAsync();
@@ -94,7 +99,8 @@ public sealed class RoomInvitationsGrpcServiceTests
         SendRoomInvitationResponse sent = await invitations.SendRoomInvitationAsync(
             new SendRoomInvitationRequest
             {
-                RoomId = created.Room.RoomId, RecipientUserId = 2
+                RoomId = created.Room.RoomId,
+                RecipientUserId = 2
             }, host);
         await database.Database.ExecuteSqlRawAsync("DELETE FROM Friendships;");
 
@@ -102,7 +108,8 @@ public sealed class RoomInvitationsGrpcServiceTests
         RpcException failure = await Assert.ThrowsExactlyAsync<RpcException>(async () =>
             await invitations.RespondRoomInvitationAsync(new RespondRoomInvitationRequest
             {
-                InvitationId = sent.Invitation.InvitationId, Accept = true
+                InvitationId = sent.Invitation.InvitationId,
+                Accept = true
             }, guest));
         using AsyncServerStreamingCall<RoomSnapshot> watch = rooms.WatchRoom(
             new WatchRoomRequest { RoomId = created.Room.RoomId }, host);
@@ -117,7 +124,7 @@ public sealed class RoomInvitationsGrpcServiceTests
     [TestMethod]
     [DataRow("unknown", StatusCode.Unauthenticated)]
     [DataRow("other", StatusCode.PermissionDenied)]
-    public async Task SendRoomInvitation_InvalidIdentityOrFriendship_Rejects(
+    public async Task SendRoomInvitation_InvalidIdentityOrFriendship_RejectsAsync(
         string token, StatusCode expected)
     {
         // Arrange
@@ -130,7 +137,8 @@ public sealed class RoomInvitationsGrpcServiceTests
         RpcException failure = await Assert.ThrowsExactlyAsync<RpcException>(async () =>
             await invitations.SendRoomInvitationAsync(new SendRoomInvitationRequest
             {
-                RoomId = 1, RecipientUserId = 2
+                RoomId = 1,
+                RecipientUserId = 2
             }, Options(token, timeout.Token)));
 
         // Assert
@@ -138,7 +146,7 @@ public sealed class RoomInvitationsGrpcServiceTests
     }
 
     [TestMethod]
-    public async Task CancelRoomInvitation_Host_CanQueryCancellationAfterReconnect()
+    public async Task CancelRoomInvitation_Host_CanQueryCancellationAfterReconnectAsync()
     {
         // Arrange
         await using SocialGrpcTestHost server = await SocialGrpcTestHost.StartAsync();
@@ -184,7 +192,7 @@ public sealed class RoomInvitationsGrpcServiceTests
     }
 
     [TestMethod]
-    public async Task SendRoomInvitation_OfflineFriend_EmailsCodeAndAllowsJoining()
+    public async Task SendRoomInvitation_OfflineFriend_EmailsCodeAndAllowsJoiningAsync()
     {
         // Arrange
         var sender = new RecordingRoomInvitationEmailSender();
@@ -223,13 +231,14 @@ public sealed class RoomInvitationsGrpcServiceTests
     [TestMethod]
     [DataRow(false, true, RoomInvitationDeliveryStatus.EmailUnavailable)]
     [DataRow(true, true, RoomInvitationDeliveryStatus.EmailUnconfirmed)]
-    public async Task SendRoomInvitation_EmailFailure_DoesNotReportDelivery(
+    public async Task SendRoomInvitation_EmailFailure_DoesNotReportDeliveryAsync(
         bool configured, bool failDelivery, RoomInvitationDeliveryStatus expected)
     {
         // Arrange
         var sender = new RecordingRoomInvitationEmailSender
         {
-            IsConfigured = configured, FailDelivery = failDelivery
+            IsConfigured = configured,
+            FailDelivery = failDelivery
         };
         await using SocialGrpcTestHost server =
             await SocialGrpcTestHost.StartAsync(emailSender: sender);
@@ -255,7 +264,7 @@ public sealed class RoomInvitationsGrpcServiceTests
     }
 
     [TestMethod]
-    public async Task SendRoomInvitation_EmailPending_DoesNotBlockRoomClosure()
+    public async Task SendRoomInvitation_EmailPending_DoesNotBlockRoomClosureAsync()
     {
         // Arrange
         var completion = new TaskCompletionSource(
@@ -301,7 +310,7 @@ public sealed class RoomInvitationsGrpcServiceTests
     [TestMethod]
     [DataRow("other", false)]
     [DataRow("host", true)]
-    public async Task SendRoomInvitation_InvalidEmailPermission_DoesNotContactSender(
+    public async Task SendRoomInvitation_InvalidEmailPermission_DoesNotContactSenderAsync(
         string token, bool closeRoom)
     {
         // Arrange
@@ -335,8 +344,10 @@ public sealed class RoomInvitationsGrpcServiceTests
     {
         return new SendRoomInvitationRequest
         {
-            RoomId = roomId, RecipientUserId = 2,
-            DeliveryChannel = RoomInvitationDeliveryChannel.Email, CultureName = "es-MX"
+            RoomId = roomId,
+            RecipientUserId = 2,
+            DeliveryChannel = RoomInvitationDeliveryChannel.Email,
+            CultureName = "es-MX"
         };
     }
 
@@ -352,7 +363,9 @@ public sealed class RoomInvitationsGrpcServiceTests
         {
             Configuration = new RoomConfiguration
             {
-                CaptureGoal = 1, GameTimeSeconds = 600, TurnTimeSeconds = 30
+                CaptureGoal = 1,
+                GameTimeSeconds = 600,
+                TurnTimeSeconds = 30
             }
         };
     }

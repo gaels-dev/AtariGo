@@ -1,4 +1,3 @@
-
 using Grpc.Core;
 using Grpc.Net.Client;
 
@@ -36,9 +35,15 @@ namespace AtariGo.Client.Services
             }
         }
 
-        public Uri ServerAddress { get; }
+        public Uri ServerAddress
+        {
+            get;
+        }
 
-        public CallInvoker CallInvoker { get; }
+        public CallInvoker CallInvoker
+        {
+            get;
+        }
 
         public void Dispose()
         {

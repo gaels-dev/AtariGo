@@ -1,7 +1,6 @@
 using AtariGo.Contracts;
 using AtariGo.GameLogic.Models;
 using AtariGo.Server.Application.Games;
-
 using DomainSnapshot = AtariGo.Server.Application.Games.GameSessionSnapshot;
 using ProtoSnapshot = AtariGo.Contracts.GameSessionSnapshot;
 
@@ -11,6 +10,8 @@ internal static class GameSessionGameplayMapping
 {
     public static void Apply(ProtoSnapshot target, DomainSnapshot source, DateTime now)
     {
+        ArgumentNullException.ThrowIfNull(target);
+        ArgumentNullException.ThrowIfNull(source);
         GameRuntimeState? progress = source.Progress;
         if (progress is null)
         {

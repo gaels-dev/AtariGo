@@ -15,10 +15,16 @@ public sealed class AuthenticationEmailContent
         _prefix = feature + "_Email_";
     }
 
-    public static AuthenticationEmailContent Login { get; } =
+    public static AuthenticationEmailContent Login
+    {
+        get;
+    } =
         new AuthenticationEmailContent("Login");
 
-    public static AuthenticationEmailContent Recovery { get; } =
+    public static AuthenticationEmailContent Recovery
+    {
+        get;
+    } =
         new AuthenticationEmailContent("Recovery");
 
     public EmailMessage CreateMessage(string recipient, string code, string cultureName)
@@ -29,7 +35,8 @@ public sealed class AuthenticationEmailContent
         CultureInfo culture = SelectCulture(cultureName);
         return new EmailMessage
         {
-            Recipient = recipient, Subject = GetText("Subject", culture),
+            Recipient = recipient,
+            Subject = GetText("Subject", culture),
             Body = string.Format(CultureInfo.InvariantCulture, GetText("Body", culture), code)
         };
     }

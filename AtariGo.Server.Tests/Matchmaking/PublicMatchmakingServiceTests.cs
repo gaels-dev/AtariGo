@@ -22,7 +22,7 @@ public sealed class PublicMatchmakingServiceTests
     }
 
     [TestMethod]
-    public async Task ReadEventsAsync_TimerWakesBeforeDeadline_WaitsAgainAndStartsGame()
+    public async Task ReadEventsAsync_TimerWakesBeforeDeadline_WaitsAgainAndStartsGameAsync()
     {
         // Arrange
         AdvancingMatchmakingTimeProvider time = new AdvancingMatchmakingTimeProvider(true);
@@ -50,7 +50,7 @@ public sealed class PublicMatchmakingServiceTests
     }
 
     [TestMethod]
-    public async Task ReadEventsAsync_TwoReadersAfterCountdown_CreatesOneGameForBoth()
+    public async Task ReadEventsAsync_TwoReadersAfterCountdown_CreatesOneGameForBothAsync()
     {
         // Arrange
         MatchmakingTicket blackTicket = Join("Black");
@@ -86,7 +86,8 @@ public sealed class PublicMatchmakingServiceTests
     }
 
     [TestMethod]
-    public async Task ReadEventsAsync_CancelledDuringCountdown_RequeuesOpponentWithoutCreatingGame()
+    public async Task
+        ReadEventsAsync_CancelledDuringCountdown_RequeuesOpponentWithoutCreatingGameAsync()
     {
         // Arrange
         MatchmakingTicket leavingTicket = Join("Leaving");
@@ -115,7 +116,7 @@ public sealed class PublicMatchmakingServiceTests
     }
 
     [TestMethod]
-    public async Task ReadEventsAsync_CreationFails_ClosesBothSearchesAndReleasesPlayers()
+    public async Task ReadEventsAsync_CreationFails_ClosesBothSearchesAndReleasesPlayersAsync()
     {
         // Arrange
         MatchmakingTicket blackTicket = Join("Black");
@@ -142,7 +143,7 @@ public sealed class PublicMatchmakingServiceTests
     }
 
     [TestMethod]
-    public async Task ReadEventsAsync_CancelledAfterClaim_CompletesCreationForOpponent()
+    public async Task ReadEventsAsync_CancelledAfterClaim_CompletesCreationForOpponentAsync()
     {
         // Arrange
         MatchmakingTicket blackTicket = Join("Black");
@@ -173,7 +174,7 @@ public sealed class PublicMatchmakingServiceTests
     }
 
     [TestMethod]
-    public async Task ReadEventsAsync_CancelledBeforeClaim_DoesNotCreateGameAfterDeadline()
+    public async Task ReadEventsAsync_CancelledBeforeClaim_DoesNotCreateGameAfterDeadlineAsync()
     {
         // Arrange
         MatchmakingTicket blackTicket = Join("Black");
@@ -192,7 +193,7 @@ public sealed class PublicMatchmakingServiceTests
     }
 
     [TestMethod]
-    public async Task ReadEventsAsync_ReaderDisposed_ReleasesQueuedPlayer()
+    public async Task ReadEventsAsync_ReaderDisposed_ReleasesQueuedPlayerAsync()
     {
         // Arrange
         MatchmakingTicket ticket = Join("Black");

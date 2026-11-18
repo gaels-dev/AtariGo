@@ -17,15 +17,30 @@ public sealed class GameHistoryEntryViewModel
         ResultLabel = Localize("GameHistory_Result_" + GetResultCode(entry));
     }
 
-    public string DateLabel { get; }
+    public string DateLabel
+    {
+        get;
+    }
 
-    public string OpponentName { get; }
+    public string OpponentName
+    {
+        get;
+    }
 
-    public string ResultLabel { get; }
+    public string ResultLabel
+    {
+        get;
+    }
 
-    public string StoneColorLabel { get; }
+    public string StoneColorLabel
+    {
+        get;
+    }
 
-    public string OpponentStoneColorLabel { get; }
+    public string OpponentStoneColorLabel
+    {
+        get;
+    }
 
     private static string GetResultCode(GameHistoryEntry entry)
     {

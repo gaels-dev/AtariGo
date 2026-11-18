@@ -1,4 +1,3 @@
-
 using Grpc.Core;
 using Grpc.Core.Interceptors;
 
@@ -12,7 +11,7 @@ namespace AtariGo.Client.Tests.Services;
 public sealed class GrpcRoomsClientTests
 {
     [TestMethod]
-    public async Task UpdateRoomConfiguration_TwoSessions_PreservesIdentityDeadlineAndRequest()
+    public async Task UpdateRoomConfiguration_TwoSessions_PreservesIdentityDeadlineAndRequestAsync()
     {
         // Arrange
         using var connection = new GrpcClientConnection(new Uri("https://localhost:7061"));
@@ -28,7 +27,9 @@ public sealed class GrpcRoomsClientTests
             ExpectedVersion = 7,
             Configuration = new RoomConfiguration
             {
-                CaptureGoal = 3, GameTimeSeconds = 600, TurnTimeSeconds = 30
+                CaptureGoal = 3,
+                GameTimeSeconds = 600,
+                TurnTimeSeconds = 30
             }
         };
 

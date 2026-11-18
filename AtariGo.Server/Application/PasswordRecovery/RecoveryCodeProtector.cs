@@ -8,7 +8,6 @@ public sealed class RecoveryCodeProtector
 {
     public const string Purpose = "PasswordReset";
     public const int MaximumAttempts = 5;
-    public const int CodeLength = AuthenticationCodeProtector.CodeLength;
     private readonly AuthenticationCodeProtector _protector;
 
     public RecoveryCodeProtector(IOptions<PasswordRecoveryOptions> options)

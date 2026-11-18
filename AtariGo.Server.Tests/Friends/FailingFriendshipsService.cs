@@ -11,7 +11,10 @@ internal sealed class FailingFriendshipsService : IFriendshipsService
         _failOperation = failOperation;
     }
 
-    public int InvocationCount { get; private set; }
+    public int InvocationCount
+    {
+        get; private set;
+    }
 
     public Task<RemoveFriendshipResult?> RemoveFriendshipAsync(
         string sessionToken, int friendUserId, CancellationToken cancellationToken)

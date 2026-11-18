@@ -11,7 +11,7 @@ namespace AtariGo.Client.Tests.Services;
 public sealed class GameplaySessionTests
 {
     [TestMethod]
-    public async Task SubmitMoveAsync_ConcurrentActions_QueuesOnlyOneAction()
+    public async Task SubmitMoveAsync_ConcurrentActions_QueuesOnlyOneActionAsync()
     {
         // Arrange
         StubGameSessionStream stream = new StubGameSessionStream();
@@ -27,7 +27,8 @@ public sealed class GameplaySessionTests
     }
 
     [TestMethod]
-    public async Task SubmitMoveAsync_Reconnect_WaitsForValidSnapshotAndPreservesOriginalAction()
+    public async Task
+        SubmitMoveAsync_Reconnect_WaitsForValidSnapshotAndPreservesOriginalActionAsync()
     {
         // Arrange
         StubGameSessionStream first = new StubGameSessionStream { FailSend = true };
@@ -54,7 +55,7 @@ public sealed class GameplaySessionTests
     }
 
     [TestMethod]
-    public async Task SubmitMoveAsync_UnrelatedReceipt_KeepsPendingActionUntilMatchingReceipt()
+    public async Task SubmitMoveAsync_UnrelatedReceipt_KeepsPendingActionUntilMatchingReceiptAsync()
     {
         // Arrange
         StubGameSessionStream stream = new StubGameSessionStream();
@@ -79,7 +80,7 @@ public sealed class GameplaySessionTests
     }
 
     [TestMethod]
-    public async Task SubmitMoveAsync_DuplicateSnapshots_DoesNotResendWithinSameConnection()
+    public async Task SubmitMoveAsync_DuplicateSnapshots_DoesNotResendWithinSameConnectionAsync()
     {
         // Arrange
         StubGameSessionStream stream = new StubGameSessionStream();
@@ -97,7 +98,7 @@ public sealed class GameplaySessionTests
     }
 
     [TestMethod]
-    public async Task SendChatAsync_SendFails_DoesNotReplayChatAfterReconnect()
+    public async Task SendChatAsync_SendFails_DoesNotReplayChatAfterReconnectAsync()
     {
         // Arrange
         StubGameSessionStream first = new StubGameSessionStream { FailSend = true };
@@ -122,7 +123,7 @@ public sealed class GameplaySessionTests
     [DataRow(StatusCode.PermissionDenied, ClientFailureReason.PermissionDenied)]
     [DataRow(StatusCode.InvalidArgument, ClientFailureReason.InvalidRequest)]
     [DataRow(StatusCode.AlreadyExists, ClientFailureReason.ConnectionReplaced)]
-    public async Task RunAsync_PermanentFailure_ReportsApplicationReasonAndStopsRetrying(
+    public async Task RunAsync_PermanentFailure_ReportsApplicationReasonAndStopsRetryingAsync(
         StatusCode statusCode, ClientFailureReason expected)
     {
         // Arrange
@@ -142,7 +143,7 @@ public sealed class GameplaySessionTests
     }
 
     [TestMethod]
-    public async Task Dispose_ActiveConnection_StopsStreamAndRejectsLateUpdates()
+    public async Task Dispose_ActiveConnection_StopsStreamAndRejectsLateUpdatesAsync()
     {
         // Arrange
         StubGameSessionStream stream = new StubGameSessionStream();
@@ -160,7 +161,7 @@ public sealed class GameplaySessionTests
     }
 
     [TestMethod]
-    public async Task SubmitMoveAsync_AlreadyCancelled_DoesNotQueueAnAction()
+    public async Task SubmitMoveAsync_AlreadyCancelled_DoesNotQueueAnActionAsync()
     {
         // Arrange
         StubGameSessionStream stream = new StubGameSessionStream();

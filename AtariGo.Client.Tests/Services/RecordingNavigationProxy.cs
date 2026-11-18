@@ -10,11 +10,20 @@ namespace AtariGo.Client.Tests.Services
     {
         private readonly List<string> _calls = new List<string>();
 
-        public ClientSessionContext? SessionContext { get; private set; }
+        public ClientSessionContext? SessionContext
+        {
+            get; private set;
+        }
 
-        public DialogViewModelBase? OpenedDialog { get; private set; }
+        public DialogViewModelBase? OpenedDialog
+        {
+            get; private set;
+        }
 
-        public object? LastNavigationArgument { get; private set; }
+        public object? LastNavigationArgument
+        {
+            get; private set;
+        }
 
         public IReadOnlyList<string> Calls
         {

@@ -12,7 +12,7 @@ namespace AtariGo.Client.Tests.ViewModels;
 public sealed class ProfileCustomizationViewModelTests
 {
     [TestMethod]
-    public async Task LoadAndUpdate_ConfirmsPlayerNameAndAvatar()
+    public async Task LoadAndUpdate_ValidProfile_ConfirmsPlayerNameAndAvatarAsync()
     {
         // Arrange
         INavigationService navigation = DispatchProxy.Create<INavigationService,
@@ -43,7 +43,7 @@ public sealed class ProfileCustomizationViewModelTests
     }
 
     [TestMethod]
-    public async Task RejectedUpdate_LeavesConfirmedNameUnchanged()
+    public async Task UpdateProfileCommand_RejectedUpdate_PreservesConfirmedNameAsync()
     {
         // Arrange
         INavigationService navigation = DispatchProxy.Create<INavigationService,
@@ -73,7 +73,7 @@ public sealed class ProfileCustomizationViewModelTests
     }
 
     [TestMethod]
-    public async Task AvatarPicker_ShowsTwentyChoicesAndLocksByWins()
+    public async Task AvatarPicker_CompletedWins_ControlsTwentyAvatarChoicesAsync()
     {
         // Arrange
         INavigationService navigation = DispatchProxy.Create<INavigationService,
@@ -82,7 +82,10 @@ public sealed class ProfileCustomizationViewModelTests
         {
             Profile = new UserProfile
             {
-                UserName = "PlayerOne", Email = "first@example.test", Wins = 9, AvatarId = 1
+                UserName = "PlayerOne",
+                Email = "first@example.test",
+                Wins = 9,
+                AvatarId = 1
             }
         };
         using ProfileCustomizationViewModel model = new ProfileCustomizationViewModel(

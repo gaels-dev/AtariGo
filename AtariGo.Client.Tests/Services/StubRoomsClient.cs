@@ -5,7 +5,10 @@ namespace AtariGo.Client.Tests.Services;
 
 internal sealed class StubRoomsClient : IRoomsClient
 {
-    public RoomSnapshot Room { get; } = new RoomSnapshot
+    public RoomSnapshot Room
+    {
+        get;
+    } = new RoomSnapshot
     {
         RoomId = 42,
         InvitationCode = "AABBCCDDEE",
@@ -13,28 +16,58 @@ internal sealed class StubRoomsClient : IRoomsClient
         Configuration = new RoomConfiguration { CaptureGoal = 2 }
     };
 
-    public UpdateRoomConfigurationRequest? UpdateRequest { get; private set; }
+    public UpdateRoomConfigurationRequest? UpdateRequest
+    {
+        get; private set;
+    }
 
-    public Func<UpdateRoomConfigurationRequest, Task<RoomSnapshot>>? UpdateHandler { get; set; }
+    public Func<UpdateRoomConfigurationRequest, Task<RoomSnapshot>>? UpdateHandler
+    {
+        get; set;
+    }
 
     public Func<WatchRoomRequest, CancellationToken, IAsyncEnumerable<RoomSnapshot>>?
-        WatchHandler { get; set; }
+        WatchHandler
+    {
+        get; set;
+    }
 
-    public Func<StartGameRequest, Task>? StartHandler { get; set; }
+    public Func<StartGameRequest, Task>? StartHandler
+    {
+        get; set;
+    }
 
-    public Func<int, Task>? LeaveHandler { get; set; }
+    public Func<int, Task>? LeaveHandler
+    {
+        get; set;
+    }
 
     public List<string> Operations { get; } = new List<string>();
 
-    public string? JoinedCode { get; private set; }
+    public string? JoinedCode
+    {
+        get; private set;
+    }
 
-    public int LeftRoomId { get; private set; }
+    public int LeftRoomId
+    {
+        get; private set;
+    }
 
-    public RoomConfiguration? CreatedConfiguration { get; private set; }
+    public RoomConfiguration? CreatedConfiguration
+    {
+        get; private set;
+    }
 
-    public StartGameRequest? StartRequest { get; private set; }
+    public StartGameRequest? StartRequest
+    {
+        get; private set;
+    }
 
-    public WatchRoomRequest? Observation { get; private set; }
+    public WatchRoomRequest? Observation
+    {
+        get; private set;
+    }
 
     public List<WatchRoomRequest> Observations { get; } = new List<WatchRoomRequest>();
 

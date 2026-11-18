@@ -39,7 +39,10 @@ internal sealed class RecoveryTestHost : IAsyncDisposable
         Database = database;
     }
 
-    public SqlServerTestDatabase Database { get; }
+    public SqlServerTestDatabase Database
+    {
+        get;
+    }
 
     public ManualTimeProvider Clock { get; } = new ManualTimeProvider();
 
@@ -85,8 +88,10 @@ internal sealed class RecoveryTestHost : IAsyncDisposable
     {
         return new ResetPasswordRequest
         {
-            Identifier = "Owner", Code = code ?? Email.Codes.Last(),
-            NewPassword = NewPassword, Confirmation = NewPassword
+            Identifier = "Owner",
+            Code = code ?? Email.Codes.Last(),
+            NewPassword = NewPassword,
+            Confirmation = NewPassword
         };
     }
 
@@ -161,8 +166,11 @@ internal sealed class RecoveryTestHost : IAsyncDisposable
         {
             var user = new User
             {
-                UserName = name, Email = name + "@example.test", RoleId = roleId,
-                State = "Active", RegistrationDate = now
+                UserName = name,
+                Email = name + "@example.test",
+                RoleId = roleId,
+                State = "Active",
+                RegistrationDate = now
             };
             user.Credential = new Credential
             {
@@ -171,7 +179,9 @@ internal sealed class RecoveryTestHost : IAsyncDisposable
             user.Sessions.Add(new AtariGo.Server.Data.Entities.Session
             {
                 SessionTokenHash = new SessionTokenProvider().Hash(name),
-                State = "Active", StartedAt = now, LastActivityAt = now,
+                State = "Active",
+                StartedAt = now,
+                LastActivityAt = now,
                 ExpiresAt = now.AddHours(1)
             });
             context.Users.Add(user);

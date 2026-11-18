@@ -7,7 +7,10 @@ public interface IPrivateRoomSession : IDisposable
 {
     event Action<PrivateRoomSessionUpdate>? Updated;
 
-    RoomSnapshot Room { get; }
+    RoomSnapshot Room
+    {
+        get;
+    }
 
     Task WatchAsync(CancellationToken cancellationToken);
 

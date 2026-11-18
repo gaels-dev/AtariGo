@@ -26,9 +26,15 @@ internal sealed class GameplayGrpcTestHost : IAsyncDisposable
         Database = database;
     }
 
-    public GameplayTestDatabase Database { get; }
+    public GameplayTestDatabase Database
+    {
+        get;
+    }
+
     public string Address => _app.Urls.Single();
+
     public IssuedGuestIdentity BlackIdentity { get; private set; } = null!;
+
     public IssuedGuestIdentity WhiteIdentity { get; private set; } = null!;
 
     public static async Task<GameplayGrpcTestHost> StartAsync()

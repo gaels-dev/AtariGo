@@ -9,5 +9,8 @@ internal sealed class FriendTestDatabaseException : DbException
         IsTransient = isTransient;
     }
 
-    public override bool IsTransient { get; }
+    public override bool IsTransient
+    {
+        get;
+    }
 }

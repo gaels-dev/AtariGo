@@ -2,10 +2,8 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Windows.Input;
 
-using Grpc.Core;
-
-using AtariGo.Client.Commands;
 using AtariGo.Client.Models;
+using AtariGo.Client.Commands;
 using AtariGo.Client.Properties;
 using AtariGo.Client.Services;
 using AtariGo.Contracts;
@@ -53,9 +51,15 @@ namespace AtariGo.Client.ViewModels.Dialogs
             private set => SetProperty(ref _errorMessage, value);
         }
 
-        public ICommand ConfirmCommand { get; }
+        public ICommand ConfirmCommand
+        {
+            get;
+        }
 
-        public ICommand CancelCommand { get; }
+        public ICommand CancelCommand
+        {
+            get;
+        }
 
         public void Dispose()
         {
@@ -107,9 +111,9 @@ namespace AtariGo.Client.ViewModels.Dialogs
                 Trace.TraceInformation(
                     "Registration wait cancelled because its dialog was closed.");
             }
-            catch (RpcException exception)
+            catch (Exception exception) when (GrpcClientFailures.IsTransportFailure(exception))
             {
-                ErrorMessage = GrpcFailureMessages.GetRegistrationMessage(exception);
+                ErrorMessage = ClientFailureMessages.GetRegistrationMessage(exception);
             }
         }
 
@@ -117,7 +121,7 @@ namespace AtariGo.Client.ViewModels.Dialogs
         {
             if (!_isDisposed)
             {
-                ErrorMessage = GrpcFailureMessages.GetMessage(exception);
+                ErrorMessage = ClientFailureMessages.GetMessage(exception);
             }
         }
 

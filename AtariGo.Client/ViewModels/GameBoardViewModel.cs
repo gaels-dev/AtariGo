@@ -77,11 +77,20 @@ namespace AtariGo.Client.ViewModels
             }
         }
 
-        public long? GameId { get; private set; }
+        public long? GameId
+        {
+            get; private set;
+        }
 
-        public ObservableCollection<BoardCellViewModel> Cells { get; }
+        public ObservableCollection<BoardCellViewModel> Cells
+        {
+            get;
+        }
 
-        public ObservableCollection<ChatMessageViewModel> ChatMessages { get; }
+        public ObservableCollection<ChatMessageViewModel> ChatMessages
+        {
+            get;
+        }
 
         public StoneColor CurrentTurn
         {
@@ -199,13 +208,25 @@ namespace AtariGo.Client.ViewModels
             set => SetProperty(ref _chatInput, value);
         }
 
-        public ICommand SendChatMessageCommand { get; }
+        public ICommand SendChatMessageCommand
+        {
+            get;
+        }
 
-        public ICommand SurrenderCommand { get; }
+        public ICommand SurrenderCommand
+        {
+            get;
+        }
 
-        public ICommand ReportPlayerCommand { get; }
+        public ICommand ReportPlayerCommand
+        {
+            get;
+        }
 
-        public ICommand LeaveGameCommand { get; }
+        public ICommand LeaveGameCommand
+        {
+            get;
+        }
 
         public string GameIdentifier
         {
@@ -289,27 +310,9 @@ namespace AtariGo.Client.ViewModels
             {
                 for (int col = 0; col < GameRules.BoardSize; col++)
                 {
-                    Cells.Add(new BoardCellViewModel(row, col, HandleCellClicked));
+                    Cells.Add(new BoardCellViewModel(row, col));
                 }
             }
-        }
-
-        private void HandleCellClicked(BoardCellViewModel cell)
-        {
-            if (GameId is not null || cell.Stone != StoneColor.None)
-            {
-                return;
-            }
-
-            foreach (BoardCellViewModel boardCell in Cells)
-            {
-                boardCell.IsLastMove = false;
-            }
-
-            cell.Stone = CurrentTurn;
-            cell.IsLastMove = true;
-
-            CurrentTurn = CurrentTurn == StoneColor.Black ? StoneColor.White : StoneColor.Black;
         }
 
         private async Task SendChatMessageAsync()

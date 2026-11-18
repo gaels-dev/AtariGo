@@ -16,7 +16,7 @@ namespace AtariGo.Client.Tests.ViewModels;
 public sealed class GameBoardViewModelTests
 {
     [TestMethod]
-    public async Task ApplySnapshot_BackgroundUpdate_UsesCapturedUiContext()
+    public async Task ApplySnapshot_BackgroundUpdate_UsesCapturedUiContextAsync()
     {
         // Arrange
         StubGameSessionStream stream = new StubGameSessionStream();
@@ -42,7 +42,7 @@ public sealed class GameBoardViewModelTests
     }
 
     [TestMethod]
-    public async Task PlaceStoneCommand_OnlineMove_WaitsForServerBeforeDrawingStone()
+    public async Task PlaceStoneCommand_OnlineMove_WaitsForServerBeforeDrawingStoneAsync()
     {
         // Arrange
         StubGameSessionStream stream = new StubGameSessionStream();
@@ -68,7 +68,7 @@ public sealed class GameBoardViewModelTests
     }
 
     [TestMethod]
-    public async Task PlaceStoneCommand_LostConnection_ReusesSameActionIdAfterReconnect()
+    public async Task PlaceStoneCommand_LostConnection_ReusesSameActionIdAfterReconnectAsync()
     {
         // Arrange
         StubGameSessionStream first = new StubGameSessionStream { FailSend = true };
@@ -86,7 +86,7 @@ public sealed class GameBoardViewModelTests
     }
 
     [TestMethod]
-    public async Task SubmitSurrenderCommand_ActiveGame_SendsActionWithoutNavigatingAway()
+    public async Task SubmitSurrenderCommand_ActiveGame_SendsActionWithoutNavigatingAwayAsync()
     {
         // Arrange
         StubGameSessionStream stream = new StubGameSessionStream();
@@ -100,7 +100,7 @@ public sealed class GameBoardViewModelTests
     }
 
     [TestMethod]
-    public async Task ApplySnapshot_OpponentsTurn_ShowsIndependentFullInactiveClock()
+    public async Task ApplySnapshot_OpponentsTurn_ShowsIndependentFullInactiveClockAsync()
     {
         // Arrange
         StubGameSessionStream stream = new StubGameSessionStream();
@@ -119,7 +119,7 @@ public sealed class GameBoardViewModelTests
     }
 
     [TestMethod]
-    public async Task ApplySnapshot_DeadlineAlreadyPassed_ShowsZeroForActiveClock()
+    public async Task ApplySnapshot_DeadlineAlreadyPassed_ShowsZeroForActiveClockAsync()
     {
         // Arrange
         StubGameSessionStream stream = new StubGameSessionStream();
@@ -142,7 +142,8 @@ public sealed class GameBoardViewModelTests
     [DataRow(StatusCode.PermissionDenied)]
     [DataRow(StatusCode.InvalidArgument)]
     [DataRow(StatusCode.AlreadyExists)]
-    public async Task LeaveGameCommand_PermanentFailure_ReturnsWithoutSurrender(StatusCode status)
+    public async Task
+        LeaveGameCommand_PermanentFailure_ReturnsWithoutSurrenderAsync(StatusCode status)
     {
         // Arrange
         StubGameSessionStream stream = new StubGameSessionStream();
@@ -166,7 +167,7 @@ public sealed class GameBoardViewModelTests
     }
 
     [TestMethod]
-    public async Task LeaveGameCommand_InitialConnectionRejected_StopsRetryingAndAllowsExit()
+    public async Task LeaveGameCommand_InitialConnectionRejected_StopsRetryingAndAllowsExitAsync()
     {
         // Arrange
         StubGameSessionClient client = new StubGameSessionClient
@@ -186,7 +187,7 @@ public sealed class GameBoardViewModelTests
     }
 
     [TestMethod]
-    public async Task LeaveGameCommand_ActiveGame_WaitsForAcceptedSurrenderAndStopsStream()
+    public async Task LeaveGameCommand_ActiveGame_WaitsForAcceptedSurrenderAndStopsStreamAsync()
     {
         // Arrange
         StubGameSessionStream stream = new StubGameSessionStream();
@@ -212,7 +213,7 @@ public sealed class GameBoardViewModelTests
     }
 
     [TestMethod]
-    public async Task SurrenderCommand_ConfirmedAndAccepted_KeepsResultScreenOpen()
+    public async Task SurrenderCommand_ConfirmedAndAccepted_KeepsResultScreenOpenAsync()
     {
         // Arrange
         StubGameSessionStream stream = new StubGameSessionStream();
@@ -235,7 +236,7 @@ public sealed class GameBoardViewModelTests
     }
 
     [TestMethod]
-    public async Task LeaveGameCommand_ConfirmationCancelled_DoesNotSendOrNavigate()
+    public async Task LeaveGameCommand_ConfirmationCancelled_DoesNotSendOrNavigateAsync()
     {
         // Arrange
         StubGameSessionStream stream = new StubGameSessionStream();
@@ -254,7 +255,7 @@ public sealed class GameBoardViewModelTests
     }
 
     [TestMethod]
-    public async Task LeaveGameCommand_RejectedSurrender_StaysOnBoardAndAllowsRetry()
+    public async Task LeaveGameCommand_RejectedSurrender_StaysOnBoardAndAllowsRetryAsync()
     {
         // Arrange
         StubGameSessionStream stream = new StubGameSessionStream();
@@ -279,7 +280,7 @@ public sealed class GameBoardViewModelTests
     }
 
     [TestMethod]
-    public async Task LeaveGameCommand_FinalSnapshot_ReturnsWithoutAnotherAction()
+    public async Task LeaveGameCommand_FinalSnapshot_ReturnsWithoutAnotherActionAsync()
     {
         // Arrange
         StubGameSessionStream stream = new StubGameSessionStream();
@@ -298,7 +299,7 @@ public sealed class GameBoardViewModelTests
     }
 
     [TestMethod]
-    public async Task LeaveGameCommand_SurrenderSendFails_ReusesActionAndExitsAfterRecovery()
+    public async Task LeaveGameCommand_SurrenderSendFails_ReusesActionAndExitsAfterRecoveryAsync()
     {
         // Arrange
         StubGameSessionStream first = new StubGameSessionStream { FailSend = true };
@@ -324,7 +325,7 @@ public sealed class GameBoardViewModelTests
     }
 
     [TestMethod]
-    public async Task LeaveGameCommand_PendingMoveAndPermanentFailure_ExitsWithoutSurrender()
+    public async Task LeaveGameCommand_PendingMoveAndPermanentFailure_ExitsWithoutSurrenderAsync()
     {
         // Arrange
         StubGameSessionStream stream = new StubGameSessionStream();
@@ -345,7 +346,7 @@ public sealed class GameBoardViewModelTests
     }
 
     [TestMethod]
-    public async Task LeaveGameCommand_PermanentSendFailure_ExitsWithoutResendingSurrender()
+    public async Task LeaveGameCommand_PermanentSendFailure_ExitsWithoutResendingSurrenderAsync()
     {
         // Arrange
         StubGameSessionStream stream = new StubGameSessionStream

@@ -12,9 +12,15 @@ public sealed class GameOperationContext
         Progress = progress;
     }
 
-    public GameRuntimeState Progress { get; }
+    public GameRuntimeState Progress
+    {
+        get;
+    }
 
     public long Version => Game.StateVersion;
 
-    internal Game Game { get; }
+    internal Game Game
+    {
+        get;
+    }
 }

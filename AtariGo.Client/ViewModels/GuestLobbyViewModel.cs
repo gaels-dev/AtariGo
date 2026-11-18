@@ -33,7 +33,10 @@ public sealed class GuestLobbyViewModel : ViewModelBase
             HandleFailure);
     }
 
-    public string PlayerName { get; }
+    public string PlayerName
+    {
+        get;
+    }
 
     public string TitleText => GetLocalizedMessage(
         "GuestLobby_Title");
@@ -47,11 +50,20 @@ public sealed class GuestLobbyViewModel : ViewModelBase
     public string SignOutLabel => GetLocalizedMessage(
         "RegisterPlayerLobby_Btn_SignOut");
 
-    public ICommand PlayMultiplayerCommand { get; }
+    public ICommand PlayMultiplayerCommand
+    {
+        get;
+    }
 
-    public ICommand OptionsCommand { get; }
+    public ICommand OptionsCommand
+    {
+        get;
+    }
 
-    public ICommand SignOutCommand { get; }
+    public ICommand SignOutCommand
+    {
+        get;
+    }
 
     private Task SignOutAsync(object? _)
     {

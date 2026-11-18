@@ -6,9 +6,15 @@ namespace AtariGo.Server.Tests.Credentials;
 
 internal sealed class CredentialUpdateInterceptor : DbCommandInterceptor
 {
-    public Func<Task>? BeforeUpdate { get; set; }
+    public Func<Task>? BeforeUpdate
+    {
+        get; set;
+    }
 
-    public bool FailUpdate { get; set; }
+    public bool FailUpdate
+    {
+        get; set;
+    }
 
     public override async ValueTask<InterceptionResult<int>> NonQueryExecutingAsync(
         DbCommand command, CommandEventData eventData, InterceptionResult<int> result,

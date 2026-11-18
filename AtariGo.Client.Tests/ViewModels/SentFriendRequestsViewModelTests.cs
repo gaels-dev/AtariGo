@@ -1,4 +1,3 @@
-
 using Grpc.Core;
 
 using AtariGo.Client.Tests.Services;
@@ -12,7 +11,7 @@ namespace AtariGo.Client.Tests.ViewModels;
 public sealed class SentFriendRequestsViewModelTests
 {
     [TestMethod]
-    public async Task LoadMore_TwoPages_AppendsRequestsAndRefreshStartsAgain()
+    public async Task LoadMore_TwoPages_AppendsRequestsAndRefreshStartsAgainAsync()
     {
         // Arrange
         var client = new StubFriendClient();
@@ -40,7 +39,8 @@ public sealed class SentFriendRequestsViewModelTests
     [TestMethod]
     [DataRow(CancelFriendRequestStatus.Cancelled)]
     [DataRow(CancelFriendRequestStatus.NoLongerPending)]
-    public async Task Cancel_ConfirmedOrStale_RemovesPendingRow(CancelFriendRequestStatus status)
+    public async Task
+        Cancel_ConfirmedOrStale_RemovesPendingRowAsync(CancelFriendRequestStatus status)
     {
         // Arrange
         var client = new StubFriendClient
@@ -60,7 +60,7 @@ public sealed class SentFriendRequestsViewModelTests
     }
 
     [TestMethod]
-    public async Task Cancel_ConnectionFailure_PreservesPendingRow()
+    public async Task Cancel_ConnectionFailure_PreservesPendingRowAsync()
     {
         // Arrange
         var client = new StubFriendClient
@@ -81,7 +81,7 @@ public sealed class SentFriendRequestsViewModelTests
     }
 
     [TestMethod]
-    public async Task Dispose_PendingLoad_DoesNotApplyLateResponse()
+    public async Task Dispose_PendingLoad_DoesNotApplyLateResponseAsync()
     {
         // Arrange
         var pending = new TaskCompletionSource<ListFriendRequestsBySenderResponse>();
@@ -102,7 +102,7 @@ public sealed class SentFriendRequestsViewModelTests
     }
 
     [TestMethod]
-    public async Task Dispose_PendingCancellation_IgnoresLateResponse()
+    public async Task Dispose_PendingCancellation_IgnoresLateResponseAsync()
     {
         // Arrange
         var pending = new TaskCompletionSource<CancelFriendRequestResponse>();
@@ -135,7 +135,9 @@ public sealed class SentFriendRequestsViewModelTests
         var page = new ListFriendRequestsBySenderResponse { NextPageToken = nextToken };
         page.Requests.Add(new OutgoingFriendRequest
         {
-            RequestId = requestId, RecipientUserId = 2, RecipientUserName = "Player"
+            RequestId = requestId,
+            RecipientUserId = 2,
+            RecipientUserName = "Player"
         });
         return page;
     }

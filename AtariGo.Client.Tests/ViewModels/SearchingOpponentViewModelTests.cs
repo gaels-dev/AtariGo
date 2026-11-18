@@ -2,7 +2,6 @@ using System.Globalization;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
-
 using AtariGo.Client.Models;
 using AtariGo.Client.Properties;
 using AtariGo.Client.Services;
@@ -20,8 +19,9 @@ public sealed class SearchingOpponentViewModelTests
     private static readonly TimeSpan testCountdownDuration = TimeSpan.FromMinutes(1);
 
     [TestMethod]
-    public async Task SearchTask_CancelledMatch_ContinuesReadingStreamImmediately()
+    public async Task SearchTask_CancelledMatch_ContinuesReadingStreamImmediatelyAsync()
     {
+        // Arrange
         INavigationService navigation =
             DispatchProxy.Create<INavigationService, RecordingNavigationProxy>();
         CancelledMatchmakingClient matchmakingClient = new CancelledMatchmakingClient(
@@ -31,9 +31,11 @@ public sealed class SearchingOpponentViewModelTests
             matchmakingClient,
             new ClientSessionContext { PlayerName = "Player" });
 
+        // Act
         await matchmakingClient.Requeued.WaitAsync(
             TimeSpan.FromSeconds(TestTimeoutSeconds));
 
+        // Assert
         Assert.AreEqual(0, viewModel.CountdownSeconds);
         Assert.AreEqual(
             Resources.ResourceManager.GetString(

@@ -1,4 +1,3 @@
-
 using Grpc.Core;
 using Grpc.Core.Interceptors;
 
@@ -12,7 +11,7 @@ namespace AtariGo.Client.Tests.Services;
 public sealed class GrpcRoomInvitationsClientTests
 {
     [TestMethod]
-    public async Task InvitationCalls_TwoSessions_PreserveIdentityDeadlineAndCancellation()
+    public async Task InvitationCalls_TwoSessions_PreserveIdentityDeadlineAndCancellationAsync()
     {
         // Arrange
         using var connection = new GrpcClientConnection(new Uri("https://localhost:7061"));
@@ -26,12 +25,14 @@ public sealed class GrpcRoomInvitationsClientTests
         // Act
         await sender.SendAsync(new SendRoomInvitationRequest
         {
-            RoomId = 42, RecipientUserId = 2
+            RoomId = 42,
+            RecipientUserId = 2
         }, cancellation.Token);
         await recipient.ListAsync(0, cancellation.Token);
         await recipient.RespondAsync(new RespondRoomInvitationRequest
         {
-            InvitationId = 7, Accept = true
+            InvitationId = 7,
+            Accept = true
         }, cancellation.Token);
         await sender.CancelAsync(7, cancellation.Token);
 

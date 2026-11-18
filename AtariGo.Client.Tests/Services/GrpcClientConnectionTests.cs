@@ -1,5 +1,3 @@
-
-
 using AtariGo.Client.Services;
 
 namespace AtariGo.Client.Tests.Services
@@ -51,7 +49,7 @@ namespace AtariGo.Client.Tests.Services
         }
 
         [TestMethod]
-        public void Dispose_RepeatedCalls_RejectsFurtherRpcCalls()
+        public async Task Dispose_RepeatedCalls_RejectsFurtherRpcCallsAsync()
         {
             // Arrange
             var connection = new GrpcClientConnection(new Uri("https://localhost:7061"));
@@ -62,7 +60,7 @@ namespace AtariGo.Client.Tests.Services
             connection.Dispose();
 
             // Assert
-            Assert.ThrowsExactly<ObjectDisposedException>(
+            await Assert.ThrowsExactlyAsync<ObjectDisposedException>(
                 () => leaderboard.GetTopPlayersAsync(LeaderboardLimit));
         }
     }

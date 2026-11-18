@@ -22,12 +22,24 @@ internal sealed class GameplayTestDatabase : IAsyncDisposable
         Services = services;
     }
 
-    public ServiceProvider Services { get; }
+    public ServiceProvider Services
+    {
+        get;
+    }
+
     public ManualTimeProvider Time => Services.GetRequiredService<ManualTimeProvider>();
+
     public GameCoordinator Coordinator => Services.GetRequiredService<GameCoordinator>();
+
     public IGameSessionRegistry Registry => Services.GetRequiredService<IGameSessionRegistry>();
-    public long GameId { get; private set; }
+
+    public long GameId
+    {
+        get; private set;
+    }
+
     public Guid BlackGuestId { get; } = Guid.NewGuid();
+
     public Guid WhiteGuestId { get; } = Guid.NewGuid();
 
     public static async Task<GameplayTestDatabase> CreateAsync(

@@ -9,28 +9,50 @@ internal sealed class GameSessionState
 
     public GameSessionState(GameSessionDefinition definition)
     {
+        ArgumentNullException.ThrowIfNull(definition);
         Definition = definition;
         Progress = definition.Progress;
         Version = definition.Version;
     }
 
-    public GameRuntimeState? Progress { get; set; }
+    public GameRuntimeState? Progress
+    {
+        get; set;
+    }
 
-    public long Version { get; set; }
+    public long Version
+    {
+        get; set;
+    }
 
-    public DateTime LastActivityUtc { get; set; }
+    public DateTime LastActivityUtc
+    {
+        get; set;
+    }
 
     public object SyncRoot { get; } = new object();
 
-    public GameSessionDefinition Definition { get; }
+    public GameSessionDefinition Definition
+    {
+        get;
+    }
 
-    public Dictionary<string, GameSessionConnection> Connections { get; } =
+    public Dictionary<string, GameSessionConnection> Connections
+    {
+        get;
+    } =
         new Dictionary<string, GameSessionConnection>(StringComparer.Ordinal);
 
-    public HashSet<string> ConnectedPlayerHistory { get; } =
+    public HashSet<string> ConnectedPlayerHistory
+    {
+        get;
+    } =
         new HashSet<string>(StringComparer.Ordinal);
 
-    public List<GameSessionChatMessage> ChatHistory { get; } =
+    public List<GameSessionChatMessage> ChatHistory
+    {
+        get;
+    } =
         new List<GameSessionChatMessage>();
 
     public GameSessionParticipant? FindParticipant(string playerKey)
@@ -62,6 +84,7 @@ internal sealed class GameSessionState
 
     public void ReplaceConnection(GameSessionConnection connection)
     {
+        ArgumentNullException.ThrowIfNull(connection);
         if (Connections.TryGetValue(connection.PlayerKey,
             out GameSessionConnection? previousConnection))
         {
@@ -75,6 +98,7 @@ internal sealed class GameSessionState
 
     public bool RemoveConnection(GameSessionConnection connection)
     {
+        ArgumentNullException.ThrowIfNull(connection);
         if (!Connections.TryGetValue(connection.PlayerKey,
             out GameSessionConnection? currentConnection)
             || !ReferenceEquals(currentConnection, connection))
@@ -137,6 +161,7 @@ internal sealed class GameSessionState
 
     public void AddChatMessage(GameSessionChatMessage chatMessage)
     {
+        ArgumentNullException.ThrowIfNull(chatMessage);
         ChatHistory.Add(chatMessage);
         if (ChatHistory.Count > GameSessionRules.MaximumChatHistoryCount)
         {
@@ -148,6 +173,8 @@ internal sealed class GameSessionState
         GameSessionConnection connection,
         GameSessionDelivery delivery)
     {
+        ArgumentNullException.ThrowIfNull(connection);
+        ArgumentNullException.ThrowIfNull(delivery);
         if (Connections.TryGetValue(connection.PlayerKey,
             out GameSessionConnection? currentConnection)
             && ReferenceEquals(connection, currentConnection))

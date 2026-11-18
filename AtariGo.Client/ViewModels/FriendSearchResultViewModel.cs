@@ -7,25 +7,25 @@ namespace AtariGo.Client.ViewModels
     public class FriendSearchResultViewModel : ViewModelBase
     {
         private readonly int _userId;
-        private readonly string _username;
+        private readonly string _userName;
         private bool _isRequestSent;
         private string _actionLabel;
 
-        public FriendSearchResultViewModel(int userId, string username)
+        public FriendSearchResultViewModel(int userId, string userName)
         {
             _userId = userId;
-            _username = username;
+            _userName = userName;
             _isRequestSent = false;
             _actionLabel = GetLocalizedMessage("FriendSearch_Btn_Add");
         }
 
         public int UserId => _userId;
 
-        public string Username
+        public string UserName
         {
             get
             {
-                return _username;
+                return _userName;
             }
         }
 

@@ -14,10 +14,6 @@ namespace AtariGo.Client.Services
 
         void NavigateToLobby();
 
-        void NavigateToGameBoard(
-            bool isGuest = false,
-            int targetCaptures = GameRules.DefaultCaptureGoal);
-
         void NavigateToSharedGame(PrivateRoomNavigationContext navigationContext);
 
         void NavigateToPublicGame(PublicMatchNavigationContext navigationContext);
@@ -36,8 +32,6 @@ namespace AtariGo.Client.Services
         void NavigateToFriendSearch();
 
         void NavigateToFriendRequests();
-
-        void NavigateToFriendList();
 
         void NavigateToGameHistory();
 
