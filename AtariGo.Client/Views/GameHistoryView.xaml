@@ -104,10 +104,13 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
                     <Button Content="{Binding BackLabel}" Command="{Binding BackCommand}"
+                            Style="{StaticResource RoundedButtonStyle}"
                             MinHeight="44" Padding="12,8" Background="#D9534F"
                             Foreground="White" FontWeight="Bold"/>
                     <Button Grid.Column="2" Content="{Binding RefreshLabel}"
-                            Command="{Binding RefreshCommand}" MinHeight="44" Padding="12,8"
+                            Command="{Binding RefreshCommand}"
+                            Style="{StaticResource RoundedButtonStyle}"
+                            MinHeight="44" Padding="12,8"
                             Background="#4A90E2" Foreground="White" FontWeight="Bold"/>
                 </Grid>
             </Grid>

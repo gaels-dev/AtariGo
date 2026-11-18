@@ -144,35 +144,72 @@
                         </StackPanel>
                     </TabItem>
                     <TabItem Header="{Binding SentLabel}">
-                        <StackPanel DataContext="{Binding Sent}" Margin="0,8,0,0">
-                            <TextBlock Text="{Binding StatusMessage}" TextWrapping="Wrap"
-                                       MinHeight="32" Foreground="#666666"/>
-                            <ListBox ItemsSource="{Binding Requests}" Height="320"
-                                     IsEnabled="{Binding CanInteract}"
-                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-                                <ListBox.ItemContainerStyle>
-                                    <Style TargetType="ListBoxItem">
-                                        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                                    </Style>
-                                </ListBox.ItemContainerStyle>
-                                <ListBox.ItemTemplate>
-                                    <DataTemplate>
-                                        <DockPanel Margin="6">
-                                            <Button DockPanel.Dock="Right"
-                                                    Content="{Binding DataContext.CancelLabel,
-                                                        RelativeSource={RelativeSource AncestorType=ListBox}}"
-                                                    Command="{Binding CancelCommand}"
-                                                    Style="{StaticResource RoundedButtonStyle}"
-                                                    Background="#D9534F" Foreground="White"
-                                                    BorderBrush="#2C2A29" BorderThickness="1"
-                                                    Padding="12,6" Margin="8,0,0,0"/>
-                                            <TextBlock Text="{Binding RecipientUserName}"
-                                                       VerticalAlignment="Center"
-                                                       TextTrimming="CharacterEllipsis"/>
-                                        </DockPanel>
-                                    </DataTemplate>
-                                </ListBox.ItemTemplate>
-                            </ListBox>
+                        <StackPanel DataContext="{Binding Sent}">
+                            <TextBlock Text="{Binding StatusMessage}"
+                                       Foreground="#666666"
+                                       TextAlignment="Center"
+                                       TextWrapping="Wrap"
+                                       MinHeight="22"
+                                       Margin="0,0,0,10"/>
+
+                            <Border Height="320"
+                                    Margin="0,0,0,18"
+                                    Padding="6"
+                                    BorderBrush="#2C2A29"
+                                    BorderThickness="1.5"
+                                    CornerRadius="8"
+                                    Background="#F7F7F7">
+                                <ListBox ItemsSource="{Binding Requests}"
+                                         IsEnabled="{Binding CanInteract}"
+                                         Background="Transparent"
+                                         BorderThickness="0"
+                                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                         ScrollViewer.VerticalScrollBarVisibility="Auto">
+                                    <ListBox.ItemContainerStyle>
+                                        <Style TargetType="ListBoxItem">
+                                            <Setter Property="HorizontalContentAlignment"
+                                                    Value="Stretch"/>
+                                            <Setter Property="Padding" Value="0"/>
+                                            <Setter Property="BorderThickness" Value="0"/>
+                                        </Style>
+                                    </ListBox.ItemContainerStyle>
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border BorderBrush="#D0C8BC"
+                                                    BorderThickness="1"
+                                                    CornerRadius="7"
+                                                    Background="White"
+                                                    Padding="10,8"
+                                                    Margin="2,3">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="90"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="{Binding RecipientUserName}"
+                                                               VerticalAlignment="Center"
+                                                               FontWeight="SemiBold"
+                                                               TextTrimming="CharacterEllipsis"
+                                                               ToolTip="{Binding RecipientUserName}"
+                                                               Margin="0,0,8,0"/>
+                                                    <Button Grid.Column="1"
+                                                            Content="{Binding DataContext.CancelLabel,
+                                                                RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                                            Command="{Binding CancelCommand}"
+                                                            Style="{StaticResource RoundedButtonStyle}"
+                                                            Height="32"
+                                                            Background="#D9534F"
+                                                            Foreground="White"
+                                                            FontWeight="Bold"
+                                                            FontSize="11"
+                                                            BorderBrush="#2C2A29"
+                                                            BorderThickness="1"/>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </Border>
                             <Button Content="{Binding MoreLabel}" Command="{Binding LoadMoreCommand}"
                                     IsEnabled="{Binding CanLoadMore}"
                                     Style="{StaticResource RoundedButtonStyle}"
