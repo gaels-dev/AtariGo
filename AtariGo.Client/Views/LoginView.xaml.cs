@@ -46,6 +46,7 @@ namespace AtariGo.Client.Views
             if (viewModel.SubmitCommand.CanExecute(password))
             {
                 viewModel.SubmitCommand.Execute(password);
+                PasswordBox.Clear();
             }
         }
     }

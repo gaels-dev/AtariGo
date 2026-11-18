@@ -6,7 +6,7 @@ namespace AtariGo.Server.Tests.PasswordRecovery;
 
 internal sealed class RecordingEmailSender : IEmailSender
 {
-    public bool IsConfigured => true;
+    public bool IsConfigured { get; set; } = true;
 
     public bool FailDelivery { get; set; }
 

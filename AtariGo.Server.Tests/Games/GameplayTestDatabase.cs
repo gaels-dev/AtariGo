@@ -37,6 +37,7 @@ internal sealed class GameplayTestDatabase : IAsyncDisposable
         await connection.OpenAsync();
         connection.CreateCollation("Latin1_General_100_CI_AI_SC",
             StringComparer.OrdinalIgnoreCase.Compare);
+        connection.CreateCollation("Latin1_General_100_BIN2", StringComparer.Ordinal.Compare);
         connection.CreateFunction("sysutcdatetime", () => DateTime.UtcNow.ToString("O"));
         ServiceCollection services = new ServiceCollection();
         DbContextOptionsBuilder<AtariGoDbContext> options =

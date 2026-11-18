@@ -37,7 +37,7 @@ builder.Services.AddDbContext<AtariGoDbContext>(options =>
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<DatabaseReadinessCheck>();
 
-builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
+builder.Services.AddLoginVerification();
 builder.Services.AddScoped<ICredentialsService, CredentialsService>();
 builder.Services.Configure<SmtpOptions>(builder.Configuration.GetSection("Smtp"));
 builder.Services.AddOptions<PasswordRecoveryOptions>()

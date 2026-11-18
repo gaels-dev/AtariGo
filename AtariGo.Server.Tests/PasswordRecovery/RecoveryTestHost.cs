@@ -120,6 +120,7 @@ internal sealed class RecoveryTestHost : IAsyncDisposable
         RegisterServices(builder.Services);
         _application = builder.Build();
         _application.MapGrpcService<PasswordRecoveryGrpcService>();
+        _application.MapGrpcService<AuthenticationGrpcService>();
         _application.MapGrpcService<SessionGrpcService>();
         await _application.StartAsync();
         _channel = GrpcChannel.ForAddress(_application.Urls.Single());
@@ -135,7 +136,7 @@ internal sealed class RecoveryTestHost : IAsyncDisposable
         services.AddScoped<PasswordResetWriter>();
         services.AddScoped<IPasswordRecoveryService, PasswordRecoveryService>();
         services.AddScoped<ISessionService, SessionService>();
-        services.AddScoped<IAuthenticationService, AuthenticationService>();
+        services.AddLoginVerification();
         services.AddSingleton<ISessionTokenProvider, SessionTokenProvider>();
         services.AddSingleton<ISessionConnectionRegistry, SessionConnectionRegistry>();
         services.AddSingleton<IGameSessionRegistry, GameSessionRegistry>();

@@ -1024,4 +1024,23 @@
   <data name="Recovery_Msg_Saving" xml:space="preserve">
     <value>Guardando. Si cierras ahora, el resultado podría quedar sin confirmar; prueba iniciar sesión con la nueva contraseña antes de solicitar otro código.</value>
   </data>
+  <data name="LoginVerification_Lbl_Title" xml:space="preserve"><value>Confirma tu inicio de sesión</value></data>
+  <data name="LoginVerification_Lbl_Code" xml:space="preserve"><value>Código recibido por correo</value></data>
+  <data name="LoginVerification_Btn_Confirm" xml:space="preserve"><value>Confirmar acceso</value></data>
+  <data name="LoginVerification_Btn_Resend" xml:space="preserve"><value>Reenviar código</value></data>
+  <data name="LoginVerification_Btn_Cancel" xml:space="preserve"><value>Volver al inicio</value></data>
+  <data name="LoginVerification_Msg_ExpiresAt" xml:space="preserve"><value>El código vence a las {0:t}.</value></data>
+  <data name="LoginVerification_Msg_RetryAt" xml:space="preserve"><value>Inténtalo después de {0:g}.</value></data>
+  <data name="LoginVerification_Result_Success" xml:space="preserve"><value>Acceso confirmado.</value></data>
+  <data name="LoginVerification_Result_ChallengeRequired" xml:space="preserve"><value>Introduce el código enviado a tu correo registrado. Dura diez minutos.</value></data>
+  <data name="LoginVerification_Result_InvalidCredentials" xml:space="preserve"><value>No se pudo validar el acceso. Revisa tus datos. Tres fallos bloquean el inicio por quince minutos.</value></data>
+  <data name="LoginVerification_Result_AccountRestricted" xml:space="preserve"><value>Tu cuenta tiene una restricción de acceso.</value></data>
+  <data name="LoginVerification_Result_InvalidCode" xml:space="preserve"><value>El código es incorrecto. Revisa sus ocho dígitos.</value></data>
+  <data name="LoginVerification_Result_CodeExpired" xml:space="preserve"><value>El código caducó. Solicita otro.</value></data>
+  <data name="LoginVerification_Result_InvalidChallenge" xml:space="preserve"><value>Este intento ya no está disponible. Inicia el acceso de nuevo.</value></data>
+  <data name="LoginVerification_Result_TemporarilyLocked" xml:space="preserve"><value>El inicio está bloqueado temporalmente después de tres fallos.</value></data>
+  <data name="LoginVerification_Result_DeliveryFailed" xml:space="preserve"><value>No se pudo enviar el correo. Puedes solicitar un reintento; tras un segundo fallo, vuelve e inténtalo más tarde.</value></data>
+  <data name="LoginVerification_Result_RateLimited" xml:space="preserve"><value>Demasiadas solicitudes. Espera antes de solicitar otro código.</value></data>
+  <data name="LoginVerification_Result_Unavailable" xml:space="preserve"><value>La verificación de acceso no está disponible. Inténtalo más tarde.</value></data>
+  <data name="LoginVerification_Result_Unconfirmed" xml:space="preserve"><value>No se pudo confirmar el resultado. Revisa tu correo si pedías un código. Si confirmabas el acceso, vuelve e inicia de nuevo. La operación no se repitió automáticamente.</value></data>
 </root>

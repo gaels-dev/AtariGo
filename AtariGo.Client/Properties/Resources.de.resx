@@ -1024,4 +1024,23 @@
   <data name="Recovery_Msg_Saving" xml:space="preserve">
     <value>Wird gespeichert. Wenn du jetzt schließt, bleibt das Ergebnis möglicherweise unbestätigt. Versuche zuerst, dich mit dem neuen Passwort anzumelden.</value>
   </data>
+  <data name="LoginVerification_Lbl_Title" xml:space="preserve"><value>Anmeldung bestätigen</value></data>
+  <data name="LoginVerification_Lbl_Code" xml:space="preserve"><value>Code aus der E-Mail</value></data>
+  <data name="LoginVerification_Btn_Confirm" xml:space="preserve"><value>Anmeldung bestätigen</value></data>
+  <data name="LoginVerification_Btn_Resend" xml:space="preserve"><value>Code erneut senden</value></data>
+  <data name="LoginVerification_Btn_Cancel" xml:space="preserve"><value>Zurück zur Anmeldung</value></data>
+  <data name="LoginVerification_Msg_ExpiresAt" xml:space="preserve"><value>Code gültig bis {0:t}.</value></data>
+  <data name="LoginVerification_Msg_RetryAt" xml:space="preserve"><value>Erneut versuchen ab {0:g}.</value></data>
+  <data name="LoginVerification_Result_Success" xml:space="preserve"><value>Anmeldung bestätigt.</value></data>
+  <data name="LoginVerification_Result_ChallengeRequired" xml:space="preserve"><value>Gib den Code aus der E-Mail ein. Er ist zehn Minuten gültig.</value></data>
+  <data name="LoginVerification_Result_InvalidCredentials" xml:space="preserve"><value>Anmeldung nicht bestätigt. Prüfe deine Zugangsdaten. Drei Fehlversuche sperren die Anmeldung für fünfzehn Minuten.</value></data>
+  <data name="LoginVerification_Result_AccountRestricted" xml:space="preserve"><value>Der Zugang zu deinem Konto ist eingeschränkt.</value></data>
+  <data name="LoginVerification_Result_InvalidCode" xml:space="preserve"><value>Der Code ist falsch. Prüfe die acht Ziffern.</value></data>
+  <data name="LoginVerification_Result_CodeExpired" xml:space="preserve"><value>Der Code ist abgelaufen. Fordere einen neuen an.</value></data>
+  <data name="LoginVerification_Result_InvalidChallenge" xml:space="preserve"><value>Dieser Anmeldeversuch ist nicht mehr verfügbar. Beginne erneut.</value></data>
+  <data name="LoginVerification_Result_TemporarilyLocked" xml:space="preserve"><value>Die Anmeldung ist nach drei Fehlversuchen vorübergehend gesperrt.</value></data>
+  <data name="LoginVerification_Result_DeliveryFailed" xml:space="preserve"><value>Die E-Mail konnte nicht gesendet werden. Wiederhole den Versand einmal. Nach einem zweiten Fehler versuche es später erneut.</value></data>
+  <data name="LoginVerification_Result_RateLimited" xml:space="preserve"><value>Zu viele Anfragen. Warte, bevor du einen neuen Code anforderst.</value></data>
+  <data name="LoginVerification_Result_Unavailable" xml:space="preserve"><value>Die Anmeldebestätigung ist nicht verfügbar. Versuche es später erneut.</value></data>
+  <data name="LoginVerification_Result_Unconfirmed" xml:space="preserve"><value>Das Ergebnis konnte nicht bestätigt werden. Prüfe beim Anfordern deine E-Mails. Beginne nach einer unbestätigten Anmeldung erneut. Es gab keine automatische Wiederholung.</value></data>
 </root>

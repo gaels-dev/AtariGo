@@ -6,11 +6,15 @@ package atarigo.authentication.v1;
 
 service Authentication {
   rpc Login (LoginRequest) returns (LoginResponse);
+  rpc VerifyLoginCode (VerifyLoginCodeRequest) returns (LoginResponse);
+  rpc ResendLoginCode (ResendLoginCodeRequest) returns (LoginResponse);
+  rpc CancelLogin (CancelLoginRequest) returns (CancelLoginResponse);
 }
 
 message LoginRequest {
   string identifier = 1;
   string password = 2;
+  string culture_name = 3;
 }
 
 message LoginResponse {
@@ -18,6 +22,11 @@ message LoginResponse {
   int32 user_id = 2;
   string user_name = 3;
   string session_token = 4;
+  string challenge_token = 5;
+  string masked_email = 6;
+  int64 code_expires_at_unix_seconds = 7;
+  int64 retry_at_unix_seconds = 8;
+  string restriction_reason = 9;
 }
 
 enum LoginResult {
@@ -26,4 +35,30 @@ enum LoginResult {
   LOGIN_RESULT_USER_NOT_FOUND = 2;
   LOGIN_RESULT_INCORRECT_PASSWORD = 3;
   LOGIN_RESULT_ACCOUNT_RESTRICTED = 4;
+  LOGIN_RESULT_INVALID_CREDENTIALS = 5;
+  LOGIN_RESULT_CHALLENGE_REQUIRED = 6;
+  LOGIN_RESULT_INVALID_CODE = 7;
+  LOGIN_RESULT_CODE_EXPIRED = 8;
+  LOGIN_RESULT_INVALID_CHALLENGE = 9;
+  LOGIN_RESULT_TEMPORARILY_LOCKED = 10;
+  LOGIN_RESULT_DELIVERY_FAILED = 11;
+  LOGIN_RESULT_RATE_LIMITED = 12;
+  LOGIN_RESULT_UNAVAILABLE = 13;
+  LOGIN_RESULT_UNCONFIRMED = 14;
 }
+
+message VerifyLoginCodeRequest {
+  string challenge_token = 1;
+  string code = 2;
+}
+
+message ResendLoginCodeRequest {
+  string challenge_token = 1;
+  string culture_name = 2;
+}
+
+message CancelLoginRequest {
+  string challenge_token = 1;
+}
+
+message CancelLoginResponse {}

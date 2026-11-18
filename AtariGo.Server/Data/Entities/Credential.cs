@@ -11,6 +11,8 @@ public partial class Credential
 
     public int FailedAttempts { get; set; }
 
+    public long AuthenticationVersion { get; set; }
+
     public DateTime? LockedUntil { get; set; }
 
     public virtual User User { get; set; } = null!;

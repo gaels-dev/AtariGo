@@ -24,7 +24,7 @@ La matriz distingue contratos existentes de nuevos, delimita las responsabilidad
 
 | Servicio .proto | Operaciones |
 | --- | --- |
-| authentication.proto | Login, StartGuestSession, RefreshSession, ValidateSession |
+| authentication.proto | Login, VerifyLoginCode, ResendLoginCode, CancelLogin; StartGuestSession, RefreshSession y ValidateSession son propuestas históricas |
 | registration.proto | RegisterAccount |
 | password_recovery.proto | RequestPasswordRecovery, ResetPassword |
 | credentials.proto | ChangePassword |
@@ -76,9 +76,62 @@ Cobertura: CU-03; acceso invitado como flujo, no CU independiente
 | Servicio .proto | Interfaz de aplicación | Clase gRPC | Operaciones | Parámetros definidos |
 | --- | --- | --- | --- | --- |
 | authentication.proto | IAuthenticationService | AuthenticationGrpcService | Login | Identifier, Password |
+|  |  |  | VerifyLoginCode | ChallengeToken, Code |
+|  |  |  | ResendLoginCode | ChallengeToken, CultureName |
+|  |  |  | CancelLogin | ChallengeToken |
 |  |  |  | StartGuestSession | GuestName, RequestedScope |
 |  |  |  | RefreshSession | RefreshToken |
 |  |  |  | ValidateSession | SessionToken en metadata |
+
+Implementación de CU-003: `Login` acepta además `CultureName` y valida las credenciales,
+bloqueos y suspensiones. Una contraseña correcta devuelve `ChallengeRequired`, un identificador
+secreto del reto y el destinatario parcialmente oculto. No crea una sesión ni devuelve su token.
+`VerifyLoginCode` devuelve `LoginResponse` y es la única etapa que puede confirmar `Success`
+con identidad y token. `ResendLoginCode` reutiliza esa respuesta; `CancelLogin` devuelve
+`CancelLoginResponse` vacío y no expone si el reto existía.
+
+El código tiene ocho dígitos y diez minutos de vigencia. Se protege con el componente compartido
+`AuthenticationCodeProtector`, vinculándolo a usuario, propósito `TwoFactor`, hash del reto y
+una vinculación aleatoria distinta por emisión. El servidor guarda únicamente el hash del
+identificador del reto. Un reenvío consume el código anterior; el código de recuperación no
+se acepta para completar un acceso.
+
+`Credentials.FailedAttempts` acumula contraseña y código incorrectos. La contraseña correcta
+por sí sola no reinicia el contador. El tercer fallo bloquea nuevos accesos quince minutos e
+invalida los retos pendientes de la cuenta. El contador se reinicia al completar ambas etapas
+o al vencer el bloqueo. Credenciales inválidas usan un único resultado público; los detalles
+de bloqueo y suspensión se muestran después de verificar la contraseña o un reto válido.
+La expiración, cancelación y los errores técnicos no cuentan como fallos del jugador.
+
+Los retos, los bloqueos y sus transiciones se conservan en SQL Server. Se toma el bloqueo de
+la cuenta antes de confirmar, reenviar o cancelar. Consumir el código y crear la sesión se
+guardan en una transacción; dos confirmaciones del mismo reto no crean dos sesiones.
+SMTP se espera fuera de la transacción. Un código preparado permanece inutilizable hasta
+registrar la aceptación del envío. Si falla, queda invalidado. El primer fallo permite un
+reenvío manual; el segundo cierra ese intento. La aceptación SMTP no demuestra entrega al buzón.
+
+`LoginVerification:ResendSeconds`, `AccountRequestsPerHour` e `IpRequestsPerHour` valen
+60, 5 y 120 por defecto. El límite por cuenta incluye emisiones de cualquier reto MFA de esa
+cuenta y persiste en SQL. El límite por IP es local al proceso y se dimensionó para permitir
+varios clientes en LAN. Varias instancias necesitan compartir ese límite. El reto admite
+emisiones durante treinta minutos desde la validación de contraseña; cada código emitido
+dentro de ese plazo conserva sus diez minutos. Cambiar o recuperar la contraseña incrementa
+`AuthenticationVersion` y cierra los retos anteriores dentro de la escritura correspondiente.
+
+Los correos de acceso utilizan `LoginEmail*.resx`, el mismo remitente SMTP y la clave
+`PasswordRecovery:HmacKey` existente. Si falta la configuración, el acceso registrado queda
+no disponible: no se omite la segunda etapa. El invitado conserva su flujo. El cliente usa
+resultados propios de aplicación, limpia contraseñas y códigos y cancela esperas al cerrar.
+No reenvía automáticamente mutaciones. Si se pierde la confirmación de sesión, se indica
+resultado no confirmado y se inicia otro acceso; una sesión creada cuya respuesta se perdió
+queda sujeta al vencimiento vigente de sesiones.
+
+Antes de iniciar esta versión sobre una BD existente, ejecutar
+`scripts/database/Update-LoginVerification.sql`. La actualización es repetible y no borra
+cuentas, credenciales ni sesiones existentes. Coordinar servidor y cliente: un cliente
+anterior no puede completar las nuevas etapas y el cliente actual rechaza el éxito directo
+de un servidor antiguo. Se mantienen los números Protobuf existentes y se añaden campos
+y valores nuevos.
 
 ### 4.2  Registration
 

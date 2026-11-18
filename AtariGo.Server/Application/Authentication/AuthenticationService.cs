@@ -1,141 +1,117 @@
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 
 using AtariGo.Server.Data;
 using AtariGo.Server.Data.Entities;
-using AtariGo.Server.Security;
 
 namespace AtariGo.Server.Application.Authentication;
 
 public sealed class AuthenticationService : IAuthenticationService
 {
-    private static readonly TimeSpan sessionLifetime = TimeSpan.FromHours(1);
     private readonly AtariGoDbContext _dbContext;
     private readonly IPasswordHasher<User> _passwordHasher;
-    private readonly ISessionTokenProvider _sessionTokenProvider;
-    private readonly TimeProvider _timeProvider;
+    private readonly LoginAttemptService _attempts;
+    private readonly LoginChallengeService _challenges;
 
-    public AuthenticationService(
-        AtariGoDbContext dbContext,
-        IPasswordHasher<User> passwordHasher,
-        ISessionTokenProvider sessionTokenProvider,
-        TimeProvider timeProvider)
+    public AuthenticationService(AtariGoDbContext dbContext, IPasswordHasher<User> passwordHasher,
+        LoginAttemptService attempts, LoginChallengeService challenges)
     {
         ArgumentNullException.ThrowIfNull(dbContext);
         ArgumentNullException.ThrowIfNull(passwordHasher);
-        ArgumentNullException.ThrowIfNull(sessionTokenProvider);
-        ArgumentNullException.ThrowIfNull(timeProvider);
-
+        ArgumentNullException.ThrowIfNull(attempts);
+        ArgumentNullException.ThrowIfNull(challenges);
         _dbContext = dbContext;
         _passwordHasher = passwordHasher;
-        _sessionTokenProvider = sessionTokenProvider;
-        _timeProvider = timeProvider;
+        _attempts = attempts;
+        _challenges = challenges;
     }
 
-    public async Task<LoginOperationResult> LoginAsync(
-        string identifier,
-        string password,
+    public async Task<LoginOperationResult> LoginAsync(LoginCommand command,
         CancellationToken cancellationToken)
     {
-        await using IDbContextTransaction transaction = await _dbContext.Database
-            .BeginTransactionAsync(cancellationToken);
-        User? user = await FindUserByIdentifierAsync(identifier, cancellationToken);
+        ArgumentNullException.ThrowIfNull(command);
+        _dbContext.ChangeTracker.Clear();
+        LoginPreparation preparation;
+        try
+        {
+            await using (IDbContextTransaction transaction = await _dbContext.Database
+                .BeginTransactionAsync(cancellationToken))
+            {
+                preparation = await PrepareAsync(command, cancellationToken);
+                await _dbContext.SaveChangesAsync(cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
+            }
+        }
+        finally
+        {
+            command.Password = string.Empty;
+        }
+        return await _challenges.SendAsync(preparation, cancellationToken);
+    }
 
+    public Task<LoginOperationResult> VerifyAsync(LoginCodeCommand command,
+        CancellationToken cancellationToken)
+    {
+        return _challenges.VerifyAsync(command, cancellationToken);
+    }
+
+    public Task<LoginOperationResult> ResendAsync(LoginChallengeCommand command,
+        CancellationToken cancellationToken)
+    {
+        return _challenges.ResendAsync(command, cancellationToken);
+    }
+
+    public Task CancelAsync(string token, CancellationToken cancellationToken)
+    {
+        return _challenges.CancelAsync(token, cancellationToken);
+    }
+
+    private async Task<LoginPreparation> PrepareAsync(LoginCommand command,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(command.Identifier) || string.IsNullOrEmpty(command.Password))
+        {
+            return new LoginPreparation(new LoginOperationResult(LoginStatus.InvalidCredentials));
+        }
+        var accounts = new AccountCredentialStore(_dbContext);
+        User? user = await accounts.LockAccountAsync(command.Identifier, cancellationToken);
         if (user?.Credential is null)
         {
-            return new LoginOperationResult(LoginStatus.UserNotFound);
+            return new LoginPreparation(new LoginOperationResult(LoginStatus.InvalidCredentials));
         }
-
-        if (!VerifyPassword(user, password))
+        LoginAttemptService.ResetExpiredLock(user.Credential, _attempts.UtcNow);
+        if (command.Password.Length > PasswordPolicy.MaximumPasswordLength
+            || !VerifyPassword(user, command.Password))
         {
-            return new LoginOperationResult(LoginStatus.IncorrectPassword);
+            await _attempts.RegisterFailureAsync(user, cancellationToken);
+            return new LoginPreparation(new LoginOperationResult(LoginStatus.InvalidCredentials));
         }
-
-        DateTime now = _timeProvider.GetUtcNow().UtcDateTime;
-        if (!CanAccessAccount(user, now))
+        LoginOperationResult? restriction = await _attempts.CheckAccessAsync(user,
+            cancellationToken);
+        if (restriction is not null)
         {
-            return new LoginOperationResult(LoginStatus.AccountRestricted);
+            return new LoginPreparation(restriction);
         }
-
-        IssuedSessionToken token = await CreateSessionAsync(user, now, cancellationToken);
-        await transaction.CommitAsync(cancellationToken);
-
-        return new LoginOperationResult(LoginStatus.Success)
-        {
-            UserId = user.UserId,
-            UserName = user.UserName,
-            SessionToken = token.Value
-        };
-    }
-
-    private Task<User?> FindUserByIdentifierAsync(
-        string identifier,
-        CancellationToken cancellationToken)
-    {
-        var accounts = new AccountCredentialStore(_dbContext);
-        return accounts.LockAccountAsync(identifier, cancellationToken);
+        return await _challenges.StartAsync(user, command.CultureName, cancellationToken);
     }
 
     private bool VerifyPassword(User user, string password)
     {
-        PasswordVerificationResult result = VerifyStoredPasswordHash(user, password);
-
-        if (result == PasswordVerificationResult.SuccessRehashNeeded)
-        {
-            user.Credential!.PasswordHash = _passwordHasher.HashPassword(user, password);
-        }
-
-        return result is PasswordVerificationResult.Success
-            or PasswordVerificationResult.SuccessRehashNeeded;
-    }
-
-    private PasswordVerificationResult VerifyStoredPasswordHash(
-        User user,
-        string password)
-    {
+        Credential credential = user.Credential
+            ?? throw new InvalidOperationException("Account credentials are required.");
+        PasswordVerificationResult result;
         try
         {
-            return _passwordHasher.VerifyHashedPassword(
-                user,
-                user.Credential!.PasswordHash,
-                password);
+            result = _passwordHasher.VerifyHashedPassword(user, credential.PasswordHash, password);
         }
         catch (FormatException)
         {
-            return PasswordVerificationResult.Failed;
+            result = PasswordVerificationResult.Failed;
         }
-    }
-
-    private static bool CanAccessAccount(User user, DateTime now)
-    {
-        bool isActive = string.Equals(
-            user.State,
-            DatabaseValues.AccountStates.Active,
-            StringComparison.OrdinalIgnoreCase);
-        bool isUnlocked = user.Credential!.LockedUntil is null
-            || user.Credential.LockedUntil <= now;
-
-        return isActive && isUnlocked;
-    }
-
-    private async Task<IssuedSessionToken> CreateSessionAsync(
-        User user,
-        DateTime now,
-        CancellationToken cancellationToken)
-    {
-        IssuedSessionToken token = _sessionTokenProvider.Create();
-        _dbContext.Sessions.Add(new Session
+        if (result == PasswordVerificationResult.SuccessRehashNeeded)
         {
-            UserId = user.UserId,
-            SessionTokenHash = token.Hash,
-            StartedAt = now,
-            LastActivityAt = now,
-            ExpiresAt = now.Add(sessionLifetime),
-            State = DatabaseValues.SessionStates.Active
-        });
-
-        await _dbContext.SaveChangesAsync(cancellationToken);
-        return token;
+            credential.PasswordHash = _passwordHasher.HashPassword(user, password);
+        }
+        return result != PasswordVerificationResult.Failed;
     }
 }

@@ -30,4 +30,13 @@ public sealed class AccountCredentialStore
             .Include(user => user.Credential)
             .SingleOrDefaultAsync(cancellationToken);
     }
+
+    public Task<User?> LockAccountAsync(int userId, CancellationToken cancellationToken)
+    {
+        return _dbContext.Users.FromSqlInterpolated($"""
+            SELECT * FROM dbo.Users WITH (UPDLOCK, HOLDLOCK)
+            WHERE UserId = {userId}
+            """)
+            .Include(user => user.Credential).SingleOrDefaultAsync(cancellationToken);
+    }
 }

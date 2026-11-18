@@ -42,6 +42,12 @@ internal sealed class SqlServerTestDatabase : IAsyncDisposable
         return new AtariGoDbContext(options);
     }
 
+    public async Task UpgradeLoginVerificationAsync()
+    {
+        string script = await File.ReadAllTextAsync(ScriptPath("Update-LoginVerification.sql"));
+        await ExecuteAsync(script.Replace("AtariGoDB", _databaseName), false);
+    }
+
     public async Task UpgradeAsync()
     {
         await ExecuteAsync(await File.ReadAllTextAsync(ScriptPath("Update-Gameplay.sql")), false);

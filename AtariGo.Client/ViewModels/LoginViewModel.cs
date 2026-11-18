@@ -2,8 +2,6 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Windows.Input;
 
-using Grpc.Core;
-
 using AtariGo.Client.Commands;
 using AtariGo.Client.Models;
 using AtariGo.Client.Properties;
@@ -15,9 +13,6 @@ namespace AtariGo.Client.ViewModels
 {
     public class LoginViewModel : ViewModelBase, IDisposable
     {
-        private static readonly TimeSpan loginSuccessMessageDelay =
-            TimeSpan.FromSeconds(1);
-
         private readonly INavigationService _navigationService;
         private readonly IAuthenticationClient _authenticationClient;
         private readonly IRegistrationClient _registrationClient;
@@ -202,7 +197,7 @@ namespace AtariGo.Client.ViewModels
 
         private async Task SubmitAsync(object? parameter)
         {
-            if (_isDisposed)
+            if (_isDisposed || IsDialogVisible)
             {
                 return;
             }
@@ -221,42 +216,49 @@ namespace AtariGo.Client.ViewModels
 
             try
             {
-                LoginResponse response = await _authenticationClient.LoginAsync(
+                LoginAttemptResult response = await _authenticationClient.LoginAsync(
                     identifier,
                     password,
                     cancellationToken);
                 cancellationToken.ThrowIfCancellationRequested();
-                await ApplyLoginResponseAsync(response, cancellationToken);
+                ApplyLoginResponse(response);
             }
-            catch (Exception exception)
-                when (GrpcCallPolicy.IsRequestedCancellation(exception, cancellationToken))
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
                 Trace.TraceInformation("Login cancelled because its window was closed.");
             }
-            catch (RpcException exception)
+            finally
             {
-                LoginMessage = GrpcFailureMessages.GetMessage(exception);
+                password = string.Empty;
             }
         }
 
-        private async Task ApplyLoginResponseAsync(
-            LoginResponse response,
-            CancellationToken cancellationToken)
+        private void ApplyLoginResponse(LoginAttemptResult response)
         {
-            string resourceKey = response.Result switch
+            LoginMessage = LoginAttemptMessages.GetMessage(response);
+            if (response.Status is LoginAttemptStatus.ChallengeRequired
+                or LoginAttemptStatus.DeliveryFailed
+                && !string.IsNullOrWhiteSpace(response.ChallengeToken))
             {
-                LoginResult.Success => "Login_Msg_Success",
-                LoginResult.UserNotFound => "Login_Err_UserNotFound",
-                LoginResult.IncorrectPassword => "Login_Err_IncorrectPassword",
-                LoginResult.AccountRestricted => "Login_Err_AccountRestricted",
-                _ => "Connection_Err_RequestFailed"
-            };
-            LoginMessage = GetLocalizedMessage(resourceKey);
+                CurrentDialogViewModel = new LoginVerificationDialogViewModel(
+                    _authenticationClient, response, CompleteLogin);
+            }
+            else if (response.Status == LoginAttemptStatus.Success)
+            {
+                LoginMessage = LoginAttemptMessages.GetText("LoginVerification_Result_Unavailable");
+            }
+        }
 
-            if (response.Result == LoginResult.Success)
+        private void CompleteLogin(LoginAttemptResult response)
+        {
+            if (_isDisposed)
             {
-                await Task.Delay(loginSuccessMessageDelay, cancellationToken);
-                cancellationToken.ThrowIfCancellationRequested();
+                return;
+            }
+            CurrentDialogViewModel = null;
+            if (response.Status == LoginAttemptStatus.Success
+                && !string.IsNullOrWhiteSpace(response.SessionToken))
+            {
                 _navigationService.NavigateToMainWindow(new ClientSessionContext
                 {
                     IsGuest = false,
@@ -270,7 +272,7 @@ namespace AtariGo.Client.ViewModels
         {
             if (!_isDisposed)
             {
-                LoginMessage = GrpcFailureMessages.GetMessage(exception);
+                LoginMessage = LoginAttemptMessages.GetText("LoginVerification_Result_Unconfirmed");
             }
         }
 

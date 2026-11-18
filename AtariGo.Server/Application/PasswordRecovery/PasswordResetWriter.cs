@@ -71,6 +71,10 @@ public sealed class PasswordResetWriter
         List<long> sessionIds = await RevokeSessionsAsync(user.UserId, now, cancellationToken);
         user.Credential.PasswordHash = _hasher.HashPassword(user, command.NewPassword);
         user.Credential.PasswordChangedAt = now;
+        user.Credential.AuthenticationVersion++;
+        await _dbContext.LoginChallenges.Where(challenge => challenge.UserId == user.UserId
+            && challenge.ClosedAt == null).ExecuteUpdateAsync(setters => setters
+                .SetProperty(challenge => challenge.ClosedAt, now), cancellationToken);
         code.UsedAt = now;
         if (!await TrySaveAsync(transaction, cancellationToken))
         {

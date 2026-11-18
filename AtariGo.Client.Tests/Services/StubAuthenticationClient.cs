@@ -1,24 +1,55 @@
-
+using AtariGo.Client.Models;
 using AtariGo.Client.Services;
-using AtariGo.Contracts;
 
-namespace AtariGo.Client.Tests.Services
+namespace AtariGo.Client.Tests.Services;
+
+public sealed class StubAuthenticationClient : IAuthenticationClient
 {
-    public sealed class StubAuthenticationClient : IAuthenticationClient
+    private readonly Func<CancellationToken, Task<LoginAttemptResult>> _login;
+
+    public StubAuthenticationClient(Func<CancellationToken, Task<LoginAttemptResult>> login)
     {
-        private readonly Func<CancellationToken, Task<LoginResponse>> _login;
+        _login = login;
+    }
 
-        public StubAuthenticationClient(Func<CancellationToken, Task<LoginResponse>> login)
-        {
-            _login = login;
-        }
+    public Func<CancellationToken, Task<LoginAttemptResult>> Verify { get; set; } =
+        _ => Task.FromResult(new LoginAttemptResult { Status = LoginAttemptStatus.InvalidCode });
 
-        public Task<LoginResponse> LoginAsync(
-            string identifier,
-            string password,
-            CancellationToken cancellationToken = default)
+    public Func<CancellationToken, Task<LoginAttemptResult>> Resend { get; set; } =
+        _ => Task.FromResult(new LoginAttemptResult
         {
-            return _login(cancellationToken);
-        }
+            Status = LoginAttemptStatus.ChallengeRequired
+        });
+
+    public string LastCode { get; private set; } = string.Empty;
+
+    public int VerificationCalls { get; private set; }
+
+    public int CancellationCalls { get; private set; }
+
+    public Task<LoginAttemptResult> LoginAsync(string identifier, string password,
+        CancellationToken cancellationToken = default)
+    {
+        return _login(cancellationToken);
+    }
+
+    public Task<LoginAttemptResult> VerifyLoginCodeAsync(string token, string code,
+        CancellationToken cancellationToken)
+    {
+        LastCode = code;
+        VerificationCalls++;
+        return Verify(cancellationToken);
+    }
+
+    public Task<LoginAttemptResult> ResendLoginCodeAsync(string token,
+        CancellationToken cancellationToken)
+    {
+        return Resend(cancellationToken);
+    }
+
+    public Task CancelLoginAsync(string token, CancellationToken cancellationToken)
+    {
+        CancellationCalls++;
+        return Task.CompletedTask;
     }
 }

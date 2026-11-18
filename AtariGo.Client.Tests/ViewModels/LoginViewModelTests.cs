@@ -4,10 +4,12 @@ using System.Reflection;
 
 using Grpc.Core;
 
+using AtariGo.Client.Models;
 using AtariGo.Client.Properties;
 using AtariGo.Client.Services;
 using AtariGo.Client.Tests.Services;
 using AtariGo.Client.ViewModels;
+using AtariGo.Client.ViewModels.Dialogs;
 using AtariGo.Contracts;
 
 namespace AtariGo.Client.Tests.ViewModels
@@ -17,9 +19,33 @@ namespace AtariGo.Client.Tests.ViewModels
     public sealed class LoginViewModelTests
     {
         [TestMethod]
-        [DataRow(StatusCode.DeadlineExceeded, "Connection_Err_Timeout")]
-        [DataRow(StatusCode.Unavailable, "Connection_Err_Unavailable")]
-        public async Task SubmitCommand_TransportFailure_ShowsSpecificMessage(
+        public async Task SubmitCommand_DirectSuccessWithoutCode_DoesNotNavigate()
+        {
+            // Arrange
+            INavigationService navigation = DispatchProxy.Create<INavigationService,
+                RecordingNavigationProxy>();
+            var authentication = new StubAuthenticationClient(_ => Task.FromResult(
+                new LoginAttemptResult
+                {
+                    Status = LoginAttemptStatus.Success, SessionToken = "bypass"
+                }));
+            var registration = new StubRegistrationClient(_ =>
+                Task.FromResult(new RegisterAccountResponse()));
+            using var model = new LoginViewModel(navigation, authentication, registration)
+            {
+                Identifier = "Player"
+            };
+            // Act
+            await CommandExecution.ExecuteAsync(model.SubmitCommand, "Secret8");
+            // Assert
+            Assert.IsNull(((RecordingNavigationProxy)navigation).SessionContext);
+            Assert.IsNull(model.CurrentDialogViewModel);
+        }
+
+        [TestMethod]
+        [DataRow(StatusCode.DeadlineExceeded, "LoginVerification_Result_Unconfirmed")]
+        [DataRow(StatusCode.Unavailable, "LoginVerification_Result_Unconfirmed")]
+        public async Task SubmitCommand_TransportFailure_ShowsUnconfirmedMessage(
             StatusCode statusCode,
             string expectedResourceKey)
         {
@@ -27,7 +53,7 @@ namespace AtariGo.Client.Tests.ViewModels
             INavigationService navigation = DispatchProxy.Create<INavigationService,
                 RecordingNavigationProxy>();
             var authentication = new StubAuthenticationClient(_ =>
-                Task.FromException<LoginResponse>(
+                Task.FromException<LoginAttemptResult>(
                     new RpcException(new Status(statusCode, "Test"))));
             var registration = new StubRegistrationClient(_ =>
                 Task.FromResult(new RegisterAccountResponse()));
@@ -48,7 +74,7 @@ namespace AtariGo.Client.Tests.ViewModels
             // Arrange
             INavigationService navigation = DispatchProxy.Create<INavigationService,
                 RecordingNavigationProxy>();
-            var pendingResponse = new TaskCompletionSource<LoginResponse>(
+            var pendingResponse = new TaskCompletionSource<LoginAttemptResult>(
                 TaskCreationOptions.RunContinuationsAsynchronously);
             CancellationToken requestToken = default;
             var authentication = new StubAuthenticationClient(token =>
@@ -64,7 +90,10 @@ namespace AtariGo.Client.Tests.ViewModels
 
             // Act
             viewModel.Dispose();
-            pendingResponse.SetResult(new LoginResponse { Result = LoginResult.Success });
+            pendingResponse.SetResult(new LoginAttemptResult
+            {
+                Status = LoginAttemptStatus.Success
+            });
             await command;
 
             // Assert
@@ -73,17 +102,21 @@ namespace AtariGo.Client.Tests.ViewModels
                 .Contains(nameof(INavigationService.NavigateToMainWindow)));
         }
         [TestMethod]
-        public async Task SubmitCommand_Success_PreservesSessionContextDuringNavigation()
+        public async Task SubmitCommand_ConfirmedCode_PreservesSessionContextDuringNavigation()
         {
             // Arrange
             INavigationService navigation = DispatchProxy.Create<INavigationService,
                 RecordingNavigationProxy>();
-            var authentication = new StubAuthenticationClient(_ => Task.FromResult(new LoginResponse
+            var authentication = new StubAuthenticationClient(_ => Task.FromResult(
+                new LoginAttemptResult
             {
-                Result = LoginResult.Success,
-                UserName = "Player",
-                SessionToken = "test-session"
+                Status = LoginAttemptStatus.ChallengeRequired, ChallengeToken = "pending"
             }));
+            authentication.Verify = _ => Task.FromResult(new LoginAttemptResult
+            {
+                Status = LoginAttemptStatus.Success, UserName = "Player",
+                SessionToken = "test-session"
+            });
             var registration = new StubRegistrationClient(_ =>
                 Task.FromResult(new RegisterAccountResponse()));
             using var model = new LoginViewModel(navigation, authentication, registration)
@@ -93,6 +126,11 @@ namespace AtariGo.Client.Tests.ViewModels
 
             // Act
             await CommandExecution.ExecuteAsync(model.SubmitCommand, "password");
+            Assert.IsNull(((RecordingNavigationProxy)navigation).SessionContext);
+            Assert.IsInstanceOfType<LoginVerificationDialogViewModel>(model.CurrentDialogViewModel);
+            var verification = (LoginVerificationDialogViewModel)model.CurrentDialogViewModel;
+            verification.Code = "01234567";
+            await CommandExecution.ExecuteAsync(verification.ConfirmCommand, null);
 
             // Assert
             var recorder = (RecordingNavigationProxy)navigation;

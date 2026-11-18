@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
 using AtariGo.Server.Application.Authentication;
 using AtariGo.Server.Application.Sessions;
@@ -36,10 +37,10 @@ public sealed class CredentialsService : ICredentialsService
         ArgumentNullException.ThrowIfNull(command.NewPassword);
         ArgumentNullException.ThrowIfNull(command.Confirmation);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(identity.UserId);
-        User? user = await _dbContext.Users.AsNoTracking()
-            .Include(candidate => candidate.Credential)
-            .SingleOrDefaultAsync(candidate => candidate.UserId == identity.UserId,
-                cancellationToken);
+        await using IDbContextTransaction transaction = await _dbContext.Database
+            .BeginTransactionAsync(cancellationToken);
+        var accounts = new AccountCredentialStore(_dbContext);
+        User? user = await accounts.LockAccountAsync(identity.UserId, cancellationToken);
         if (user?.Credential is null || user.State != DatabaseValues.AccountStates.Active)
         {
             return ChangePasswordResult.AccountUnavailable;
@@ -56,7 +57,10 @@ public sealed class CredentialsService : ICredentialsService
         {
             return ChangePasswordResult.ConfirmationMismatch;
         }
-        return await UpdateCredentialAsync(user, command.NewPassword, cancellationToken);
+        ChangePasswordResult result = await UpdateCredentialAsync(user, command.NewPassword,
+            cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        return result;
     }
 
     private bool VerifyCurrentPassword(User user, string password)
@@ -86,8 +90,16 @@ public sealed class CredentialsService : ICredentialsService
                     == originalHash)
             .ExecuteUpdateAsync(setters => setters
                 .SetProperty(credential => credential.PasswordHash, newHash)
+                .SetProperty(credential => credential.AuthenticationVersion,
+                    credential => credential.AuthenticationVersion + 1)
                 .SetProperty(credential => credential.PasswordChangedAt, changedAt),
                 cancellationToken);
+        if (updated > 0)
+        {
+            await _dbContext.LoginChallenges.Where(challenge => challenge.UserId == user.UserId
+                && challenge.ClosedAt == null).ExecuteUpdateAsync(setters => setters
+                    .SetProperty(challenge => challenge.ClosedAt, changedAt), cancellationToken);
+        }
         return updated > 0 ? ChangePasswordResult.Changed : ChangePasswordResult.CredentialChanged;
     }
 }

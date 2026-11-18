@@ -19,7 +19,7 @@ public sealed class AuthenticationServiceTests
     [TestMethod]
     [DataRow(false)]
     [DataRow(true)]
-    public async Task LoginAsync_StoredCredentialAsPassword_RejectsWithoutChangingData(
+    public async Task LoginAsync_StoredCredentialAsPassword_RejectsWithoutCreatingSession(
         bool storesPlaintext)
     {
         // Arrange
@@ -32,10 +32,13 @@ public sealed class AuthenticationServiceTests
         await SeedAsync(context, user);
         AuthenticationService service = CreateService(context);
         // Act
-        LoginOperationResult result = await service.LoginAsync(user.UserName, stored,
+        LoginOperationResult result = await service.LoginAsync(new LoginCommand
+        {
+            Identifier = user.UserName, Password = stored
+        },
             CancellationToken.None);
         // Assert
-        Assert.AreEqual(LoginStatus.IncorrectPassword, result.Status);
+        Assert.AreEqual(LoginStatus.InvalidCredentials, result.Status);
         Assert.AreEqual(string.Empty, result.SessionToken);
         Assert.AreEqual(0, await context.Sessions.CountAsync());
         Assert.AreEqual(stored, await context.Credentials.AsNoTracking()
@@ -45,7 +48,7 @@ public sealed class AuthenticationServiceTests
     [TestMethod]
     [DataRow(false)]
     [DataRow(true)]
-    public async Task LoginAsync_VerifiedPassword_AuthenticatesAndRefreshesHashWhenNeeded(
+    public async Task LoginAsync_VerifiedPassword_RequiresCodeAndRefreshesHashWhenNeeded(
         bool usesOlderHash)
     {
         // Arrange
@@ -63,14 +66,17 @@ public sealed class AuthenticationServiceTests
         await SeedAsync(context, user);
         AuthenticationService service = CreateService(context);
         // Act
-        LoginOperationResult result = await service.LoginAsync(user.Email, Password,
+        LoginOperationResult result = await service.LoginAsync(new LoginCommand
+        {
+            Identifier = user.Email, Password = Password
+        },
             CancellationToken.None);
         string savedHash = await context.Credentials.AsNoTracking()
             .Select(credential => credential.PasswordHash).SingleAsync();
         // Assert
-        Assert.AreEqual(LoginStatus.Success, result.Status);
-        Assert.IsFalse(string.IsNullOrWhiteSpace(result.SessionToken));
-        Assert.AreEqual(1, await context.Sessions.CountAsync());
+        Assert.AreEqual(LoginStatus.ChallengeRequired, result.Status);
+        Assert.AreEqual(string.Empty, result.SessionToken);
+        Assert.AreEqual(0, await context.Sessions.CountAsync());
         Assert.AreEqual(usesOlderHash, originalHash != savedHash);
         Assert.AreEqual(PasswordVerificationResult.Success,
             hasher.VerifyHashedPassword(user, savedHash, Password));
@@ -95,7 +101,6 @@ public sealed class AuthenticationServiceTests
 
     private static AuthenticationService CreateService(AtariGoDbContext context)
     {
-        return new AuthenticationService(context, new PasswordHasher<User>(),
-            new SessionTokenProvider(), TimeProvider.System);
+        return LoginTestServices.Create(context);
     }
 }

@@ -14,12 +14,15 @@ using Grpc.Net.Client;
 using AtariGo.Contracts;
 using AtariGo.Server.Application.Authentication;
 using AtariGo.Server.Application.Credentials;
+using AtariGo.Server.Application.Email;
+using AtariGo.Server.Application.PasswordRecovery;
 using AtariGo.Server.Application.Sessions;
 using AtariGo.Server.Data;
 using AtariGo.Server.Data.Entities;
 using AtariGo.Server.Security;
 using AtariGo.Server.Services;
 using AtariGo.Server.Tests.Games;
+using AtariGo.Server.Tests.Authentication;
 
 namespace AtariGo.Server.Tests.Credentials;
 
@@ -49,9 +52,15 @@ public sealed class CredentialsGrpcServiceTests
         using IServiceScope scope = app.Services.CreateScope();
         IAuthenticationService authentication = scope.ServiceProvider
             .GetRequiredService<IAuthenticationService>();
-        LoginOperationResult oldLogin = await authentication.LoginAsync("Owner", OriginalPassword,
+        LoginOperationResult oldLogin = await authentication.LoginAsync(new LoginCommand
+        {
+            Identifier = "Owner", Password = OriginalPassword
+        },
             CancellationToken.None);
-        LoginOperationResult newLogin = await authentication.LoginAsync("Owner", NewPassword,
+        LoginOperationResult newLogin = await authentication.LoginAsync(new LoginCommand
+        {
+            Identifier = "Owner", Password = NewPassword
+        },
             CancellationToken.None);
         SessionIdentity? session = await scope.ServiceProvider.GetRequiredService<ISessionService>()
             .ValidateSessionAsync("owner", CancellationToken.None);
@@ -59,8 +68,8 @@ public sealed class CredentialsGrpcServiceTests
             .SingleAsync(credential => credential.UserId == 1);
         // Assert
         Assert.AreEqual(PasswordChangeStatus.Changed, response.Status);
-        Assert.AreEqual(LoginStatus.IncorrectPassword, oldLogin.Status);
-        Assert.AreEqual(LoginStatus.Success, newLogin.Status);
+        Assert.AreEqual(LoginStatus.InvalidCredentials, oldLogin.Status);
+        Assert.AreEqual(LoginStatus.ChallengeRequired, newLogin.Status);
         Assert.IsNotNull(session);
         Assert.IsNotNull(saved.PasswordChangedAt);
         Assert.AreNotEqual(NewPassword, saved.PasswordHash);
@@ -190,7 +199,10 @@ public sealed class CredentialsGrpcServiceTests
         builder.Services.AddSingleton<ISessionConnectionRegistry, SessionConnectionRegistry>();
         builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
         builder.Services.AddScoped<ICredentialsService, CredentialsService>();
-        builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
+        builder.Services.AddLoginVerification();
+        builder.Services.AddSingleton<IEmailSender, RecordingLoginEmailSender>();
+        builder.Services.Configure<PasswordRecoveryOptions>(options =>
+            options.HmacKey = new string('K', 64));
         builder.Services.AddScoped<ISessionService, SessionService>();
         WebApplication app = builder.Build();
         app.MapGrpcService<CredentialsGrpcService>();

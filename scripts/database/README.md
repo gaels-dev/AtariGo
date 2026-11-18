@@ -1,5 +1,29 @@
 # Base de datos para la jugabilidad
 
+## Verificación del inicio de sesión por correo
+
+`Update-LoginVerification.sql` añade `Credentials.AuthenticationVersion` y la tabla
+`LoginChallenges`, con sus claves, restricciones e índices. Conserva las cuentas, hashes
+y sesiones existentes. Puede ejecutarse de nuevo y revierte la transacción si falla.
+`Create-AtariGo.sql` ya incluye el esquema para instalaciones nuevas.
+
+Detener el servidor, respaldar la base existente y ejecutar el script completo antes
+de iniciar el servidor actualizado. La aplicación no aplica esta actualización automáticamente.
+
+```powershell
+sqlcmd -S "(localdb)\MSSQLLocalDB" -E -b -d AtariGoDB -i .\scripts\database\Update-LoginVerification.sql
+dotnet run --project .\AtariGo.Server -- --check-database
+```
+
+También puede ejecutarse desde SQL Server Management Studio. Adaptar el nombre de servidor
+y de base de datos a la instalación. La cuenta del servidor necesita permisos de consulta,
+inserción y actualización sobre `LoginChallenges`, además de los permisos existentes de
+credenciales, códigos, sesiones y consulta de sanciones.
+
+La verificación reutiliza el SMTP y `PasswordRecovery:HmacKey` configurados con
+`scripts/Configure-RecoveryEmail.ps1`. El cliente y el servidor deben actualizarse juntos.
+La ausencia de correo o de una clave válida impide el acceso registrado, sin omitir el código.
+
 ## Actualización de perfil y avatares
 
 `Update-ProfileAvatars.sql` actualiza la BD existente para guardar `Profiles.AvatarId`

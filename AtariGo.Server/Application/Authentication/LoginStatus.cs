@@ -5,5 +5,14 @@ public enum LoginStatus
     Success,
     UserNotFound,
     IncorrectPassword,
-    AccountRestricted
+    AccountRestricted,
+    InvalidCredentials,
+    ChallengeRequired,
+    InvalidCode,
+    CodeExpired,
+    InvalidChallenge,
+    TemporarilyLocked,
+    DeliveryFailed,
+    RateLimited,
+    Unavailable
 }

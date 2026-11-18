@@ -216,9 +216,13 @@ public sealed class PasswordRecoveryTests
             .ValidateSessionAsync("Owner", CancellationToken.None));
         IAuthenticationService login = scope.ServiceProvider
             .GetRequiredService<IAuthenticationService>();
-        Assert.AreEqual(LoginStatus.IncorrectPassword, (await login.LoginAsync("Owner",
-            RecoveryTestHost.OriginalPassword, CancellationToken.None)).Status);
-        Assert.AreEqual(LoginStatus.Success, (await login.LoginAsync("Owner",
-            RecoveryTestHost.NewPassword, CancellationToken.None)).Status);
+        Assert.AreEqual(LoginStatus.InvalidCredentials, (await login.LoginAsync(new LoginCommand
+        {
+            Identifier = "Owner", Password = RecoveryTestHost.OriginalPassword
+        }, CancellationToken.None)).Status);
+        Assert.AreEqual(LoginStatus.ChallengeRequired, (await login.LoginAsync(new LoginCommand
+        {
+            Identifier = "Owner", Password = RecoveryTestHost.NewPassword
+        }, CancellationToken.None)).Status);
     }
 }
