@@ -18,7 +18,6 @@ public sealed class SmtpEmailSenderTests
     public async Task SendAsync_GenericMessage_PreservesContentUsesTlsAndPropagatesCancellation(
         int port, SecureSocketOptions security)
     {
-        // Arrange
         using var client = new RecordingSmtpClient();
         using var cancellation = new CancellationTokenSource();
         SmtpOptions options = CreateOptions(port);
@@ -29,9 +28,7 @@ public sealed class SmtpEmailSenderTests
             Recipient = "player@example.test", Subject = "Custom subject ä",
             Body = "Custom message unrelated to password recovery.\nCódigo: 01234567"
         };
-        // Act
         await sender.SendAsync(message, cancellation.Token);
-        // Assert
         Assert.AreEqual(options.Host, client.Host);
         Assert.AreEqual(port, client.Port);
         Assert.AreEqual(security, client.Security);
@@ -51,15 +48,12 @@ public sealed class SmtpEmailSenderTests
     [TestMethod]
     public async Task SendAsync_FailedSend_PropagatesFailureAndDisposesClient()
     {
-        // Arrange
         using var client = new RecordingSmtpClient { ShouldFailSend = true };
         var sender = new SmtpEmailSender(Options.Create(CreateOptions(465)),
             NullLogger<SmtpEmailSender>.Instance, () => client);
         var message = new EmailMessage { Recipient = "player@example.test", Body = "Private code" };
-        // Act
         await Assert.ThrowsAsync<IOException>(() => sender.SendAsync(message,
             CancellationToken.None));
-        // Assert
         Assert.IsFalse(client.IsDisconnected);
         Assert.IsTrue(client.IsDisposed);
     }
@@ -67,17 +61,14 @@ public sealed class SmtpEmailSenderTests
     [TestMethod]
     public async Task SendAsync_CancelledRequest_PropagatesCancellationAndDisposesClient()
     {
-        // Arrange
         using var client = new RecordingSmtpClient();
         using var cancellation = new CancellationTokenSource();
         cancellation.Cancel();
         var sender = new SmtpEmailSender(Options.Create(CreateOptions(465)),
             NullLogger<SmtpEmailSender>.Instance, () => client);
         var message = new EmailMessage { Recipient = "player@example.test" };
-        // Act
         await Assert.ThrowsAsync<OperationCanceledException>(() => sender.SendAsync(message,
             cancellation.Token));
-        // Assert
         Assert.AreEqual(string.Empty, client.Subject);
         Assert.IsTrue(client.IsDisposed);
     }
@@ -85,15 +76,12 @@ public sealed class SmtpEmailSenderTests
     [TestMethod]
     public void IsConfigured_DefaultDependencyInjection_ResolvesConfiguredSenderWithoutFactory()
     {
-        // Arrange
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddSingleton(Options.Create(CreateOptions(465)));
         services.AddSingleton<IEmailSender, SmtpEmailSender>();
         using ServiceProvider provider = services.BuildServiceProvider();
-        // Act
         IEmailSender sender = provider.GetRequiredService<IEmailSender>();
-        // Assert
         Assert.IsTrue(sender.IsConfigured);
     }
 

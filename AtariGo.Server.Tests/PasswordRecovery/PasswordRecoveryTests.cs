@@ -22,7 +22,6 @@ public sealed class PasswordRecoveryTests
     [TestMethod]
     public async Task ResetPassword_ValidCode_ChangesCredentialRevokesConnectionsAndRejectsReuse()
     {
-        // Arrange
         await using RecoveryTestHost host = await RecoveryTestHost.CreateAsync();
         await host.RequestAsync("Owner@example.test");
         var sessions = new Contracts.Session.SessionClient(host.Channel);
@@ -36,11 +35,9 @@ public sealed class PasswordRecoveryTests
         Assert.IsTrue(await stream.ResponseStream.MoveNext(CancellationToken.None));
         IGameSessionRegistry games = host.Services.GetRequiredService<IGameSessionRegistry>();
         using GameSessionConnection game = games.Connect(CreateGame());
-        // Act
         PasswordRecoveryResponse result = await host.ResetAsync(host.CreateReset());
         PasswordRecoveryResponse reused = await host.ResetAsync(host.CreateReset());
         bool ended = !await stream.ResponseStream.MoveNext(CancellationToken.None);
-        // Assert
         Assert.AreEqual(RecoveryStatus.Reset, result.Status);
         Assert.AreEqual(RecoveryStatus.InvalidCode, reused.Status);
         Assert.IsTrue(ended);
@@ -54,7 +51,6 @@ public sealed class PasswordRecoveryTests
     [TestMethod]
     public async Task ResetPassword_PreviouslyIssuedCode_ResetsWithoutSendingAnotherEmail()
     {
-        // Arrange
         await using RecoveryTestHost host = await RecoveryTestHost.CreateAsync();
         await using AtariGoDbContext context = host.Database.CreateContext();
         DateTime now = host.Clock.GetUtcNow().UtcDateTime;
@@ -65,9 +61,7 @@ public sealed class PasswordRecoveryTests
             CodeHash = "07DD21B1608634684E89426287BCC831AF61CDE9A01EB47F1C15B7E960124612"
         });
         await context.SaveChangesAsync();
-        // Act
         PasswordRecoveryResponse result = await host.ResetAsync(host.CreateReset("01234567"));
-        // Assert
         Assert.AreEqual(RecoveryStatus.Reset, result.Status);
         Assert.AreEqual(0, host.Email.Codes.Count);
         Assert.IsNotNull(await context.AuthenticationCodes.AsNoTracking()
@@ -78,14 +72,12 @@ public sealed class PasswordRecoveryTests
     [TestMethod]
     public async Task ResetPassword_InvalidCodesAndPasswords_PreservesCredential()
     {
-        // Arrange
         await using RecoveryTestHost host = await RecoveryTestHost.CreateAsync();
         await host.RequestAsync();
         ResetPasswordRequest request = host.CreateReset();
         await using AtariGoDbContext context = host.Database.CreateContext();
         string original = await context.Credentials.Where(row => row.UserId == 1)
             .Select(row => row.PasswordHash).SingleAsync();
-        // Act
         request.NewPassword = "lowercase";
         Assert.AreEqual(RecoveryStatus.InvalidPassword, (await host.ResetAsync(request)).Status);
         request.NewPassword = RecoveryTestHost.NewPassword;
@@ -108,7 +100,6 @@ public sealed class PasswordRecoveryTests
         }
         Assert.AreEqual(RecoveryStatus.InvalidCode,
             (await host.ResetAsync(host.CreateReset())).Status);
-        // Assert
         Assert.AreEqual(original, await context.Credentials.Where(row => row.UserId == 1)
             .Select(row => row.PasswordHash).SingleAsync());
         AuthenticationCode saved = await context.AuthenticationCodes.SingleAsync();
@@ -120,13 +111,11 @@ public sealed class PasswordRecoveryTests
     [TestMethod]
     public async Task RequestPasswordRecovery_ResendExpiryAndDeliveryFailure_ProtectsCodes()
     {
-        // Arrange
         await using RecoveryTestHost host = await RecoveryTestHost.CreateAsync();
         await host.RequestAsync("Unknown");
         Assert.AreEqual(0, host.Email.Codes.Count);
         await host.RequestAsync();
         string first = host.Email.Codes.Single();
-        // Act
         await host.RequestAsync();
         Assert.AreEqual(1, host.Email.Codes.Count);
         host.Clock.Advance(TimeSpan.FromSeconds(60));
@@ -145,7 +134,6 @@ public sealed class PasswordRecoveryTests
         host.Clock.Advance(TimeSpan.FromSeconds(60));
         host.Email.FailDelivery = false;
         await host.RequestAsync();
-        // Assert
         await using AtariGoDbContext context = host.Database.CreateContext();
         List<AuthenticationCode> codes = await context.AuthenticationCodes.ToListAsync();
         Assert.AreEqual(3, codes.Count);
@@ -162,7 +150,6 @@ public sealed class PasswordRecoveryTests
     [TestMethod]
     public async Task ResetPassword_FailedWriteAndConcurrentRequests_PreservesAtomicity()
     {
-        // Arrange
         await using RecoveryTestHost host = await RecoveryTestHost.CreateAsync();
         await host.RequestAsync();
         await using AtariGoDbContext context = host.Database.CreateContext();
@@ -170,18 +157,14 @@ public sealed class PasswordRecoveryTests
             CREATE TRIGGER dbo.FailPasswordReset ON dbo.Credentials AFTER UPDATE AS
             THROW 51000, 'Simulated credential write failure.', 1;
             """);
-        // Act
         PasswordRecoveryResponse failure = await host.ResetAsync(host.CreateReset());
-        // Assert
         Assert.AreEqual(RecoveryStatus.NotSaved, failure.Status);
         Assert.IsNull((await context.AuthenticationCodes.AsNoTracking().SingleAsync()).UsedAt);
         Assert.IsNull((await context.Credentials.AsNoTracking().FirstAsync()).PasswordChangedAt);
         Assert.IsTrue(await context.Sessions.AllAsync(row => row.State == "Active"));
-        // Act
         await context.Database.ExecuteSqlRawAsync("DROP TRIGGER dbo.FailPasswordReset;");
         PasswordRecoveryResponse[] results = await Task.WhenAll(
             host.ResetAsync(host.CreateReset()), host.ResetAsync(host.CreateReset()));
-        // Assert
         Assert.AreEqual(1, results.Count(result => result.Status == RecoveryStatus.Reset));
         Assert.AreEqual(1, results.Count(result => result.Status == RecoveryStatus.InvalidCode));
         await AssertSavedStateAsync(host);

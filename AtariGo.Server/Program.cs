@@ -1,4 +1,3 @@
-
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -6,13 +5,13 @@ using AtariGo.GameLogic.Rules;
 using AtariGo.Server.Application.Authentication;
 using AtariGo.Server.Application.Credentials;
 using AtariGo.Server.Application.Email;
-using AtariGo.Server.Application.PasswordRecovery;
 using AtariGo.Server.Application.Friends;
 using AtariGo.Server.Application.Friendships;
-using AtariGo.Server.Application.Games;
 using AtariGo.Server.Application.GameHistory;
+using AtariGo.Server.Application.Games;
 using AtariGo.Server.Application.Leaderboard;
 using AtariGo.Server.Application.Matchmaking;
+using AtariGo.Server.Application.PasswordRecovery;
 using AtariGo.Server.Application.Profile;
 using AtariGo.Server.Application.RoomInvitations;
 using AtariGo.Server.Application.Rooms;
@@ -45,7 +44,6 @@ builder.Services.AddOptions<PasswordRecoveryOptions>()
     .Validate(options => options.AccountRequestsPerHour > 0 && options.IpRequestsPerHour > 0
         && options.ResendSeconds >= PasswordRecoveryOptions.MinimumResendSeconds);
 builder.Services.AddSingleton<RecoveryCodeProtector>();
-builder.Services.AddSingleton<RecoveryRequestLimiter>();
 builder.Services.AddSingleton<IEmailSender, SmtpEmailSender>();
 builder.Services.AddScoped<RecoveryCodeDelivery>();
 builder.Services.AddScoped<PasswordResetWriter>();

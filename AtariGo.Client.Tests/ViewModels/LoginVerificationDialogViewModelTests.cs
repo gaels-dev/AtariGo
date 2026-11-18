@@ -11,8 +11,7 @@ public sealed class LoginVerificationDialogViewModelTests
     [TestMethod]
     public async Task ConfirmCommand_UnconfirmedResult_ClearsCodeAndNeverRetriesAutomatically()
     {
-        // Arrange
-        var client = CreateClient();
+        StubAuthenticationClient client = CreateClient();
         client.Verify = _ => Task.FromResult(new LoginAttemptResult
         {
             Status = LoginAttemptStatus.Unconfirmed
@@ -21,10 +20,8 @@ public sealed class LoginVerificationDialogViewModelTests
         using var model = new LoginVerificationDialogViewModel(client, Pending(),
             _ => completions++);
         model.Code = "01234567";
-        // Act
         await CommandExecution.ExecuteAsync(model.ConfirmCommand, null);
         await CommandExecution.ExecuteAsync(model.ConfirmCommand, null);
-        // Assert
         Assert.AreEqual(1, client.VerificationCalls);
         Assert.AreEqual(string.Empty, model.Code);
         Assert.IsFalse(model.CanEdit);
@@ -34,10 +31,9 @@ public sealed class LoginVerificationDialogViewModelTests
     [TestMethod]
     public async Task Dispose_PendingConfirmation_CancelsAndDiscardsLateSuccess()
     {
-        // Arrange
         var response = new TaskCompletionSource<LoginAttemptResult>(
             TaskCreationOptions.RunContinuationsAsynchronously);
-        var client = CreateClient();
+        StubAuthenticationClient client = CreateClient();
         CancellationToken captured = default;
         client.Verify = token =>
         {
@@ -49,14 +45,12 @@ public sealed class LoginVerificationDialogViewModelTests
             _ => completions++);
         model.Code = "01234567";
         Task running = CommandExecution.ExecuteAsync(model.ConfirmCommand, null);
-        // Act
         model.Dispose();
         response.SetResult(new LoginAttemptResult
         {
             Status = LoginAttemptStatus.Success, SessionToken = "session"
         });
         await running;
-        // Assert
         Assert.IsTrue(captured.IsCancellationRequested);
         Assert.AreEqual(0, completions);
         Assert.AreEqual(string.Empty, model.Code);
@@ -65,15 +59,12 @@ public sealed class LoginVerificationDialogViewModelTests
     [TestMethod]
     public async Task CancelCommand_ValidAttempt_ClosesDialogAndRequestsServerCancellation()
     {
-        // Arrange
-        var client = CreateClient();
+        StubAuthenticationClient client = CreateClient();
         int completions = 0;
         using var model = new LoginVerificationDialogViewModel(client, Pending(),
             _ => completions++);
         model.Code = "01234567";
-        // Act
         await CommandExecution.ExecuteAsync(model.CancelCommand, null);
-        // Assert
         Assert.AreEqual(1, completions);
         Assert.AreEqual(1, client.CancellationCalls);
         Assert.AreEqual(string.Empty, model.Code);
@@ -83,13 +74,10 @@ public sealed class LoginVerificationDialogViewModelTests
     [TestMethod]
     public async Task ConfirmCommand_InvalidCode_DoesNotSendRequest()
     {
-        // Arrange
-        var client = CreateClient();
+        StubAuthenticationClient client = CreateClient();
         using var model = new LoginVerificationDialogViewModel(client, Pending(), _ => { });
         model.Code = "bad";
-        // Act
         await CommandExecution.ExecuteAsync(model.ConfirmCommand, null);
-        // Assert
         Assert.AreEqual(0, client.VerificationCalls);
         Assert.IsTrue(model.CanEdit);
     }
@@ -97,16 +85,13 @@ public sealed class LoginVerificationDialogViewModelTests
     [TestMethod]
     public async Task ResendCommand_UnconfirmedDelivery_AllowsEnteringCodeWithoutAutomaticRetry()
     {
-        // Arrange
-        var client = CreateClient();
+        StubAuthenticationClient client = CreateClient();
         client.Resend = _ => Task.FromResult(new LoginAttemptResult
         {
             Status = LoginAttemptStatus.Unconfirmed
         });
         using var model = new LoginVerificationDialogViewModel(client, Pending(), _ => { });
-        // Act
         await CommandExecution.ExecuteAsync(model.ResendCommand, null);
-        // Assert
         Assert.IsTrue(model.CanEdit);
         Assert.AreEqual(string.Empty, model.Code);
         Assert.AreEqual(0, client.VerificationCalls);

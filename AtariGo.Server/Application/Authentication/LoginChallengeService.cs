@@ -16,39 +16,33 @@ public sealed class LoginChallengeService
     private readonly LoginCodeDeliveryService _delivery;
     private readonly LoginAttemptService _attempts;
     private readonly ISessionTokenProvider _tokens;
+    private readonly PendingLoginStore _pending;
 
     public LoginChallengeService(AtariGoDbContext dbContext, LoginCodeDeliveryService delivery,
-        LoginAttemptService attempts, ISessionTokenProvider tokens)
+        LoginAttemptService attempts, ISessionTokenProvider tokens, PendingLoginStore pending)
     {
         ArgumentNullException.ThrowIfNull(dbContext);
         ArgumentNullException.ThrowIfNull(delivery);
         ArgumentNullException.ThrowIfNull(attempts);
         ArgumentNullException.ThrowIfNull(tokens);
+        ArgumentNullException.ThrowIfNull(pending);
         _dbContext = dbContext;
         _delivery = delivery;
         _attempts = attempts;
         _tokens = tokens;
+        _pending = pending;
     }
 
     public async Task<LoginPreparation> StartAsync(User user, string cultureName,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(user);
-        Credential credential = user.Credential
-            ?? throw new InvalidOperationException("Account credentials are required.");
+        ArgumentNullException.ThrowIfNull(cultureName);
         if (!_delivery.IsConfigured)
         {
             return new LoginPreparation(new LoginOperationResult(LoginStatus.Unavailable));
         }
-        IssuedSessionToken token = _tokens.Create();
-        DateTime now = _attempts.UtcNow;
-        var challenge = new LoginChallenge
-        {
-            UserId = user.UserId, TokenHash = token.Hash,
-            AuthenticationVersion = credential.AuthenticationVersion,
-            CreatedAt = now, IssueUntil = now.Add(LoginVerificationOptions.IssuanceLifetime)
-        };
-        DateTime? retryAt = await _delivery.FindRetryAtAsync(challenge, cancellationToken);
+        DateTime? retryAt = await _delivery.FindRetryAtAsync(user.UserId, cancellationToken);
         if (retryAt.HasValue)
         {
             return new LoginPreparation(new LoginOperationResult(LoginStatus.RateLimited)
@@ -56,13 +50,18 @@ public sealed class LoginChallengeService
                 RetryAt = retryAt
             });
         }
-        _dbContext.LoginChallenges.Add(challenge);
-        LoginCodeDelivery delivery = _delivery.Prepare(new LoginChallengeContext(user, challenge),
-            cultureName);
-        return new LoginPreparation(CreatePendingResult(user, challenge) with
+        IssuedSessionToken token = _tokens.Create();
+        var pending = new PendingLogin
+        {
+            UserId = user.UserId, TokenHash = token.Hash,
+            IssueUntil = _attempts.UtcNow.Add(LoginVerificationOptions.IssuanceLifetime)
+        };
+        LoginCodeDelivery delivery = _delivery.Prepare(user, pending, cultureName);
+        var context = new PendingLoginContext(user, delivery.Pending, delivery.Code);
+        return new LoginPreparation(CreatePendingResult(context) with
         {
             ChallengeToken = token.Value
-        }, delivery);
+        }, delivery) { StartsLogin = true };
     }
 
     public async Task<LoginOperationResult> SendAsync(LoginPreparation preparation,
@@ -73,42 +72,35 @@ public sealed class LoginChallengeService
         {
             return preparation.Result;
         }
-        bool sent = await _delivery.SendAsync(preparation.Delivery, cancellationToken);
-        using var timeout = new CancellationTokenSource(finalizationTimeout);
-        _dbContext.ChangeTracker.Clear();
-        await using IDbContextTransaction transaction = await _dbContext.Database
-            .BeginTransactionAsync(timeout.Token);
-        LoginChallengeContext? context = await FindAsync(preparation.Result.ChallengeToken,
-            timeout.Token);
-        LoginOperationResult result = new LoginOperationResult(LoginStatus.InvalidChallenge);
-        if (context is not null && IsPending(context)
-            && context.Challenge.CodeBinding == preparation.Delivery.Binding)
+        LoginCodeDelivery delivery = preparation.Delivery;
+        PendingLogin pending = delivery.Pending with
         {
-            result = await FinalizeDeliveryAsync(context, sent, timeout.Token);
-            result = result with
-            {
-                ChallengeToken = context.Challenge.ClosedAt is null
-                    ? preparation.Result.ChallengeToken : string.Empty
-            };
+            CodeId = delivery.Code.AuthenticationCodeId
+        };
+        if (preparation.StartsLogin && !_pending.TryAdd(pending))
+        {
+            delivery.Message.Body = string.Empty;
+            return new LoginOperationResult(LoginStatus.Unavailable);
         }
-        await _dbContext.SaveChangesAsync(timeout.Token);
-        await transaction.CommitAsync(timeout.Token);
-        return result;
+        bool sent = await _delivery.SendAsync(delivery, cancellationToken);
+        using var timeout = new CancellationTokenSource(finalizationTimeout);
+        return await FinalizeSendAsync(preparation, sent, timeout.Token);
     }
 
     public async Task<LoginOperationResult> VerifyAsync(LoginCodeCommand command,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(command);
+        string hash = GetTokenHash(command.ChallengeToken);
+        using PendingLoginLease lease = await _pending.EnterAsync(hash, cancellationToken);
         _dbContext.ChangeTracker.Clear();
         await using IDbContextTransaction transaction = await _dbContext.Database
             .BeginTransactionAsync(cancellationToken);
-        LoginChallengeContext? context = await FindAsync(command.ChallengeToken, cancellationToken);
+        PendingLoginContext? context = await FindAsync(hash, cancellationToken);
         LoginOperationResult result = context is null
             ? new LoginOperationResult(LoginStatus.InvalidChallenge)
             : await CompleteAsync(context, command.Code, cancellationToken);
-        await _dbContext.SaveChangesAsync(cancellationToken);
-        await transaction.CommitAsync(cancellationToken);
+        await CommitAsync(context, transaction, cancellationToken);
         return result;
     }
 
@@ -116,39 +108,63 @@ public sealed class LoginChallengeService
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(command);
-        _dbContext.ChangeTracker.Clear();
         LoginPreparation preparation;
-        await using (IDbContextTransaction transaction = await _dbContext.Database
-            .BeginTransactionAsync(cancellationToken))
+        string hash = GetTokenHash(command.ChallengeToken);
+        using (PendingLoginLease lease = await _pending.EnterAsync(hash, cancellationToken))
         {
-            LoginChallengeContext? context = await FindAsync(command.ChallengeToken,
-                cancellationToken);
+            _dbContext.ChangeTracker.Clear();
+            await using IDbContextTransaction transaction = await _dbContext.Database
+                .BeginTransactionAsync(cancellationToken);
+            PendingLoginContext? context = await FindAsync(hash, cancellationToken);
             preparation = await PrepareResendAsync(context, command, cancellationToken);
-            await _dbContext.SaveChangesAsync(cancellationToken);
-            await transaction.CommitAsync(cancellationToken);
+            await CommitAsync(context, transaction, cancellationToken);
         }
         return await SendAsync(preparation, cancellationToken);
     }
 
     public async Task CancelAsync(string token, CancellationToken cancellationToken)
     {
+        string hash = GetTokenHash(token);
+        using PendingLoginLease lease = await _pending.EnterAsync(hash, cancellationToken);
         _dbContext.ChangeTracker.Clear();
         await using IDbContextTransaction transaction = await _dbContext.Database
             .BeginTransactionAsync(cancellationToken);
-        LoginChallengeContext? context = await FindAsync(token, cancellationToken);
+        PendingLoginContext? context = await FindAsync(hash, cancellationToken);
         if (context is not null)
         {
-            Close(context.Challenge);
+            Close(context);
         }
-        await _dbContext.SaveChangesAsync(cancellationToken);
-        await transaction.CommitAsync(cancellationToken);
+        await CommitAsync(context, transaction, cancellationToken);
     }
 
-    private async Task<LoginPreparation> PrepareResendAsync(LoginChallengeContext? context,
+    private async Task<LoginOperationResult> FinalizeSendAsync(LoginPreparation preparation,
+        bool sent, CancellationToken cancellationToken)
+    {
+        string hash = GetTokenHash(preparation.Result.ChallengeToken);
+        using PendingLoginLease lease = await _pending.EnterAsync(hash, cancellationToken);
+        _dbContext.ChangeTracker.Clear();
+        await using IDbContextTransaction transaction = await _dbContext.Database
+            .BeginTransactionAsync(cancellationToken);
+        PendingLoginContext? context = await FindAsync(hash, cancellationToken);
+        var result = new LoginOperationResult(LoginStatus.InvalidChallenge);
+        if (context is not null
+            && context.Code.AuthenticationCodeId == preparation.Delivery!.Code.AuthenticationCodeId)
+        {
+            result = await FinalizeDeliveryAsync(context, sent, cancellationToken);
+            result = result with
+            {
+                ChallengeToken = context.Pending.IsClosed
+                    ? string.Empty : preparation.Result.ChallengeToken
+            };
+        }
+        await CommitAsync(context, transaction, cancellationToken);
+        return result;
+    }
+
+    private async Task<LoginPreparation> PrepareResendAsync(PendingLoginContext? context,
         LoginChallengeCommand command, CancellationToken cancellationToken)
     {
-        if (context is null || !IsPending(context)
-            || context.Challenge.IssueUntil <= _attempts.UtcNow)
+        if (context is null || context.Pending.IssueUntil <= _attempts.UtcNow)
         {
             return new LoginPreparation(new LoginOperationResult(LoginStatus.InvalidChallenge));
         }
@@ -162,7 +178,8 @@ public sealed class LoginChallengeService
         {
             return new LoginPreparation(new LoginOperationResult(LoginStatus.Unavailable));
         }
-        DateTime? retryAt = await _delivery.FindRetryAtAsync(context.Challenge, cancellationToken);
+        DateTime? retryAt = await _delivery.FindRetryAtAsync(context.User.UserId,
+            cancellationToken);
         if (retryAt.HasValue)
         {
             return new LoginPreparation(new LoginOperationResult(LoginStatus.RateLimited)
@@ -170,58 +187,65 @@ public sealed class LoginChallengeService
                 RetryAt = retryAt
             });
         }
-        LoginCodeDelivery delivery = _delivery.Prepare(context, command.CultureName);
-        return new LoginPreparation(CreatePendingResult(context.User, context.Challenge) with
+        context.Code.UsedAt = _attempts.UtcNow;
+        LoginCodeDelivery delivery = _delivery.Prepare(context.User, context.Pending,
+            command.CultureName);
+        context.Pending = delivery.Pending;
+        context.Code = delivery.Code;
+        return new LoginPreparation(CreatePendingResult(context) with
         {
             ChallengeToken = command.ChallengeToken
         }, delivery);
     }
 
-    private async Task<LoginOperationResult> CompleteAsync(LoginChallengeContext context,
+    private async Task<LoginOperationResult> CompleteAsync(PendingLoginContext context,
         string code, CancellationToken cancellationToken)
     {
-        if (!IsPending(context))
-        {
-            return new LoginOperationResult(LoginStatus.InvalidChallenge);
-        }
         LoginOperationResult? restriction = await _attempts.CheckAccessAsync(context.User,
             cancellationToken);
         if (restriction is not null)
         {
             return restriction;
         }
-        LoginChallenge challenge = context.Challenge;
-        AuthenticationCode? active = challenge.ActiveCode;
-        if (active is null || active.UsedAt is not null
-            || challenge.DeliveryState != LoginVerificationOptions.Sent)
+        if (context.Pending.DeliveryStatus != LoginDeliveryStatus.Sent)
         {
             return new LoginOperationResult(LoginStatus.InvalidChallenge);
         }
-        if (active.ExpiresAt <= _attempts.UtcNow)
+        if (context.Code.ExpiresAt <= _attempts.UtcNow)
         {
             return new LoginOperationResult(LoginStatus.CodeExpired);
         }
-        if (!_delivery.Matches(challenge, code))
+        if (!_delivery.Matches(context, code))
         {
-            active.AttemptCount++;
+            context.Code.AttemptCount++;
             await _attempts.RegisterFailureAsync(context.User, cancellationToken);
-            Credential credential = context.User.Credential
-                ?? throw new InvalidOperationException("Account credentials are required.");
-            return new LoginOperationResult(credential.LockedUntil > _attempts.UtcNow
-                ? LoginStatus.TemporarilyLocked : LoginStatus.InvalidCode)
-            {
-                RetryAt = credential.LockedUntil
-            };
+            return CreateFailureResult(context);
         }
         return CreateSession(context);
     }
 
-    private LoginOperationResult CreateSession(LoginChallengeContext context)
+    private LoginOperationResult CreateFailureResult(PendingLoginContext context)
+    {
+        Credential credential = context.User.Credential
+            ?? throw new InvalidOperationException("Account credentials are required.");
+        bool locked = credential.LockedUntil > _attempts.UtcNow;
+        if (locked)
+        {
+            Close(context);
+        }
+        return new LoginOperationResult(locked
+            ? LoginStatus.TemporarilyLocked : LoginStatus.InvalidCode)
+        {
+            RetryAt = credential.LockedUntil
+        };
+    }
+
+    private LoginOperationResult CreateSession(PendingLoginContext context)
     {
         Credential credential = context.User.Credential
             ?? throw new InvalidOperationException("Account credentials are required.");
         DateTime now = _attempts.UtcNow;
-        Close(context.Challenge);
+        Close(context);
         credential.FailedAttempts = 0;
         credential.LockedUntil = null;
         IssuedSessionToken token = _tokens.Create();
@@ -238,87 +262,84 @@ public sealed class LoginChallengeService
         };
     }
 
-    private async Task<LoginOperationResult> FinalizeDeliveryAsync(LoginChallengeContext context,
+    private async Task<LoginOperationResult> FinalizeDeliveryAsync(PendingLoginContext context,
         bool sent, CancellationToken cancellationToken)
     {
         LoginOperationResult? restriction = await _attempts.CheckAccessAsync(context.User,
             cancellationToken);
         if (restriction is not null)
         {
-            Close(context.Challenge);
+            Close(context);
             return restriction;
         }
-        LoginChallenge challenge = context.Challenge;
-        challenge.DeliveryState = sent ? LoginVerificationOptions.Sent
-            : LoginVerificationOptions.Failed;
-        if (!sent)
+        context.Pending = context.Pending with
         {
-            challenge.DeliveryFailures++;
-            if (challenge.ActiveCode is not null)
-            {
-                challenge.ActiveCode.UsedAt = _attempts.UtcNow;
-            }
-            if (challenge.DeliveryFailures >= LoginVerificationOptions.MaximumDeliveryFailures)
-            {
-                Close(challenge);
-            }
+            DeliveryStatus = sent ? LoginDeliveryStatus.Sent : LoginDeliveryStatus.Failed,
+            DeliveryFailures = context.Pending.DeliveryFailures + (sent ? 0 : 1)
+        };
+        if (context.Pending.DeliveryFailures >= LoginVerificationOptions.MaximumDeliveryFailures)
+        {
+            Close(context);
         }
-        return CreatePendingResult(context.User, challenge) with
+        return CreatePendingResult(context) with
         {
             Status = sent ? LoginStatus.ChallengeRequired : LoginStatus.DeliveryFailed
         };
     }
 
-    private async Task<LoginChallengeContext?> FindAsync(string token,
+    private async Task<PendingLoginContext?> FindAsync(string hash,
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(token) || token.Length > MaximumTokenLength)
-        {
-            return null;
-        }
-        string hash = _tokens.Hash(token);
-        int? userId = await _dbContext.LoginChallenges.AsNoTracking()
-            .Where(challenge => challenge.TokenHash == hash)
-            .Select(challenge => (int?)challenge.UserId).SingleOrDefaultAsync(cancellationToken);
-        if (!userId.HasValue)
+        PendingLogin? pending = _pending.Find(hash);
+        if (pending is null)
         {
             return null;
         }
         var accounts = new AccountCredentialStore(_dbContext);
-        User? user = await accounts.LockAccountAsync(userId.Value, cancellationToken);
-        if (user?.Credential is null)
+        User? user = await accounts.LockAccountAsync(pending.UserId, cancellationToken);
+        AuthenticationCode? code = await _dbContext.AuthenticationCodes.SingleOrDefaultAsync(
+            item => item.AuthenticationCodeId == pending.CodeId && item.UserId == pending.UserId
+                && item.CodeType == LoginVerificationOptions.Purpose, cancellationToken);
+        if (user?.Credential is null || code is null || code.UsedAt is not null)
         {
+            _pending.Publish(pending with { IsClosed = true });
             return null;
         }
-        LoginChallenge challenge = await _dbContext.LoginChallenges.Include(item => item.ActiveCode)
-            .SingleAsync(item => item.TokenHash == hash, cancellationToken);
-        return new LoginChallengeContext(user, challenge);
+        return new PendingLoginContext(user, pending, code);
     }
 
-    private static bool IsPending(LoginChallengeContext context)
+    private async Task CommitAsync(PendingLoginContext? context, IDbContextTransaction transaction,
+        CancellationToken cancellationToken)
     {
-        return context.Challenge.ClosedAt is null
-            && context.User.Credential?.AuthenticationVersion
-                == context.Challenge.AuthenticationVersion;
-    }
-
-    private void Close(LoginChallenge challenge)
-    {
-        challenge.ClosedAt = _attempts.UtcNow;
-        if (challenge.ActiveCode is not null)
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        if (context is not null)
         {
-            challenge.ActiveCode.UsedAt = _attempts.UtcNow;
+            _pending.Publish(context.Pending with { CodeId = context.Code.AuthenticationCodeId });
         }
     }
 
-    private LoginOperationResult CreatePendingResult(User user, LoginChallenge challenge)
+    private string GetTokenHash(string token)
     {
-        int separator = user.Email.IndexOf('@');
-        string masked = separator > 0 ? user.Email[..1] + "***" + user.Email[separator..] : "***";
+        return string.IsNullOrWhiteSpace(token) || token.Length > MaximumTokenLength
+            ? string.Empty : _tokens.Hash(token);
+    }
+
+    private void Close(PendingLoginContext context)
+    {
+        context.Pending = context.Pending with { IsClosed = true };
+        context.Code.UsedAt = _attempts.UtcNow;
+    }
+
+    private LoginOperationResult CreatePendingResult(PendingLoginContext context)
+    {
+        string email = context.User.Email;
+        int separator = email.IndexOf('@');
+        string masked = separator > 0 ? email[..1] + "***" + email[separator..] : "***";
         return new LoginOperationResult(LoginStatus.ChallengeRequired)
         {
-            MaskedEmail = masked, CodeExpiresAt = challenge.ActiveCode?.ExpiresAt,
-            RetryAt = challenge.LastSentAt?.Add(_delivery.ResendDelay)
+            MaskedEmail = masked, CodeExpiresAt = context.Code.ExpiresAt,
+            RetryAt = context.Code.CreatedAt.Add(_delivery.ResendDelay)
         };
     }
 }

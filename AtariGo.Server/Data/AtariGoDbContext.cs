@@ -17,8 +17,6 @@ public partial class AtariGoDbContext : DbContext
 
     public virtual DbSet<Credential> Credentials { get; set; }
 
-    public DbSet<LoginChallenge> LoginChallenges { get; set; }
-
     public virtual DbSet<FriendRequest> FriendRequests { get; set; }
 
     public virtual DbSet<Friendship> Friendships { get; set; }
@@ -61,8 +59,6 @@ public partial class AtariGoDbContext : DbContext
 
         modelBuilder.ApplyConfiguration(new CredentialEntityConfiguration());
 
-        modelBuilder.ApplyConfiguration(new LoginChallengeEntityConfiguration());
-
         modelBuilder.ApplyConfiguration(new FriendRequestEntityConfiguration());
 
         modelBuilder.ApplyConfiguration(new FriendshipEntityConfiguration());
@@ -91,8 +87,7 @@ public partial class AtariGoDbContext : DbContext
 
         modelBuilder.Entity<Session>(entity =>
         {
-            entity.HasIndex(e => new { e.UserId, e.State, e.ExpiresAt },
-                "IX_Sessions_User_State_Expiry");
+            entity.HasIndex(e => new { e.UserId, e.State, e.ExpiresAt }, "IX_Sessions_User_State_Expiry");
 
             entity.HasIndex(e => e.SessionTokenHash, "UQ_Sessions_TokenHash").IsUnique();
 

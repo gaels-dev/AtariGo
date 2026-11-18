@@ -34,6 +34,7 @@ public sealed class PasswordResetWriter
     public async Task<RecoveryResult> ResetAsync(PasswordResetCommand command,
         CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(command);
         if (!_protector.IsConfigured)
         {
             return RecoveryResult.Unavailable;
@@ -71,10 +72,10 @@ public sealed class PasswordResetWriter
         List<long> sessionIds = await RevokeSessionsAsync(user.UserId, now, cancellationToken);
         user.Credential.PasswordHash = _hasher.HashPassword(user, command.NewPassword);
         user.Credential.PasswordChangedAt = now;
-        user.Credential.AuthenticationVersion++;
-        await _dbContext.LoginChallenges.Where(challenge => challenge.UserId == user.UserId
-            && challenge.ClosedAt == null).ExecuteUpdateAsync(setters => setters
-                .SetProperty(challenge => challenge.ClosedAt, now), cancellationToken);
+        await _dbContext.AuthenticationCodes.Where(item => item.UserId == user.UserId
+            && item.CodeType == LoginVerificationOptions.Purpose && item.UsedAt == null)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(item => item.UsedAt, now),
+                cancellationToken);
         code.UsedAt = now;
         if (!await TrySaveAsync(transaction, cancellationToken))
         {

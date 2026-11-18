@@ -91,10 +91,11 @@ con identidad y token. `ResendLoginCode` reutiliza esa respuesta; `CancelLogin` 
 `CancelLoginResponse` vacío y no expone si el reto existía.
 
 El código tiene ocho dígitos y diez minutos de vigencia. Se protege con el componente compartido
-`AuthenticationCodeProtector`, vinculándolo a usuario, propósito `TwoFactor`, hash del reto y
-una vinculación aleatoria distinta por emisión. El servidor guarda únicamente el hash del
-identificador del reto. Un reenvío consume el código anterior; el código de recuperación no
-se acepta para completar un acceso.
+`AuthenticationCodeProtector`, vinculándolo a usuario, propósito `TwoFactor` y hash del reto.
+El servidor conserva únicamente el hash del identificador del reto en memoria; SQL guarda
+el código protegido en la tabla existente `AuthenticationCodes`. Un reenvío consume el código
+anterior y cambia el identificador de la emisión activa; el código de recuperación no se
+acepta para completar un acceso.
 
 `Credentials.FailedAttempts` acumula contraseña y código incorrectos. La contraseña correcta
 por sí sola no reinicia el contador. El tercer fallo bloquea nuevos accesos quince minutos e
@@ -103,20 +104,30 @@ o al vencer el bloqueo. Credenciales inválidas usan un único resultado públic
 de bloqueo y suspensión se muestran después de verificar la contraseña o un reto válido.
 La expiración, cancelación y los errores técnicos no cuentan como fallos del jugador.
 
-Los retos, los bloqueos y sus transiciones se conservan en SQL Server. Se toma el bloqueo de
-la cuenta antes de confirmar, reenviar o cancelar. Consumir el código y crear la sesión se
-guardan en una transacción; dos confirmaciones del mismo reto no crean dos sesiones.
-SMTP se espera fuera de la transacción. Un código preparado permanece inutilizable hasta
-registrar la aceptación del envío. Si falla, queda invalidado. El primer fallo permite un
-reenvío manual; el segundo cierra ese intento. La aceptación SMTP no demuestra entrega al buzón.
+Los retos son instantáneas inmutables en un almacén temporal del proceso, acotado y con
+vencimiento. Cada transición de un reto usa el mismo semáforo antes de bloquear la cuenta
+en SQL. El nuevo estado en memoria se publica después de confirmar la transacción SQL.
+Consumir el código y crear la sesión se guardan en una transacción; dos confirmaciones del
+mismo reto no crean dos sesiones. SMTP se espera fuera de la transacción y del semáforo.
+Un código permanece inutilizable hasta registrar en memoria la aceptación del envío. Si
+falla, el estado del reto impide confirmarlo. El primer fallo permite un reenvío manual;
+el segundo consume el código y cierra ese intento. La aceptación SMTP no demuestra entrega
+al buzón. Una respuesta tardía de correo no modifica una emisión posterior.
 
 `LoginVerification:ResendSeconds`, `AccountRequestsPerHour` e `IpRequestsPerHour` valen
 60, 5 y 120 por defecto. El límite por cuenta incluye emisiones de cualquier reto MFA de esa
 cuenta y persiste en SQL. El límite por IP es local al proceso y se dimensionó para permitir
 varios clientes en LAN. Varias instancias necesitan compartir ese límite. El reto admite
 emisiones durante treinta minutos desde la validación de contraseña; cada código emitido
-dentro de ese plazo conserva sus diez minutos. Cambiar o recuperar la contraseña incrementa
-`AuthenticationVersion` y cierra los retos anteriores dentro de la escritura correspondiente.
+dentro de ese plazo conserva sus diez minutos. Cambiar o recuperar la contraseña consume
+todos los códigos `TwoFactor` pendientes dentro de la escritura correspondiente. Confirmar
+o reenviar exige que la emisión activa no haya sido consumida.
+
+`LoginVerification:MaximumPendingLogins` limita los retos a 10000 por proceso por defecto;
+al alcanzar el límite se rechazan nuevos retos sin penalizar al jugador. Los retos cerrados
+se retiran y los vencidos se eliminan al consultarlos o admitir otros. Reiniciar el servidor
+descarta los retos; los códigos de SQL por sí solos no permiten autenticar. Todas las etapas
+deben llegar al mismo proceso. Varias instancias independientes no comparten los retos.
 
 Los correos de acceso utilizan `LoginEmail*.resx`, el mismo remitente SMTP y la clave
 `PasswordRecovery:HmacKey` existente. Si falta la configuración, el acceso registrado queda
@@ -126,9 +137,8 @@ No reenvía automáticamente mutaciones. Si se pierde la confirmación de sesió
 resultado no confirmado y se inicia otro acceso; una sesión creada cuya respuesta se perdió
 queda sujeta al vencimiento vigente de sesiones.
 
-Antes de iniciar esta versión sobre una BD existente, ejecutar
-`scripts/database/Update-LoginVerification.sql`. La actualización es repetible y no borra
-cuentas, credenciales ni sesiones existentes. Coordinar servidor y cliente: un cliente
+Esta versión no modifica el esquema ni requiere ejecutar scripts SQL para habilitar el MFA.
+Coordinar servidor y cliente: un cliente
 anterior no puede completar las nuevas etapas y el cliente actual rechaza el éxito directo
 de un servidor antiguo. Se mantienen los números Protobuf existentes y se añaden campos
 y valores nuevos.
@@ -162,7 +172,8 @@ El cliente comunica su cultura actual al solicitar el código. El correo utiliza
 localizadas `Properties/RecoveryEmail*.resx` del cliente, embebidas también en el servidor sin
 una dependencia de WPF. Se admiten español, alemán e inglés; otras culturas usan inglés.
 
-`RecoveryEmailContent` prepara destinatario, asunto y cuerpo en un `EmailMessage` antes del
+`AuthenticationEmailContent.Recovery` prepara destinatario, asunto y cuerpo en un
+`EmailMessage` antes del
 envío. El contrato interno `IEmailSender.SendAsync` recibe ese mensaje preparado; el transporte
 SMTP comparte configuración y TLS, sin seleccionar plantillas ni aplicar reglas de recuperación.
 El cuerpo con el código se descarta al terminar el intento de envío, incluso si falla.

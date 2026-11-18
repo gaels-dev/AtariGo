@@ -1,9 +1,11 @@
 using System.Data.Common;
 
-using Grpc.Core;
 using Microsoft.EntityFrameworkCore;
 
+using Grpc.Core;
+
 using AtariGo.Contracts;
+using AtariGo.Server.Application.Authentication;
 using AtariGo.Server.Application.PasswordRecovery;
 
 namespace AtariGo.Server.Services;
@@ -11,11 +13,11 @@ namespace AtariGo.Server.Services;
 public sealed class PasswordRecoveryGrpcService : PasswordRecovery.PasswordRecoveryBase
 {
     private readonly IPasswordRecoveryService _recovery;
-    private readonly RecoveryRequestLimiter _limiter;
+    private readonly AuthenticationRequestLimiter _limiter;
     private readonly ILogger<PasswordRecoveryGrpcService> _logger;
 
     public PasswordRecoveryGrpcService(IPasswordRecoveryService recovery,
-        RecoveryRequestLimiter limiter, ILogger<PasswordRecoveryGrpcService> logger)
+        AuthenticationRequestLimiter limiter, ILogger<PasswordRecoveryGrpcService> logger)
     {
         ArgumentNullException.ThrowIfNull(recovery);
         ArgumentNullException.ThrowIfNull(limiter);
@@ -25,42 +27,11 @@ public sealed class PasswordRecoveryGrpcService : PasswordRecovery.PasswordRecov
         _logger = logger;
     }
 
-    public override Task<PasswordRecoveryResponse> RequestPasswordRecovery(
-        PasswordRecoveryRequest request, ServerCallContext context)
-    {
-        if (!CanRequest(context))
-        {
-            return Task.FromResult(CreateResponse(RecoveryResult.RateLimited));
-        }
-        var command = new RecoveryRequestCommand
-        {
-            Identifier = request.Identifier, CultureName = request.CultureName
-        };
-        return ExecuteAsync(() => _recovery.RequestAsync(command, context.CancellationToken));
-    }
-
-    public override Task<PasswordRecoveryResponse> ResetPassword(ResetPasswordRequest request,
-        ServerCallContext context)
-    {
-        if (!CanRequest(context))
-        {
-            return Task.FromResult(CreateResponse(RecoveryResult.RateLimited));
-        }
-        var command = new PasswordResetCommand
-        {
-            Identifier = request.Identifier,
-            Code = request.Code,
-            NewPassword = request.NewPassword,
-            Confirmation = request.Confirmation
-        };
-        return ExecuteAsync(() => _recovery.ResetAsync(command, context.CancellationToken));
-    }
-
     private bool CanRequest(ServerCallContext context)
     {
         string address = context.GetHttpContext().Connection.RemoteIpAddress?.ToString()
             ?? "unknown";
-        return _limiter.TryAcquire(address);
+        return _limiter.TryAcquireRecovery(address);
     }
 
     private async Task<PasswordRecoveryResponse> ExecuteAsync(Func<Task<RecoveryResult>> operation)
@@ -103,5 +74,36 @@ public sealed class PasswordRecoveryGrpcService : PasswordRecovery.PasswordRecov
             _ => RecoveryStatus.Unavailable
         };
         return new PasswordRecoveryResponse { Status = status };
+    }
+
+    public override Task<PasswordRecoveryResponse> RequestPasswordRecovery(
+        PasswordRecoveryRequest request, ServerCallContext context)
+    {
+        if (!CanRequest(context))
+        {
+            return Task.FromResult(CreateResponse(RecoveryResult.RateLimited));
+        }
+        var command = new RecoveryRequestCommand
+        {
+            Identifier = request.Identifier, CultureName = request.CultureName
+        };
+        return ExecuteAsync(() => _recovery.RequestAsync(command, context.CancellationToken));
+    }
+
+    public override Task<PasswordRecoveryResponse> ResetPassword(ResetPasswordRequest request,
+        ServerCallContext context)
+    {
+        if (!CanRequest(context))
+        {
+            return Task.FromResult(CreateResponse(RecoveryResult.RateLimited));
+        }
+        var command = new PasswordResetCommand
+        {
+            Identifier = request.Identifier,
+            Code = request.Code,
+            NewPassword = request.NewPassword,
+            Confirmation = request.Confirmation
+        };
+        return ExecuteAsync(() => _recovery.ResetAsync(command, context.CancellationToken));
     }
 }

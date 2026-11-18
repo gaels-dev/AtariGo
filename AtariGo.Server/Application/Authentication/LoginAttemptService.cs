@@ -79,9 +79,10 @@ public sealed class LoginAttemptService
         if (credential.FailedAttempts >= LoginVerificationOptions.MaximumFailedAttempts)
         {
             credential.LockedUntil = now.Add(LoginVerificationOptions.LockDuration);
-            await _dbContext.LoginChallenges.Where(challenge => challenge.UserId == user.UserId
-                && challenge.ClosedAt == null).ExecuteUpdateAsync(setters => setters
-                    .SetProperty(challenge => challenge.ClosedAt, now), cancellationToken);
+            await _dbContext.AuthenticationCodes.Where(code => code.UserId == user.UserId
+                && code.CodeType == LoginVerificationOptions.Purpose && code.UsedAt == null)
+                .ExecuteUpdateAsync(setters => setters.SetProperty(code => code.UsedAt, now),
+                    cancellationToken);
         }
     }
 }

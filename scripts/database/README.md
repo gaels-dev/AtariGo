@@ -2,27 +2,33 @@
 
 ## Verificación del inicio de sesión por correo
 
-`Update-LoginVerification.sql` añade `Credentials.AuthenticationVersion` y la tabla
-`LoginChallenges`, con sus claves, restricciones e índices. Conserva las cuentas, hashes
-y sesiones existentes. Puede ejecutarse de nuevo y revierte la transacción si falla.
-`Create-AtariGo.sql` ya incluye el esquema para instalaciones nuevas.
+El MFA no agrega tablas ni columnas y no requiere ejecutar una actualización SQL.
+Reutiliza `AuthenticationCodes` con el tipo `TwoFactor`, `Credentials.FailedAttempts`,
+`Credentials.LockedUntil`, `Sessions` y la consulta de sanciones. La recuperación conserva
+el tipo `PasswordReset`. `Create-AtariGo.sql` mantiene el esquema anterior al MFA.
 
-Detener el servidor, respaldar la base existente y ejecutar el script completo antes
-de iniciar el servidor actualizado. La aplicación no aplica esta actualización automáticamente.
+Los intentos pendientes se conservan temporalmente en memoria de un único proceso del
+servidor, con un límite de 10000 (`LoginVerification:MaximumPendingLogins`) y vencimiento.
+El código protegido y su consumo se guardan en SQL. Reiniciar el servidor cancela los
+intentos pendientes; el jugador debe volver a proporcionar sus credenciales. Este diseño
+requiere que todas las etapas de un intento lleguen al mismo proceso del servidor.
 
-```powershell
-sqlcmd -S "(localdb)\MSSQLLocalDB" -E -b -d AtariGoDB -i .\scripts\database\Update-LoginVerification.sql
-dotnet run --project .\AtariGo.Server -- --check-database
-```
-
-También puede ejecutarse desde SQL Server Management Studio. Adaptar el nombre de servidor
-y de base de datos a la instalación. La cuenta del servidor necesita permisos de consulta,
-inserción y actualización sobre `LoginChallenges`, además de los permisos existentes de
-credenciales, códigos, sesiones y consulta de sanciones.
+Cambiar o recuperar la contraseña consume los códigos `TwoFactor` pendientes dentro de la
+transacción de actualización. Esto impide completar o reenviar un acceso iniciado con la
+contraseña anterior, incluso si su estado temporal todavía está en memoria.
 
 La verificación reutiliza el SMTP y `PasswordRecovery:HmacKey` configurados con
 `scripts/Configure-RecoveryEmail.ps1`. El cliente y el servidor deben actualizarse juntos.
 La ausencia de correo o de una clave válida impide el acceso registrado, sin omitir el código.
+
+Para probar: iniciar el servidor y el cliente actualizados, introducir las credenciales y
+confirmar el código recibido. El lobby solo se abre después de confirmar el código. Un
+reenvío sustituye el código anterior y respeta la espera indicada. Se puede comprobar la
+compatibilidad del esquema sin modificar datos con:
+
+```powershell
+dotnet run --project .\AtariGo.Server -- --check-database
+```
 
 ## Actualización de perfil y avatares
 

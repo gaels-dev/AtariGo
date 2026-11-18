@@ -45,10 +45,8 @@ public sealed class SmtpEmailSender : IEmailSender
         {
             await SendMessageAsync(message, cancellationToken);
         }
-        catch (Exception exception) when (exception is IOException or CommandException
-            or ProtocolException or MailKit.Security.AuthenticationException
-            or System.Net.Sockets.SocketException
-            or System.Security.Authentication.AuthenticationException)
+        catch (Exception exception) when (exception is not OperationCanceledException
+            && EmailDeliveryService.IsDeliveryFailure(exception))
         {
             _logger.LogWarning("Email delivery failed with {ErrorType}.",
                 exception.GetType().Name);

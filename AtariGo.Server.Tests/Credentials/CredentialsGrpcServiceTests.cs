@@ -22,7 +22,7 @@ using AtariGo.Server.Data.Entities;
 using AtariGo.Server.Security;
 using AtariGo.Server.Services;
 using AtariGo.Server.Tests.Games;
-using AtariGo.Server.Tests.Authentication;
+using AtariGo.Server.Tests.PasswordRecovery;
 
 namespace AtariGo.Server.Tests.Credentials;
 
@@ -38,7 +38,6 @@ public sealed class CredentialsGrpcServiceTests
     [TestMethod]
     public async Task ChangePassword_AuthenticatedRequest_ChangesHashAndPreservesSession()
     {
-        // Arrange
         await using SqlServerTestDatabase database = await SqlServerTestDatabase.CreateAsync();
         await SeedAsync(database);
         await using WebApplication app = await StartServerAsync(database.ConnectionString);
@@ -47,7 +46,6 @@ public sealed class CredentialsGrpcServiceTests
         await using AtariGoDbContext context = database.CreateContext();
         string otherHash = await context.Credentials.Where(credential => credential.UserId == 2)
             .Select(credential => credential.PasswordHash).SingleAsync();
-        // Act
         ChangePasswordResponse response = await SendAsync(client, CreateRequest(), "owner");
         using IServiceScope scope = app.Services.CreateScope();
         IAuthenticationService authentication = scope.ServiceProvider
@@ -66,7 +64,6 @@ public sealed class CredentialsGrpcServiceTests
             .ValidateSessionAsync("owner", CancellationToken.None);
         Credential saved = await context.Credentials.AsNoTracking()
             .SingleAsync(credential => credential.UserId == 1);
-        // Assert
         Assert.AreEqual(PasswordChangeStatus.Changed, response.Status);
         Assert.AreEqual(LoginStatus.InvalidCredentials, oldLogin.Status);
         Assert.AreEqual(LoginStatus.ChallengeRequired, newLogin.Status);
@@ -81,7 +78,6 @@ public sealed class CredentialsGrpcServiceTests
     [TestMethod]
     public async Task ChangePassword_InvalidRequests_LeavesCredentialUntouched()
     {
-        // Arrange
         await using SqlServerTestDatabase database = await SqlServerTestDatabase.CreateAsync();
         await SeedAsync(database);
         await using WebApplication app = await StartServerAsync(database.ConnectionString);
@@ -90,7 +86,8 @@ public sealed class CredentialsGrpcServiceTests
         await using AtariGoDbContext context = database.CreateContext();
         string originalHash = await context.Credentials.Where(credential => credential.UserId == 1)
             .Select(credential => credential.PasswordHash).SingleAsync();
-        var invalidCases = new[]
+        (string Current, string Password, string Confirmation, PasswordChangeStatus Expected)[]
+            invalidCases =
         {
             ("Wrong", NewPassword, NewPassword, PasswordChangeStatus.IncorrectCurrentPassword),
             (OriginalPassword, "short", "short", PasswordChangeStatus.InvalidNewPassword),
@@ -100,7 +97,6 @@ public sealed class CredentialsGrpcServiceTests
                 PasswordChangeStatus.InvalidNewPassword),
             (OriginalPassword, NewPassword, "Other", PasswordChangeStatus.ConfirmationMismatch)
         };
-        // Act
         foreach ((string current, string password, string confirmation,
             PasswordChangeStatus expected) in invalidCases)
         {
@@ -117,7 +113,6 @@ public sealed class CredentialsGrpcServiceTests
             {
                 { "x-guest-credential", "guest" }
             }, deadline: DateTime.UtcNow.AddSeconds(RequestTimeoutSeconds)).ResponseAsync);
-        // Assert
         Assert.AreEqual(StatusCode.Unauthenticated, expired.StatusCode);
         Assert.AreEqual(StatusCode.Unauthenticated, guest.StatusCode);
         Assert.AreEqual(originalHash, await context.Credentials
@@ -128,7 +123,6 @@ public sealed class CredentialsGrpcServiceTests
     [TestMethod]
     public async Task ChangePassword_ConflictAndWriteFailure_PreservesConfirmedCredential()
     {
-        // Arrange
         await using SqlServerTestDatabase database = await SqlServerTestDatabase.CreateAsync();
         await SeedAsync(database);
         var interceptor = new CredentialUpdateInterceptor();
@@ -141,14 +135,12 @@ public sealed class CredentialsGrpcServiceTests
         string concurrentPassword = "ConcurrentSecret8";
         string concurrentHash = new PasswordHasher<User>().HashPassword(owner, concurrentPassword);
         interceptor.BeforeUpdate = () => ReplaceHashAsync(database, concurrentHash);
-        // Act
         ChangePasswordResponse conflict = await SendAsync(client, CreateRequest(), "owner");
         interceptor.FailUpdate = true;
         ChangePasswordRequest request = CreateRequest();
         request.CurrentPassword = concurrentPassword;
         RpcException failure = await Assert.ThrowsAsync<RpcException>(
             () => SendAsync(client, request, "owner"));
-        // Assert
         Assert.AreEqual(PasswordChangeStatus.CredentialChanged, conflict.Status);
         Assert.AreEqual(StatusCode.Unavailable, failure.StatusCode);
         Assert.AreEqual("The password change was not confirmed.", failure.Status.Detail);
@@ -200,7 +192,7 @@ public sealed class CredentialsGrpcServiceTests
         builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
         builder.Services.AddScoped<ICredentialsService, CredentialsService>();
         builder.Services.AddLoginVerification();
-        builder.Services.AddSingleton<IEmailSender, RecordingLoginEmailSender>();
+        builder.Services.AddSingleton<IEmailSender, RecordingEmailSender>();
         builder.Services.Configure<PasswordRecoveryOptions>(options =>
             options.HmacKey = new string('K', 64));
         builder.Services.AddScoped<ISessionService, SessionService>();

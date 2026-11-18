@@ -1,10 +1,3 @@
-using System.Security.Cryptography;
-
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
-
-using MailKit;
-
 using AtariGo.Server.Application.Email;
 using AtariGo.Server.Data;
 using AtariGo.Server.Data.Entities;
@@ -14,110 +7,77 @@ namespace AtariGo.Server.Application.Authentication;
 
 public sealed class LoginCodeDeliveryService
 {
-    private const int BindingByteLength = 16;
-    private static readonly TimeSpan requestWindow = TimeSpan.FromHours(1);
     private readonly AtariGoDbContext _dbContext;
-    private readonly IEmailSender _sender;
-    private readonly LoginCodeProtector _protector;
-    private readonly LoginVerificationOptions _options;
+    private readonly EmailDeliveryService _email;
+    private readonly AuthenticationCodeProtector _protector;
+    private readonly AuthenticationCodeIssuanceService _issuance;
     private readonly TimeProvider _timeProvider;
 
-    public LoginCodeDeliveryService(AtariGoDbContext dbContext, IEmailSender sender,
-        LoginCodeProtector protector, IOptions<LoginVerificationOptions> options,
+    public LoginCodeDeliveryService(AtariGoDbContext dbContext, EmailDeliveryService email,
+        AuthenticationCodeProtector protector, AuthenticationCodeIssuanceService issuance,
         TimeProvider timeProvider)
     {
         ArgumentNullException.ThrowIfNull(dbContext);
-        ArgumentNullException.ThrowIfNull(sender);
+        ArgumentNullException.ThrowIfNull(email);
         ArgumentNullException.ThrowIfNull(protector);
-        ArgumentNullException.ThrowIfNull(options);
+        ArgumentNullException.ThrowIfNull(issuance);
         ArgumentNullException.ThrowIfNull(timeProvider);
         _dbContext = dbContext;
-        _sender = sender;
+        _email = email;
         _protector = protector;
-        _options = options.Value;
+        _issuance = issuance;
         _timeProvider = timeProvider;
     }
 
-    public bool IsConfigured => _sender.IsConfigured && _protector.IsConfigured;
+    public bool IsConfigured => _email.IsConfigured && _protector.IsConfigured;
 
-    public TimeSpan ResendDelay => TimeSpan.FromSeconds(_options.ResendSeconds);
+    public TimeSpan ResendDelay => _issuance.LoginResendDelay;
 
-    public async Task<DateTime?> FindRetryAtAsync(LoginChallenge challenge,
+    public Task<DateTime?> FindRetryAtAsync(int userId,
         CancellationToken cancellationToken)
     {
-        ArgumentNullException.ThrowIfNull(challenge);
-        DateTime now = GetNow();
-        DateTime windowStart = now.Subtract(requestWindow);
-        List<DateTime> issued = await _dbContext.AuthenticationCodes.AsNoTracking()
-            .Where(code => code.UserId == challenge.UserId
-                && code.CodeType == LoginVerificationOptions.Purpose
-                && code.CreatedAt > windowStart)
-            .OrderBy(code => code.CreatedAt).Select(code => code.CreatedAt)
-            .ToListAsync(cancellationToken);
-        if (issued.Count >= _options.AccountRequestsPerHour)
-        {
-            return issued[0].Add(requestWindow);
-        }
-        DateTime? last = issued.Count > 0 ? issued[^1] : challenge.LastSentAt;
-        DateTime? next = last?.AddSeconds(_options.ResendSeconds);
-        return next > now ? next : null;
+        return _issuance.FindLoginRetryAtAsync(userId, cancellationToken);
     }
 
-    public LoginCodeDelivery Prepare(LoginChallengeContext context, string cultureName)
+    public LoginCodeDelivery Prepare(User user, PendingLogin pending, string cultureName)
     {
-        ArgumentNullException.ThrowIfNull(context);
+        ArgumentNullException.ThrowIfNull(user);
+        ArgumentNullException.ThrowIfNull(pending);
         ArgumentNullException.ThrowIfNull(cultureName);
-        LoginChallenge challenge = context.Challenge;
         DateTime now = GetNow();
-        if (challenge.ActiveCode is not null)
-        {
-            challenge.ActiveCode.UsedAt = now;
-        }
-        challenge.CodeBinding = Convert.ToHexString(
-            RandomNumberGenerator.GetBytes(BindingByteLength));
         string value = AuthenticationCodeProtector.CreateCode();
         var code = new AuthenticationCode
         {
-            UserId = challenge.UserId, CodeType = LoginVerificationOptions.Purpose,
-            CodeHash = _protector.Protect(challenge, value), CreatedAt = now,
+            UserId = pending.UserId, CodeType = LoginVerificationOptions.Purpose,
+            CodeHash = _protector.Protect(CreateScope(pending), value), CreatedAt = now,
             ExpiresAt = now.Add(LoginVerificationOptions.CodeLifetime)
         };
         _dbContext.AuthenticationCodes.Add(code);
-        challenge.ActiveCode = code;
-        challenge.LastSentAt = now;
-        challenge.DeliveryState = LoginVerificationOptions.Pending;
-        EmailMessage message = LoginEmailContent.CreateMessage(context.User.Email, value,
+        EmailMessage message = AuthenticationEmailContent.Login.CreateMessage(user.Email, value,
             cultureName);
-        return new LoginCodeDelivery(challenge, message);
+        return new LoginCodeDelivery(pending with
+        {
+            DeliveryStatus = LoginDeliveryStatus.Pending
+        }, code, message);
     }
 
-    public bool Matches(LoginChallenge challenge, string code)
+    public bool Matches(PendingLoginContext context, string code)
     {
-        ArgumentNullException.ThrowIfNull(challenge);
-        return challenge.ActiveCode is not null
-            && _protector.Matches(challenge, code, challenge.ActiveCode.CodeHash);
+        ArgumentNullException.ThrowIfNull(context);
+        return _protector.Matches(CreateScope(context.Pending), code, context.Code.CodeHash);
     }
 
-    public async Task<bool> SendAsync(LoginCodeDelivery delivery,
+    public Task<bool> SendAsync(LoginCodeDelivery delivery,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(delivery);
-        try
-        {
-            await _sender.SendAsync(delivery.Message, cancellationToken);
-        }
-        catch (Exception exception) when (exception is IOException or OperationCanceledException
-            or CommandException or ProtocolException or MailKit.Security.AuthenticationException
-            or System.Net.Sockets.SocketException
-            or System.Security.Authentication.AuthenticationException)
-        {
-            return false;
-        }
-        finally
-        {
-            delivery.Message.Body = string.Empty;
-        }
-        return true;
+        return _email.TrySendAsync(delivery.Message, cancellationToken);
+    }
+
+    private static AuthenticationCodeScope CreateScope(PendingLogin pending)
+    {
+        return new AuthenticationCodeScope(pending.UserId, LoginVerificationOptions.Purpose,
+            pending.TokenHash);
     }
 
     private DateTime GetNow()

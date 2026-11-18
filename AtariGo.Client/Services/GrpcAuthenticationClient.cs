@@ -40,6 +40,8 @@ public sealed class GrpcAuthenticationClient : IAuthenticationClient
     public async Task<LoginAttemptResult> LoginAsync(string identifier, string password,
         CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(identifier);
+        ArgumentNullException.ThrowIfNull(password);
         var request = new LoginRequest
         {
             Identifier = identifier, Password = password,
@@ -59,6 +61,8 @@ public sealed class GrpcAuthenticationClient : IAuthenticationClient
     public async Task<LoginAttemptResult> VerifyLoginCodeAsync(string token, string code,
         CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(token);
+        ArgumentNullException.ThrowIfNull(code);
         var request = new VerifyLoginCodeRequest { ChallengeToken = token, Code = code };
         try
         {
@@ -75,6 +79,7 @@ public sealed class GrpcAuthenticationClient : IAuthenticationClient
     public Task<LoginAttemptResult> ResendLoginCodeAsync(string token,
         CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(token);
         var request = new ResendLoginCodeRequest
         {
             ChallengeToken = token, CultureName = CultureInfo.CurrentUICulture.Name
@@ -85,6 +90,7 @@ public sealed class GrpcAuthenticationClient : IAuthenticationClient
 
     public async Task CancelLoginAsync(string token, CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(token);
         try
         {
             await _client.CancelLoginAsync(new CancelLoginRequest { ChallengeToken = token },

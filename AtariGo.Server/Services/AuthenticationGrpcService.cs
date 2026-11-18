@@ -26,11 +26,11 @@ public sealed class AuthenticationGrpcService : Authentication.AuthenticationBas
             [LoginStatus.Unavailable] = LoginResult.Unavailable
         };
     private readonly IAuthenticationService _authentication;
-    private readonly LoginRequestLimiter _limiter;
+    private readonly AuthenticationRequestLimiter _limiter;
     private readonly ILogger<AuthenticationGrpcService> _logger;
 
     public AuthenticationGrpcService(IAuthenticationService authentication,
-        LoginRequestLimiter limiter, ILogger<AuthenticationGrpcService> logger)
+        AuthenticationRequestLimiter limiter, ILogger<AuthenticationGrpcService> logger)
     {
         ArgumentNullException.ThrowIfNull(authentication);
         ArgumentNullException.ThrowIfNull(limiter);
@@ -45,7 +45,7 @@ public sealed class AuthenticationGrpcService : Authentication.AuthenticationBas
     {
         string address = context.GetHttpContext().Connection.RemoteIpAddress?.ToString()
             ?? "unknown";
-        if (!_limiter.TryAcquire(address))
+        if (!_limiter.TryAcquireLogin(address))
         {
             return new LoginResponse { Result = LoginResult.RateLimited };
         }

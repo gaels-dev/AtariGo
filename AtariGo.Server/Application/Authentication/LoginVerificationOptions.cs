@@ -6,9 +6,6 @@ public sealed class LoginVerificationOptions
     public const int MaximumDeliveryFailures = 2;
     public const int MinimumResendSeconds = 60;
     public const string Purpose = "TwoFactor";
-    public const string Pending = "Pending";
-    public const string Sent = "Sent";
-    public const string Failed = "Failed";
 
     public static TimeSpan CodeLifetime { get; } = TimeSpan.FromMinutes(10);
 
@@ -21,4 +18,6 @@ public sealed class LoginVerificationOptions
     public int AccountRequestsPerHour { get; set; } = 5;
 
     public int IpRequestsPerHour { get; set; } = 120;
+
+    public int MaximumPendingLogins { get; set; } = 10000;
 }

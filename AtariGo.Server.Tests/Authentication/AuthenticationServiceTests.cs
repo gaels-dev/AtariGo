@@ -3,10 +3,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
 using AtariGo.Server.Application.Authentication;
+using AtariGo.Server.Application.Email;
+using AtariGo.Server.Application.PasswordRecovery;
 using AtariGo.Server.Data;
 using AtariGo.Server.Data.Entities;
 using AtariGo.Server.Security;
 using AtariGo.Server.Tests.Games;
+using AtariGo.Server.Tests.PasswordRecovery;
 
 namespace AtariGo.Server.Tests.Authentication;
 
@@ -22,7 +25,6 @@ public sealed class AuthenticationServiceTests
     public async Task LoginAsync_StoredCredentialAsPassword_RejectsWithoutCreatingSession(
         bool storesPlaintext)
     {
-        // Arrange
         await using SqlServerTestDatabase database = await SqlServerTestDatabase.CreateAsync();
         await using AtariGoDbContext context = database.CreateContext();
         User user = CreateUser();
@@ -30,14 +32,14 @@ public sealed class AuthenticationServiceTests
             .HashPassword(user, Password);
         user.Credential = new Credential { PasswordHash = stored };
         await SeedAsync(context, user);
-        AuthenticationService service = CreateService(context);
-        // Act
+        using var pending = new PendingLoginStore(TimeProvider.System,
+            Options.Create(new LoginVerificationOptions()));
+        AuthenticationService service = CreateService(context, pending);
         LoginOperationResult result = await service.LoginAsync(new LoginCommand
         {
             Identifier = user.UserName, Password = stored
         },
             CancellationToken.None);
-        // Assert
         Assert.AreEqual(LoginStatus.InvalidCredentials, result.Status);
         Assert.AreEqual(string.Empty, result.SessionToken);
         Assert.AreEqual(0, await context.Sessions.CountAsync());
@@ -51,7 +53,6 @@ public sealed class AuthenticationServiceTests
     public async Task LoginAsync_VerifiedPassword_RequiresCodeAndRefreshesHashWhenNeeded(
         bool usesOlderHash)
     {
-        // Arrange
         await using SqlServerTestDatabase database = await SqlServerTestDatabase.CreateAsync();
         await using AtariGoDbContext context = database.CreateContext();
         User user = CreateUser();
@@ -64,8 +65,9 @@ public sealed class AuthenticationServiceTests
         string originalHash = originalHasher.HashPassword(user, Password);
         user.Credential = new Credential { PasswordHash = originalHash };
         await SeedAsync(context, user);
-        AuthenticationService service = CreateService(context);
-        // Act
+        using var pending = new PendingLoginStore(TimeProvider.System,
+            Options.Create(new LoginVerificationOptions()));
+        AuthenticationService service = CreateService(context, pending);
         LoginOperationResult result = await service.LoginAsync(new LoginCommand
         {
             Identifier = user.Email, Password = Password
@@ -73,7 +75,6 @@ public sealed class AuthenticationServiceTests
             CancellationToken.None);
         string savedHash = await context.Credentials.AsNoTracking()
             .Select(credential => credential.PasswordHash).SingleAsync();
-        // Assert
         Assert.AreEqual(LoginStatus.ChallengeRequired, result.Status);
         Assert.AreEqual(string.Empty, result.SessionToken);
         Assert.AreEqual(0, await context.Sessions.CountAsync());
@@ -91,16 +92,31 @@ public sealed class AuthenticationServiceTests
         };
     }
 
+    private static AuthenticationService CreateService(AtariGoDbContext context,
+        PendingLoginStore pending)
+    {
+        TimeProvider time = TimeProvider.System;
+        var attempts = new LoginAttemptService(context, time);
+        IOptions<PasswordRecoveryOptions> recovery = Options.Create(new PasswordRecoveryOptions
+        {
+            HmacKey = new string('K', 64)
+        });
+        IOptions<LoginVerificationOptions> login = Options.Create(new LoginVerificationOptions());
+        var protector = new AuthenticationCodeProtector(recovery.Value.HmacKey);
+        var issuance = new AuthenticationCodeIssuanceService(context, login, recovery, time);
+        var email = new RecordingEmailSender { ExpectedRecipient = "player@example.test" };
+        var delivery = new LoginCodeDeliveryService(context, new EmailDeliveryService(email),
+            protector, issuance, time);
+        var challenges = new LoginChallengeService(context, delivery, attempts,
+            new SessionTokenProvider(), pending);
+        return new AuthenticationService(context, new PasswordHasher<User>(), attempts, challenges);
+    }
+
     private static async Task SeedAsync(AtariGoDbContext context, User user)
     {
         user.RoleId = await context.Roles.Select(role => role.RoleId).SingleAsync();
         context.Users.Add(user);
         await context.SaveChangesAsync();
         context.ChangeTracker.Clear();
-    }
-
-    private static AuthenticationService CreateService(AtariGoDbContext context)
-    {
-        return LoginTestServices.Create(context);
     }
 }

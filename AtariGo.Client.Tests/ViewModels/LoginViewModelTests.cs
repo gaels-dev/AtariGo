@@ -1,7 +1,6 @@
 using System.Globalization;
 using System.Reflection;
 
-
 using Grpc.Core;
 
 using AtariGo.Client.Models;
@@ -21,7 +20,6 @@ namespace AtariGo.Client.Tests.ViewModels
         [TestMethod]
         public async Task SubmitCommand_DirectSuccessWithoutCode_DoesNotNavigate()
         {
-            // Arrange
             INavigationService navigation = DispatchProxy.Create<INavigationService,
                 RecordingNavigationProxy>();
             var authentication = new StubAuthenticationClient(_ => Task.FromResult(
@@ -35,9 +33,7 @@ namespace AtariGo.Client.Tests.ViewModels
             {
                 Identifier = "Player"
             };
-            // Act
             await CommandExecution.ExecuteAsync(model.SubmitCommand, "Secret8");
-            // Assert
             Assert.IsNull(((RecordingNavigationProxy)navigation).SessionContext);
             Assert.IsNull(model.CurrentDialogViewModel);
         }
@@ -49,7 +45,6 @@ namespace AtariGo.Client.Tests.ViewModels
             StatusCode statusCode,
             string expectedResourceKey)
         {
-            // Arrange
             INavigationService navigation = DispatchProxy.Create<INavigationService,
                 RecordingNavigationProxy>();
             var authentication = new StubAuthenticationClient(_ =>
@@ -60,10 +55,8 @@ namespace AtariGo.Client.Tests.ViewModels
             using var viewModel = new LoginViewModel(navigation, authentication, registration);
             viewModel.Identifier = "player";
 
-            // Act
             await CommandExecution.ExecuteAsync(viewModel.SubmitCommand, "password");
 
-            // Assert
             Assert.AreEqual(Resources.ResourceManager.GetString(
                 expectedResourceKey, CultureInfo.CurrentUICulture), viewModel.LoginMessage);
         }
@@ -71,7 +64,6 @@ namespace AtariGo.Client.Tests.ViewModels
         [TestMethod]
         public async Task Dispose_PendingLoginSuccess_DoesNotNavigateToMainWindow()
         {
-            // Arrange
             INavigationService navigation = DispatchProxy.Create<INavigationService,
                 RecordingNavigationProxy>();
             var pendingResponse = new TaskCompletionSource<LoginAttemptResult>(
@@ -88,7 +80,6 @@ namespace AtariGo.Client.Tests.ViewModels
             viewModel.Identifier = "player";
             Task command = CommandExecution.ExecuteAsync(viewModel.SubmitCommand, "password");
 
-            // Act
             viewModel.Dispose();
             pendingResponse.SetResult(new LoginAttemptResult
             {
@@ -96,7 +87,6 @@ namespace AtariGo.Client.Tests.ViewModels
             });
             await command;
 
-            // Assert
             Assert.IsTrue(requestToken.IsCancellationRequested);
             Assert.IsFalse(((RecordingNavigationProxy)navigation).Calls
                 .Contains(nameof(INavigationService.NavigateToMainWindow)));
@@ -104,7 +94,6 @@ namespace AtariGo.Client.Tests.ViewModels
         [TestMethod]
         public async Task SubmitCommand_ConfirmedCode_PreservesSessionContextDuringNavigation()
         {
-            // Arrange
             INavigationService navigation = DispatchProxy.Create<INavigationService,
                 RecordingNavigationProxy>();
             var authentication = new StubAuthenticationClient(_ => Task.FromResult(
@@ -124,16 +113,15 @@ namespace AtariGo.Client.Tests.ViewModels
                 Identifier = "Player"
             };
 
-            // Act
             await CommandExecution.ExecuteAsync(model.SubmitCommand, "password");
             Assert.IsNull(((RecordingNavigationProxy)navigation).SessionContext);
             Assert.IsInstanceOfType<LoginVerificationDialogViewModel>(model.CurrentDialogViewModel);
-            var verification = (LoginVerificationDialogViewModel)model.CurrentDialogViewModel;
+            LoginVerificationDialogViewModel verification =
+                (LoginVerificationDialogViewModel)model.CurrentDialogViewModel;
             verification.Code = "01234567";
             await CommandExecution.ExecuteAsync(verification.ConfirmCommand, null);
 
-            // Assert
-            var recorder = (RecordingNavigationProxy)navigation;
+            RecordingNavigationProxy recorder = (RecordingNavigationProxy)navigation;
             Assert.IsNotNull(recorder.SessionContext);
             Assert.AreEqual("Player", recorder.SessionContext.PlayerName);
             Assert.AreEqual("test-session", recorder.SessionContext.SessionToken);

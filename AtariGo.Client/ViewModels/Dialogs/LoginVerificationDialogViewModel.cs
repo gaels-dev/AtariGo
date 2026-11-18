@@ -104,7 +104,6 @@ public sealed class LoginVerificationDialogViewModel : ViewModelBase, IDisposabl
             LoginAttemptResult result = await _client.VerifyLoginCodeAsync(_challengeToken, Code,
                 _token);
             _token.ThrowIfCancellationRequested();
-            Code = string.Empty;
             ApplyResult(result, true);
             if (result.Status == LoginAttemptStatus.Success)
             {

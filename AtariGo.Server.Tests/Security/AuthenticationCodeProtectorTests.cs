@@ -12,13 +12,10 @@ public sealed class AuthenticationCodeProtectorTests
     [TestMethod]
     public void Protect_RecoveryScope_ProducesLegacyHashAndAcceptsLeadingZero()
     {
-        // Arrange
         var protector = new AuthenticationCodeProtector(new string('K', 64));
         var scope = new AuthenticationCodeScope(1, "PasswordReset");
-        // Act
         string hash = protector.Protect(scope, "01234567");
         bool matches = protector.Matches(scope, "01234567", LegacyHash);
-        // Assert
         Assert.AreEqual(LegacyHash, hash);
         Assert.IsTrue(matches);
     }
@@ -26,22 +23,19 @@ public sealed class AuthenticationCodeProtectorTests
     [TestMethod]
     public void Matches_OtherUserPurposeOrBinding_RejectsCodeOutsideItsScope()
     {
-        // Arrange
         var protector = new AuthenticationCodeProtector(new string('K', 64));
         var scope = new AuthenticationCodeScope(1, "TwoFactor", "first-attempt");
         string hash = protector.Protect(scope, "01234567");
-        var otherScopes = new[]
+        AuthenticationCodeScope[] otherScopes =
         {
             new AuthenticationCodeScope(2, "TwoFactor", "first-attempt"),
             new AuthenticationCodeScope(1, "PasswordReset", "first-attempt"),
             new AuthenticationCodeScope(1, "TwoFactor", "second-attempt"),
             new AuthenticationCodeScope(1, "TwoFactor")
         };
-        // Act
         bool matches = protector.Matches(scope, "01234567", hash);
         bool[] otherMatches = otherScopes.Select(other => protector.Matches(other, "01234567",
             hash)).ToArray();
-        // Assert
         Assert.IsTrue(matches);
         Assert.IsTrue(otherMatches.All(match => !match));
         Assert.IsFalse(protector.Matches(new AuthenticationCodeScope(1, "TwoFactor"),
@@ -51,14 +45,11 @@ public sealed class AuthenticationCodeProtectorTests
     [TestMethod]
     public void Protect_BindingContainsSeparators_DoesNotCollideWithOtherScopes()
     {
-        // Arrange
         var protector = new AuthenticationCodeProtector(new string('K', 64));
         var first = new AuthenticationCodeScope(1, "TwoFactor", "x:y");
         var second = new AuthenticationCodeScope(1, "TwoFactor:x", "y");
-        // Act
         string firstHash = protector.Protect(first, "01234567");
         string secondHash = protector.Protect(second, "01234567");
-        // Assert
         Assert.AreNotEqual(firstHash, secondHash);
         Assert.IsFalse(protector.Matches(second, "01234567", firstHash));
     }
@@ -71,12 +62,9 @@ public sealed class AuthenticationCodeProtectorTests
     [DataRow("00000000")]
     public void Matches_InvalidOrIncorrectCode_RejectsCode(string code)
     {
-        // Arrange
         var protector = new AuthenticationCodeProtector(new string('K', 64));
         var scope = new AuthenticationCodeScope(1, "PasswordReset");
-        // Act
         bool matches = protector.Matches(scope, code, LegacyHash);
-        // Assert
         Assert.IsFalse(matches);
     }
 
@@ -87,11 +75,8 @@ public sealed class AuthenticationCodeProtectorTests
     [DataRow("ññññññññññññññññ", true)]
     public void IsConfigured_KeyLength_UsesExistingUtf8ByteRequirement(string key, bool expected)
     {
-        // Arrange
         var protector = new AuthenticationCodeProtector(key);
-        // Act
         bool configured = protector.IsConfigured;
-        // Assert
         Assert.AreEqual(expected, configured);
     }
 }

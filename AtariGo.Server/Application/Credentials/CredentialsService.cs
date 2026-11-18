@@ -90,15 +90,14 @@ public sealed class CredentialsService : ICredentialsService
                     == originalHash)
             .ExecuteUpdateAsync(setters => setters
                 .SetProperty(credential => credential.PasswordHash, newHash)
-                .SetProperty(credential => credential.AuthenticationVersion,
-                    credential => credential.AuthenticationVersion + 1)
                 .SetProperty(credential => credential.PasswordChangedAt, changedAt),
                 cancellationToken);
         if (updated > 0)
         {
-            await _dbContext.LoginChallenges.Where(challenge => challenge.UserId == user.UserId
-                && challenge.ClosedAt == null).ExecuteUpdateAsync(setters => setters
-                    .SetProperty(challenge => challenge.ClosedAt, changedAt), cancellationToken);
+            await _dbContext.AuthenticationCodes.Where(code => code.UserId == user.UserId
+                && code.CodeType == LoginVerificationOptions.Purpose && code.UsedAt == null)
+                .ExecuteUpdateAsync(setters => setters.SetProperty(code => code.UsedAt, changedAt),
+                    cancellationToken);
         }
         return updated > 0 ? ChangePasswordResult.Changed : ChangePasswordResult.CredentialChanged;
     }

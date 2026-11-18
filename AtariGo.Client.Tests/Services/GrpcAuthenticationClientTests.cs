@@ -14,7 +14,6 @@ public sealed class GrpcAuthenticationClientTests
     [TestMethod]
     public async Task VerifyLoginCodeAsync_LostResponse_ClearsSecretsAndDoesNotRetry()
     {
-        // Arrange
         using var connection = new GrpcClientConnection(new Uri("https://localhost:7061"));
         var interceptor = new LoginResponseInterceptor
         {
@@ -23,16 +22,14 @@ public sealed class GrpcAuthenticationClientTests
         };
         var client = new GrpcAuthenticationClient(connection.CallInvoker.Intercept(interceptor));
         using var cancellation = new CancellationTokenSource();
-        // Act
         LoginAttemptResult result = await client.VerifyLoginCodeAsync("pending-token", "01234567",
             cancellation.Token);
-        // Assert
         Assert.AreEqual(LoginAttemptStatus.Unconfirmed, result.Status);
         Assert.AreEqual(1, interceptor.Calls);
         Assert.AreEqual(cancellation.Token, interceptor.Options.CancellationToken);
         Assert.IsNotNull(interceptor.Options.Deadline);
         Assert.IsInstanceOfType<VerifyLoginCodeRequest>(interceptor.Request);
-        var request = (VerifyLoginCodeRequest)interceptor.Request;
+        VerifyLoginCodeRequest request = (VerifyLoginCodeRequest)interceptor.Request;
         Assert.AreEqual(string.Empty, request.Code);
         Assert.AreEqual(string.Empty, request.ChallengeToken);
     }
@@ -40,7 +37,6 @@ public sealed class GrpcAuthenticationClientTests
     [TestMethod]
     public async Task LoginAsync_ChallengeResponse_PreservesPendingDataAndClearsPassword()
     {
-        // Arrange
         using var connection = new GrpcClientConnection(new Uri("https://localhost:7061"));
         var interceptor = new LoginResponseInterceptor
         {
@@ -51,9 +47,7 @@ public sealed class GrpcAuthenticationClientTests
             })
         };
         var client = new GrpcAuthenticationClient(connection.CallInvoker.Intercept(interceptor));
-        // Act
         LoginAttemptResult result = await client.LoginAsync("Player", "Secret8");
-        // Assert
         Assert.AreEqual(LoginAttemptStatus.ChallengeRequired, result.Status);
         Assert.AreEqual("pending-token", result.ChallengeToken);
         Assert.AreEqual("p***@example.test", result.MaskedEmail);

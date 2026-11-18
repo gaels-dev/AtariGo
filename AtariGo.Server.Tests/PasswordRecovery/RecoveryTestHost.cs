@@ -90,6 +90,16 @@ internal sealed class RecoveryTestHost : IAsyncDisposable
         };
     }
 
+    public async Task RestartAsync()
+    {
+        _channel?.Dispose();
+        if (_application is not null)
+        {
+            await _application.DisposeAsync();
+        }
+        await StartAsync();
+    }
+
     public async ValueTask DisposeAsync()
     {
         _channel?.Dispose();
@@ -130,7 +140,6 @@ internal sealed class RecoveryTestHost : IAsyncDisposable
     {
         services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
         services.AddSingleton<RecoveryCodeProtector>();
-        services.AddSingleton<RecoveryRequestLimiter>();
         services.AddSingleton<RecoverySessionRevoker>();
         services.AddScoped<RecoveryCodeDelivery>();
         services.AddScoped<PasswordResetWriter>();

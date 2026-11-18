@@ -45,7 +45,8 @@ function Protect-RecoverySecretFile
             $identity, 'FullControl', 'Allow')
         $security.AddAccessRule($rule)
     }
-    Set-Acl -LiteralPath $Path -AclObject $security
+    [System.IO.FileSystemAclExtensions]::SetAccessControl(
+        [System.IO.FileInfo]::new($Path), $security)
 }
 
 function Set-RecoveryPassword

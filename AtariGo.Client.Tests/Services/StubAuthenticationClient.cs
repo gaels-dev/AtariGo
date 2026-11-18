@@ -9,6 +9,7 @@ public sealed class StubAuthenticationClient : IAuthenticationClient
 
     public StubAuthenticationClient(Func<CancellationToken, Task<LoginAttemptResult>> login)
     {
+        ArgumentNullException.ThrowIfNull(login);
         _login = login;
     }
 
@@ -20,8 +21,6 @@ public sealed class StubAuthenticationClient : IAuthenticationClient
         {
             Status = LoginAttemptStatus.ChallengeRequired
         });
-
-    public string LastCode { get; private set; } = string.Empty;
 
     public int VerificationCalls { get; private set; }
 
@@ -36,7 +35,6 @@ public sealed class StubAuthenticationClient : IAuthenticationClient
     public Task<LoginAttemptResult> VerifyLoginCodeAsync(string token, string code,
         CancellationToken cancellationToken)
     {
-        LastCode = code;
         VerificationCalls++;
         return Verify(cancellationToken);
     }

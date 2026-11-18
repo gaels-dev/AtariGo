@@ -5,18 +5,19 @@ namespace AtariGo.Server.Application.Authentication;
 
 public sealed class LoginCodeDelivery
 {
-    public LoginCodeDelivery(LoginChallenge challenge, EmailMessage message)
+    public LoginCodeDelivery(PendingLogin pending, AuthenticationCode code, EmailMessage message)
     {
-        ArgumentNullException.ThrowIfNull(challenge);
+        ArgumentNullException.ThrowIfNull(pending);
+        ArgumentNullException.ThrowIfNull(code);
         ArgumentNullException.ThrowIfNull(message);
-        Challenge = challenge;
+        Pending = pending;
+        Code = code;
         Message = message;
-        Binding = challenge.CodeBinding;
     }
 
-    public LoginChallenge Challenge { get; }
+    public PendingLogin Pending { get; }
+
+    public AuthenticationCode Code { get; }
 
     public EmailMessage Message { get; }
-
-    public string Binding { get; }
 }
