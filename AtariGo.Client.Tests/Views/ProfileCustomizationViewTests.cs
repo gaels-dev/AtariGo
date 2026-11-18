@@ -10,6 +10,7 @@ using AtariGo.Client.Services;
 using AtariGo.Client.Tests.Services;
 using AtariGo.Client.ViewModels;
 using AtariGo.Client.Views;
+using AtariGo.Contracts;
 
 namespace AtariGo.Client.Tests.Views;
 
@@ -24,7 +25,7 @@ public sealed class ProfileCustomizationViewTests
         INavigationService navigation = DispatchProxy.Create<INavigationService,
             RecordingNavigationProxy>();
         using ProfileCustomizationViewModel model = new ProfileCustomizationViewModel(
-            navigation, new StubProfileClient(), IgnoreName);
+            navigation, new StubProfileClient(), IgnoreProfile);
         ProfileCustomizationView view = new ProfileCustomizationView();
         view.DataContext = model;
 
@@ -62,7 +63,7 @@ public sealed class ProfileCustomizationViewTests
         INavigationService navigation = DispatchProxy.Create<INavigationService,
             RecordingNavigationProxy>();
         using ProfileCustomizationViewModel model = new ProfileCustomizationViewModel(
-            navigation, new StubProfileClient(), IgnoreName);
+            navigation, new StubProfileClient(), IgnoreProfile);
         ProfileCustomizationView view = new ProfileCustomizationView
         {
             DataContext = model
@@ -88,6 +89,35 @@ public sealed class ProfileCustomizationViewTests
         {
             Assert.IsTrue(loadedResources.Any(resource => resource.EndsWith(
                 $"avatar_{option.AvatarId}.png", StringComparison.OrdinalIgnoreCase)));
+        }
+    }
+
+    [STATestMethod]
+    public void View_UsesSharedRoundedButtonStyle()
+    {
+        // Arrange
+        INavigationService navigation = DispatchProxy.Create<INavigationService,
+            RecordingNavigationProxy>();
+        using ProfileCustomizationViewModel model = new ProfileCustomizationViewModel(
+            navigation, new StubProfileClient(), IgnoreProfile);
+        ProfileCustomizationView view = new ProfileCustomizationView
+        {
+            DataContext = model
+        };
+        Style roundedStyle = new Style(typeof(Button));
+        view.Resources["RoundedButtonStyle"] = roundedStyle;
+
+        // Act
+        view.Measure(new Size(1000, 700));
+        view.Arrange(new Rect(0, 0, 1000, 700));
+        view.UpdateLayout();
+        IReadOnlyList<Button> buttons = FindButtons(view);
+
+        // Assert
+        Assert.IsGreaterThanOrEqualTo(7, buttons.Count);
+        foreach (Button button in buttons)
+        {
+            Assert.AreSame(roundedStyle, button.Style);
         }
     }
 
@@ -121,6 +151,21 @@ public sealed class ProfileCustomizationViewTests
         return images;
     }
 
+    private static IReadOnlyList<Button> FindButtons(DependencyObject parent)
+    {
+        List<Button> buttons = new List<Button>();
+        for (int index = 0; index < VisualTreeHelper.GetChildrenCount(parent); index++)
+        {
+            DependencyObject child = VisualTreeHelper.GetChild(parent, index);
+            if (child is Button button)
+            {
+                buttons.Add(button);
+            }
+            buttons.AddRange(FindButtons(child));
+        }
+        return buttons;
+    }
+
     private static bool IsOutsideCollapsedOverlay(Image image)
     {
         DependencyObject? current = image;
@@ -135,7 +180,7 @@ public sealed class ProfileCustomizationViewTests
         return true;
     }
 
-    private static void IgnoreName(string playerName)
+    private static void IgnoreProfile(UserProfile profile)
     {
     }
 }

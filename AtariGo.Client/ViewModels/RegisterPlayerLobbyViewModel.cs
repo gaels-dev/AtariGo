@@ -18,17 +18,17 @@ namespace AtariGo.Client.ViewModels
     public class RegisterPlayerLobbyViewModel : ViewModelBase, IDisposable
     {
         private const int LeaderboardLimit = 10;
-        private const int DefaultAvatarId = 1;
         private const string DefaultPlayerName = "Player";
 
         private readonly ILeaderboardClient _leaderboardClient;
         private readonly IProfileClient? _profileClient;
+        private readonly Action<int>? _avatarLoaded;
         private readonly CancellationTokenSource _lifetimeCancellation =
             new CancellationTokenSource();
 
         private string _playerName;
         private int _playerWins;
-        private int _playerAvatarId;
+        private int? _playerAvatarId;
         private bool _isGuest;
         private bool _isLeaderboardLoading;
         private string _leaderboardStatus = string.Empty;
@@ -45,8 +45,9 @@ namespace AtariGo.Client.ViewModels
             _leaderboardClient =
                 leaderboardClient ?? new GrpcLeaderboardClient();
             _profileClient = context?.ProfileClient;
+            _avatarLoaded = context?.AvatarLoaded;
             _playerName = DefaultPlayerName;
-            _playerAvatarId = DefaultAvatarId;
+            _playerAvatarId = context?.InitialAvatarId;
             _isGuest = false;
             RoomInvitations = context?.RoomInvitations;
             Friends = context?.Friends ?? new ObservableCollection<FriendItemViewModel>();
@@ -183,11 +184,19 @@ namespace AtariGo.Client.ViewModels
             }
         }
 
-        public int PlayerAvatarId
+        public int? PlayerAvatarId
         {
             get => _playerAvatarId;
-            private set => SetProperty(ref _playerAvatarId, value);
+            private set
+            {
+                if (SetProperty(ref _playerAvatarId, value))
+                {
+                    OnPropertyChanged(nameof(HasPlayerAvatar));
+                }
+            }
         }
+
+        public bool HasPlayerAvatar => PlayerAvatarId.HasValue;
 
         public bool IsGuest
         {
@@ -343,6 +352,7 @@ namespace AtariGo.Client.ViewModels
                 cancellationToken.ThrowIfCancellationRequested();
                 PlayerWins = profile.Wins;
                 PlayerAvatarId = profile.AvatarId;
+                _avatarLoaded?.Invoke(profile.AvatarId);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {

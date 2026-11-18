@@ -27,9 +27,11 @@ internal sealed class StubProfileClient : IProfileClient
 
     public UpdateProfileRequest? LastRequest { get; private set; }
 
+    public Task<UserProfile>? ProfileResponse { get; set; }
+
     public Task<UserProfile> GetProfileAsync(CancellationToken cancellationToken)
     {
-        return Task.FromResult(Profile);
+        return ProfileResponse ?? Task.FromResult(Profile);
     }
 
     public Task<UpdateProfileResponse> UpdateProfileAsync(

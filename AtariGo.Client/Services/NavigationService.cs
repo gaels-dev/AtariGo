@@ -236,7 +236,7 @@ namespace AtariGo.Client.Services
 
             GrpcProfileClient client = new GrpcProfileClient(mainViewModel.SessionToken);
             ProfileCustomizationViewModel profile = new ProfileCustomizationViewModel(
-                this, client, mainViewModel.UpdatePlayerName);
+                this, client, mainViewModel.UpdatePlayerProfile);
             mainViewModel.CurrentViewModel = profile;
             profile.LoadCommand.Execute(null);
         }

@@ -59,7 +59,18 @@
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
                             <Image Source="{Binding PlayerAvatarId,
                                 Converter={StaticResource AvatarImageConverter}}"
-                                   Width="45" Height="45" Margin="0,0,12,0"/>
+                                   Width="45" Height="45" Margin="0,0,12,0">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding HasPlayerAvatar}"
+                                                         Value="False">
+                                                <Setter Property="Visibility" Value="Hidden"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Image.Style>
+                            </Image>
                             <StackPanel VerticalAlignment="Center">
                                 <TextBlock
                                     Text="{x:Static

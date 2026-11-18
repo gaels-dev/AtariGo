@@ -12,15 +12,15 @@ namespace AtariGo.Client.Tests.ViewModels;
 public sealed class ProfileCustomizationViewModelTests
 {
     [TestMethod]
-    public async Task LoadAndUpdate_UsesServerProfileAndRefreshesPlayerName()
+    public async Task LoadAndUpdate_ConfirmsPlayerNameAndAvatar()
     {
         // Arrange
         INavigationService navigation = DispatchProxy.Create<INavigationService,
             RecordingNavigationProxy>();
         StubProfileClient client = new StubProfileClient();
-        string? updatedName = null;
+        UserProfile? confirmedProfile = null;
         using ProfileCustomizationViewModel model = new ProfileCustomizationViewModel(
-            navigation, client, name => updatedName = name);
+            navigation, client, profile => confirmedProfile = profile);
 
         // Act
         await CommandExecution.ExecuteAsync(model.LoadCommand, null);
@@ -33,7 +33,9 @@ public sealed class ProfileCustomizationViewModelTests
         Assert.AreEqual(3, model.Wins);
         Assert.AreEqual("NewName", model.PlayerName);
         Assert.AreEqual(4, model.SelectedAvatarId);
-        Assert.AreEqual("NewName", updatedName);
+        Assert.IsNotNull(confirmedProfile);
+        Assert.AreEqual("NewName", confirmedProfile.UserName);
+        Assert.AreEqual(4, confirmedProfile.AvatarId);
         Assert.IsNotNull(client.LastRequest);
         Assert.AreEqual("NewName", client.LastRequest.UserName);
         Assert.AreEqual(4, client.LastRequest.AvatarId);
@@ -53,9 +55,9 @@ public sealed class ProfileCustomizationViewModelTests
                 Status = ProfileUpdateStatus.UserNameTaken
             }
         };
-        string? updatedName = null;
+        List<UserProfile> confirmedProfiles = new List<UserProfile>();
         using ProfileCustomizationViewModel model = new ProfileCustomizationViewModel(
-            navigation, client, name => updatedName = name);
+            navigation, client, profile => confirmedProfiles.Add(profile));
         await CommandExecution.ExecuteAsync(model.LoadCommand, null);
         model.PlayerName = "PlayerTwo";
 
@@ -63,7 +65,9 @@ public sealed class ProfileCustomizationViewModelTests
         await CommandExecution.ExecuteAsync(model.UpdateProfileCommand, null);
 
         // Assert
-        Assert.IsNull(updatedName);
+        Assert.HasCount(1, confirmedProfiles);
+        Assert.AreEqual("PlayerOne", confirmedProfiles[0].UserName);
+        Assert.AreEqual(1, confirmedProfiles[0].AvatarId);
         Assert.AreEqual("PlayerTwo", model.PlayerName);
         Assert.IsFalse(string.IsNullOrWhiteSpace(model.StatusMessage));
     }
@@ -82,7 +86,7 @@ public sealed class ProfileCustomizationViewModelTests
             }
         };
         using ProfileCustomizationViewModel model = new ProfileCustomizationViewModel(
-            navigation, client, IgnoreName);
+            navigation, client, IgnoreProfile);
 
         // Act
         await CommandExecution.ExecuteAsync(model.LoadCommand, null);
@@ -106,7 +110,7 @@ public sealed class ProfileCustomizationViewModelTests
         Assert.IsFalse(model.IsAvatarPickerOpen);
     }
 
-    private static void IgnoreName(string playerName)
+    private static void IgnoreProfile(UserProfile profile)
     {
     }
 }

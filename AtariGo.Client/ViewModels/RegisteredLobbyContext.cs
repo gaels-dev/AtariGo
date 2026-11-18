@@ -12,6 +12,10 @@ namespace AtariGo.Client.ViewModels
 
         public IProfileClient? ProfileClient { get; init; }
 
+        public int? InitialAvatarId { get; init; }
+
+        public Action<int>? AvatarLoaded { get; init; }
+
         public ObservableCollection<FriendItemViewModel> Friends { get; init; } =
             new ObservableCollection<FriendItemViewModel>();
 

@@ -19,7 +19,7 @@ public sealed class ProfileCustomizationViewModel : ViewModelBase, IDisposable
 
     private readonly INavigationService _navigationService;
     private readonly IProfileClient _profileClient;
-    private readonly Action<string> _onPlayerNameUpdated;
+    private readonly Action<UserProfile> _onProfileConfirmed;
     private readonly CancellationTokenSource _lifetime = new CancellationTokenSource();
     private readonly CancellationToken _token;
     private string _playerName = string.Empty;
@@ -36,14 +36,14 @@ public sealed class ProfileCustomizationViewModel : ViewModelBase, IDisposable
     private bool _isDisposed;
 
     public ProfileCustomizationViewModel(INavigationService navigationService,
-        IProfileClient profileClient, Action<string> onPlayerNameUpdated)
+        IProfileClient profileClient, Action<UserProfile> onProfileConfirmed)
     {
         ArgumentNullException.ThrowIfNull(navigationService);
         ArgumentNullException.ThrowIfNull(profileClient);
-        ArgumentNullException.ThrowIfNull(onPlayerNameUpdated);
+        ArgumentNullException.ThrowIfNull(onProfileConfirmed);
         _navigationService = navigationService;
         _profileClient = profileClient;
-        _onPlayerNameUpdated = onPlayerNameUpdated;
+        _onProfileConfirmed = onProfileConfirmed;
         _token = _lifetime.Token;
         RefreshAvatarOptions();
         LoadCommand = new AsyncRelayCommand(LoadProfileAsync, HandleFailure, _token);
@@ -231,7 +231,6 @@ public sealed class ProfileCustomizationViewModel : ViewModelBase, IDisposable
             return;
         }
         ApplyProfile(profile);
-        _onPlayerNameUpdated(profile.UserName);
         StatusMessage = Localize("ProfileCustomization_Msg_Updated");
     }
 
@@ -241,6 +240,7 @@ public sealed class ProfileCustomizationViewModel : ViewModelBase, IDisposable
         Email = profile.Email;
         Wins = profile.Wins;
         SelectedAvatarId = profile.AvatarId;
+        _onProfileConfirmed(profile);
     }
 
     private void HandleRpcFailure(RpcException exception)

@@ -13,43 +13,13 @@
     <UserControl.Resources>
         <converters:AvatarIdToImageConverter x:Key="AvatarImageConverter"/>
         <BooleanToVisibilityConverter x:Key="VisibilityConverter"/>
-        <Style x:Key="AvatarPickerButtonStyle" TargetType="Button">
-            <Setter Property="HorizontalContentAlignment" Value="Center"/>
-            <Setter Property="VerticalContentAlignment" Value="Center"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="ButtonBorder"
-                                CornerRadius="8"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center"
-                                              VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="ButtonBorder"
-                                        Property="Opacity" Value="0.5"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-        <Style x:Key="AvatarButtonStyle"
-               TargetType="Button"
-               BasedOn="{StaticResource AvatarPickerButtonStyle}">
-            <Setter Property="Background" Value="White"/>
-            <Setter Property="BorderBrush" Value="#2C2A29"/>
-            <Setter Property="BorderThickness" Value="1.5"/>
-            <Setter Property="Padding" Value="4"/>
+        <Style x:Key="AvatarSelectionBorderStyle" TargetType="Border">
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="3"/>
+            <Setter Property="CornerRadius" Value="5"/>
             <Style.Triggers>
                 <DataTrigger Binding="{Binding IsSelected}" Value="True">
                     <Setter Property="BorderBrush" Value="#1976D2"/>
-                    <Setter Property="BorderThickness" Value="3"/>
                 </DataTrigger>
             </Style.Triggers>
         </Style>
@@ -120,25 +90,30 @@
                             </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Button Style="{StaticResource AvatarButtonStyle}"
+                                    <Button Style="{DynamicResource RoundedButtonStyle}"
                                             Command="{Binding DataContext.SelectAvatarCommand,
                                                 RelativeSource={RelativeSource AncestorType=UserControl}}"
                                             CommandParameter="{Binding}"
                                             Width="70"
                                             Height="70"
-                                            Margin="3">
-                                        <Image Source="{Binding AvatarId,
-                                            Converter={StaticResource AvatarImageConverter}}"
-                                               Width="54"
-                                               Height="54"
-                                               Stretch="UniformToFill"/>
+                                            Margin="3"
+                                            Background="White"
+                                            BorderBrush="#2C2A29"
+                                            BorderThickness="1.5">
+                                        <Border Style="{StaticResource AvatarSelectionBorderStyle}">
+                                            <Image Source="{Binding AvatarId,
+                                                Converter={StaticResource AvatarImageConverter}}"
+                                                   Width="54"
+                                                   Height="54"
+                                                   Stretch="UniformToFill"/>
+                                        </Border>
                                     </Button>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
                         <Button Content="{Binding ViewMoreLabel}"
                                 Command="{Binding OpenAvatarPickerCommand}"
-                                Style="{StaticResource AvatarPickerButtonStyle}"
+                                Style="{DynamicResource RoundedButtonStyle}"
                                 Width="70"
                                 Height="70"
                                 Margin="3"
@@ -217,6 +192,7 @@
                     <Button
                         Content="{x:Static properties:Resources.ProfileCustomization_Btn_Update}"
                         Command="{Binding UpdateProfileCommand}"
+                        Style="{DynamicResource RoundedButtonStyle}"
                         IsEnabled="{Binding IsLoaded}"
                         Height="42"
                         Background="#4A90E2"
@@ -228,6 +204,7 @@
                     <Button
                         Content="{x:Static properties:Resources.ProfileCustomization_Btn_ChangePassword}"
                         Command="{Binding ChangePasswordCommand}"
+                        Style="{DynamicResource RoundedButtonStyle}"
                         Height="42"
                         Background="#E5D8C5"
                         Foreground="#2C2A29"
@@ -238,6 +215,7 @@
                     <Button
                         Content="{x:Static properties:Resources.ProfileCustomization_Btn_Close}"
                         Command="{Binding BackCommand}"
+                        Style="{DynamicResource RoundedButtonStyle}"
                         Height="42"
                         Background="#D9534F"
                         Foreground="White"
@@ -293,7 +271,7 @@
                                 <DataTemplate>
                                     <StackPanel Width="116"
                                                 HorizontalAlignment="Center">
-                                        <Button Style="{StaticResource AvatarButtonStyle}"
+                                        <Button Style="{DynamicResource RoundedButtonStyle}"
                                                 Command="{Binding DataContext.SelectAvatarCommand,
                                                     RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                 CommandParameter="{Binding}"
@@ -301,12 +279,17 @@
                                                 ToolTip="{Binding UnlockRequirement}"
                                                 Width="94"
                                                 Height="94"
-                                                HorizontalAlignment="Center">
-                                            <Image Source="{Binding AvatarId,
-                                                Converter={StaticResource AvatarImageConverter}}"
-                                                   Width="80"
-                                                   Height="80"
-                                                   Stretch="UniformToFill"/>
+                                                HorizontalAlignment="Center"
+                                                Background="White"
+                                                BorderBrush="#2C2A29"
+                                                BorderThickness="1.5">
+                                            <Border Style="{StaticResource AvatarSelectionBorderStyle}">
+                                                <Image Source="{Binding AvatarId,
+                                                    Converter={StaticResource AvatarImageConverter}}"
+                                                       Width="80"
+                                                       Height="80"
+                                                       Stretch="UniformToFill"/>
+                                            </Border>
                                         </Button>
                                         <TextBlock Text="{Binding AvatarId}"
                                                    HorizontalAlignment="Center"
@@ -327,7 +310,7 @@
                     <Button Grid.Row="2"
                             Content="{Binding CloseAvatarPickerLabel}"
                             Command="{Binding CloseAvatarPickerCommand}"
-                            Style="{StaticResource AvatarPickerButtonStyle}"
+                            Style="{DynamicResource RoundedButtonStyle}"
                             Width="180"
                             Height="40"
                             HorizontalAlignment="Center"

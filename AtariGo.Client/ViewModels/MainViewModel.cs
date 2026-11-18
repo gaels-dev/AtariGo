@@ -25,6 +25,7 @@ namespace AtariGo.Client.ViewModels
         private Task? _realtimeTask;
         private bool _isGuest;
         private string _playerName;
+        private int? _playerAvatarId;
         private string _presenceStatusResourceKey = string.Empty;
         private bool _isDisposed;
         private bool _guestCredentialRevoked;
@@ -133,6 +134,12 @@ namespace AtariGo.Client.ViewModels
             }
         }
 
+        public int? PlayerAvatarId
+        {
+            get => _playerAvatarId;
+            private set => SetProperty(ref _playerAvatarId, value);
+        }
+
         public string? SessionToken { get; }
 
         public string? GuestCredential { get; }
@@ -144,6 +151,13 @@ namespace AtariGo.Client.ViewModels
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(playerName);
             PlayerName = playerName;
+        }
+
+        public void UpdatePlayerProfile(UserProfile profile)
+        {
+            ArgumentNullException.ThrowIfNull(profile);
+            UpdatePlayerName(profile.UserName);
+            UpdatePlayerAvatarId(profile.AvatarId);
         }
 
         public void Dispose()
@@ -181,6 +195,8 @@ namespace AtariGo.Client.ViewModels
                     SessionToken = SessionToken,
                     ProfileClient = string.IsNullOrWhiteSpace(SessionToken)
                         ? null : new GrpcProfileClient(SessionToken),
+                    InitialAvatarId = PlayerAvatarId,
+                    AvatarLoaded = UpdatePlayerAvatarId,
                     SignOutAsync = SignOutAsync,
                     RoomInvitations = RoomInvitations
                 })
@@ -316,6 +332,11 @@ namespace AtariGo.Client.ViewModels
         private void OnDialogClosed(bool? result)
         {
             CloseDialog();
+        }
+
+        private void UpdatePlayerAvatarId(int avatarId)
+        {
+            PlayerAvatarId = avatarId;
         }
 
         private async Task SignOutGuestAsync()
