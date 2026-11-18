@@ -10,10 +10,12 @@ using Grpc.Net.Client;
 
 using AtariGo.Contracts;
 using AtariGo.Server.Application.Games;
+using AtariGo.Server.Application.Reports;
 using AtariGo.Server.Application.RoomInvitations;
 using AtariGo.Server.Application.Rooms;
 using AtariGo.Server.Application.Sessions;
 using AtariGo.Server.Services;
+using AtariGo.Server.Tests.Reports;
 
 namespace AtariGo.Server.Tests.Rooms;
 
@@ -127,6 +129,27 @@ public sealed class RoomsGrpcServiceTests
         Assert.AreEqual(StatusCode.NotFound, unknownCode);
         Assert.AreEqual(StatusCode.PermissionDenied, guessedId);
         Assert.AreEqual(StatusCode.Unauthenticated, unauthenticated);
+    }
+
+    [TestMethod]
+    public async Task CreatePrivateRoom_SuspendedAccount_ReturnsSpecificFailureCodeAsync()
+    {
+        // Arrange
+        var sanctions = new AllowAllAccountSanctionService { IsSuspended = true };
+        await using WebApplication app = await StartServerAsync(sanctions);
+        using GrpcChannel channel = GrpcChannel.ForAddress(app.Urls.Single());
+        var client = new Contracts.Rooms.RoomsClient(channel);
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(TestTimeoutSeconds));
+
+        // Act
+        RpcException failure = await Assert.ThrowsExactlyAsync<RpcException>(async () =>
+            await client.CreatePrivateRoomAsync(
+                CreateRoomRequest(), CreateOptions("host", timeout.Token)));
+
+        // Assert
+        Assert.AreEqual(StatusCode.PermissionDenied, failure.StatusCode);
+        Assert.AreEqual(GrpcFailureCodes.AccountSuspended,
+            failure.Trailers.GetValue(GrpcFailureCodes.TrailerKey));
     }
 
     [TestMethod]
@@ -271,7 +294,8 @@ public sealed class RoomsGrpcServiceTests
         Assert.AreEqual(expected, failure.StatusCode);
     }
 
-    private static async Task<WebApplication> StartServerAsync()
+    private static async Task<WebApplication> StartServerAsync(
+        IAccountSanctionService? sanctions = null)
     {
         WebApplicationBuilder builder = WebApplication.CreateBuilder();
         builder.Configuration.Sources.Clear();
@@ -282,6 +306,8 @@ public sealed class RoomsGrpcServiceTests
         builder.Services.AddSingleton<IRoomsService, RoomsService>();
         builder.Services.AddSingleton<ISessionService, TestRoomSessionService>();
         builder.Services.AddSingleton<IGameLifecycleService, TestGameLifecycleService>();
+        builder.Services.AddSingleton<IAccountSanctionService>(
+            sanctions ?? new AllowAllAccountSanctionService());
 
         WebApplication app = builder.Build();
         app.MapGrpcService<RoomsGrpcService>();

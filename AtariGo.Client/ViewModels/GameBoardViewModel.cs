@@ -16,6 +16,8 @@ namespace AtariGo.Client.ViewModels
         private const string BlackStoneColorName = "Black";
         private readonly INavigationService _navigationService;
         private readonly IGameplaySession? _session;
+        private readonly IReportClient? _reportClient;
+        private readonly bool _isGuest;
         private readonly SynchronizationContext? _uiContext;
         private readonly CancellationTokenSource _lifetimeCancellation =
             new CancellationTokenSource();
@@ -42,6 +44,8 @@ namespace AtariGo.Client.ViewModels
             ArgumentNullException.ThrowIfNull(context);
             _navigationService = navigationService;
             _session = context.Session;
+            _reportClient = context.ReportClient;
+            _isGuest = context.IsGuest;
             _uiContext = SynchronizationContext.Current;
             _targetCaptures = GameRules.DefaultCaptureGoal;
             _isChatEnabled = false;
@@ -223,6 +227,9 @@ namespace AtariGo.Client.ViewModels
             get;
         }
 
+        public bool CanReportPlayer => !_isDisposed && !_isGuest
+            && _reportClient is not null && GameId.HasValue;
+
         public ICommand LeaveGameCommand
         {
             get;
@@ -260,6 +267,7 @@ namespace AtariGo.Client.ViewModels
                 participant => participant.IsHost != navigationContext.IsHost);
             OpponentName = opponent?.UserName ?? Properties.Resources.GameBoard_Lbl_Opponent;
             OnPropertyChanged(nameof(GameIdentifier));
+            OnPropertyChanged(nameof(CanReportPlayer));
             StartGameSession(room.GameId);
         }
 
@@ -281,6 +289,7 @@ namespace AtariGo.Client.ViewModels
             }
             IsChatEnabled = false;
             OnPropertyChanged(nameof(GameIdentifier));
+            OnPropertyChanged(nameof(CanReportPlayer));
             StartGameSession(game.GameId);
         }
 
@@ -380,7 +389,12 @@ namespace AtariGo.Client.ViewModels
 
         private void PromptReportPlayer()
         {
-            var dialog = new ReportPlayerDialogViewModel(_opponentName);
+            if (!CanReportPlayer)
+            {
+                return;
+            }
+            ReportPlayerDialogViewModel dialog = new ReportPlayerDialogViewModel(
+                _opponentName, GameId!.Value, _reportClient!);
             _navigationService.OpenDialog(dialog);
         }
 
@@ -437,7 +451,7 @@ namespace AtariGo.Client.ViewModels
             ApplyBoardCells(snapshot);
             MaximumChatMessageLength = snapshot.MaximumChatMessageLength;
             LoadChatHistory(snapshot);
-            IsChatEnabled = true;
+            IsChatEnabled = !_isGuest;
 
             ApplyGameplaySnapshot(snapshot);
         }
@@ -472,9 +486,15 @@ namespace AtariGo.Client.ViewModels
 
         private void ShowChatRejection(ChatMessageRejectionReason reason)
         {
-            string resourceKey = reason == ChatMessageRejectionReason.Empty
-                ? "GameBoard_Chat_Err_Empty"
-                : "GameBoard_Chat_Err_TooLong";
+            string resourceKey = reason switch
+            {
+                ChatMessageRejectionReason.Empty => "GameBoard_Chat_Err_Empty",
+                ChatMessageRejectionReason.TooLong => "GameBoard_Chat_Err_TooLong",
+                ChatMessageRejectionReason.Muted => "GameBoard_Chat_Err_Muted",
+                ChatMessageRejectionReason.GuestNotAllowed
+                    => "GameBoard_Chat_Err_GuestNotAllowed",
+                _ => "GameBoard_Chat_Err_SendFailed"
+            };
             ChatStatusMessage = GetLocalizedMessage(resourceKey);
         }
 

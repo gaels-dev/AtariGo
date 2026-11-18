@@ -57,7 +57,7 @@ namespace AtariGo.Client.Services
             catch (RpcException exception)
             {
                 throw new ClientRequestException(GrpcClientFailures.GetReason(exception),
-                    exception.Status.Detail, exception);
+                    GrpcClientFailures.GetErrorCode(exception), exception);
             }
         }
     }

@@ -18,45 +18,28 @@ public partial class Report
         get; set;
     }
 
-    public long? GameId
+    public long GameId
     {
         get; set;
     }
 
-    public string ReportReason { get; set; } = null!;
+    public string Category { get; set; } = null!;
 
-    public string Description { get; set; } = null!;
-
-    public string State { get; set; } = null!;
+    public string? Description { get; set; }
 
     public DateTime CreatedAt
     {
         get; set;
     }
 
-    public DateTime? ReviewedAt
+    public virtual Game Game
     {
         get; set;
-    }
-
-    public int? ReviewerId
-    {
-        get; set;
-    }
-
-    public virtual Game? Game
-    {
-        get; set;
-    }
+    } = null!;
 
     public virtual User ReportedUser { get; set; } = null!;
 
     public virtual User Reporter { get; set; } = null!;
 
-    public virtual User? Reviewer
-    {
-        get; set;
-    }
-
-    public virtual ICollection<Sanction> Sanctions { get; set; } = new List<Sanction>();
+    public virtual Sanction? TriggeredSanction { get; set; }
 }

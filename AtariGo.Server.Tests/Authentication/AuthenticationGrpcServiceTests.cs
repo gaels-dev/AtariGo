@@ -24,7 +24,7 @@ public sealed class AuthenticationGrpcServiceTests
         LoginResponse confirmed = await VerifyAsync(host, pending.ChallengeToken,
             host.Email.Codes.Last());
         Assert.AreEqual(LoginResult.Success, confirmed.Result);
-        Assert.AreEqual(18, await context.Database.SqlQueryRaw<int>(
+        Assert.AreEqual(17, await context.Database.SqlQueryRaw<int>(
             "SELECT COUNT(*) AS Value FROM sys.tables").SingleAsync());
         Assert.AreEqual(5, await context.Database.SqlQueryRaw<int>("""
             SELECT COUNT(*) AS Value FROM sys.columns
@@ -404,32 +404,40 @@ public sealed class AuthenticationGrpcServiceTests
         await using RecoveryTestHost host = await RecoveryTestHost.CreateAsync();
         await using AtariGoDbContext context = host.Database.CreateContext();
         DateTime now = host.Clock.GetUtcNow().UtcDateTime;
+        var game = new Game
+        {
+            GameConfiguration = new GameConfiguration
+            {
+                CaptureGoal = 1, GameTimeSeconds = 600, TurnTimeSeconds = 30
+            },
+            GameType = "Public", State = "Waiting"
+        };
+        var report = new Report
+        {
+            ReporterId = 2, ReportedUserId = 1, Game = game,
+            Category = "Inactivity", CreatedAt = now
+        };
         context.Sanctions.Add(new Sanction
         {
-            UserId = 1,
-            AdministratorId = 2,
-            SanctionType = "TemporarySuspension",
-            Reason = "Test suspension",
-            StartedAt = now,
-            EndsAt = now.AddDays(1),
-            State = "Active"
+            UserId = 1, TriggeringReport = report, SanctionType = "TemporarySuspension",
+            Threshold = 3, StartedAt = now, EndsAt = now.AddDays(1)
         });
         await context.SaveChangesAsync();
         LoginResponse result = await LoginAsync(host);
         Assert.AreEqual(LoginResult.AccountRestricted, result.Result);
-        Assert.AreEqual("Test suspension", result.RestrictionReason);
+        Assert.AreEqual("Inactivity", result.RestrictionReason);
         Assert.AreEqual(0, host.Email.Codes.Count);
         Assert.IsGreaterThan(0, result.RetryAtUnixSeconds);
     }
 
     [TestMethod]
-    public async Task VerifyLoginCode_AccountSuspendedAfterIssuance_DoesNotCreateSessionAsync()
+    public async Task VerifyLoginCode_AccountInactiveAfterIssuance_DoesNotCreateSessionAsync()
     {
         await using RecoveryTestHost host = await RecoveryTestHost.CreateAsync();
         LoginResponse pending = await LoginAsync(host);
         await using AtariGoDbContext context = host.Database.CreateContext();
         await context.Users.Where(user => user.UserId == 1)
-            .ExecuteUpdateAsync(setters => setters.SetProperty(user => user.State, "Suspended"));
+            .ExecuteUpdateAsync(setters => setters.SetProperty(user => user.State, "Inactive"));
         LoginResponse result = await VerifyAsync(host, pending.ChallengeToken,
             host.Email.Codes.Last());
         Assert.AreEqual(LoginResult.AccountRestricted, result.Result);

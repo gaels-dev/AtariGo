@@ -151,7 +151,7 @@ public sealed class SearchingOpponentViewModel : ViewModelBase, IDisposable
         {
             StopCountdown();
             CountdownSeconds = 0;
-            StatusMessage = ClientFailureMessages.GetMessage(exception);
+            StatusMessage = ClientFailureMessages.GetGameAccessMessage(exception);
         }
     }
 

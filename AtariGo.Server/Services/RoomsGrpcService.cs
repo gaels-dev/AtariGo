@@ -1,6 +1,7 @@
 using Grpc.Core;
 
 using AtariGo.Contracts;
+using AtariGo.Server.Application.Reports;
 using AtariGo.Server.Application.Rooms;
 using AtariGo.Server.Application.Sessions;
 
@@ -10,18 +11,22 @@ public sealed class RoomsGrpcService : Rooms.RoomsBase
 {
     private readonly IRoomsService _roomsService;
     private readonly ISessionService _sessionService;
+    private readonly IAccountSanctionService _sanctions;
     private readonly ILogger<RoomsGrpcService> _logger;
 
     public RoomsGrpcService(
         IRoomsService roomsService,
         ISessionService sessionService,
+        IAccountSanctionService sanctions,
         ILogger<RoomsGrpcService> logger)
     {
         ArgumentNullException.ThrowIfNull(roomsService);
         ArgumentNullException.ThrowIfNull(sessionService);
+        ArgumentNullException.ThrowIfNull(sanctions);
 
         _roomsService = roomsService;
         _sessionService = sessionService;
+        _sanctions = sanctions;
         ArgumentNullException.ThrowIfNull(logger);
         _logger = logger;
     }
@@ -85,6 +90,14 @@ public sealed class RoomsGrpcService : Rooms.RoomsBase
         return new LobbyParticipant(identity.UserId, identity.UserName);
     }
 
+    private async Task EnsureGameAccessAsync(int userId, CancellationToken cancellationToken)
+    {
+        if (await _sanctions.HasActiveSuspensionAsync(userId, cancellationToken))
+        {
+            throw AccountSanctionGrpcErrors.CreateAccountSuspended();
+        }
+    }
+
     private static RpcException CreateRoomFailure(RoomOperationStatus status)
     {
         return status switch
@@ -113,6 +126,8 @@ public sealed class RoomsGrpcService : Rooms.RoomsBase
                 StatusCode.PermissionDenied, "Room membership is required.")),
             RoomOperationStatus.CannotStart => new RpcException(new Status(
                 StatusCode.FailedPrecondition, "Two participants are required.")),
+            RoomOperationStatus.AccountRestricted =>
+                AccountSanctionGrpcErrors.CreateParticipantSuspended(),
             RoomOperationStatus.StartInProgress => new RpcException(new Status(
                 StatusCode.FailedPrecondition, "The room is starting or has started.")),
             _ => new RpcException(new Status(StatusCode.Internal, "Room operation failed."))
@@ -134,6 +149,7 @@ public sealed class RoomsGrpcService : Rooms.RoomsBase
         ServerCallContext context)
     {
         LobbyParticipant host = await GetParticipantAsync(context);
+        await EnsureGameAccessAsync(host.UserId, context.CancellationToken);
         if (request.Configuration is null)
         {
             throw new RpcException(new Status(
@@ -155,6 +171,7 @@ public sealed class RoomsGrpcService : Rooms.RoomsBase
         ServerCallContext context)
     {
         LobbyParticipant participant = await GetParticipantAsync(context);
+        await EnsureGameAccessAsync(participant.UserId, context.CancellationToken);
         var locator = new RoomLocator(request.RoomId, request.InvitationCode);
         PrivateRoom room = RequireRoom(_roomsService.JoinRoom(participant, locator));
         return new JoinRoomResponse
@@ -193,6 +210,7 @@ public sealed class RoomsGrpcService : Rooms.RoomsBase
             await responseStream.WriteAsync(MapRoom(room), context.CancellationToken);
         }
     }
+
 
     public override async Task<UpdateRoomConfigurationResponse> UpdateRoomConfiguration(
         UpdateRoomConfigurationRequest request,

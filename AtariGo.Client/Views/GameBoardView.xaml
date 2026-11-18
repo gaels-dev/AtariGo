@@ -95,6 +95,7 @@
                 <Button Grid.Column="1"
                         Style="{StaticResource ActionButtonStyle}"
                         Command="{Binding ReportPlayerCommand}"
+                        IsEnabled="{Binding CanReportPlayer}"
                         Background="#D9534F"
                         Foreground="White"
                         BorderThickness="0"

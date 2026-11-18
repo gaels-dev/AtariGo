@@ -117,6 +117,13 @@ public sealed class GameSessionRegistry : IGameSessionRegistry
         }
     }
 
+    public ChatMessageSubmissionResult RejectChatMessage(
+        GameSessionConnection connection, ChatMessageRejectionReason reason)
+    {
+        ArgumentNullException.ThrowIfNull(connection);
+        return PublishChatRejection(connection, reason, ChatMessageSubmissionResult.Rejected);
+    }
+
     public bool IsCurrent(GameSessionConnection connection)
     {
         ArgumentNullException.ThrowIfNull(connection);

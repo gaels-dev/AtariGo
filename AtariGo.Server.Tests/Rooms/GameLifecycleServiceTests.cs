@@ -5,6 +5,7 @@ using AtariGo.Server.Application.Games;
 using AtariGo.Server.Application.Rooms;
 using AtariGo.Server.Application.Sessions;
 using AtariGo.Server.Data;
+using AtariGo.Server.Tests.Reports;
 
 namespace AtariGo.Server.Tests.Rooms;
 
@@ -12,6 +13,33 @@ namespace AtariGo.Server.Tests.Rooms;
 [TestCategory("Unit")]
 public sealed class GameLifecycleServiceTests
 {
+    [TestMethod]
+    public async Task StartGameAsync_SuspendedParticipant_ReleasesRoomReservation()
+    {
+        // Arrange
+        DbContextOptions<AtariGoDbContext> options = new DbContextOptionsBuilder<AtariGoDbContext>()
+            .UseSqlite("Data Source=:memory:").Options;
+        await using var dbContext = new FailingAtariGoDbContext(options);
+        var roomsService = new RoomsService(TimeProvider.System,
+            new SessionConnectionRegistry(), NullLogger<RoomsService>.Instance);
+        PrivateRoom room = CreateRoomWithOpponent(roomsService);
+        var sanctions = new AllowAllAccountSanctionService { IsSuspended = true };
+        var service = new GameLifecycleService(roomsService, dbContext,
+            TimeProvider.System, sanctions);
+        var request = new RoomStartRequest(room.RoomId, room.Version, room.Host.UserId);
+
+        // Act
+        RoomOperationResult result = await service.StartGameAsync(
+            request, CancellationToken.None);
+        RoomStartReservationResult retry = roomsService.ReserveStart(request);
+        roomsService.CancelStart(retry.Reservation!);
+
+        // Assert
+        Assert.AreEqual(RoomOperationStatus.AccountRestricted, result.Status);
+        Assert.AreEqual(RoomOperationStatus.Success, retry.Status);
+        Assert.IsNull(result.Room?.GameId);
+    }
+
     [TestMethod]
     public async Task StartGameAsync_PersistenceFails_ClearsTrackedGraphAndReleasesRoomAsync()
     {
@@ -25,7 +53,8 @@ public sealed class GameLifecycleServiceTests
             new SessionConnectionRegistry(),
             NullLogger<RoomsService>.Instance);
         PrivateRoom room = CreateRoomWithOpponent(roomsService);
-        var service = new GameLifecycleService(roomsService, dbContext, TimeProvider.System);
+        var service = new GameLifecycleService(roomsService, dbContext,
+            TimeProvider.System, new AllowAllAccountSanctionService());
         var request = new RoomStartRequest(room.RoomId, room.Version, room.Host.UserId);
 
         // Act

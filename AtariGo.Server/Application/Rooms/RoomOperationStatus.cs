@@ -11,5 +11,6 @@ public enum RoomOperationStatus
     CannotStart,
     VersionMismatch,
     HostRequired,
-    StartInProgress
+    StartInProgress,
+    AccountRestricted
 }

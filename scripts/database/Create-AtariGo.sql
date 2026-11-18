@@ -10,16 +10,6 @@ GO
 USE AtariGoDB;
 GO
 
-CREATE TABLE dbo.Roles
-(
-    RoleId INT IDENTITY(1, 1) NOT NULL,
-    Name NVARCHAR(30) NOT NULL,
-    Description NVARCHAR(500) NULL,
-    CONSTRAINT PK_Roles PRIMARY KEY (RoleId),
-    CONSTRAINT UQ_Roles_Name UNIQUE (Name)
-);
-GO
-
 CREATE TABLE dbo.Users
 (
     UserId INT IDENTITY(1, 1) NOT NULL,
@@ -30,19 +20,13 @@ CREATE TABLE dbo.Users
     RegistrationDate DATETIME2(0) NOT NULL
         CONSTRAINT DF_Users_RegistrationDate DEFAULT (SYSUTCDATETIME()),
     LastUpdate DATETIME2(0) NULL,
-    RoleId INT NOT NULL,
     CONSTRAINT PK_Users PRIMARY KEY (UserId),
     CONSTRAINT UQ_Users_UserName UNIQUE (UserName),
     CONSTRAINT UQ_Users_Email UNIQUE (Email),
-    CONSTRAINT FK_Users_Role FOREIGN KEY (RoleId)
-        REFERENCES dbo.Roles (RoleId),
-    CONSTRAINT CK_Users_State CHECK (State IN ('Active', 'Inactive', 'Suspended', 'Banned')),
+    CONSTRAINT CK_Users_State CHECK (State IN ('Active', 'Inactive')),
     CONSTRAINT CK_Users_LastUpdate CHECK
         (LastUpdate IS NULL OR LastUpdate >= RegistrationDate)
 );
-GO
-
-CREATE INDEX IX_Users_RoleId ON dbo.Users (RoleId);
 GO
 
 CREATE TABLE dbo.Credentials
@@ -444,89 +428,61 @@ CREATE TABLE dbo.Reports
     ReportId BIGINT IDENTITY(1, 1) NOT NULL,
     ReporterId INT NOT NULL,
     ReportedUserId INT NOT NULL,
-    GameId BIGINT NULL,
-    ReportReason VARCHAR(30) NOT NULL,
-    Description NVARCHAR(2000) NOT NULL,
-    State VARCHAR(20) NOT NULL
-        CONSTRAINT DF_Reports_State DEFAULT ('Pending'),
+    GameId BIGINT NOT NULL,
+    Category VARCHAR(20) NOT NULL,
+    Description NVARCHAR(2000) NULL,
     CreatedAt DATETIME2(0) NOT NULL
         CONSTRAINT DF_Reports_CreatedAt DEFAULT (SYSUTCDATETIME()),
-    ReviewedAt DATETIME2(0) NULL,
-    ReviewerId INT NULL,
     CONSTRAINT PK_Reports PRIMARY KEY (ReportId),
+    CONSTRAINT UQ_Reports_Reporter_Game UNIQUE (ReporterId, GameId),
     CONSTRAINT FK_Reports_Reporter FOREIGN KEY (ReporterId)
         REFERENCES dbo.Users (UserId),
     CONSTRAINT FK_Reports_ReportedUser FOREIGN KEY (ReportedUserId)
         REFERENCES dbo.Users (UserId),
     CONSTRAINT FK_Reports_Game FOREIGN KEY (GameId)
         REFERENCES dbo.Games (GameId),
-    CONSTRAINT FK_Reports_Reviewer FOREIGN KEY (ReviewerId)
-        REFERENCES dbo.Users (UserId),
     CONSTRAINT CK_Reports_DifferentUsers CHECK (ReporterId <> ReportedUserId),
-    CONSTRAINT CK_Reports_Reason
-        CHECK (ReportReason IN ('OffensiveLanguage', 'Cheating', 'Other')),
-    CONSTRAINT CK_Reports_State
-        CHECK (State IN ('Pending', 'Reviewed', 'ActionTaken', 'Dismissed')),
-    CONSTRAINT CK_Reports_Review CHECK
-        ((State = 'Pending' AND ReviewedAt IS NULL AND ReviewerId IS NULL)
-        OR (State <> 'Pending' AND ReviewedAt IS NOT NULL AND ReviewerId IS NOT NULL)),
-    CONSTRAINT CK_Reports_ReviewedAt CHECK
-        (ReviewedAt IS NULL OR ReviewedAt >= CreatedAt)
+    CONSTRAINT CK_Reports_Category
+        CHECK (Category IN ('Chat', 'Inactivity', 'Manipulation'))
 );
 GO
 
-CREATE INDEX IX_Reports_State_Created ON dbo.Reports (State, CreatedAt);
-GO
-
-CREATE INDEX IX_Reports_ReportedUser ON dbo.Reports (ReportedUserId, CreatedAt DESC);
-GO
-
-CREATE INDEX IX_Reports_Reviewer ON dbo.Reports (ReviewerId)
-    WHERE ReviewerId IS NOT NULL;
+CREATE INDEX IX_Reports_Target_Category_Created
+    ON dbo.Reports (ReportedUserId, Category, CreatedAt DESC, ReporterId);
 GO
 
 CREATE TABLE dbo.Sanctions
 (
     SanctionId BIGINT IDENTITY(1, 1) NOT NULL,
     UserId INT NOT NULL,
-    AdministratorId INT NOT NULL,
-    ReportId BIGINT NULL,
+    TriggeringReportId BIGINT NOT NULL,
     SanctionType VARCHAR(30) NOT NULL,
-    Reason NVARCHAR(1000) NOT NULL,
+    Threshold INT NOT NULL,
     StartedAt DATETIME2(0) NOT NULL
         CONSTRAINT DF_Sanctions_StartedAt DEFAULT (SYSUTCDATETIME()),
-    EndsAt DATETIME2(0) NULL,
-    State VARCHAR(20) NOT NULL
-        CONSTRAINT DF_Sanctions_State DEFAULT ('Active'),
+    EndsAt DATETIME2(0) NOT NULL,
+    RevokedAt DATETIME2(0) NULL,
     CONSTRAINT PK_Sanctions PRIMARY KEY (SanctionId),
+    CONSTRAINT UQ_Sanctions_TriggeringReport UNIQUE (TriggeringReportId),
     CONSTRAINT FK_Sanctions_User FOREIGN KEY (UserId)
         REFERENCES dbo.Users (UserId),
-    CONSTRAINT FK_Sanctions_Administrator FOREIGN KEY (AdministratorId)
-        REFERENCES dbo.Users (UserId),
-    CONSTRAINT FK_Sanctions_Report FOREIGN KEY (ReportId)
+    CONSTRAINT FK_Sanctions_TriggeringReport FOREIGN KEY (TriggeringReportId)
         REFERENCES dbo.Reports (ReportId),
     CONSTRAINT CK_Sanctions_Type
-        CHECK (SanctionType IN ('Warning', 'TemporarySuspension', 'PermanentBan')),
-    CONSTRAINT CK_Sanctions_State CHECK (State IN ('Active', 'Expired', 'Revoked')),
-    CONSTRAINT CK_Sanctions_EndsAt CHECK (EndsAt IS NULL OR EndsAt > StartedAt)
+        CHECK (SanctionType IN ('ChatMute', 'TemporarySuspension')),
+    CONSTRAINT CK_Sanctions_Threshold CHECK (Threshold >= 3 AND Threshold % 3 = 0),
+    CONSTRAINT CK_Sanctions_EndsAt CHECK (EndsAt > StartedAt),
+    CONSTRAINT CK_Sanctions_RevokedAt CHECK
+        (RevokedAt IS NULL OR RevokedAt >= StartedAt)
 );
 GO
 
-CREATE INDEX IX_Sanctions_User_State ON dbo.Sanctions (UserId, State, StartedAt DESC);
-GO
-
-CREATE INDEX IX_Sanctions_Administrator ON dbo.Sanctions (AdministratorId, StartedAt DESC);
-GO
-
-CREATE INDEX IX_Sanctions_Report ON dbo.Sanctions (ReportId)
-    WHERE ReportId IS NOT NULL;
+CREATE INDEX IX_Sanctions_User_Dates
+    ON dbo.Sanctions (UserId, SanctionType, StartedAt DESC, EndsAt);
 GO
 
 CREATE UNIQUE INDEX UX_GamePlayers_Game_GuestIdentity
     ON dbo.GamePlayers(GameId, GuestIdentityId) WHERE GuestIdentityId IS NOT NULL;
-GO
-
-INSERT INTO dbo.Roles(Name, Description) VALUES (N'Player', N'Registered player');
 GO
 
 ALTER TABLE dbo.Users WITH CHECK ADD CONSTRAINT CK_Users_UserName_NotGuest CHECK

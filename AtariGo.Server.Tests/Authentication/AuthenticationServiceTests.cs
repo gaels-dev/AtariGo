@@ -118,7 +118,6 @@ public sealed class AuthenticationServiceTests
 
     private static async Task SeedAsync(AtariGoDbContext context, User user)
     {
-        user.RoleId = await context.Roles.Select(role => role.RoleId).SingleAsync();
         context.Users.Add(user);
         await context.SaveChangesAsync();
         context.ChangeTracker.Clear();

@@ -55,13 +55,7 @@ public sealed class RegistrationService : IRegistrationService
             return existingAccountStatus.Value;
         }
 
-        Role? playerRole = await FindPlayerRoleAsync(cancellationToken);
-        if (playerRole is null)
-        {
-            return RegistrationStatus.Error;
-        }
-
-        User user = CreateUser(command, playerRole);
+        User user = CreateUser(command);
         return await SaveNewUserAsync(user, cancellationToken);
     }
 
@@ -84,16 +78,7 @@ public sealed class RegistrationService : IRegistrationService
         return emailExists ? RegistrationStatus.EmailTaken : null;
     }
 
-    private Task<Role?> FindPlayerRoleAsync(CancellationToken cancellationToken)
-    {
-        return _dbContext.Roles.SingleOrDefaultAsync(
-            role => role.Name == DatabaseValues.RoleNames.Player,
-            cancellationToken);
-    }
-
-    private User CreateUser(
-        RegisterAccountCommand command,
-        Role playerRole)
+    private User CreateUser(RegisterAccountCommand command)
     {
         DateTime now = _timeProvider.GetUtcNow().UtcDateTime;
         var user = new User
@@ -102,7 +87,6 @@ public sealed class RegistrationService : IRegistrationService
             Email = command.Email.Trim(),
             State = DatabaseValues.AccountStates.Active,
             RegistrationDate = now,
-            RoleId = playerRole.RoleId,
             Credential = new Credential { FailedAttempts = 0 },
             Profile = new AtariGo.Server.Data.Entities.Profile
             {

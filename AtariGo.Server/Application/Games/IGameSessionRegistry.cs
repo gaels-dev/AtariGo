@@ -8,6 +8,10 @@ public interface IGameSessionRegistry
         GameSessionConnection connection,
         string text);
 
+    ChatMessageSubmissionResult RejectChatMessage(
+        GameSessionConnection connection,
+        ChatMessageRejectionReason reason);
+
     bool IsCurrent(GameSessionConnection connection);
 
     bool AreBothConnected(long gameId);

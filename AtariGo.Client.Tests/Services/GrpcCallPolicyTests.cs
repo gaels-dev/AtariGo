@@ -3,6 +3,7 @@ using Grpc.Core.Interceptors;
 
 using AtariGo.Client.Models;
 using AtariGo.Client.Services;
+using AtariGo.Contracts;
 
 namespace AtariGo.Client.Tests.Services
 {
@@ -32,6 +33,28 @@ namespace AtariGo.Client.Tests.Services
             Assert.AreEqual("BusinessCode", failure.ErrorCode);
             Assert.AreSame(transport, failure.InnerException);
             Assert.IsFalse(failure.Message.Contains("BusinessCode", StringComparison.Ordinal));
+        }
+
+        [TestMethod]
+        public async Task ExecuteAsync_SuspensionTrailer_PreservesSpecificReasonAsync()
+        {
+            // Arrange
+            var trailers = new Metadata
+            {
+                { GrpcFailureCodes.TrailerKey, GrpcFailureCodes.AccountSuspended }
+            };
+            var transport = new RpcException(
+                new Status(StatusCode.PermissionDenied, "The account is suspended."), trailers);
+
+            // Act
+            ClientRequestException failure =
+                await Assert.ThrowsExactlyAsync<ClientRequestException>(
+                    () => GrpcCallPolicy.ExecuteAsync(() => Task.FromException<int>(transport)));
+
+            // Assert
+            Assert.AreEqual(ClientFailureReason.PermissionDenied, failure.Reason);
+            Assert.AreEqual(GrpcFailureCodes.AccountSuspended, failure.ErrorCode);
+            Assert.AreSame(transport, failure.InnerException);
         }
 
         [TestMethod]

@@ -9,47 +9,44 @@ public sealed class ReportEntityConfiguration : IEntityTypeConfiguration<Report>
 {
     public void Configure(EntityTypeBuilder<Report> entity)
     {
-        entity.HasIndex(report => new { report.ReportedUserId, report.CreatedAt },
-            "IX_Reports_ReportedUser").IsDescending(false, true);
+        entity.ToTable("Reports", table =>
+        {
+            table.HasCheckConstraint("CK_Reports_DifferentUsers",
+                "[ReporterId] <> [ReportedUserId]");
+            table.HasCheckConstraint("CK_Reports_Category",
+                "[Category] IN ('Chat', 'Inactivity', 'Manipulation')");
+        });
 
-        entity.HasIndex(report => report.ReviewerId, "IX_Reports_Reviewer").HasFilter(
-            "([ReviewerId] IS NOT NULL)");
-
-        entity.HasIndex(report => new { report.State, report.CreatedAt },
-            "IX_Reports_State_Created");
+        entity.HasIndex(report => new { report.ReporterId, report.GameId },
+            "UQ_Reports_Reporter_Game").IsUnique();
+        entity.HasIndex(report => new
+        {
+            report.ReportedUserId, report.Category, report.CreatedAt, report.ReporterId
+        }, "IX_Reports_Target_Category_Created").IsDescending(false, false, true, false);
 
         entity.Property(report => report.CreatedAt)
             .HasPrecision(0)
             .HasDefaultValueSql("(sysutcdatetime())", "DF_Reports_CreatedAt");
-        entity.Property(report => report.Description).HasMaxLength(2000);
-        entity.Property(report => report.ReportReason)
-            .HasMaxLength(30)
-            .IsUnicode(false);
-        entity.Property(report => report.ReviewedAt).HasPrecision(0);
-        entity.Property(report => report.State)
+        entity.Property(report => report.Category)
             .HasMaxLength(20)
-            .IsUnicode(false)
-            .HasDefaultValue("Pending", "DF_Reports_State");
+            .IsUnicode(false);
+        entity.Property(report => report.Description).HasMaxLength(2000);
 
-        entity.HasOne(dependent => dependent.Game).WithMany(principal => principal.Reports)
-            .HasForeignKey(dependent => dependent.GameId)
+        entity.HasOne(report => report.Game).WithMany(game => game.Reports)
+            .HasForeignKey(report => report.GameId)
+            .OnDelete(DeleteBehavior.Restrict)
             .HasConstraintName("FK_Reports_Game");
 
-        entity.HasOne(dependent => dependent.ReportedUser)
-            .WithMany(principal => principal.ReportReportedUsers)
-            .HasForeignKey(dependent => dependent.ReportedUserId)
-            .OnDelete(DeleteBehavior.ClientSetNull)
+        entity.HasOne(report => report.ReportedUser)
+            .WithMany(user => user.ReportReportedUsers)
+            .HasForeignKey(report => report.ReportedUserId)
+            .OnDelete(DeleteBehavior.Restrict)
             .HasConstraintName("FK_Reports_ReportedUser");
 
-        entity.HasOne(dependent => dependent.Reporter)
-            .WithMany(principal => principal.ReportReporters)
-            .HasForeignKey(dependent => dependent.ReporterId)
-            .OnDelete(DeleteBehavior.ClientSetNull)
+        entity.HasOne(report => report.Reporter)
+            .WithMany(user => user.ReportReporters)
+            .HasForeignKey(report => report.ReporterId)
+            .OnDelete(DeleteBehavior.Restrict)
             .HasConstraintName("FK_Reports_Reporter");
-
-        entity.HasOne(dependent => dependent.Reviewer)
-            .WithMany(principal => principal.ReportReviewers)
-            .HasForeignKey(dependent => dependent.ReviewerId)
-            .HasConstraintName("FK_Reports_Reviewer");
     }
 }

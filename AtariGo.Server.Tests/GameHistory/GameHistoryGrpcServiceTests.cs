@@ -123,10 +123,9 @@ public sealed class GameHistoryGrpcServiceTests
     private static async Task<long[]> SeedAsync(SqlServerTestDatabase database)
     {
         await using AtariGoDbContext context = database.CreateContext();
-        int roleId = await context.Roles.Select(role => role.RoleId).SingleAsync();
-        context.Users.Add(CreateUser("Owner", roleId));
-        context.Users.Add(CreateUser("RegisteredRival", roleId));
-        context.Users.Add(CreateUser("NoGames", roleId));
+        context.Users.Add(CreateUser("Owner"));
+        context.Users.Add(CreateUser("RegisteredRival"));
+        context.Users.Add(CreateUser("NoGames"));
         await context.SaveChangesAsync();
         var games = new List<Game>();
         for (int index = 0; index < 22; index++)
@@ -140,14 +139,13 @@ public sealed class GameHistoryGrpcServiceTests
             .ThenByDescending(game => game.GameId).Take(20).Select(game => game.GameId).ToArray();
     }
 
-    private static User CreateUser(string name, int roleId)
+    private static User CreateUser(string name)
     {
         return new User
         {
             UserName = name,
             Email = name + "@example.test",
             State = "Active",
-            RoleId = roleId,
             RegistrationDate = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)
         };
     }

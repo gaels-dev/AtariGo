@@ -154,9 +154,9 @@ public sealed class SqlServerGameplayTests
         await database.UpgradeDirectAsync();
         await database.UpgradeDirectAsync();
         // Assert
-        Assert.AreEqual(18, await new DatabaseReadinessCheck(context).CheckAsync(
+        Assert.AreEqual(17, await new DatabaseReadinessCheck(context).CheckAsync(
             CancellationToken.None));
-        Assert.AreEqual(18, await context.Database.SqlQueryRaw<int>(
+        Assert.AreEqual(17, await context.Database.SqlQueryRaw<int>(
             "SELECT COUNT(*) AS Value FROM sys.tables").SingleAsync());
     }
 

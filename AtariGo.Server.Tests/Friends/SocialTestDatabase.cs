@@ -43,11 +43,11 @@ internal sealed class SocialTestDatabase : IAsyncDisposable
             CREATE TABLE Users (
                 UserId INTEGER PRIMARY KEY, UserName TEXT NOT NULL, Email TEXT NOT NULL,
                 State TEXT NOT NULL, RegistrationDate TEXT NOT NULL,
-                LastUpdate TEXT NULL, RoleId INTEGER NOT NULL);
+                LastUpdate TEXT NULL);
             INSERT INTO Users VALUES
-                (1, 'Host', 'host@example.test', 'Active', '2026-01-01', NULL, 1),
-                (2, 'GuestPlayer', 'player@example.test', 'Active', '2026-01-01', NULL, 1),
-                (3, 'Other', 'other@example.test', 'Active', '2026-01-01', NULL, 1);
+                (1, 'Host', 'host@example.test', 'Active', '2026-01-01', NULL),
+                (2, 'GuestPlayer', 'player@example.test', 'Active', '2026-01-01', NULL),
+                (3, 'Other', 'other@example.test', 'Active', '2026-01-01', NULL);
             CREATE TABLE FriendRequests (
                 FriendRequestId INTEGER PRIMARY KEY AUTOINCREMENT,
                 RequesterId INTEGER NOT NULL, RecipientId INTEGER NOT NULL,

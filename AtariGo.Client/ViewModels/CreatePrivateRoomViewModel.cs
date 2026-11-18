@@ -110,7 +110,7 @@ namespace AtariGo.Client.ViewModels
 
         private void ShowFailure(Exception exception)
         {
-            ErrorMessage = ClientFailureMessages.GetMessage(exception);
+            ErrorMessage = ClientFailureMessages.GetGameAccessMessage(exception);
         }
     }
 }

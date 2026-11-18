@@ -4,6 +4,7 @@ namespace AtariGo.Server.Application.Games;
 
 public static class GameSessionRules
 {
+    private const string UserKeyPrefix = "user:";
     public const int MaximumPendingEvents = 128;
     public const int BoardSize = GameState.BoardSize;
     public const int PlayerCount = 2;
@@ -14,7 +15,16 @@ public static class GameSessionRules
 
     public static string CreateUserKey(int userId)
     {
-        return $"user:{userId}";
+        return $"{UserKeyPrefix}{userId}";
+    }
+
+    public static bool TryGetUserId(string playerKey, out int userId)
+    {
+        ArgumentNullException.ThrowIfNull(playerKey);
+        userId = 0;
+        return playerKey.StartsWith(UserKeyPrefix, StringComparison.Ordinal)
+            && int.TryParse(playerKey.AsSpan(UserKeyPrefix.Length), out userId)
+            && userId > 0;
     }
 
     public static string CreateGuestKey(Guid guestIdentityId)

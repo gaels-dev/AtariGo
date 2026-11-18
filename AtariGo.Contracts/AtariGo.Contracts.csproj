@@ -20,6 +20,7 @@
     <Protobuf Include="Protos\matchmaking.proto" GrpcServices="Both" />
     <Protobuf Include="Protos\game_session.proto" GrpcServices="Both" />
     <Protobuf Include="Protos\game_history.proto" GrpcServices="Both" />
+    <Protobuf Include="Protos\reports.proto" GrpcServices="Both" />
     <Protobuf Include="Protos\friends.proto" GrpcServices="Both" />
     <Protobuf Include="Protos\friendships.proto" GrpcServices="Both" />
   </ItemGroup>

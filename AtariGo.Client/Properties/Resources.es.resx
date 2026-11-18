@@ -1061,4 +1061,24 @@
   <data name="RoomInvitations_Err_RateLimited" xml:space="preserve">
     <value>Espera {0} segundos antes de otro intento de correo.</value>
   </data>
+  <data name="ReportPlayer_Reason_Chat" xml:space="preserve"><value>Abuso del chat</value></data>
+  <data name="ReportPlayer_Reason_Inactivity" xml:space="preserve"><value>Inactividad intencional</value></data>
+  <data name="ReportPlayer_Reason_Manipulation" xml:space="preserve"><value>Manipulación de la partida</value></data>
+  <data name="ReportPlayer_Btn_Close" xml:space="preserve"><value>Cerrar</value></data>
+  <data name="ReportPlayer_Err_TooLong" xml:space="preserve"><value>Los detalles son demasiado largos.</value></data>
+  <data name="ReportPlayer_Err_Unavailable" xml:space="preserve"><value>No se pudo confirmar el reporte. Inténtalo más tarde.</value></data>
+  <data name="ReportPlayer_Result_Accepted" xml:space="preserve"><value>Se recibió tu reporte.</value></data>
+  <data name="ReportPlayer_Result_AlreadyReported" xml:space="preserve"><value>Ya reportaste a este jugador en esta partida.</value></data>
+  <data name="ReportPlayer_Result_NotParticipant" xml:space="preserve"><value>No puedes reportar una partida en la que no participaste.</value></data>
+  <data name="ReportPlayer_Result_OpponentIsGuest" xml:space="preserve"><value>No se puede reportar a un invitado.</value></data>
+  <data name="ReportPlayer_Result_ChatMuted" xml:space="preserve"><value>No se aceptan reportes de chat mientras este jugador está silenciado.</value></data>
+  <data name="ReportPlayer_Result_InvalidRequest" xml:space="preserve"><value>No se pudo enviar el reporte con estos datos.</value></data>
+  <data name="LoginVerification_Restriction_Chat" xml:space="preserve"><value>Motivo: reportes reiterados por chat.</value></data>
+  <data name="LoginVerification_Restriction_Inactivity" xml:space="preserve"><value>Motivo: reportes reiterados por inactividad.</value></data>
+  <data name="LoginVerification_Restriction_Manipulation" xml:space="preserve"><value>Motivo: reportes reiterados por manipulación de partidas.</value></data>
+  <data name="GameBoard_Chat_Err_Muted" xml:space="preserve"><value>No puedes enviar mensajes mientras tu cuenta esté silenciada.</value></data>
+  <data name="GameBoard_Chat_Err_GuestNotAllowed" xml:space="preserve"><value>Los invitados no pueden enviar mensajes de chat.</value></data>
+  <data name="GameAccess_Err_Suspended" xml:space="preserve"><value>Tu cuenta está suspendida temporalmente. Aún no puedes iniciar otra partida.</value></data>
+  <data name="GameAccess_Err_ParticipantSuspended" xml:space="preserve"><value>Uno de los jugadores está suspendido temporalmente. No se puede iniciar la partida.</value></data>
+  <data name="GameAccess_Err_PermissionDenied" xml:space="preserve"><value>No tienes permiso para realizar esta operación.</value></data>
 </root>

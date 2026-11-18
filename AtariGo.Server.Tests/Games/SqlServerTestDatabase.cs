@@ -65,6 +65,44 @@ internal sealed class SqlServerTestDatabase : IAsyncDisposable
         await ExecuteAsync(script.Replace("AtariGoDB", _databaseName), false);
     }
 
+    public async Task UpgradeReportsAsync()
+    {
+        string script = await File.ReadAllTextAsync(ScriptPath("Update-AutomatedReports.sql"));
+        await ExecuteAsync(script.Replace("AtariGoDB", _databaseName), false);
+    }
+
+    public async Task RestoreLegacyReportSchemaAsync()
+    {
+        await ExecuteAsync("""
+            DROP TABLE dbo.Sanctions;
+            DROP TABLE dbo.Reports;
+            CREATE TABLE dbo.Roles
+            (
+                RoleId INT NOT NULL PRIMARY KEY,
+                Name NVARCHAR(30) NOT NULL
+            );
+            INSERT INTO dbo.Roles (RoleId, Name) VALUES (1, N'Player');
+            ALTER TABLE dbo.Users ADD RoleId INT NOT NULL;
+            ALTER TABLE dbo.Users ADD CONSTRAINT FK_Users_Role
+                FOREIGN KEY (RoleId) REFERENCES dbo.Roles (RoleId);
+            CREATE INDEX IX_Users_RoleId ON dbo.Users (RoleId);
+            ALTER TABLE dbo.Users DROP CONSTRAINT CK_Users_State;
+            ALTER TABLE dbo.Users ADD CONSTRAINT CK_Users_State
+                CHECK (State IN ('Active', 'Inactive', 'Suspended', 'Banned'));
+            CREATE TABLE dbo.Reports
+            (
+                ReportId BIGINT IDENTITY(1, 1) NOT NULL PRIMARY KEY,
+                ReporterId INT NOT NULL,
+                ReportedUserId INT NOT NULL
+            );
+            CREATE TABLE dbo.Sanctions
+            (
+                SanctionId BIGINT IDENTITY(1, 1) NOT NULL PRIMARY KEY,
+                UserId INT NOT NULL
+            );
+            """, false);
+    }
+
     public async Task RestoreLegacyProfileSchemaAsync()
     {
         await ExecuteAsync("""

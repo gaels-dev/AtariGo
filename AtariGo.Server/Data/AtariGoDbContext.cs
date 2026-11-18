@@ -72,11 +72,6 @@ public partial class AtariGoDbContext : DbContext
         get; set;
     }
 
-    public virtual DbSet<Role> Roles
-    {
-        get; set;
-    }
-
     public virtual DbSet<Room> Rooms
     {
         get; set;
@@ -131,8 +126,6 @@ public partial class AtariGoDbContext : DbContext
         modelBuilder.ApplyConfiguration(new ProfileEntityConfiguration());
 
         modelBuilder.ApplyConfiguration(new ReportEntityConfiguration());
-
-        modelBuilder.ApplyConfiguration(new RoleEntityConfiguration());
 
         modelBuilder.ApplyConfiguration(new RoomEntityConfiguration());
 

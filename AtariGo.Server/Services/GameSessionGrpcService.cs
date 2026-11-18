@@ -217,9 +217,10 @@ public sealed class GameSessionGrpcService : GameSession.GameSessionBase
             if (clientEvent.EventCase
                 == GameSessionClientEvent.EventOneofCase.SendChatMessage)
             {
-                _coordinator.PublishChatMessage(
+                await _coordinator.PublishChatMessageAsync(
                     connection,
-                    clientEvent.SendChatMessage.Text);
+                    clientEvent.SendChatMessage.Text,
+                    cancellationToken);
                 continue;
             }
 
@@ -391,12 +392,15 @@ public sealed class GameSessionGrpcService : GameSession.GameSessionBase
     private static ProtoChatRejectionReason MapRejectionReason(
         DomainChatRejectionReason reason)
     {
-        if (reason == DomainChatRejectionReason.Empty)
+        return reason switch
         {
-            return ProtoChatRejectionReason.Empty;
-        }
-
-        return ProtoChatRejectionReason.TooLong;
+            DomainChatRejectionReason.Empty => ProtoChatRejectionReason.Empty,
+            DomainChatRejectionReason.TooLong => ProtoChatRejectionReason.TooLong,
+            DomainChatRejectionReason.Muted => ProtoChatRejectionReason.Muted,
+            DomainChatRejectionReason.GuestNotAllowed
+                => ProtoChatRejectionReason.GuestNotAllowed,
+            _ => ProtoChatRejectionReason.Unspecified
+        };
     }
 
     private static GameBoardCell MapCell(GameSessionBoardCell cell)

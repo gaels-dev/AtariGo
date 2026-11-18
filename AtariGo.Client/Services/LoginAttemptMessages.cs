@@ -19,7 +19,13 @@ public static class LoginAttemptMessages
         }
         if (!string.IsNullOrWhiteSpace(result.RestrictionReason))
         {
-            message += " " + result.RestrictionReason;
+            string key = "LoginVerification_Restriction_" + result.RestrictionReason;
+            string? reason = Resources.ResourceManager.GetString(
+                key, CultureInfo.CurrentUICulture);
+            if (!string.IsNullOrWhiteSpace(reason))
+            {
+                message += " " + reason;
+            }
         }
         return message;
     }

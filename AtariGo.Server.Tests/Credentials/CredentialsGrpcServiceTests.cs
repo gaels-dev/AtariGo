@@ -220,8 +220,7 @@ public sealed class CredentialsGrpcServiceTests
     private static async Task SeedAsync(SqlServerTestDatabase database)
     {
         await using AtariGoDbContext context = database.CreateContext();
-        int roleId = await context.Roles.Select(role => role.RoleId).SingleAsync();
-        User owner = CreateUser("Owner", roleId);
+        User owner = CreateUser("Owner");
         owner.Sessions.Add(new AtariGo.Server.Data.Entities.Session
         {
             SessionTokenHash = new SessionTokenProvider().Hash("owner"),
@@ -231,18 +230,17 @@ public sealed class CredentialsGrpcServiceTests
             ExpiresAt = DateTime.UtcNow.AddHours(1)
         });
         context.Users.Add(owner);
-        context.Users.Add(CreateUser("Other", roleId));
+        context.Users.Add(CreateUser("Other"));
         await context.SaveChangesAsync();
     }
 
-    private static User CreateUser(string name, int roleId)
+    private static User CreateUser(string name)
     {
         var user = new User
         {
             UserName = name,
             Email = name + "@example.test",
             State = "Active",
-            RoleId = roleId,
             RegistrationDate = DateTime.UtcNow
         };
         user.Credential = new Credential

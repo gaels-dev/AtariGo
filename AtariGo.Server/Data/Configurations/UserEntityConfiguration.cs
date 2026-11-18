@@ -15,8 +15,6 @@ public sealed class UserEntityConfiguration : IEntityTypeConfiguration<User>
                 + "AND LEFT(LOWER(LTRIM(RTRIM([UserName]))), 6) "
                 + "<> N'guest-'"));
 
-        entity.HasIndex(user => user.RoleId, "IX_Users_RoleId");
-
         entity.HasIndex(user => user.Email, "UQ_Users_Email").IsUnique();
 
         entity.HasIndex(user => user.UserName, "UQ_Users_UserName").IsUnique();
@@ -32,9 +30,5 @@ public sealed class UserEntityConfiguration : IEntityTypeConfiguration<User>
             .HasDefaultValue("Active", "DF_Users_State");
         entity.Property(user => user.UserName).HasMaxLength(15);
 
-        entity.HasOne(dependent => dependent.Role).WithMany(principal => principal.Users)
-            .HasForeignKey(dependent => dependent.RoleId)
-            .OnDelete(DeleteBehavior.ClientSetNull)
-            .HasConstraintName("FK_Users_Role");
     }
 }

@@ -1062,4 +1062,24 @@
   <data name="RoomInvitations_Err_RateLimited" xml:space="preserve">
     <value>Please wait {0} seconds before another email attempt.</value>
   </data>
+  <data name="ReportPlayer_Reason_Chat" xml:space="preserve"><value>Chat abuse</value></data>
+  <data name="ReportPlayer_Reason_Inactivity" xml:space="preserve"><value>Intentional inactivity</value></data>
+  <data name="ReportPlayer_Reason_Manipulation" xml:space="preserve"><value>Game manipulation</value></data>
+  <data name="ReportPlayer_Btn_Close" xml:space="preserve"><value>Close</value></data>
+  <data name="ReportPlayer_Err_TooLong" xml:space="preserve"><value>The details are too long.</value></data>
+  <data name="ReportPlayer_Err_Unavailable" xml:space="preserve"><value>The report could not be confirmed. Please try again later.</value></data>
+  <data name="ReportPlayer_Result_Accepted" xml:space="preserve"><value>Your report was received.</value></data>
+  <data name="ReportPlayer_Result_AlreadyReported" xml:space="preserve"><value>You have already reported this player for this game.</value></data>
+  <data name="ReportPlayer_Result_NotParticipant" xml:space="preserve"><value>You cannot report a game you did not play.</value></data>
+  <data name="ReportPlayer_Result_OpponentIsGuest" xml:space="preserve"><value>Guest players cannot be reported.</value></data>
+  <data name="ReportPlayer_Result_ChatMuted" xml:space="preserve"><value>Chat reports are unavailable while this player is muted.</value></data>
+  <data name="ReportPlayer_Result_InvalidRequest" xml:space="preserve"><value>The report could not be submitted with these details.</value></data>
+  <data name="LoginVerification_Restriction_Chat" xml:space="preserve"><value>Reason: repeated chat reports.</value></data>
+  <data name="LoginVerification_Restriction_Inactivity" xml:space="preserve"><value>Reason: repeated inactivity reports.</value></data>
+  <data name="LoginVerification_Restriction_Manipulation" xml:space="preserve"><value>Reason: repeated game manipulation reports.</value></data>
+  <data name="GameBoard_Chat_Err_Muted" xml:space="preserve"><value>Chat is unavailable while your account is muted.</value></data>
+  <data name="GameBoard_Chat_Err_GuestNotAllowed" xml:space="preserve"><value>Guests cannot send chat messages.</value></data>
+  <data name="GameAccess_Err_Suspended" xml:space="preserve"><value>Your account is temporarily suspended. You cannot start another game yet.</value></data>
+  <data name="GameAccess_Err_ParticipantSuspended" xml:space="preserve"><value>A player is temporarily suspended. The game cannot start.</value></data>
+  <data name="GameAccess_Err_PermissionDenied" xml:space="preserve"><value>You do not have permission to perform this operation.</value></data>
 </root>

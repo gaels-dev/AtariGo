@@ -5,5 +5,6 @@ public enum ChatMessageSubmissionResult
     Accepted,
     Empty,
     TooLong,
+    Rejected,
     NotConnected
 }

@@ -238,7 +238,11 @@ namespace AtariGo.Client.ViewModels
             GameBoardViewModelContext boardContext = new GameBoardViewModelContext(
                 new GameplaySession(new GrpcGameSessionClient(SessionToken, GuestCredential)),
                 navigationContext.IsGuest,
-                navigationContext.PlayerName);
+                navigationContext.PlayerName)
+            {
+                ReportClient = string.IsNullOrWhiteSpace(SessionToken)
+                    ? null : new GrpcReportsClient(SessionToken)
+            };
             GameBoardViewModel gameBoard = new GameBoardViewModel(
                 _navigationService,
                 boardContext);
@@ -276,7 +280,11 @@ namespace AtariGo.Client.ViewModels
             GameBoardViewModelContext boardContext = new GameBoardViewModelContext(
                 new GameplaySession(new GrpcGameSessionClient(SessionToken, null)),
                 false,
-                _playerName);
+                _playerName)
+            {
+                ReportClient = string.IsNullOrWhiteSpace(SessionToken)
+                    ? null : new GrpcReportsClient(SessionToken)
+            };
             GameBoardViewModel gameBoard = new GameBoardViewModel(
                 _navigationService,
                 boardContext);

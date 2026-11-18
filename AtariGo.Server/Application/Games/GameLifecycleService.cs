@@ -1,5 +1,6 @@
 using AtariGo.Server.Application.Rooms;
 using AtariGo.Server.Application.Matchmaking;
+using AtariGo.Server.Application.Reports;
 using AtariGo.Server.Data;
 using AtariGo.Server.Data.Entities;
 
@@ -13,19 +14,23 @@ public sealed class GameLifecycleService : IGameLifecycleService
     private readonly IRoomsService _roomsService;
     private readonly AtariGoDbContext _dbContext;
     private readonly TimeProvider _timeProvider;
+    private readonly IAccountSanctionService _sanctions;
 
     public GameLifecycleService(
         IRoomsService roomsService,
         AtariGoDbContext dbContext,
-        TimeProvider timeProvider)
+        TimeProvider timeProvider,
+        IAccountSanctionService sanctions)
     {
         ArgumentNullException.ThrowIfNull(roomsService);
         ArgumentNullException.ThrowIfNull(dbContext);
         ArgumentNullException.ThrowIfNull(timeProvider);
+        ArgumentNullException.ThrowIfNull(sanctions);
 
         _roomsService = roomsService;
         _dbContext = dbContext;
         _timeProvider = timeProvider;
+        _sanctions = sanctions;
     }
 
     public async Task<RoomOperationResult> StartGameAsync(
@@ -47,6 +52,13 @@ public sealed class GameLifecycleService : IGameLifecycleService
         long gameId;
         try
         {
+            if (await HasSuspendedPlayerAsync(result.Reservation.Room.Host.UserId,
+                result.Reservation.Room.Opponent?.UserId, cancellationToken))
+            {
+                _roomsService.CancelStart(result.Reservation);
+                return new RoomOperationResult(
+                    RoomOperationStatus.AccountRestricted, result.Room);
+            }
             gameId = await PersistGameAsync(result.Reservation.Room, CancellationToken.None);
         }
         catch
@@ -72,6 +84,11 @@ public sealed class GameLifecycleService : IGameLifecycleService
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
+        if (await HasSuspendedPlayerAsync(request.BlackPlayer.UserId,
+            request.WhitePlayer.UserId, cancellationToken))
+        {
+            throw new AccountSuspendedException();
+        }
         DateTime now = _timeProvider.GetUtcNow().UtcDateTime;
         var game = new Game
         {
@@ -110,6 +127,18 @@ public sealed class GameLifecycleService : IGameLifecycleService
         }
 
         return completed;
+    }
+
+    private async Task<bool> HasSuspendedPlayerAsync(int? firstUserId,
+        int? secondUserId, CancellationToken cancellationToken)
+    {
+        if (firstUserId is int first
+            && await _sanctions.HasActiveSuspensionAsync(first, cancellationToken))
+        {
+            return true;
+        }
+        return secondUserId is int second
+            && await _sanctions.HasActiveSuspensionAsync(second, cancellationToken);
     }
 
     private async Task<long> PersistGameAsync(

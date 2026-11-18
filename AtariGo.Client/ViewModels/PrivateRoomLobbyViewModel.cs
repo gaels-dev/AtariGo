@@ -315,7 +315,7 @@ public sealed class PrivateRoomLobbyViewModel : ViewModelBase, IDisposable
         if (!_isDisposed)
         {
             Trace.TraceWarning("Room command failed: {0}.", exception.GetType().Name);
-            ErrorMessage = GetMessage("Connection_Err_RequestFailed");
+            ErrorMessage = ClientFailureMessages.GetGameAccessMessage(exception);
         }
     }
 }

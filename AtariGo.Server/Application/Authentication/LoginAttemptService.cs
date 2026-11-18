@@ -47,17 +47,17 @@ public sealed class LoginAttemptService
             };
         }
         Sanction? sanction = await _dbContext.Sanctions.AsNoTracking()
-            .Where(item => item.UserId == user.UserId && item.State == "Active"
-                && item.StartedAt <= now && (item.EndsAt == null || item.EndsAt > now)
-                && (item.SanctionType == "TemporarySuspension"
-                    || item.SanctionType == "PermanentBan"))
-            .OrderByDescending(item => item.EndsAt == null).ThenByDescending(item => item.EndsAt)
+            .Include(item => item.TriggeringReport)
+            .Where(item => item.UserId == user.UserId && item.RevokedAt == null
+                && item.StartedAt <= now && item.EndsAt > now
+                && item.SanctionType == DatabaseValues.SanctionTypes.TemporarySuspension)
+            .OrderByDescending(item => item.EndsAt)
             .FirstOrDefaultAsync(cancellationToken);
         if (sanction is not null)
         {
             return new LoginOperationResult(LoginStatus.AccountRestricted)
             {
-                RestrictionReason = sanction.Reason,
+                RestrictionReason = sanction.TriggeringReport.Category,
                 RetryAt = sanction.EndsAt
             };
         }

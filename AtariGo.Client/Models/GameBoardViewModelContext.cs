@@ -5,4 +5,7 @@ namespace AtariGo.Client.Models;
 public sealed record GameBoardViewModelContext(
     IGameplaySession? Session,
     bool IsGuest,
-    string PlayerName);
+    string PlayerName)
+{
+    public IReportClient? ReportClient { get; init; }
+}

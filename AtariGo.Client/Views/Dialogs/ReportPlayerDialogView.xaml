@@ -35,6 +35,7 @@
 
             <ComboBox ItemsSource="{Binding Reasons}"
                       SelectedItem="{Binding SelectedReason}"
+                      DisplayMemberPath="Label"
                       Height="36"
                       VerticalContentAlignment="Center"
                       Margin="0,0,0,15"/>
@@ -45,6 +46,7 @@
                        Margin="0,0,0,5"/>
 
             <TextBox Text="{Binding Details, UpdateSourceTrigger=PropertyChanged}"
+                     MaxLength="{Binding MaximumDetailsLength}"
                      Height="70"
                      TextWrapping="Wrap"
                      AcceptsReturn="True"
@@ -52,11 +54,17 @@
                      Padding="8"
                      BorderBrush="#2C2A29"
                      BorderThickness="1"
-                     Margin="0,0,0,20"/>
+                     Margin="0,0,0,10"/>
+
+            <TextBlock Text="{Binding StatusMessage}"
+                       TextWrapping="Wrap"
+                       Foreground="#2C2A29"
+                       Margin="0,0,0,15"
+                       AutomationProperties.LiveSetting="Polite"/>
 
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                 <Button Style="{StaticResource RoundedButtonStyle}"
-                        Content="{x:Static properties:Resources.ReportPlayer_Btn_Cancel}"
+                        Content="{Binding CancelLabel}"
                         Command="{Binding CancelCommand}"
                         Width="110"
                         Height="36"
@@ -70,6 +78,7 @@
                 <Button Style="{StaticResource RoundedButtonStyle}"
                         Content="{x:Static properties:Resources.ReportPlayer_Btn_Submit}"
                         Command="{Binding SubmitCommand}"
+                        IsEnabled="{Binding CanSubmit}"
                         Width="130"
                         Height="36"
                         Background="#D9534F"

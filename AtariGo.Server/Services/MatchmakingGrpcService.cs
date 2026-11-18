@@ -3,6 +3,7 @@ using Grpc.Core;
 using AtariGo.Contracts;
 using AtariGo.Server.Application.Games;
 using AtariGo.Server.Application.Matchmaking;
+using AtariGo.Server.Application.Reports;
 using AtariGo.Server.Application.Sessions;
 
 namespace AtariGo.Server.Services;
@@ -16,21 +17,25 @@ public sealed class MatchmakingGrpcService : Matchmaking.MatchmakingBase
     private readonly PublicMatchmakingService _matchmaking;
     private readonly IGuestIdentityRegistry _guestIdentityRegistry;
     private readonly ISessionService _sessionService;
+    private readonly IAccountSanctionService _sanctions;
     private readonly ILogger<MatchmakingGrpcService> _logger;
 
     public MatchmakingGrpcService(
         PublicMatchmakingService matchmaking,
         IGuestIdentityRegistry guestIdentityRegistry,
         ISessionService sessionService,
+        IAccountSanctionService sanctions,
         ILogger<MatchmakingGrpcService> logger)
     {
         ArgumentNullException.ThrowIfNull(matchmaking);
         ArgumentNullException.ThrowIfNull(guestIdentityRegistry);
         ArgumentNullException.ThrowIfNull(sessionService);
+        ArgumentNullException.ThrowIfNull(sanctions);
         ArgumentNullException.ThrowIfNull(logger);
         _matchmaking = matchmaking;
         _guestIdentityRegistry = guestIdentityRegistry;
         _sessionService = sessionService;
+        _sanctions = sanctions;
         _logger = logger;
     }
 
@@ -131,6 +136,11 @@ public sealed class MatchmakingGrpcService : Matchmaking.MatchmakingBase
         ServerCallContext context)
     {
         MatchmakingPlayer player = await IdentifyPlayerAsync(context);
+        if (player.UserId is int userId
+            && await _sanctions.HasActiveSuspensionAsync(userId, context.CancellationToken))
+        {
+            throw AccountSanctionGrpcErrors.CreateAccountSuspended();
+        }
         MatchmakingTicket? ticket = _matchmaking.Join(player);
         if (ticket is null)
         {
@@ -157,6 +167,10 @@ public sealed class MatchmakingGrpcService : Matchmaking.MatchmakingBase
                 && exception.StatusCode == StatusCode.Cancelled)
         {
             _logger.LogInformation("Public matchmaking RPC was cancelled by the client.");
+        }
+        catch (AccountSuspendedException)
+        {
+            throw AccountSanctionGrpcErrors.CreateParticipantSuspended();
         }
     }
 }

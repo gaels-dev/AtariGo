@@ -422,12 +422,12 @@ public sealed class FriendServiceTests
     {
         return context.Database.ExecuteSqlRawAsync("""
             INSERT INTO Users VALUES
-                (4, 'Alpine', 'alpine@example.test', 'Active', '2026-01-01', NULL, 1),
-                (5, 'Alpha', 'alpha@example.test', 'Active', '2026-01-01', NULL, 1),
-                (6, 'Ally', 'ally@example.test', 'Active', '2026-01-01', NULL, 1),
-                (7, 'Alina', 'alina@example.test', 'Active', '2026-01-01', NULL, 1),
-                (8, 'Alfred', 'alfred@example.test', 'Active', '2026-01-01', NULL, 1),
-                (9, 'Alberta', 'alberta@example.test', 'Inactive', '2026-01-01', NULL, 1);
+                (4, 'Alpine', 'alpine@example.test', 'Active', '2026-01-01', NULL),
+                (5, 'Alpha', 'alpha@example.test', 'Active', '2026-01-01', NULL),
+                (6, 'Ally', 'ally@example.test', 'Active', '2026-01-01', NULL),
+                (7, 'Alina', 'alina@example.test', 'Active', '2026-01-01', NULL),
+                (8, 'Alfred', 'alfred@example.test', 'Active', '2026-01-01', NULL),
+                (9, 'Alberta', 'alberta@example.test', 'Inactive', '2026-01-01', NULL);
             INSERT INTO Friendships VALUES (4, 1, '2026-01-01');
             INSERT INTO FriendRequests VALUES
                 (1, 1, 5, 'Pending', '2026-01-01', NULL),
@@ -445,7 +445,7 @@ public sealed class FriendServiceTests
             await context.Database.ExecuteSqlInterpolatedAsync($"""
                 INSERT INTO Users VALUES
                     ({userId}, {userName}, {userName + "@example.test"}, 'Active',
-                     '2026-01-01', NULL, 1);
+                     '2026-01-01', NULL);
                 """);
         }
     }

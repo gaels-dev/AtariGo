@@ -24,11 +24,6 @@ public partial class User
         get; set;
     }
 
-    public int RoleId
-    {
-        get; set;
-    }
-
     public virtual ICollection<AuthenticationCode> AuthenticationCodes
     {
         get; set;
@@ -79,17 +74,7 @@ public partial class User
 
     public virtual ICollection<Report> ReportReporters { get; set; } = new List<Report>();
 
-    public virtual ICollection<Report> ReportReviewers { get; set; } = new List<Report>();
-
-    public virtual Role Role { get; set; } = null!;
-
     public virtual ICollection<Room> Rooms { get; set; } = new List<Room>();
-
-    public virtual ICollection<Sanction> SanctionAdministrators
-    {
-        get; set;
-    }
-        = new List<Sanction>();
 
     public virtual ICollection<Sanction> SanctionUsers { get; set; } = new List<Sanction>();
 

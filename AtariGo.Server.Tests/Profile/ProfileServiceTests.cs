@@ -151,8 +151,7 @@ public sealed class ProfileServiceTests
             CREATE TABLE Users (
                 UserId INTEGER PRIMARY KEY, UserName TEXT NOT NULL UNIQUE,
                 Email TEXT NOT NULL, State TEXT NOT NULL,
-                RegistrationDate TEXT NOT NULL, LastUpdate TEXT NULL,
-                RoleId INTEGER NOT NULL);
+                RegistrationDate TEXT NOT NULL, LastUpdate TEXT NULL);
             CREATE TABLE Profiles (
                 UserId INTEGER PRIMARY KEY, AvatarId INTEGER NOT NULL,
                 Description TEXT NULL, LastUpdate TEXT NULL);
@@ -161,8 +160,8 @@ public sealed class ProfileServiceTests
                 GamePlayerId INTEGER PRIMARY KEY, GameId INTEGER NOT NULL,
                 UserId INTEGER NULL, Result TEXT NOT NULL);
             INSERT INTO Users VALUES
-                (1, 'PlayerOne', 'first@example.test', 'Active', '2026-01-01', NULL, 1),
-                (2, 'PlayerTwo', 'second@example.test', 'Active', '2026-01-01', NULL, 1);
+                (1, 'PlayerOne', 'first@example.test', 'Active', '2026-01-01', NULL),
+                (2, 'PlayerTwo', 'second@example.test', 'Active', '2026-01-01', NULL);
             INSERT INTO Profiles VALUES (1, 1, NULL, NULL), (2, 1, NULL, NULL);
             INSERT INTO Games VALUES (1, 'Completed'), (2, 'InProgress');
             INSERT INTO GamePlayers VALUES

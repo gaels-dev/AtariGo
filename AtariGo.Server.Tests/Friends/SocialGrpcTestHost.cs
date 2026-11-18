@@ -9,11 +9,13 @@ using Microsoft.Extensions.Logging;
 using AtariGo.Server.Application.Friends;
 using AtariGo.Server.Application.Email;
 using AtariGo.Server.Application.Friendships;
+using AtariGo.Server.Application.Reports;
 using AtariGo.Server.Application.RoomInvitations;
 using AtariGo.Server.Application.Rooms;
 using AtariGo.Server.Application.Sessions;
 using AtariGo.Server.Application.Social;
 using AtariGo.Server.Services;
+using AtariGo.Server.Tests.Reports;
 
 namespace AtariGo.Server.Tests.Friends;
 
@@ -64,6 +66,8 @@ internal sealed class SocialGrpcTestHost : IAsyncDisposable
         builder.Services.AddSingleton<IRoomInvitationNotifier>(provider =>
             provider.GetRequiredService<ISessionConnectionRegistry>());
         builder.Services.AddSingleton<IRoomsService, RoomsService>();
+        builder.Services.AddSingleton<IAccountSanctionService,
+            AllowAllAccountSanctionService>();
         builder.Services.AddScoped<IRoomInvitationsService, RoomInvitationsService>();
         builder.Services.AddOptions<SmtpOptions>();
         builder.Services.AddSingleton<IEmailSender, SmtpEmailSender>();

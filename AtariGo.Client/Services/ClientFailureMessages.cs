@@ -3,6 +3,7 @@ using System.Globalization;
 
 using AtariGo.Client.Models;
 using AtariGo.Client.Properties;
+using AtariGo.Contracts;
 
 namespace AtariGo.Client.Services
 {
@@ -30,6 +31,21 @@ namespace AtariGo.Client.Services
             else if (reason == ClientFailureReason.CapacityExceeded)
             {
                 message = GetLocalizedMessage("JoinPrivateRoom_Err_Full");
+            }
+            else if (reason == ClientFailureReason.PermissionDenied)
+            {
+                message = GetPermissionMessage(exception);
+            }
+
+            return message;
+        }
+
+        public static string GetGameAccessMessage(Exception exception)
+        {
+            string message = GetMessage(exception);
+            if (GrpcClientFailures.GetReason(exception) == ClientFailureReason.PermissionDenied)
+            {
+                message = GetPermissionMessage(exception);
             }
 
             return message;
@@ -62,6 +78,18 @@ namespace AtariGo.Client.Services
                 ClientFailureReason.Cancelled => "Connection_Err_Cancelled",
                 _ => "Connection_Err_RequestFailed"
             };
+        }
+
+        private static string GetPermissionMessage(Exception exception)
+        {
+            string resourceKey = GrpcClientFailures.GetErrorCode(exception) switch
+            {
+                GrpcFailureCodes.AccountSuspended => "GameAccess_Err_Suspended",
+                GrpcFailureCodes.ParticipantSuspended =>
+                    "GameAccess_Err_ParticipantSuspended",
+                _ => "GameAccess_Err_PermissionDenied"
+            };
+            return GetLocalizedMessage(resourceKey);
         }
 
         private static string GetLocalizedMessage(string resourceKey)

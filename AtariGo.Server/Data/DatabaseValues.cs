@@ -13,6 +13,7 @@ public static class DatabaseValues
     public static class AccountStates
     {
         public const string Active = "Active";
+        public const string Inactive = "Inactive";
     }
 
     public static class SessionStates
@@ -54,8 +55,16 @@ public static class DatabaseValues
         public const string Won = "Won";
     }
 
-    public static class RoleNames
+    public static class ReportCategories
     {
-        public const string Player = "Player";
+        public const string Chat = "Chat";
+        public const string Inactivity = "Inactivity";
+        public const string Manipulation = "Manipulation";
+    }
+
+    public static class SanctionTypes
+    {
+        public const string ChatMute = "ChatMute";
+        public const string TemporarySuspension = "TemporarySuspension";
     }
 }

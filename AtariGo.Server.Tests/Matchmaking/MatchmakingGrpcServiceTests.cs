@@ -11,11 +11,13 @@ using Grpc.Net.Client;
 using AtariGo.Contracts;
 using AtariGo.Server.Application.Games;
 using AtariGo.Server.Application.Matchmaking;
+using AtariGo.Server.Application.Reports;
 using AtariGo.Server.Application.RoomInvitations;
 using AtariGo.Server.Application.Rooms;
 using AtariGo.Server.Application.Sessions;
 using AtariGo.Server.Services;
 using AtariGo.Server.Tests.Rooms;
+using AtariGo.Server.Tests.Reports;
 
 namespace AtariGo.Server.Tests.Matchmaking;
 
@@ -185,6 +187,8 @@ public sealed class MatchmakingGrpcServiceTests
         builder.Services.AddSingleton<InMemoryPublicMatchmakingQueue>();
         builder.Services.AddScoped<PublicMatchmakingService>();
         builder.Services.AddSingleton<ISessionService, TestRoomSessionService>();
+        builder.Services.AddSingleton<IAccountSanctionService,
+            AllowAllAccountSanctionService>();
         builder.Services.AddSingleton<IRoomInvitationNotifier, SessionConnectionRegistry>();
         builder.Services.AddSingleton<IRoomsService, RoomsService>();
         builder.Services.AddSingleton<IGameLifecycleService>(provider => lifecycle

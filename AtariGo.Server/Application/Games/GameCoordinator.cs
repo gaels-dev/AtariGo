@@ -1,4 +1,7 @@
 using AtariGo.Server.Concurrency;
+using Microsoft.EntityFrameworkCore;
+
+using AtariGo.Server.Data;
 
 namespace AtariGo.Server.Application.Games;
 
@@ -88,11 +91,31 @@ public sealed class GameCoordinator : IDisposable, IAsyncDisposable
         _registry.Disconnect(connection);
     }
 
-    public ChatMessageSubmissionResult PublishChatMessage(
-        GameSessionConnection connection, string text)
+    public async Task<ChatMessageSubmissionResult> PublishChatMessageAsync(
+        GameSessionConnection connection, string text, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(connection);
         ArgumentNullException.ThrowIfNull(text);
+        if (!GameSessionRules.TryGetUserId(connection.PlayerKey, out int userId))
+        {
+            return _registry.RejectChatMessage(
+                connection, ChatMessageRejectionReason.GuestNotAllowed);
+        }
+        using IServiceScope scope = _scopeFactory.CreateScope();
+        AtariGoDbContext dbContext = scope.ServiceProvider
+            .GetRequiredService<AtariGoDbContext>();
+        TimeProvider timeProvider = scope.ServiceProvider.GetRequiredService<TimeProvider>();
+        DateTime now = DateTime.UnixEpoch.AddSeconds(
+            timeProvider.GetUtcNow().ToUnixTimeSeconds());
+        bool isMuted = await dbContext.Sanctions.AsNoTracking()
+            .AnyAsync(sanction => sanction.UserId == userId
+                && sanction.SanctionType == DatabaseValues.SanctionTypes.ChatMute
+                && sanction.RevokedAt == null && sanction.StartedAt <= now
+                && sanction.EndsAt > now, cancellationToken);
+        if (isMuted)
+        {
+            return _registry.RejectChatMessage(connection, ChatMessageRejectionReason.Muted);
+        }
         return _registry.PublishChatMessage(connection, text);
     }
 

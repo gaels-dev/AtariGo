@@ -246,7 +246,7 @@ public partial class GameBoardViewModel
         }
         _hasPendingAction = update.HasPendingAction;
         _isSessionConnected = update.State == GameplayConnectionState.Connected;
-        IsChatEnabled = _isSessionConnected;
+        IsChatEnabled = _isSessionConnected && !_isGuest;
         if (update.ConnectionStarted)
         {
             _clockSynchronization.BeginConnection();

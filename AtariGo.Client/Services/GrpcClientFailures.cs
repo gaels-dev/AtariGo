@@ -1,6 +1,7 @@
 using Grpc.Core;
 
 using AtariGo.Client.Models;
+using AtariGo.Contracts;
 
 namespace AtariGo.Client.Services;
 
@@ -32,7 +33,8 @@ public static class GrpcClientFailures
         return exception switch
         {
             ClientRequestException request => request.ErrorCode,
-            RpcException rpc => rpc.Status.Detail,
+            RpcException rpc => rpc.Trailers.GetValue(GrpcFailureCodes.TrailerKey)
+                ?? rpc.Status.Detail,
             _ => string.Empty
         };
     }

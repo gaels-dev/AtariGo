@@ -160,7 +160,6 @@ internal sealed class RecoveryTestHost : IAsyncDisposable
     private async Task SeedAsync()
     {
         await using AtariGoDbContext context = Database.CreateContext();
-        int roleId = await context.Roles.Select(role => role.RoleId).SingleAsync();
         DateTime now = Clock.GetUtcNow().UtcDateTime;
         foreach (string name in new[] { "Owner", "Other" })
         {
@@ -168,7 +167,6 @@ internal sealed class RecoveryTestHost : IAsyncDisposable
             {
                 UserName = name,
                 Email = name + "@example.test",
-                RoleId = roleId,
                 State = "Active",
                 RegistrationDate = now
             };

@@ -22,8 +22,8 @@ public sealed class SqlServerProfileMigrationTests
             ALTER TABLE dbo.Profiles DROP CONSTRAINT CK_Profiles_AvatarId;
             ALTER TABLE dbo.Profiles WITH CHECK ADD CONSTRAINT CK_Profiles_AvatarId
                 CHECK (AvatarId BETWEEN 1 AND 5);
-            INSERT INTO dbo.Users (UserName, Email, RoleId)
-            VALUES (N'PlayerOne', N'first@example.test', 1);
+            INSERT INTO dbo.Users (UserName, Email)
+            VALUES (N'PlayerOne', N'first@example.test');
             INSERT INTO dbo.Profiles (UserId, AvatarId) VALUES (1, 5);
             """);
 
@@ -54,9 +54,9 @@ public sealed class SqlServerProfileMigrationTests
         await using (AtariGoDbContext seed = database.CreateContext())
         {
             await seed.Database.ExecuteSqlRawAsync("""
-                INSERT INTO dbo.Users (UserName, Email, RoleId)
-                VALUES (N'First', N'first@example.test', 1),
-                    (N'Second', N'second@example.test', 1);
+                INSERT INTO dbo.Users (UserName, Email)
+                VALUES (N'First', N'first@example.test'),
+                    (N'Second', N'second@example.test');
                 INSERT INTO dbo.Profiles (UserId, Avatar)
                 SELECT UserId, 0x01 FROM dbo.Users WHERE UserName = N'First';
                 """);
