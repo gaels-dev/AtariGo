@@ -153,6 +153,12 @@ foreach ($setting in $certificateSettings.GetEnumerator()) {
     }
 }
 
+& dotnet user-secrets set 'AtariGo:Lan:CertificateThumbprint' `
+    $serverCertificate.Thumbprint --project $projectPath
+if ($LASTEXITCODE -ne 0) {
+    throw [InvalidOperationException]::new('Unable to configure the LAN certificate.')
+}
+
 Write-Output ('Public CA certificate: ' + $rootPublicPath)
 Write-Output ('Verify this SHA-256 on each client: ' + $rootSha256)
 Write-Output ('Server certificate expires: ' + $serverCertificate.NotAfter.ToString('O'))

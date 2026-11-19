@@ -1,3 +1,5 @@
+using System.Security.Cryptography.X509Certificates;
+
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -28,6 +30,13 @@ string[] hostArguments = args
     .Where(argument => argument != DatabaseReadinessCommand.CommandLineSwitch)
     .ToArray();
 WebApplicationBuilder builder = WebApplication.CreateBuilder(hostArguments);
+bool checkDatabase = args.Contains(DatabaseReadinessCommand.CommandLineSwitch,
+    StringComparer.Ordinal);
+X509Certificate2? lanCertificate = null;
+if (!checkDatabase)
+{
+    lanCertificate = LanEndpointSettings.Configure(builder);
+}
 
 string? connectionString = builder.Configuration.GetConnectionString(
     DatabaseConnectionSettings.ConnectionName);
@@ -88,9 +97,14 @@ builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 builder.Services.AddGrpc();
 
 await using WebApplication app = builder.Build();
+if (lanCertificate is not null)
+{
+    app.Lifetime.ApplicationStopped.Register(lanCertificate.Dispose);
+}
 
 if (!DatabaseConnectionSettings.Validate(app.Configuration, app.Logger))
 {
+    lanCertificate?.Dispose();
     Environment.ExitCode = DatabaseReadinessCommand.FailureExitCode;
     return;
 }
@@ -114,7 +128,7 @@ app.MapGrpcService<MatchmakingGrpcService>();
 app.MapGet("/", () =>
     "Communication with gRPC endpoints must be made through a gRPC client.");
 
-if (args.Contains(DatabaseReadinessCommand.CommandLineSwitch, StringComparer.Ordinal))
+if (checkDatabase)
 {
     Environment.ExitCode = await DatabaseReadinessCommand.RunAsync(app.Services, app.Logger);
 }
