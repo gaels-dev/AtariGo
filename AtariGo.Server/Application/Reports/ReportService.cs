@@ -18,7 +18,7 @@ public sealed class ReportService : IReportService
     private const int SecondSanctionDays = 3;
     private const int MaximumSanctionDays = 7;
 
-    private const int SecondSanctionThreshold = 2;
+    private const int SecondSanctionThreshold = ReportsPerThreshold * 2;
 
     private readonly AtariGoDbContext _dbContext;
     private readonly TimeProvider _timeProvider;
