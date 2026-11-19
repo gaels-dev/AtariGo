@@ -389,6 +389,28 @@ public sealed class GameBoardViewModelTests
             nameof(INavigationService.NavigateToMainMenu)));
     }
 
+    [TestMethod]
+    public async Task ApplySnapshot_GameCompleted_OpensGameOverDialogAndNavigatesOnCloseAsync()
+    {
+        // Arrange
+        StubGameSessionStream stream = new StubGameSessionStream();
+        INavigationService navigation = DispatchProxy.Create<INavigationService,
+            RecordingNavigationProxy>();
+        RecordingNavigationProxy recorded = (RecordingNavigationProxy)navigation;
+        using GameBoardViewModel model = CreateModel(stream, navigation: navigation);
+        await WaitUntilAsync(() => model.IsMyTurn);
+
+        // Act
+        stream.Publish(FinishedGame());
+        await WaitUntilAsync(() => recorded.OpenedDialog is GameOverDialogViewModel);
+        GameOverDialogViewModel dialog = (GameOverDialogViewModel)recorded.OpenedDialog!;
+        dialog.AcceptCommand.Execute(null);
+
+        // Assert
+        Assert.IsTrue(recorded.Calls.Contains(nameof(INavigationService.OpenDialog)));
+        Assert.IsTrue(recorded.Calls.Contains(nameof(INavigationService.NavigateToMainMenu)));
+    }
+
     private static GameSessionServerEvent AcceptSurrender(StubGameSessionStream stream)
     {
         return new GameSessionServerEvent

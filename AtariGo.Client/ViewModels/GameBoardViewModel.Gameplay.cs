@@ -6,6 +6,7 @@ using System.Windows.Threading;
 using AtariGo.Client.Commands;
 using AtariGo.Client.Models;
 using AtariGo.Client.Services;
+using AtariGo.Client.ViewModels.Dialogs;
 using AtariGo.Contracts;
 
 namespace AtariGo.Client.ViewModels;
@@ -21,6 +22,7 @@ public partial class GameBoardViewModel
     private bool _isFinished;
     private bool _hasPermanentSessionFailure;
     private bool _returnToMenuAfterSurrender;
+    private bool _hasShownGameEndDialog;
     private long _blackClockMilliseconds;
     private long _whiteClockMilliseconds;
     private long _clockReceivedTimestamp;
@@ -117,6 +119,34 @@ public partial class GameBoardViewModel
         OnPropertyChanged(nameof(TurnStatusMessage));
         OnPropertyChanged(nameof(CapturesStatus));
         RefreshClockLabels();
+        if (snapshot.Status == "Completed" && !_hasShownGameEndDialog)
+        {
+            _hasShownGameEndDialog = true;
+            ShowGameEndDialog(snapshot);
+        }
+    }
+
+    private void ShowGameEndDialog(GameSessionSnapshot snapshot)
+    {
+        string title = GetLocalizedMessage("GameBoard_GameOver_Title");
+        string outcomeKey = "GameBoard_Result_Lost";
+        if (MapStone(snapshot.Winner) == MyColor)
+        {
+            outcomeKey = "GameBoard_Result_Won";
+        }
+
+        string reasonKey = "GameBoard_Result_" + snapshot.EndReason;
+        string message = GetLocalizedMessage(outcomeKey) + " " + GetLocalizedMessage(reasonKey);
+        string actionButtonText = GetLocalizedMessage("GameBoard_GameOver_Action");
+
+        GameOverDialogViewModel dialog = new GameOverDialogViewModel(title, message, actionButtonText);
+        dialog.DialogClosed += OnGameEndDialogClosed;
+        _navigationService.OpenDialog(dialog);
+    }
+
+    private void OnGameEndDialogClosed(bool? result)
+    {
+        ReturnToMainMenu();
     }
 
     private string GetGameplayStatus(GameSessionSnapshot snapshot)
