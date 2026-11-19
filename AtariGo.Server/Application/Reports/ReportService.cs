@@ -11,12 +11,14 @@ namespace AtariGo.Server.Application.Reports;
 
 public sealed class ReportService : IReportService
 {
-    private const int MaximumDescriptionLength = 2000;
+    private const int MaximumDescriptionLength = 200;
     private const int WindowDays = 30;
     private const int ReportsPerThreshold = 3;
     private const int FirstSanctionDays = 1;
     private const int SecondSanctionDays = 3;
     private const int MaximumSanctionDays = 7;
+
+    private const int SecondSanctionThreshold = 2;
 
     private readonly AtariGoDbContext _dbContext;
     private readonly TimeProvider _timeProvider;
@@ -191,7 +193,12 @@ public sealed class ReportService : IReportService
         {
             return FirstSanctionDays;
         }
-        return threshold == ReportsPerThreshold * 2
-            ? SecondSanctionDays : MaximumSanctionDays;
+
+        if (threshold == SecondSanctionThreshold)
+        {
+            return SecondSanctionDays;
+        }
+
+        return MaximumSanctionDays;
     }
 }
