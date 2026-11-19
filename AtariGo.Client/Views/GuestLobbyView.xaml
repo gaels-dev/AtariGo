@@ -36,10 +36,10 @@
                 Padding="45"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Stretch">
-            <Grid Width="700" VerticalAlignment="Center">
+            <Grid Width="750" VerticalAlignment="Center">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="1*"/>
-                    <ColumnDefinition Width="1.2*"/>
+                    <ColumnDefinition Width="1.4*"/>
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Grid.Column="0"
@@ -93,11 +93,12 @@
                     <StackPanel VerticalAlignment="Center">
                         <TextBlock Text="{Binding TitleText}"
                                    FontFamily="Georgia"
-                                   FontSize="27"
+                                   FontSize="24"
                                    FontWeight="Bold"
                                    Foreground="#2C2A29"
                                    HorizontalAlignment="Center"
                                    TextAlignment="Center"
+                                   TextWrapping="Wrap"
                                    Margin="0,0,0,25"/>
                         <Button Style="{StaticResource RoundedButtonStyle}"
                                 Content="{Binding PlayMultiplayerLabel}"

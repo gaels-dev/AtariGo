@@ -125,7 +125,7 @@
                                     BorderThickness="0"
                                     Foreground="#1976D2"/>
                         </Grid>
-                        <Grid Margin="0,0,0,4">
+                        <Grid Margin="0,0,14,4">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="32"/>
                                 <ColumnDefinition Width="27"/>
@@ -154,7 +154,7 @@
                             <ItemsControl ItemsSource="{Binding LeaderboardEntries}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Grid Margin="0,3">
+                                        <Grid Margin="0,3,10,3">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="32"/>
                                                 <ColumnDefinition Width="27"/>
