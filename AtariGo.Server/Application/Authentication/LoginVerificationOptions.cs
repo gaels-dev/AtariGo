@@ -1,3 +1,5 @@
+using AtariGo.Contracts.Validation;
+
 namespace AtariGo.Server.Application.Authentication;
 
 public sealed class LoginVerificationOptions
@@ -7,7 +9,7 @@ public sealed class LoginVerificationOptions
     public const int MinimumResendSeconds = 60;
     public const string Purpose = "TwoFactor";
 
-    public static TimeSpan CodeLifetime { get; } = TimeSpan.FromMinutes(10);
+    public static TimeSpan CodeLifetime { get; } = VerificationCodeRules.Lifetime;
 
     public static TimeSpan LockDuration { get; } = TimeSpan.FromMinutes(15);
 

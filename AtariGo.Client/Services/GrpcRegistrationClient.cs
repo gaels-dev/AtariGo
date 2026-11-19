@@ -20,24 +20,29 @@ namespace AtariGo.Client.Services
             _client = new Registration.RegistrationClient(callInvoker);
         }
 
-        public Task<RegisterAccountResponse> RegisterAccountAsync(
+        public async Task<RegisterAccountResponse> RegisterAccountAsync(
             RegistrationDraft registrationDraft,
-            string confirmationText,
             CancellationToken cancellationToken = default)
         {
-            ArgumentNullException.ThrowIfNull(confirmationText);
             ArgumentNullException.ThrowIfNull(registrationDraft);
 
-            return GrpcCallPolicy.ExecuteAsync(() => _client.RegisterAccountAsync(
-                new RegisterAccountRequest
+            var request = new RegisterAccountRequest
                 {
                     UserName = registrationDraft.UserName,
                     Email = registrationDraft.Email,
                     Password = registrationDraft.Password,
-                    PasswordConfirmation = registrationDraft.PasswordConfirmation,
-                    ConfirmationText = confirmationText
-                },
-                GrpcCallPolicy.CreateOptions(cancellationToken)).ResponseAsync);
+                    PasswordConfirmation = registrationDraft.PasswordConfirmation
+                };
+            try
+            {
+                return await GrpcCallPolicy.ExecuteAsync(() => _client.RegisterAccountAsync(
+                    request, GrpcCallPolicy.CreateOptions(cancellationToken)).ResponseAsync);
+            }
+            finally
+            {
+                request.Password = string.Empty;
+                request.PasswordConfirmation = string.Empty;
+            }
         }
     }
 }

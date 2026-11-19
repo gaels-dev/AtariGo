@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore.Storage;
 
+using AtariGo.Contracts.Validation;
 using AtariGo.Server.Data;
 using AtariGo.Server.Data.Entities;
 
@@ -69,7 +70,8 @@ public sealed class AuthenticationService : IAuthenticationService
     private async Task<LoginPreparation> PrepareAsync(LoginCommand command,
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(command.Identifier) || string.IsNullOrEmpty(command.Password))
+        if (string.IsNullOrWhiteSpace(command.Identifier) || string.IsNullOrEmpty(command.Password)
+            || command.Password.Length > PasswordPolicy.MaximumPasswordLength)
         {
             return new LoginPreparation(new LoginOperationResult(LoginStatus.InvalidCredentials));
         }
@@ -80,8 +82,7 @@ public sealed class AuthenticationService : IAuthenticationService
             return new LoginPreparation(new LoginOperationResult(LoginStatus.InvalidCredentials));
         }
         LoginAttemptService.ResetExpiredLock(user.Credential, _attempts.UtcNow);
-        if (command.Password.Length > PasswordPolicy.MaximumPasswordLength
-            || !VerifyPassword(user, command.Password))
+        if (!VerifyPassword(user, command.Password))
         {
             await _attempts.RegisterFailureAsync(user, cancellationToken);
             return new LoginPreparation(new LoginOperationResult(LoginStatus.InvalidCredentials));

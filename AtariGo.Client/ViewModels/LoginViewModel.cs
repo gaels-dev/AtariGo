@@ -4,10 +4,9 @@ using System.Windows.Input;
 
 using AtariGo.Client.Commands;
 using AtariGo.Client.Models;
-using AtariGo.Client.Properties;
 using AtariGo.Client.Services;
 using AtariGo.Client.ViewModels.Dialogs;
-using AtariGo.Contracts;
+using AtariGo.Contracts.Validation;
 
 namespace AtariGo.Client.ViewModels
 {
@@ -19,10 +18,7 @@ namespace AtariGo.Client.ViewModels
         private readonly CancellationTokenSource _lifetimeCancellation =
             new CancellationTokenSource();
         private bool _isDisposed;
-        private RegisterDialogViewModel? _registerDialogViewModel;
-        private GuestRegistrationDialogViewModel?
-            _guestRegistrationDialogViewModel;
-
+        private bool _isBusy;
         private string _identifier = string.Empty;
         private string _loginMessage = string.Empty;
         private bool _isLanguageOverlayVisible;
@@ -92,6 +88,8 @@ namespace AtariGo.Client.ViewModels
 
         public bool IsDialogVisible => _currentDialogViewModel is not null;
 
+        public bool CanEditCredentials => !_isDisposed && !_isBusy;
+
         public ICommand ChangeLanguageCommand
         {
             get;
@@ -147,56 +145,36 @@ namespace AtariGo.Client.ViewModels
 
         public void ShowSessionExpiredMessage()
         {
-            LoginMessage = GetLocalizedMessage("Connection_Err_SessionExpired");
+            LoginMessage = AuthenticationMessages.GetText("Connection_Err_SessionExpired");
         }
 
         public void OpenRegisterDialog()
         {
-            _registerDialogViewModel = new RegisterDialogViewModel(_navigationService);
-            CurrentDialogViewModel = _registerDialogViewModel;
-        }
-
-        public void OpenVerificationDialog(RegistrationDraft registrationDraft)
-        {
-            CurrentDialogViewModel = new VerificationDialogViewModel(
-                registrationDraft,
-                _navigationService,
-                _registrationClient);
-        }
-
-        public void ReturnToRegisterDialog()
-        {
-            CurrentDialogViewModel = _registerDialogViewModel;
-        }
-
-        public void DiscardRegistration()
-        {
-            _registerDialogViewModel?.ClearSensitiveData();
-            _registerDialogViewModel = null;
-            CurrentDialogViewModel = null;
-        }
-
-        public void ShowRegistrationResult(RegistrationResult result)
-        {
-            bool succeeded = result == RegistrationResult.Success;
-            ViewModelBase? previousDialog = CurrentDialogViewModel;
-            string resourceKey = result switch
+            if (!CanEditCredentials)
             {
-                RegistrationResult.Success => "RegistrationResult_Msg_Success",
-                RegistrationResult.UsernameTaken =>
-                    "RegistrationResult_Msg_UsernameTaken",
-                RegistrationResult.EmailTaken => "RegistrationResult_Msg_EmailTaken",
-                _ => "RegistrationResult_Msg_Error"
-            };
+                return;
+            }
+            CurrentDialogViewModel = new RegisterDialogViewModel(
+                _navigationService, _registrationClient);
+        }
 
+        public void ShowRegistrationSuccess()
+        {
+            if (CurrentDialogViewModel is RegisterDialogViewModel registration)
+            {
+                Identifier = registration.UserName.Trim();
+            }
             CurrentDialogViewModel = new RegistrationResultDialogViewModel(
-                GetLocalizedMessage(resourceKey),
-                GetLocalizedMessage("RegistrationResult_Btn_Close"),
-                () => CloseRegistrationResult(succeeded, previousDialog));
+                AuthenticationMessages.GetText("RegistrationResult_Msg_Success"),
+                AuthenticationMessages.GetText("RegistrationResult_Btn_Close"), CloseDialog);
         }
 
         public void OpenForgotPasswordDialog()
         {
+            if (!CanEditCredentials)
+            {
+                return;
+            }
             CurrentDialogViewModel = new PasswordRecoveryDialogViewModel(
                 new GrpcPasswordRecoveryClient(), _navigationService);
         }
@@ -206,22 +184,9 @@ namespace AtariGo.Client.ViewModels
             CurrentDialogViewModel = null;
         }
 
-        private void CloseRegistrationResult(bool succeeded, ViewModelBase? previousDialog)
-        {
-            if (succeeded)
-            {
-                _registerDialogViewModel?.ClearSensitiveData();
-                _registerDialogViewModel = null;
-            }
-
-            CurrentDialogViewModel = succeeded
-                ? null
-                : _registerDialogViewModel ?? previousDialog;
-        }
-
         private async Task SubmitAsync(object? parameter)
         {
-            if (_isDisposed || IsDialogVisible)
+            if (!CanEditCredentials || IsDialogVisible)
             {
                 return;
             }
@@ -229,14 +194,22 @@ namespace AtariGo.Client.ViewModels
             string password = parameter as string ?? string.Empty;
             string identifier = Identifier.Trim();
 
-            if (string.IsNullOrWhiteSpace(identifier) || string.IsNullOrWhiteSpace(password))
+            if (string.IsNullOrWhiteSpace(identifier) || string.IsNullOrEmpty(password))
             {
-                LoginMessage = GetLocalizedMessage("Login_Err_Required");
+                LoginMessage = AuthenticationMessages.GetText("Login_Err_Required");
                 return;
             }
 
+            if (identifier.Length > EmailAddressRules.MaximumLength
+                || password.Length > PasswordPolicy.MaximumPasswordLength)
+            {
+                LoginMessage = AuthenticationMessages.GetText(
+                    "LoginVerification_Result_InvalidCredentials");
+                return;
+            }
             LoginMessage = string.Empty;
             CancellationToken cancellationToken = _lifetimeCancellation.Token;
+            SetLoginBusy(true);
 
             try
             {
@@ -254,12 +227,13 @@ namespace AtariGo.Client.ViewModels
             finally
             {
                 password = string.Empty;
+                SetLoginBusy(false);
             }
         }
 
         private void ApplyLoginResponse(LoginAttemptResult response)
         {
-            LoginMessage = LoginAttemptMessages.GetMessage(response);
+            LoginMessage = AuthenticationMessages.GetMessage(response);
             if (response.Status is LoginAttemptStatus.ChallengeRequired
                 or LoginAttemptStatus.DeliveryFailed
                 && !string.IsNullOrWhiteSpace(response.ChallengeToken))
@@ -269,7 +243,8 @@ namespace AtariGo.Client.ViewModels
             }
             else if (response.Status == LoginAttemptStatus.Success)
             {
-                LoginMessage = LoginAttemptMessages.GetText("LoginVerification_Result_Unavailable");
+                LoginMessage = AuthenticationMessages.GetText(
+                    "LoginVerification_Result_Unavailable");
             }
         }
 
@@ -296,21 +271,19 @@ namespace AtariGo.Client.ViewModels
         {
             if (!_isDisposed)
             {
-                LoginMessage = LoginAttemptMessages.GetText("LoginVerification_Result_Unconfirmed");
+                LoginMessage = AuthenticationMessages.GetText(
+                    "LoginVerification_Result_Unconfirmed");
             }
         }
 
-        private static string GetLocalizedMessage(string key) =>
-            Resources.ResourceManager.GetString(key, CultureInfo.CurrentUICulture)
-            ?? key;
-
         private void GuestLogin()
         {
-            _guestRegistrationDialogViewModel =
-                new GuestRegistrationDialogViewModel(
-                    _navigationService);
-            CurrentDialogViewModel =
-                _guestRegistrationDialogViewModel;
+            if (!CanEditCredentials)
+            {
+                return;
+            }
+            CurrentDialogViewModel = new GuestRegistrationDialogViewModel(
+                _navigationService);
         }
 
         private void ConfirmLanguage()
@@ -328,6 +301,15 @@ namespace AtariGo.Client.ViewModels
 
             IsLanguageOverlayVisible = false;
             _navigationService.RefreshLoginView();
+        }
+
+        private void SetLoginBusy(bool isBusy)
+        {
+            if (!_isDisposed)
+            {
+                _isBusy = isBusy;
+                OnPropertyChanged(nameof(CanEditCredentials));
+            }
         }
     }
 }

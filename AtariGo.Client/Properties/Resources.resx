@@ -350,23 +350,8 @@
   <data name="GameBoard_Surrender_Confirm" xml:space="preserve">
     <value>Surrender</value>
   </data>
-  <data name="Verification_Lbl_Title" xml:space="preserve">
-    <value>Confirmation Required</value>
-  </data>
-  <data name="Verification_Lbl_Description" xml:space="preserve">
-    <value>Enter any non-empty text to continue. Code validation is disabled for now.</value>
-  </data>
-  <data name="Verification_Btn_Confirm" xml:space="preserve">
-    <value>Confirm account</value>
-  </data>
-  <data name="Verification_Btn_Cancel" xml:space="preserve">
-    <value>Cancel</value>
-  </data>
-  <data name="Verification_Err_EmptyCode" xml:space="preserve">
-    <value>Verification code cannot be empty.</value>
-  </data>
   <data name="Register_Lbl_Title" xml:space="preserve">
-    <value>User Registration</value>
+    <value>Create an account</value>
   </data>
   <data name="Register_Lbl_Username" xml:space="preserve">
     <value>Username</value>
@@ -375,7 +360,7 @@
     <value>Email</value>
   </data>
   <data name="Register_Lbl_Password" xml:space="preserve">
-    <value>Password (Min. 8 chars, 1 Uppercase)</value>
+    <value>Password</value>
   </data>
   <data name="Register_Btn_Register" xml:space="preserve">
     <value>Sign Up</value>
@@ -383,41 +368,35 @@
   <data name="Register_Btn_Back" xml:space="preserve">
     <value>Back</value>
   </data>
-  <data name="Register_Err_EmptyFields" xml:space="preserve">
-    <value>Complete all required fields.</value>
-  </data>
   <data name="Register_Lbl_ConfirmPassword" xml:space="preserve">
     <value>Confirm password</value>
   </data>
   <data name="Register_Err_InvalidEmail" xml:space="preserve">
-    <value>Enter a valid email address.</value>
+    <value>Enter only your email address, for example: name@example.com.</value>
   </data>
   <data name="Register_Err_PasswordPolicy" xml:space="preserve">
-    <value>Password must have at least 8 characters and one uppercase letter.</value>
+    <value>Use {0} to {1} characters and at least one uppercase letter.</value>
   </data>
   <data name="Register_Err_PasswordMismatch" xml:space="preserve">
-    <value>The passwords do not match.</value>
-  </data>
-  <data name="Register_Err_Generic" xml:space="preserve">
-    <value>We could not complete registration. Review the information and try again.</value>
+    <value>The passwords do not match. Check the confirmation.</value>
   </data>
   <data name="Register_Err_ReservedUsername" xml:space="preserve">
     <value>The name “Guest” and names beginning with “Guest-” are reserved for guests.</value>
   </data>
   <data name="RegistrationResult_Msg_Success" xml:space="preserve">
-    <value>User registered successfully.</value>
+    <value>Your account is ready. Sign in to play.</value>
   </data>
   <data name="RegistrationResult_Msg_Error" xml:space="preserve">
-    <value>An error occurred while registering the user. Please try again.</value>
+    <value>Your account could not be created. Check your details and try again.</value>
   </data>
   <data name="RegistrationResult_Btn_Close" xml:space="preserve">
     <value>Close</value>
   </data>
   <data name="RegistrationResult_Msg_UsernameTaken" xml:space="preserve">
-    <value>That username is already taken.</value>
+    <value>That username is already in use. Choose another one.</value>
   </data>
   <data name="RegistrationResult_Msg_EmailTaken" xml:space="preserve">
-    <value>That email address is already in use.</value>
+    <value>An account already uses that email. Sign in or reset your password.</value>
   </data>
   <data name="NewPassword_Lbl_Title" xml:space="preserve">
     <value>Change Password</value>
@@ -439,30 +418,6 @@
   </data>
   <data name="NewPassword_Err_Mismatch" xml:space="preserve">
     <value>Passwords do not match.</value>
-  </data>
-  <data name="ForgotVerification_Lbl_Title" xml:space="preserve">
-    <value>Confirmation Required</value>
-  </data>
-  <data name="ForgotVerification_Lbl_Description" xml:space="preserve">
-    <value>We have sent a 6-digit code to your email to change your password.</value>
-  </data>
-  <data name="ForgotVerification_Btn_Cancel" xml:space="preserve">
-    <value>Cancel</value>
-  </data>
-  <data name="ForgotVerification_Btn_Confirm" xml:space="preserve">
-    <value>Confirm</value>
-  </data>
-  <data name="ForgotVerification_Err_EmptyCode" xml:space="preserve">
-    <value>Verification code cannot be empty.</value>
-  </data>
-  <data name="ForgotPassword_Lbl_Title" xml:space="preserve">
-    <value>Recover Password</value>
-  </data>
-  <data name="ForgotPassword_Lbl_EmailOrUsername" xml:space="preserve">
-    <value>Email or Username</value>
-  </data>
-  <data name="ForgotPassword_Btn_Accept" xml:space="preserve">
-    <value>Accept</value>
   </data>
   <data name="FriendSearch_Lbl_Title" xml:space="preserve">
     <value>Search Friends</value>
@@ -584,29 +539,8 @@
   <data name="FriendSearch_Btn_AlreadyFriends" xml:space="preserve">
     <value>Friend</value>
   </data>
-  <data name="ForgotPassword_Btn_Cancel" xml:space="preserve">
-    <value>Cancel</value>
-  </data>
-  <data name="ForgotPassword_Err_Empty" xml:space="preserve">
-    <value>Email or username cannot be empty.</value>
-  </data>
   <data name="Login_Err_Required" xml:space="preserve">
-    <value>Enter your username or email and password.</value>
-  </data>
-  <data name="Login_Err_UserNotFound" xml:space="preserve">
-    <value>No account was found for that username or email.</value>
-  </data>
-  <data name="Login_Err_IncorrectPassword" xml:space="preserve">
-    <value>The password is incorrect.</value>
-  </data>
-  <data name="Login_Err_AccountRestricted" xml:space="preserve">
-    <value>This account is not allowed to sign in.</value>
-  </data>
-  <data name="Login_Err_ServiceUnavailable" xml:space="preserve">
-    <value>Sign-in could not be completed. Check the server connection and try again.</value>
-  </data>
-  <data name="Login_Msg_Success" xml:space="preserve">
-    <value>Sign-in successful.</value>
+    <value>Enter your username or email and your password.</value>
   </data>
   <data name="ProfileCustomization_Lbl_Title" xml:space="preserve">
     <value>Customization</value>
@@ -720,10 +654,10 @@
     <value>The session could not be closed on the server. Check your connection and try again.</value>
   </data>
   <data name="GuestRegistration_Err_Connection" xml:space="preserve">
-    <value>Could not start guest access. Check your connection and try again.</value>
+    <value>We could not open your guest session. Check your connection and try again.</value>
   </data>
   <data name="GuestRegistration_Title" xml:space="preserve">
-    <value>Guest Registration</value>
+    <value>Play as a guest</value>
   </data>
   <data name="GuestRegistration_Name" xml:space="preserve">
     <value>Name</value>
@@ -738,10 +672,7 @@
     <value>Back</value>
   </data>
   <data name="GuestRegistration_Required" xml:space="preserve">
-    <value>Enter a name to continue.</value>
-  </data>
-  <data name="GuestRegistration_NameTooLong" xml:space="preserve">
-    <value>The name cannot exceed 15 characters.</value>
+    <value>Enter a name to play as a guest.</value>
   </data>
   <data name="GuestLobby_Title" xml:space="preserve">
     <value>What would you like to do?</value>
@@ -768,7 +699,7 @@
     <value>Could not communicate with the server. Check the network, server address, and certificate trust.</value>
   </data>
   <data name="Registration_Err_Unconfirmed" xml:space="preserve">
-    <value>We could not confirm whether your account was created. Try signing in before submitting registration again. Closing this dialog does not undo a registration already processed by the server.</value>
+    <value>We could not confirm whether your account was created. Try signing in before registering again.</value>
   </data>
   <data name="JoinPrivateRoom_Err_UnknownCode" xml:space="preserve">
     <value>That room code is invalid or has expired.</value>
@@ -993,40 +924,40 @@
     <value>Reset password</value>
   </data>
   <data name="Recovery_Result_Accepted" xml:space="preserve">
-    <value>If the account exists, you will receive a code. It expires in 10 minutes. Wait at least 60 seconds before resending.</value>
+    <value>If the details match an account, you will receive a code by email. Also check your spam folder.</value>
   </data>
   <data name="Recovery_Result_Reset" xml:space="preserve">
-    <value>Password reset. Sign in with your new password. Previous sessions have been closed.</value>
+    <value>Your password was reset and previous sessions were closed. Sign in with your new password.</value>
   </data>
   <data name="Recovery_Result_MissingFields" xml:space="preserve">
-    <value>Complete all required fields.</value>
+    <value>Enter your username or email. To reset your password, also enter the code and both password fields.</value>
   </data>
   <data name="Recovery_Result_InvalidCode" xml:space="preserve">
-    <value>Incorrect, expired or already used code. After 5 failed attempts, request a new code.</value>
+    <value>Check the code you received. If it expired or is no longer valid, request another one.</value>
   </data>
   <data name="Recovery_Result_InvalidPassword" xml:space="preserve">
     <value>Use 8 to 255 characters and at least one uppercase letter.</value>
   </data>
   <data name="Recovery_Result_ConfirmationMismatch" xml:space="preserve">
-    <value>The passwords do not match.</value>
+    <value>The passwords do not match. Check the confirmation.</value>
   </data>
   <data name="Recovery_Result_RateLimited" xml:space="preserve">
-    <value>Too many requests. Please try again later.</value>
+    <value>You have made several requests in a short time. Wait before trying again.</value>
   </data>
   <data name="Recovery_Result_Unavailable" xml:space="preserve">
-    <value>Password recovery is temporarily unavailable. Please try again later.</value>
+    <value>Password recovery could not be completed right now. Try again later.</value>
   </data>
   <data name="Recovery_Result_Unconfirmed" xml:space="preserve">
-    <value>The result could not be confirmed. If you were saving, try signing in with the new password before requesting another code. If you were requesting a code, check your email.</value>
+    <value>We could not confirm the result. If you requested a code, check your email. If you saved a password, try signing in with it before requesting another code.</value>
   </data>
   <data name="Recovery_Result_DeliveryFailed" xml:space="preserve">
-    <value>The recovery email could not be sent. Try again later. Your password has not changed.</value>
+    <value>We could not complete sending the code. Request another one later. Your password is unchanged.</value>
   </data>
   <data name="Recovery_Result_NotSaved" xml:space="preserve">
-    <value>The new password could not be saved. Your previous password remains valid. You can try again.</value>
+    <value>We could not save your password. Your previous password is still valid. Try again.</value>
   </data>
   <data name="Recovery_Msg_Saving" xml:space="preserve">
-    <value>Saving. Closing this window may leave the result unconfirmed; try signing in with the new password before requesting another code.</value>
+    <value>Saving your new password…</value>
   </data>
   <data name="LoginVerification_Lbl_Title" xml:space="preserve"><value>Confirm your login</value></data>
   <data name="LoginVerification_Lbl_Code" xml:space="preserve"><value>Code received by email</value></data>
@@ -1036,17 +967,17 @@
   <data name="LoginVerification_Msg_ExpiresAt" xml:space="preserve"><value>Code expires at {0:t}.</value></data>
   <data name="LoginVerification_Msg_RetryAt" xml:space="preserve"><value>Try again after {0:g}.</value></data>
   <data name="LoginVerification_Result_Success" xml:space="preserve"><value>Login confirmed.</value></data>
-  <data name="LoginVerification_Result_ChallengeRequired" xml:space="preserve"><value>Enter the code sent to your registered email. It is valid for ten minutes.</value></data>
-  <data name="LoginVerification_Result_InvalidCredentials" xml:space="preserve"><value>Login could not be validated. Check your credentials. Three failed attempts block login for fifteen minutes.</value></data>
+  <data name="LoginVerification_Result_ChallengeRequired" xml:space="preserve"><value>Enter the code sent to your registered email. It lasts {0} minutes.</value></data>
+  <data name="LoginVerification_Result_InvalidCredentials" xml:space="preserve"><value>The username, email or password is incorrect. Check your details.</value></data>
   <data name="LoginVerification_Result_AccountRestricted" xml:space="preserve"><value>Your account is restricted.</value></data>
-  <data name="LoginVerification_Result_InvalidCode" xml:space="preserve"><value>The code is incorrect. Check its eight digits.</value></data>
-  <data name="LoginVerification_Result_CodeExpired" xml:space="preserve"><value>The code expired. Request another code.</value></data>
-  <data name="LoginVerification_Result_InvalidChallenge" xml:space="preserve"><value>This login attempt is no longer available. Start again.</value></data>
-  <data name="LoginVerification_Result_TemporarilyLocked" xml:space="preserve"><value>Login is temporarily blocked after three failed attempts.</value></data>
-  <data name="LoginVerification_Result_DeliveryFailed" xml:space="preserve"><value>The email could not be sent. You may request one retry; after a second failure, return and try later.</value></data>
-  <data name="LoginVerification_Result_RateLimited" xml:space="preserve"><value>Too many requests. Wait before requesting another code.</value></data>
-  <data name="LoginVerification_Result_Unavailable" xml:space="preserve"><value>Login verification is unavailable. Try later.</value></data>
-  <data name="LoginVerification_Result_Unconfirmed" xml:space="preserve"><value>The result could not be confirmed. Check your email if requesting a code. If confirming login, return and start again. No operation was retried automatically.</value></data>
+  <data name="LoginVerification_Result_InvalidCode" xml:space="preserve"><value>The code is incorrect. Copy it exactly as it appears in the email.</value></data>
+  <data name="LoginVerification_Result_CodeExpired" xml:space="preserve"><value>The code expired. Request a new one.</value></data>
+  <data name="LoginVerification_Result_InvalidChallenge" xml:space="preserve"><value>This sign-in attempt is no longer available. Go back and sign in again.</value></data>
+  <data name="LoginVerification_Result_TemporarilyLocked" xml:space="preserve"><value>Sign-in is temporarily locked because of failed attempts.</value></data>
+  <data name="LoginVerification_Result_DeliveryFailed" xml:space="preserve"><value>We could not complete sending the code. Request another one or sign in again.</value></data>
+  <data name="LoginVerification_Result_RateLimited" xml:space="preserve"><value>You have made several requests in a short time. Wait before trying again.</value></data>
+  <data name="LoginVerification_Result_Unavailable" xml:space="preserve"><value>Sign-in could not be completed right now. Try again later.</value></data>
+  <data name="LoginVerification_Result_Unconfirmed" xml:space="preserve"><value>The result could not be confirmed. Check your email if requesting a code. If confirming login, return and start again.</value></data>
   <data name="RoomInvitations_Btn_SendEmail" xml:space="preserve">
     <value>Send by email</value>
   </data>
@@ -1085,4 +1016,19 @@
   <data name="GameAccess_Err_Suspended" xml:space="preserve"><value>Your account is temporarily suspended. You cannot start another game yet.</value></data>
   <data name="GameAccess_Err_ParticipantSuspended" xml:space="preserve"><value>A player is temporarily suspended. The game cannot start.</value></data>
   <data name="GameAccess_Err_PermissionDenied" xml:space="preserve"><value>You do not have permission to perform this operation.</value></data>
+  <data name="Register_Err_UsernameAtSign" xml:space="preserve">
+    <value>A username cannot contain @. Enter your email in the Email address field.</value>
+  </data>
+  <data name="Register_Err_InvalidUsername" xml:space="preserve">
+    <value>Use 1 to {0} characters: letters, numbers or _. Do not include spaces or other symbols.</value>
+  </data>
+  <data name="Registration_Msg_Saving" xml:space="preserve">
+    <value>Creating your account…</value>
+  </data>
+  <data name="GuestRegistration_Err_InvalidName" xml:space="preserve">
+    <value>Use 1 to {0} characters in your name: letters, numbers or _. No spaces or other symbols.</value>
+  </data>
+  <data name="Recovery_Btn_Close" xml:space="preserve">
+    <value>Back to sign in</value>
+  </data>
 </root>

@@ -5,7 +5,6 @@ using AtariGo.Client.Models;
 using AtariGo.Client.ViewModels;
 using AtariGo.Client.ViewModels.Dialogs;
 using AtariGo.Client.Views;
-using AtariGo.Contracts;
 
 namespace AtariGo.Client.Services
 {
@@ -122,25 +121,9 @@ namespace AtariGo.Client.Services
             Dispatch(() => GetLoginViewModel()?.OpenRegisterDialog());
         }
 
-        public void OpenVerificationDialog(RegistrationDraft draft)
+        public void ShowRegistrationSuccess()
         {
-            ArgumentNullException.ThrowIfNull(draft);
-            Dispatch(() => GetLoginViewModel()?.OpenVerificationDialog(draft));
-        }
-
-        public void ReturnToRegisterDialog()
-        {
-            Dispatch(() => GetLoginViewModel()?.ReturnToRegisterDialog());
-        }
-
-        public void DiscardRegistration()
-        {
-            Dispatch(() => GetLoginViewModel()?.DiscardRegistration());
-        }
-
-        public void ShowRegistrationResult(RegistrationResult result)
-        {
-            Dispatch(() => GetLoginViewModel()?.ShowRegistrationResult(result));
+            Dispatch(() => GetLoginViewModel()?.ShowRegistrationSuccess());
         }
 
         public void OpenForgotPasswordDialog()

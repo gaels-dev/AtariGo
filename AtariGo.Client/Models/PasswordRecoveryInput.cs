@@ -1,9 +1,10 @@
+using AtariGo.Contracts.Validation;
+
 namespace AtariGo.Client.Models;
 
 public sealed class PasswordRecoveryInput
 {
-    public const int MaximumIdentifierLength = 254;
-    public const int CodeLength = 8;
+    public const int MaximumIdentifierLength = EmailAddressRules.MaximumLength;
 
     public string Identifier { get; set; } = string.Empty;
 
@@ -20,13 +21,11 @@ public sealed class PasswordRecoveryInput
         {
             return PasswordRecoveryResult.MissingFields;
         }
-        if (Code.Length != CodeLength || Code.Any(character => character is < '0' or > '9'))
+        if (!VerificationCodeRules.IsValid(Code))
         {
             return PasswordRecoveryResult.InvalidCode;
         }
-        if (NewPassword.Length < PasswordChangeInput.MinimumPasswordLength
-            || NewPassword.Length > PasswordChangeInput.MaximumPasswordLength
-            || !NewPassword.Any(char.IsUpper))
+        if (!PasswordPolicy.IsValid(NewPassword))
         {
             return PasswordRecoveryResult.InvalidPassword;
         }
@@ -37,7 +36,7 @@ public sealed class PasswordRecoveryInput
     public static bool IsIdentifierValid(string identifier)
     {
         return !string.IsNullOrWhiteSpace(identifier)
-            && identifier.Length <= MaximumIdentifierLength;
+            && identifier.Trim().Length <= MaximumIdentifierLength;
     }
 
     public void Clear()

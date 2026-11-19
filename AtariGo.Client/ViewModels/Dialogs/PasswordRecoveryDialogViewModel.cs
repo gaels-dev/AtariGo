@@ -1,9 +1,7 @@
-using System.Globalization;
 using System.Windows.Input;
 
 using AtariGo.Client.Commands;
 using AtariGo.Client.Models;
-using AtariGo.Client.Properties;
 using AtariGo.Client.Services;
 
 namespace AtariGo.Client.ViewModels.Dialogs;
@@ -70,24 +68,26 @@ public sealed class PasswordRecoveryDialogViewModel : ViewModelBase, IDisposable
 
     public bool CanReset => CanEdit && IsResetStage;
 
-    public string Title => Localize("Recovery_Lbl_Title");
+    public string Title => AuthenticationMessages.GetText("Recovery_Lbl_Title");
 
-    public string IdentifierLabel => Localize("Recovery_Lbl_Identifier");
+    public string IdentifierLabel => AuthenticationMessages.GetText("Recovery_Lbl_Identifier");
 
-    public string CodeLabel => Localize("Recovery_Lbl_Code");
+    public string CodeLabel => AuthenticationMessages.GetText("Recovery_Lbl_Code");
 
-    public string NewPasswordLabel => Localize("ChangePassword_Lbl_NewPassword");
+    public string NewPasswordLabel => AuthenticationMessages.GetText(
+        "ChangePassword_Lbl_NewPassword");
 
-    public string ConfirmationLabel => Localize("ChangePassword_Lbl_Confirmation");
+    public string ConfirmationLabel => AuthenticationMessages.GetText(
+        "ChangePassword_Lbl_Confirmation");
 
-    public string PolicyLabel => Localize("ChangePassword_Lbl_Policy");
+    public string PolicyLabel => AuthenticationMessages.GetPasswordPolicy();
 
-    public string RequestLabel => Localize(IsResetStage
+    public string RequestLabel => AuthenticationMessages.GetText(IsResetStage
         ? "Recovery_Btn_Resend" : "Recovery_Btn_Request");
 
-    public string ResetLabel => Localize("Recovery_Btn_Reset");
+    public string ResetLabel => AuthenticationMessages.GetText("Recovery_Btn_Reset");
 
-    public string CancelLabel => Localize(_isFinished ? "ChangePassword_Btn_Close"
+    public string CancelLabel => AuthenticationMessages.GetText(_isFinished ? "Recovery_Btn_Close"
         : "ChangePassword_Btn_Cancel");
 
     public ICommand RequestCommand
@@ -162,12 +162,11 @@ public sealed class PasswordRecoveryDialogViewModel : ViewModelBase, IDisposable
         {
             ShowResult(validation.Value);
             input.Clear();
-            SecretsCleared?.Invoke();
             return;
         }
         _activeInput = input;
         SetBusy(true);
-        StatusMessage = Localize("Recovery_Msg_Saving");
+        StatusMessage = AuthenticationMessages.GetText("Recovery_Msg_Saving");
         try
         {
             PasswordRecoveryResult result = await _client.ResetAsync(input, _token);
@@ -203,7 +202,8 @@ public sealed class PasswordRecoveryDialogViewModel : ViewModelBase, IDisposable
 
     private void ShowResult(PasswordRecoveryResult result)
     {
-        StatusMessage = Localize("Recovery_Result_" + result);
+        StatusMessage = result == PasswordRecoveryResult.InvalidPassword
+            ? PolicyLabel : AuthenticationMessages.GetText("Recovery_Result_" + result);
     }
 
     private void SetBusy(bool value)
@@ -226,10 +226,5 @@ public sealed class PasswordRecoveryDialogViewModel : ViewModelBase, IDisposable
             ShowResult(PasswordRecoveryResult.Unconfirmed);
             SetBusy(false);
         }
-    }
-
-    private static string Localize(string key)
-    {
-        return Resources.ResourceManager.GetString(key, CultureInfo.CurrentUICulture) ?? key;
     }
 }

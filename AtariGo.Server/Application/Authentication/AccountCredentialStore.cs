@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 
+using AtariGo.Contracts.Validation;
 using AtariGo.Server.Data;
 using AtariGo.Server.Data.Entities;
 
@@ -7,7 +8,7 @@ namespace AtariGo.Server.Application.Authentication;
 
 public sealed class AccountCredentialStore
 {
-    public const int MaximumIdentifierLength = 254;
+    public const int MaximumIdentifierLength = EmailAddressRules.MaximumLength;
     private readonly AtariGoDbContext _dbContext;
 
     public AccountCredentialStore(AtariGoDbContext dbContext)
@@ -16,20 +17,22 @@ public sealed class AccountCredentialStore
         _dbContext = dbContext;
     }
 
-    public Task<User?> LockAccountAsync(string identifier, CancellationToken cancellationToken)
+    public async Task<User?> LockAccountAsync(string identifier,
+        CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(identifier);
         string normalized = identifier.Trim();
         if (normalized.Length is 0 or > MaximumIdentifierLength)
         {
-            return Task.FromResult<User?>(null);
+            return null;
         }
-        return _dbContext.Users.FromSqlInterpolated($"""
+        List<User> matches = await _dbContext.Users.FromSqlInterpolated($"""
             SELECT * FROM dbo.Users WITH (UPDLOCK, HOLDLOCK)
             WHERE UserName = {normalized} OR Email = {normalized}
             """)
             .Include(user => user.Credential)
-            .SingleOrDefaultAsync(cancellationToken);
+            .Take(2).ToListAsync(cancellationToken);
+        return matches.Count == 1 ? matches[0] : null;
     }
 
     public Task<User?> LockAccountAsync(int userId, CancellationToken cancellationToken)

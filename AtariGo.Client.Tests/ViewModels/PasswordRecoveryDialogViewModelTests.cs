@@ -14,7 +14,6 @@ public sealed class PasswordRecoveryDialogViewModelTests
     [TestMethod]
     public async Task ResetCommand_UnconfirmedResult_ClearsSecretsAndPreventsRetryAsync()
     {
-        // Arrange
         var client = new StubPasswordRecoveryClient
         {
             Response = Task.FromResult(PasswordRecoveryResult.Unconfirmed)
@@ -26,10 +25,8 @@ public sealed class PasswordRecoveryDialogViewModelTests
         await CommandExecution.ExecuteAsync(model.RequestCommand, null);
         model.Code = "12345678";
         PasswordRecoveryInput input = CreateInput();
-        // Act
         await CommandExecution.ExecuteAsync(model.ResetCommand, input);
         await CommandExecution.ExecuteAsync(model.ResetCommand, CreateInput());
-        // Assert
         Assert.IsFalse(model.CanReset);
         Assert.IsFalse(model.CanEdit);
         Assert.AreEqual(1, client.ResetCalls);
@@ -44,7 +41,6 @@ public sealed class PasswordRecoveryDialogViewModelTests
     [TestMethod]
     public async Task CancelCommand_PendingReset_CancelsAndDiscardsLateSuccessAsync()
     {
-        // Arrange
         var pending = new TaskCompletionSource<PasswordRecoveryResult>(
             TaskCreationOptions.RunContinuationsAsynchronously);
         var client = new StubPasswordRecoveryClient { Response = pending.Task };
@@ -57,11 +53,9 @@ public sealed class PasswordRecoveryDialogViewModelTests
         PasswordRecoveryInput input = CreateInput();
         Task command = CommandExecution.ExecuteAsync(model.ResetCommand, input);
         string previous = model.StatusMessage;
-        // Act
         model.CancelCommand.Execute(null);
         pending.SetResult(PasswordRecoveryResult.Reset);
         await command;
-        // Assert
         Assert.IsTrue(client.RequestToken.IsCancellationRequested);
         Assert.AreEqual(previous, model.StatusMessage);
         Assert.AreEqual(string.Empty, model.Code);

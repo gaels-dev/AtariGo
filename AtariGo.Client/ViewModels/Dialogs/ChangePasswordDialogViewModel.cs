@@ -68,7 +68,7 @@ public sealed class ChangePasswordDialogViewModel : DialogViewModelBase, IDispos
 
     public string ConfirmationLabel => Localize("ChangePassword_Lbl_Confirmation");
 
-    public string PolicyLabel => Localize("ChangePassword_Lbl_Policy");
+    public string PolicyLabel => AuthenticationMessages.GetPasswordPolicy();
 
     public string SaveLabel => Localize("ChangePassword_Btn_Save");
 

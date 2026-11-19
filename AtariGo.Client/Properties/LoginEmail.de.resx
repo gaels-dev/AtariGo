@@ -7,7 +7,7 @@
   <data name="Login_Email_Subject" xml:space="preserve"><value>Atari Go - Anmeldebestätigung</value></data>
   <data name="Login_Email_Body" xml:space="preserve"><value>Dein Anmeldecode: {0}
 
-10 Minuten gültig. Teile diesen Code nicht.
+{1} Minuten gültig. Teile diesen Code nicht.
 
 Falls du diese Anmeldung nicht angefordert hast, ignoriere diese E-Mail.</value></data>
 </root>

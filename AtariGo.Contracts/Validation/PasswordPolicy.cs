@@ -1,4 +1,4 @@
-namespace AtariGo.Server.Application.Authentication;
+namespace AtariGo.Contracts.Validation;
 
 public static class PasswordPolicy
 {

@@ -1,4 +1,4 @@
-using AtariGo.Server.Application.Authentication;
+using AtariGo.Contracts.Validation;
 
 namespace AtariGo.Server.Tests.Profile;
 

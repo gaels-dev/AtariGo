@@ -1,6 +1,8 @@
 using System.Globalization;
 using System.Resources;
 
+using AtariGo.Contracts.Validation;
+
 namespace AtariGo.Server.Application.Email;
 
 public sealed class AuthenticationEmailContent
@@ -37,7 +39,8 @@ public sealed class AuthenticationEmailContent
         {
             Recipient = recipient,
             Subject = GetText("Subject", culture),
-            Body = string.Format(CultureInfo.InvariantCulture, GetText("Body", culture), code)
+            Body = string.Format(CultureInfo.InvariantCulture, GetText("Body", culture),
+                code, VerificationCodeRules.LifetimeMinutes)
         };
     }
 

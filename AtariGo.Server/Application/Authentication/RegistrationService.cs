@@ -38,6 +38,7 @@ public sealed class RegistrationService : IRegistrationService
         RegisterAccountCommand command,
         CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(command);
         if (!_registrationValidator.IsValid(command))
         {
             return RegistrationStatus.Error;
@@ -111,7 +112,8 @@ public sealed class RegistrationService : IRegistrationService
         }
         catch (DbUpdateException exception)
         {
-            _logger.LogWarning(exception, "Could not register account.");
+            _logger.LogWarning("Could not register account: {ErrorType}.",
+                exception.GetType().Name);
             _dbContext.ChangeTracker.Clear();
             return RegistrationStatus.Error;
         }

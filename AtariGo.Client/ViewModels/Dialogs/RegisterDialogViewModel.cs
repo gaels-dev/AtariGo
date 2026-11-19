@@ -1,39 +1,41 @@
-using System.Globalization;
-using System.Net.Mail;
+using System.Diagnostics;
 using System.Windows.Input;
 
 using AtariGo.Client.Commands;
 using AtariGo.Client.Models;
-using AtariGo.Client.Properties;
 using AtariGo.Client.Services;
+using AtariGo.Contracts;
+using AtariGo.Contracts.Validation;
 
 namespace AtariGo.Client.ViewModels.Dialogs;
 
-public sealed class RegisterDialogViewModel : ViewModelBase
+public sealed class RegisterDialogViewModel : ViewModelBase, IDisposable
 {
-    private const int MaximumUserNameLength = 15;
-    private const string ReservedGuestName = "Guest";
-    private const string ReservedGuestPrefix = "Guest-";
-    private const int MaximumEmailLength = 254;
-    private const int MinimumPasswordLength = 8;
-    private const int MaximumPasswordLength = 255;
-
     private readonly INavigationService _navigationService;
+    private readonly IRegistrationClient _registrationClient;
+    private readonly CancellationTokenSource _lifetimeCancellation = new();
+    private readonly CancellationToken _lifetimeToken;
     private string _userName = string.Empty;
     private string _email = string.Empty;
     private string _password = string.Empty;
     private string _passwordConfirmation = string.Empty;
     private string _errorMessage = string.Empty;
-    private RegistrationDraft? _registrationDraft;
+    private RegistrationDraft? _activeDraft;
+    private bool _isDisposed;
+    private bool _isBusy;
 
-    public RegisterDialogViewModel(INavigationService navigationService)
+    public RegisterDialogViewModel(INavigationService navigationService,
+        IRegistrationClient? registrationClient = null)
     {
         ArgumentNullException.ThrowIfNull(navigationService);
         _navigationService = navigationService;
-
-        RegisterCommand = new RelayCommand(ProceedToVerification);
-        CancelCommand = new RelayCommand(_navigationService.DiscardRegistration);
+        _registrationClient = registrationClient ?? new GrpcRegistrationClient();
+        _lifetimeToken = _lifetimeCancellation.Token;
+        RegisterCommand = new AsyncRelayCommand(RegisterAsync, HandleFailure, _lifetimeToken);
+        CancelCommand = new RelayCommand(Cancel);
     }
+
+    public event Action? SecretsCleared;
 
     public string UserName
     {
@@ -65,101 +67,139 @@ public sealed class RegisterDialogViewModel : ViewModelBase
         private set => SetProperty(ref _errorMessage, value);
     }
 
-    public string ConfirmPasswordLabel =>
-        GetLocalizedMessage("Register_Lbl_ConfirmPassword");
-
-    public ICommand RegisterCommand
-    {
-        get;
-    }
-
-    public ICommand CancelCommand
-    {
-        get;
-    }
+    public bool CanEdit => !_isDisposed && !_isBusy;
+    public string ConfirmPasswordLabel => AuthenticationMessages.GetText(
+        "Register_Lbl_ConfirmPassword");
+    public string PolicyLabel => AuthenticationMessages.GetPasswordPolicy();
+    public ICommand RegisterCommand { get; }
+    public ICommand CancelCommand { get; }
 
     public void ClearSensitiveData()
     {
         Password = string.Empty;
         PasswordConfirmation = string.Empty;
-        _registrationDraft?.ClearSensitiveData();
-        _registrationDraft = null;
+        _activeDraft?.ClearSensitiveData();
+        _activeDraft = null;
+        SecretsCleared?.Invoke();
     }
 
-    private void ProceedToVerification()
+    public void Dispose()
     {
-        string userName = UserName.Trim();
-        string email = Email.Trim();
-
-        string? validationError = GetFieldValidationError(userName, email)
-            ?? GetIdentityValidationError(userName, email)
-            ?? GetPasswordValidationError();
-        if (validationError is not null)
+        if (_isDisposed)
         {
-            ErrorMessage = GetLocalizedMessage(validationError);
             return;
         }
+        _isDisposed = true;
+        _lifetimeCancellation.Cancel();
+        ClearSensitiveData();
+        _lifetimeCancellation.Dispose();
+    }
 
-        ErrorMessage = string.Empty;
-        _registrationDraft = new RegistrationDraft
+    private async Task RegisterAsync(object? parameter)
+    {
+        if (!CanEdit)
         {
-            UserName = userName,
-            Email = email,
+            return;
+        }
+        string? error = GetIdentityError() ?? GetPasswordError();
+        if (error is not null)
+        {
+            ErrorMessage = error == "Register_Err_PasswordPolicy"
+                ? PolicyLabel : AuthenticationMessages.GetText(error);
+            return;
+        }
+        _activeDraft = new RegistrationDraft
+        {
+            UserName = UserName.Trim(),
+            Email = Email.Trim(),
             Password = Password,
             PasswordConfirmation = PasswordConfirmation
         };
-
-        _navigationService.OpenVerificationDialog(_registrationDraft);
-    }
-
-    private string? GetFieldValidationError(string userName, string email)
-    {
-        if (string.IsNullOrWhiteSpace(userName) || string.IsNullOrWhiteSpace(email)
-            || string.IsNullOrWhiteSpace(Password)
-            || string.IsNullOrWhiteSpace(PasswordConfirmation))
+        SetBusy(true);
+        ErrorMessage = AuthenticationMessages.GetText("Registration_Msg_Saving");
+        try
         {
-            return "Register_Err_EmptyFields";
+            RegisterAccountResponse response = await _registrationClient.RegisterAccountAsync(
+                _activeDraft, _lifetimeToken);
+            _lifetimeToken.ThrowIfCancellationRequested();
+            ApplyResult(response.Result);
         }
-
-        bool exceedsLimit = userName.Length > MaximumUserNameLength
-            || email.Length > MaximumEmailLength || Password.Length > MaximumPasswordLength;
-        return exceedsLimit ? "Register_Err_Generic" : null;
+        catch (Exception exception)
+            when (GrpcCallPolicy.IsRequestedCancellation(exception, _lifetimeToken))
+        {
+            Trace.TraceInformation("Registration wait cancelled because its dialog was closed.");
+        }
+        finally
+        {
+            if (!_isDisposed)
+            {
+                ClearSensitiveData();
+                SetBusy(false);
+            }
+        }
     }
 
-    private static string? GetIdentityValidationError(string userName, string email)
+    private string? GetIdentityError()
     {
-        if (IsReservedGuestName(userName))
+        string userName = UserName.Trim();
+        if (userName.Contains('@'))
+        {
+            return "Register_Err_UsernameAtSign";
+        }
+        if (UserNameRules.IsReserved(userName))
         {
             return "Register_Err_ReservedUsername";
         }
-
-        return MailAddress.TryCreate(email, out _) ? null : "Register_Err_InvalidEmail";
+        if (!UserNameRules.IsValid(UserName))
+        {
+            return "Register_Err_InvalidUsername";
+        }
+        return EmailAddressRules.IsValid(Email) ? null : "Register_Err_InvalidEmail";
     }
 
-    private string? GetPasswordValidationError()
+    private string? GetPasswordError()
     {
-        if (Password.Length < MinimumPasswordLength || !Password.ContainsUppercaseLetter())
+        if (!PasswordPolicy.IsValid(Password))
         {
             return "Register_Err_PasswordPolicy";
         }
-
-        bool passwordsMatch = string.Equals(
-            Password, PasswordConfirmation, StringComparison.Ordinal);
-        return passwordsMatch ? null : "Register_Err_PasswordMismatch";
+        return string.Equals(Password, PasswordConfirmation, StringComparison.Ordinal)
+            ? null : "Register_Err_PasswordMismatch";
     }
 
-    private static bool IsReservedGuestName(string userName)
+    private void ApplyResult(RegistrationResult result)
     {
-        return string.Equals(
-                userName,
-                ReservedGuestName,
-                StringComparison.OrdinalIgnoreCase)
-            || userName.StartsWith(
-                ReservedGuestPrefix,
-                StringComparison.OrdinalIgnoreCase);
+        if (result == RegistrationResult.Success)
+        {
+            _navigationService.ShowRegistrationSuccess();
+            return;
+        }
+        string key = result switch
+        {
+            RegistrationResult.UsernameTaken => "RegistrationResult_Msg_UsernameTaken",
+            RegistrationResult.EmailTaken => "RegistrationResult_Msg_EmailTaken",
+            _ => "RegistrationResult_Msg_Error"
+        };
+        ErrorMessage = AuthenticationMessages.GetText(key);
     }
 
-    private static string GetLocalizedMessage(string key) =>
-        Resources.ResourceManager.GetString(key, CultureInfo.CurrentUICulture)
-        ?? key;
+    private void HandleFailure(Exception exception)
+    {
+        if (!_isDisposed)
+        {
+            ErrorMessage = ClientFailureMessages.GetRegistrationMessage(exception);
+        }
+    }
+
+    private void Cancel()
+    {
+        Dispose();
+        _navigationService.CloseLoginDialog();
+    }
+
+    private void SetBusy(bool isBusy)
+    {
+        _isBusy = isBusy;
+        OnPropertyChanged(nameof(CanEdit));
+    }
 }

@@ -7,6 +7,5 @@ public interface IRegistrationClient
 {
     Task<RegisterAccountResponse> RegisterAccountAsync(
         RegistrationDraft registrationDraft,
-        string confirmationText,
         CancellationToken cancellationToken = default);
 }

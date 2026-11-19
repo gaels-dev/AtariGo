@@ -1,3 +1,4 @@
+using System.Windows;
 using System.Windows.Controls;
 
 using AtariGo.Client.ViewModels.Dialogs;
@@ -6,16 +7,24 @@ namespace AtariGo.Client.Views.Dialogs
 {
     public partial class RegisterDialogView : UserControl
     {
+        private RegisterDialogViewModel? _viewModel;
+
         public RegisterDialogView()
         {
             InitializeComponent();
             DataContextChanged += OnDataContextChanged;
-            Loaded += (_, _) => RestorePasswordFields();
+            Loaded += OnLoaded;
+            Unloaded += OnUnloaded;
         }
 
-        private void OnRegisterButtonClick(object sender, System.Windows.RoutedEventArgs e)
+        private void OnRegisterButtonClick(object sender, RoutedEventArgs eventArgs)
         {
             if (DataContext is not RegisterDialogViewModel viewModel)
+            {
+                return;
+            }
+
+            if (!viewModel.CanEdit)
             {
                 return;
             }
@@ -31,18 +40,45 @@ namespace AtariGo.Client.Views.Dialogs
 
         private void OnDataContextChanged(
             object sender,
-            System.Windows.DependencyPropertyChangedEventArgs e)
+            DependencyPropertyChangedEventArgs eventArgs)
         {
-            RestorePasswordFields();
+            AttachViewModel();
         }
 
-        private void RestorePasswordFields()
+        private void OnLoaded(object sender, RoutedEventArgs eventArgs)
         {
-            if (DataContext is RegisterDialogViewModel viewModel)
+            AttachViewModel();
+        }
+
+        private void OnUnloaded(object sender, RoutedEventArgs eventArgs)
+        {
+            DetachViewModel();
+        }
+
+        private void AttachViewModel()
+        {
+            DetachViewModel();
+            _viewModel = DataContext as RegisterDialogViewModel;
+            if (_viewModel is not null)
             {
-                PasswordBox.Password = viewModel.Password;
-                ConfirmPasswordBox.Password = viewModel.PasswordConfirmation;
+                _viewModel.SecretsCleared += ClearPasswordBoxes;
             }
+        }
+
+        private void DetachViewModel()
+        {
+            if (_viewModel is not null)
+            {
+                _viewModel.SecretsCleared -= ClearPasswordBoxes;
+                _viewModel = null;
+            }
+            ClearPasswordBoxes();
+        }
+
+        private void ClearPasswordBoxes()
+        {
+            PasswordBox.Clear();
+            ConfirmPasswordBox.Clear();
         }
     }
 }

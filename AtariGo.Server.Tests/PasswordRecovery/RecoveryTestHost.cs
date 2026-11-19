@@ -136,6 +136,7 @@ internal sealed class RecoveryTestHost : IAsyncDisposable
         _application = builder.Build();
         _application.MapGrpcService<PasswordRecoveryGrpcService>();
         _application.MapGrpcService<AuthenticationGrpcService>();
+        _application.MapGrpcService<RegistrationGrpcService>();
         _application.MapGrpcService<SessionGrpcService>();
         await _application.StartAsync();
         _channel = GrpcChannel.ForAddress(_application.Urls.Single());
@@ -144,6 +145,8 @@ internal sealed class RecoveryTestHost : IAsyncDisposable
     private static void RegisterServices(IServiceCollection services)
     {
         services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
+        services.AddScoped<RegistrationValidator>();
+        services.AddScoped<IRegistrationService, RegistrationService>();
         services.AddSingleton<RecoveryCodeProtector>();
         services.AddSingleton<RecoverySessionRevoker>();
         services.AddScoped<RecoveryCodeDelivery>();

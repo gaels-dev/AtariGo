@@ -75,7 +75,7 @@ namespace AtariGo.Client.Tests.Services
 
             // Act
             await authentication.LoginAsync("player", "password", cancellation.Token);
-            await registration.RegisterAccountAsync(new RegistrationDraft(), "text",
+            await registration.RegisterAccountAsync(new RegistrationDraft(),
                 cancellation.Token);
             await leaderboard.GetTopPlayersAsync(LeaderboardLimit, cancellation.Token);
             var callbacks = new SessionRealtimeCallbacks(

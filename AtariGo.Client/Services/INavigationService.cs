@@ -1,6 +1,5 @@
 using AtariGo.Client.Models;
 using AtariGo.Client.ViewModels.Dialogs;
-using AtariGo.Contracts;
 
 namespace AtariGo.Client.Services
 {
@@ -49,13 +48,7 @@ namespace AtariGo.Client.Services
 
         void OpenRegisterDialog();
 
-        void OpenVerificationDialog(RegistrationDraft draft);
-
-        void ReturnToRegisterDialog();
-
-        void DiscardRegistration();
-
-        void ShowRegistrationResult(RegistrationResult result);
+        void ShowRegistrationSuccess();
 
         void OpenForgotPasswordDialog();
 

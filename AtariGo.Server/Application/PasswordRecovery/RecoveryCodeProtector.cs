@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Options;
 
+using AtariGo.Contracts.Validation;
 using AtariGo.Server.Security;
 
 namespace AtariGo.Server.Application.PasswordRecovery;
@@ -16,7 +17,7 @@ public sealed class RecoveryCodeProtector
         _protector = new AuthenticationCodeProtector(options.Value.HmacKey);
     }
 
-    public static TimeSpan Lifetime { get; } = TimeSpan.FromMinutes(10);
+    public static TimeSpan Lifetime { get; } = VerificationCodeRules.Lifetime;
 
     public bool IsConfigured => _protector.IsConfigured;
 

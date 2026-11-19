@@ -349,23 +349,8 @@
   <data name="GameBoard_Surrender_Confirm" xml:space="preserve">
     <value>Aufgeben</value>
   </data>
-  <data name="Verification_Lbl_Title" xml:space="preserve">
-    <value>Bestätigung erforderlich</value>
-  </data>
-  <data name="Verification_Lbl_Description" xml:space="preserve">
-    <value>Gib einen beliebigen Text ein. Der Code wird vorerst nicht überprüft.</value>
-  </data>
-  <data name="Verification_Btn_Confirm" xml:space="preserve">
-    <value>Konto bestätigen</value>
-  </data>
-  <data name="Verification_Btn_Cancel" xml:space="preserve">
-    <value>Abbrechen</value>
-  </data>
-  <data name="Verification_Err_EmptyCode" xml:space="preserve">
-    <value>Der Bestätigungscode darf nicht leer sein.</value>
-  </data>
   <data name="Register_Lbl_Title" xml:space="preserve">
-    <value>Benutzerregistrierung</value>
+    <value>Konto erstellen</value>
   </data>
   <data name="Register_Lbl_Username" xml:space="preserve">
     <value>Benutzername</value>
@@ -374,7 +359,7 @@
     <value>E-Mail-Adresse</value>
   </data>
   <data name="Register_Lbl_Password" xml:space="preserve">
-    <value>Passwort (Mind. 8 Zeichen, 1 Großbuchstabe)</value>
+    <value>Passwort</value>
   </data>
   <data name="Register_Btn_Register" xml:space="preserve">
     <value>Registrieren</value>
@@ -382,41 +367,35 @@
   <data name="Register_Btn_Back" xml:space="preserve">
     <value>Zurück</value>
   </data>
-  <data name="Register_Err_EmptyFields" xml:space="preserve">
-    <value>Fülle alle Pflichtfelder aus.</value>
-  </data>
   <data name="Register_Lbl_ConfirmPassword" xml:space="preserve">
     <value>Passwort bestätigen</value>
   </data>
   <data name="Register_Err_InvalidEmail" xml:space="preserve">
-    <value>Gib eine gültige E-Mail-Adresse ein.</value>
+    <value>Gib nur deine E-Mail-Adresse ein, zum Beispiel: name@beispiel.de.</value>
   </data>
   <data name="Register_Err_PasswordPolicy" xml:space="preserve">
-    <value>Das Passwort benötigt mindestens 8 Zeichen und einen Großbuchstaben.</value>
+    <value>Verwende {0} bis {1} Zeichen und mindestens einen Großbuchstaben.</value>
   </data>
   <data name="Register_Err_PasswordMismatch" xml:space="preserve">
-    <value>Die Passwörter stimmen nicht überein.</value>
-  </data>
-  <data name="Register_Err_Generic" xml:space="preserve">
-    <value>Die Registrierung konnte nicht abgeschlossen werden. Prüfe die Angaben und versuche es erneut.</value>
+    <value>Die Passwörter stimmen nicht überein. Prüfe die Bestätigung.</value>
   </data>
   <data name="Register_Err_ReservedUsername" xml:space="preserve">
     <value>Der Name „Guest“ und Namen mit dem Präfix „Guest-“ sind Gästen vorbehalten.</value>
   </data>
   <data name="RegistrationResult_Msg_Success" xml:space="preserve">
-    <value>Benutzer erfolgreich registriert.</value>
+    <value>Dein Konto ist bereit. Melde dich an, um zu spielen.</value>
   </data>
   <data name="RegistrationResult_Msg_Error" xml:space="preserve">
-    <value>Bei der Registrierung ist ein Fehler aufgetreten. Bitte versuche es erneut.</value>
+    <value>Dein Konto konnte nicht erstellt werden. Prüfe die Angaben und versuche es erneut.</value>
   </data>
   <data name="RegistrationResult_Btn_Close" xml:space="preserve">
     <value>Schließen</value>
   </data>
   <data name="RegistrationResult_Msg_UsernameTaken" xml:space="preserve">
-    <value>Dieser Benutzername ist bereits vergeben.</value>
+    <value>Dieser Benutzername ist bereits vergeben. Wähle einen anderen.</value>
   </data>
   <data name="RegistrationResult_Msg_EmailTaken" xml:space="preserve">
-    <value>Diese E-Mail-Adresse wird bereits verwendet.</value>
+    <value>Für diese E-Mail gibt es bereits ein Konto. Melde dich an oder setze dein Passwort zurück.</value>
   </data>
   <data name="NewPassword_Lbl_Title" xml:space="preserve">
     <value>Passwort ändern</value>
@@ -438,30 +417,6 @@
   </data>
   <data name="NewPassword_Err_Mismatch" xml:space="preserve">
     <value>Die Passwörter stimmen nicht überein.</value>
-  </data>
-  <data name="ForgotVerification_Lbl_Title" xml:space="preserve">
-    <value>Bestätigung erforderlich</value>
-  </data>
-  <data name="ForgotVerification_Lbl_Description" xml:space="preserve">
-    <value>Wir haben einen 6-stelligen Code an Ihre E-Mail gesendet, um Ihr Passwort zu ändern.</value>
-  </data>
-  <data name="ForgotVerification_Btn_Cancel" xml:space="preserve">
-    <value>Abbrechen</value>
-  </data>
-  <data name="ForgotVerification_Btn_Confirm" xml:space="preserve">
-    <value>Bestätigen</value>
-  </data>
-  <data name="ForgotVerification_Err_EmptyCode" xml:space="preserve">
-    <value>Der Bestätigungscode darf nicht leer sein.</value>
-  </data>
-  <data name="ForgotPassword_Lbl_Title" xml:space="preserve">
-    <value>Passwort wiederherstellen</value>
-  </data>
-  <data name="ForgotPassword_Lbl_EmailOrUsername" xml:space="preserve">
-    <value>E-Mail oder Benutzername</value>
-  </data>
-  <data name="ForgotPassword_Btn_Accept" xml:space="preserve">
-    <value>Akzeptieren</value>
   </data>
   <data name="FriendSearch_Lbl_Title" xml:space="preserve">
     <value>Freunde suchen</value>
@@ -583,29 +538,8 @@
   <data name="FriendSearch_Btn_AlreadyFriends" xml:space="preserve">
     <value>Freund</value>
   </data>
-  <data name="ForgotPassword_Btn_Cancel" xml:space="preserve">
-    <value>Abbrechen</value>
-  </data>
-  <data name="ForgotPassword_Err_Empty" xml:space="preserve">
-    <value>E-Mail oder Benutzername darf nicht leer sein.</value>
-  </data>
   <data name="Login_Err_Required" xml:space="preserve">
-    <value>Gib deinen Benutzernamen oder deine E-Mail-Adresse und dein Passwort ein.</value>
-  </data>
-  <data name="Login_Err_UserNotFound" xml:space="preserve">
-    <value>Für diesen Benutzernamen oder diese E-Mail-Adresse wurde kein Konto gefunden.</value>
-  </data>
-  <data name="Login_Err_IncorrectPassword" xml:space="preserve">
-    <value>Das Passwort ist falsch.</value>
-  </data>
-  <data name="Login_Err_AccountRestricted" xml:space="preserve">
-    <value>Der Kontostatus erlaubt keine Anmeldung.</value>
-  </data>
-  <data name="Login_Err_ServiceUnavailable" xml:space="preserve">
-    <value>Die Anmeldung konnte nicht abgeschlossen werden. Prüfe die Serververbindung und versuche es erneut.</value>
-  </data>
-  <data name="Login_Msg_Success" xml:space="preserve">
-    <value>Die Anmeldung war erfolgreich.</value>
+    <value>Gib deinen Benutzernamen oder deine E-Mail und dein Passwort ein.</value>
   </data>
   <data name="ProfileCustomization_Lbl_Title" xml:space="preserve">
     <value>Profil anpassen</value>
@@ -719,10 +653,10 @@
     <value>Die Sitzung konnte nicht auf dem Server beendet werden. Prüfe die Verbindung und versuche es erneut.</value>
   </data>
   <data name="GuestRegistration_Err_Connection" xml:space="preserve">
-    <value>Der Gastzugang konnte nicht gestartet werden. Prüfe deine Verbindung und versuche es erneut.</value>
+    <value>Deine Gastsitzung konnte nicht geöffnet werden. Prüfe die Verbindung und versuche es erneut.</value>
   </data>
   <data name="GuestRegistration_Title" xml:space="preserve">
-    <value>Gastregistrierung</value>
+    <value>Als Gast spielen</value>
   </data>
   <data name="GuestRegistration_Name" xml:space="preserve">
     <value>Name</value>
@@ -737,10 +671,7 @@
     <value>Zurück</value>
   </data>
   <data name="GuestRegistration_Required" xml:space="preserve">
-    <value>Gib einen Namen ein, um fortzufahren.</value>
-  </data>
-  <data name="GuestRegistration_NameTooLong" xml:space="preserve">
-    <value>Der Name darf höchstens 15 Zeichen lang sein.</value>
+    <value>Gib einen Namen ein, um als Gast zu spielen.</value>
   </data>
   <data name="GuestLobby_Title" xml:space="preserve">
     <value>Was möchtest du tun?</value>
@@ -767,7 +698,7 @@
     <value>Die Verbindung zum Server ist fehlgeschlagen. Prüfe das Netzwerk, die Serveradresse und das Vertrauen des Zertifikats.</value>
   </data>
   <data name="Registration_Err_Unconfirmed" xml:space="preserve">
-    <value>Wir konnten nicht bestätigen, ob dein Konto erstellt wurde. Versuche dich anzumelden, bevor du die Registrierung erneut sendest. Das Schließen dieses Dialogs macht eine bereits verarbeitete Registrierung nicht rückgängig.</value>
+    <value>Die Kontoerstellung konnte nicht bestätigt werden. Versuche vor einer neuen Registrierung, dich anzumelden.</value>
   </data>
   <data name="JoinPrivateRoom_Err_UnknownCode" xml:space="preserve">
     <value>Der Raumcode ist ungültig oder abgelaufen.</value>
@@ -992,40 +923,40 @@
     <value>Passwort zurücksetzen</value>
   </data>
   <data name="Recovery_Result_Accepted" xml:space="preserve">
-    <value>Falls das Konto existiert, erhältst du einen Code. Er ist 10 Minuten gültig. Warte vor dem erneuten Senden mindestens 60 Sekunden.</value>
+    <value>Wenn die Angaben zu einem Konto gehören, erhältst du einen Code per E-Mail. Prüfe auch den Spamordner.</value>
   </data>
   <data name="Recovery_Result_Reset" xml:space="preserve">
-    <value>Passwort zurückgesetzt. Melde dich mit dem neuen Passwort an. Frühere Sitzungen wurden beendet.</value>
+    <value>Dein Passwort wurde zurückgesetzt und bisherige Sitzungen wurden beendet. Melde dich mit dem neuen Passwort an.</value>
   </data>
   <data name="Recovery_Result_MissingFields" xml:space="preserve">
-    <value>Fülle alle Pflichtfelder aus.</value>
+    <value>Gib Benutzername oder E-Mail ein. Zum Zurücksetzen sind auch der Code und beide Passwortfelder erforderlich.</value>
   </data>
   <data name="Recovery_Result_InvalidCode" xml:space="preserve">
-    <value>Falscher, abgelaufener oder bereits verwendeter Code. Fordere nach 5 Fehlversuchen einen neuen Code an.</value>
+    <value>Prüfe den erhaltenen Code. Ist er abgelaufen oder nicht mehr gültig, fordere einen neuen an.</value>
   </data>
   <data name="Recovery_Result_InvalidPassword" xml:space="preserve">
     <value>Verwende 8 bis 255 Zeichen und mindestens einen Großbuchstaben.</value>
   </data>
   <data name="Recovery_Result_ConfirmationMismatch" xml:space="preserve">
-    <value>Die Passwörter stimmen nicht überein.</value>
+    <value>Die Passwörter stimmen nicht überein. Prüfe die Bestätigung.</value>
   </data>
   <data name="Recovery_Result_RateLimited" xml:space="preserve">
-    <value>Zu viele Anfragen. Versuche es später erneut.</value>
+    <value>Du hast mehrere Anfragen kurz hintereinander gestellt. Warte vor dem nächsten Versuch.</value>
   </data>
   <data name="Recovery_Result_Unavailable" xml:space="preserve">
-    <value>Die Passwortwiederherstellung ist derzeit nicht verfügbar. Versuche es später erneut.</value>
+    <value>Die Wiederherstellung konnte gerade nicht abgeschlossen werden. Versuche es später erneut.</value>
   </data>
   <data name="Recovery_Result_Unconfirmed" xml:space="preserve">
-    <value>Das Ergebnis konnte nicht bestätigt werden. Versuche nach dem Speichern zuerst, dich mit dem neuen Passwort anzumelden. Prüfe nach einer Codeanforderung dein E-Mail-Postfach.</value>
+    <value>Das Ergebnis konnte nicht bestätigt werden. Prüfe nach einer Code-Anfrage deine E-Mail. Versuche nach dem Speichern zuerst, dich mit dem neuen Passwort anzumelden.</value>
   </data>
   <data name="Recovery_Result_DeliveryFailed" xml:space="preserve">
-    <value>Die Wiederherstellungs-E-Mail konnte nicht gesendet werden. Versuche es später erneut. Dein Passwort wurde nicht geändert.</value>
+    <value>Der Code-Versand konnte nicht abgeschlossen werden. Fordere später einen neuen an. Dein Passwort ist unverändert.</value>
   </data>
   <data name="Recovery_Result_NotSaved" xml:space="preserve">
-    <value>Das neue Passwort konnte nicht gespeichert werden. Dein bisheriges Passwort bleibt gültig. Du kannst es erneut versuchen.</value>
+    <value>Dein Passwort konnte nicht gespeichert werden. Das bisherige ist noch gültig. Versuche es erneut.</value>
   </data>
   <data name="Recovery_Msg_Saving" xml:space="preserve">
-    <value>Wird gespeichert. Wenn du jetzt schließt, bleibt das Ergebnis möglicherweise unbestätigt. Versuche zuerst, dich mit dem neuen Passwort anzumelden.</value>
+    <value>Dein neues Passwort wird gespeichert…</value>
   </data>
   <data name="LoginVerification_Lbl_Title" xml:space="preserve"><value>Anmeldung bestätigen</value></data>
   <data name="LoginVerification_Lbl_Code" xml:space="preserve"><value>Code aus der E-Mail</value></data>
@@ -1035,17 +966,17 @@
   <data name="LoginVerification_Msg_ExpiresAt" xml:space="preserve"><value>Code gültig bis {0:t}.</value></data>
   <data name="LoginVerification_Msg_RetryAt" xml:space="preserve"><value>Erneut versuchen ab {0:g}.</value></data>
   <data name="LoginVerification_Result_Success" xml:space="preserve"><value>Anmeldung bestätigt.</value></data>
-  <data name="LoginVerification_Result_ChallengeRequired" xml:space="preserve"><value>Gib den Code aus der E-Mail ein. Er ist zehn Minuten gültig.</value></data>
-  <data name="LoginVerification_Result_InvalidCredentials" xml:space="preserve"><value>Anmeldung nicht bestätigt. Prüfe deine Zugangsdaten. Drei Fehlversuche sperren die Anmeldung für fünfzehn Minuten.</value></data>
+  <data name="LoginVerification_Result_ChallengeRequired" xml:space="preserve"><value>Gib den Code aus der E-Mail ein. Er ist {0} Minuten gültig.</value></data>
+  <data name="LoginVerification_Result_InvalidCredentials" xml:space="preserve"><value>Benutzername, E-Mail oder Passwort ist falsch. Prüfe deine Angaben.</value></data>
   <data name="LoginVerification_Result_AccountRestricted" xml:space="preserve"><value>Der Zugang zu deinem Konto ist eingeschränkt.</value></data>
-  <data name="LoginVerification_Result_InvalidCode" xml:space="preserve"><value>Der Code ist falsch. Prüfe die acht Ziffern.</value></data>
+  <data name="LoginVerification_Result_InvalidCode" xml:space="preserve"><value>Der Code ist falsch. Übernimm ihn genau aus der E-Mail.</value></data>
   <data name="LoginVerification_Result_CodeExpired" xml:space="preserve"><value>Der Code ist abgelaufen. Fordere einen neuen an.</value></data>
-  <data name="LoginVerification_Result_InvalidChallenge" xml:space="preserve"><value>Dieser Anmeldeversuch ist nicht mehr verfügbar. Beginne erneut.</value></data>
-  <data name="LoginVerification_Result_TemporarilyLocked" xml:space="preserve"><value>Die Anmeldung ist nach drei Fehlversuchen vorübergehend gesperrt.</value></data>
-  <data name="LoginVerification_Result_DeliveryFailed" xml:space="preserve"><value>Die E-Mail konnte nicht gesendet werden. Wiederhole den Versand einmal. Nach einem zweiten Fehler versuche es später erneut.</value></data>
-  <data name="LoginVerification_Result_RateLimited" xml:space="preserve"><value>Zu viele Anfragen. Warte, bevor du einen neuen Code anforderst.</value></data>
-  <data name="LoginVerification_Result_Unavailable" xml:space="preserve"><value>Die Anmeldebestätigung ist nicht verfügbar. Versuche es später erneut.</value></data>
-  <data name="LoginVerification_Result_Unconfirmed" xml:space="preserve"><value>Das Ergebnis konnte nicht bestätigt werden. Prüfe beim Anfordern deine E-Mails. Beginne nach einer unbestätigten Anmeldung erneut. Es gab keine automatische Wiederholung.</value></data>
+  <data name="LoginVerification_Result_InvalidChallenge" xml:space="preserve"><value>Dieser Anmeldeversuch ist nicht mehr verfügbar. Kehre zurück und melde dich erneut an.</value></data>
+  <data name="LoginVerification_Result_TemporarilyLocked" xml:space="preserve"><value>Die Anmeldung ist wegen fehlgeschlagener Versuche vorübergehend gesperrt.</value></data>
+  <data name="LoginVerification_Result_DeliveryFailed" xml:space="preserve"><value>Der Code-Versand konnte nicht abgeschlossen werden. Fordere einen neuen an oder melde dich erneut an.</value></data>
+  <data name="LoginVerification_Result_RateLimited" xml:space="preserve"><value>Du hast mehrere Anfragen kurz hintereinander gestellt. Warte vor dem nächsten Versuch.</value></data>
+  <data name="LoginVerification_Result_Unavailable" xml:space="preserve"><value>Die Anmeldung konnte gerade nicht abgeschlossen werden. Versuche es später erneut.</value></data>
+  <data name="LoginVerification_Result_Unconfirmed" xml:space="preserve"><value>Das Ergebnis konnte nicht bestätigt werden. Prüfe beim Anfordern deine E-Mails. Beginne nach einer unbestätigten Anmeldung erneut.</value></data>
   <data name="RoomInvitations_Btn_SendEmail" xml:space="preserve">
     <value>Per E-Mail senden</value>
   </data>
@@ -1084,4 +1015,19 @@
   <data name="GameAccess_Err_Suspended" xml:space="preserve"><value>Dein Konto ist vorübergehend gesperrt. Du kannst noch kein neues Spiel starten.</value></data>
   <data name="GameAccess_Err_ParticipantSuspended" xml:space="preserve"><value>Ein Spieler ist vorübergehend gesperrt. Das Spiel kann nicht beginnen.</value></data>
   <data name="GameAccess_Err_PermissionDenied" xml:space="preserve"><value>Du bist nicht berechtigt, diese Aktion auszuführen.</value></data>
+  <data name="Register_Err_UsernameAtSign" xml:space="preserve">
+    <value>Der Benutzername darf kein @ enthalten. Die E-Mail gehört ins Feld E-Mail-Adresse.</value>
+  </data>
+  <data name="Register_Err_InvalidUsername" xml:space="preserve">
+    <value>Verwende 1 bis {0} Zeichen: Buchstaben, Ziffern oder _, keine Leer- oder Sonderzeichen.</value>
+  </data>
+  <data name="Registration_Msg_Saving" xml:space="preserve">
+    <value>Dein Konto wird erstellt…</value>
+  </data>
+  <data name="GuestRegistration_Err_InvalidName" xml:space="preserve">
+    <value>Verwende 1 bis {0} Zeichen im Namen: Buchstaben, Ziffern oder _, keine Leer- oder Sonderzeichen.</value>
+  </data>
+  <data name="Recovery_Btn_Close" xml:space="preserve">
+    <value>Zurück zur Anmeldung</value>
+  </data>
 </root>

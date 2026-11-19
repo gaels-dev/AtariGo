@@ -1,7 +1,7 @@
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
-using AtariGo.Server.Application.Authentication;
+using AtariGo.Contracts.Validation;
 using AtariGo.Server.Data;
 using AtariGo.Server.Data.Entities;
 

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 
+using AtariGo.Contracts.Validation;
 using AtariGo.Server.Application.Authentication;
 using AtariGo.Server.Data;
 using AtariGo.Server.Data.Entities;

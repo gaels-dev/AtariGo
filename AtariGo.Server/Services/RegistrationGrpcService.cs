@@ -36,17 +36,21 @@ public sealed class RegistrationGrpcService : Registration.RegistrationBase
             UserName = request.UserName,
             Email = request.Email,
             Password = request.Password,
-            PasswordConfirmation = request.PasswordConfirmation,
-            ConfirmationText = request.ConfirmationText
+            PasswordConfirmation = request.PasswordConfirmation
         };
 
-        RegistrationStatus status = await _registrationService.RegisterAccountAsync(
-            command,
-            context.CancellationToken);
-
-        return new RegisterAccountResponse
+        try
         {
-            Result = MapRegistrationStatus(status)
-        };
+            RegistrationStatus status = await _registrationService.RegisterAccountAsync(
+                command, context.CancellationToken);
+            return new RegisterAccountResponse { Result = MapRegistrationStatus(status) };
+        }
+        finally
+        {
+            request.Password = string.Empty;
+            request.PasswordConfirmation = string.Empty;
+            command.Password = string.Empty;
+            command.PasswordConfirmation = string.Empty;
+        }
     }
 }

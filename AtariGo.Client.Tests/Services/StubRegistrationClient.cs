@@ -11,14 +11,20 @@ namespace AtariGo.Client.Tests.Services
         public StubRegistrationClient(
             Func<CancellationToken, Task<RegisterAccountResponse>> register)
         {
+            ArgumentNullException.ThrowIfNull(register);
             _register = register;
         }
 
+        public RegistrationDraft? LastDraft { get; private set; }
+
+        public int Calls { get; private set; }
+
         public Task<RegisterAccountResponse> RegisterAccountAsync(
             RegistrationDraft registrationDraft,
-            string confirmationText,
             CancellationToken cancellationToken = default)
         {
+            LastDraft = registrationDraft;
+            Calls++;
             return _register(cancellationToken);
         }
     }

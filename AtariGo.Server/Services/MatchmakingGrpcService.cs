@@ -1,6 +1,7 @@
 using Grpc.Core;
 
 using AtariGo.Contracts;
+using AtariGo.Contracts.Validation;
 using AtariGo.Server.Application.Games;
 using AtariGo.Server.Application.Matchmaking;
 using AtariGo.Server.Application.Reports;
@@ -11,8 +12,6 @@ namespace AtariGo.Server.Services;
 public sealed class MatchmakingGrpcService : Matchmaking.MatchmakingBase
 {
     private const string GuestCredentialHeader = "x-guest-credential";
-    private const string GuestNamePrefix = "Guest-";
-    private const int MaximumGuestNameLength = 15;
 
     private readonly PublicMatchmakingService _matchmaking;
     private readonly IGuestIdentityRegistry _guestIdentityRegistry;
@@ -79,13 +78,14 @@ public sealed class MatchmakingGrpcService : Matchmaking.MatchmakingBase
 
     private static bool IsValidGuestName(string displayName)
     {
-        if (!displayName.StartsWith(GuestNamePrefix, StringComparison.Ordinal))
+        if (!displayName.StartsWith(UserNameRules.GuestPrefix, StringComparison.Ordinal))
         {
             return false;
         }
 
-        string guestName = displayName[GuestNamePrefix.Length..];
-        return guestName.Length > 0 && guestName.Length <= MaximumGuestNameLength;
+        string guestName = displayName[UserNameRules.GuestPrefix.Length..];
+        return string.Equals(guestName, guestName.Trim(), StringComparison.Ordinal)
+            && UserNameRules.IsValidGuestName(guestName);
     }
 
     private static string GetGuestCredential(ServerCallContext context)
@@ -106,7 +106,7 @@ public sealed class MatchmakingGrpcService : Matchmaking.MatchmakingBase
         ServerCallContext context)
     {
         string displayName = request.DisplayName.Trim();
-        if (!IsValidGuestName(displayName))
+        if (request.DisplayName.Any(char.IsControl) || !IsValidGuestName(displayName))
         {
             throw new RpcException(new Status(
                 StatusCode.InvalidArgument,

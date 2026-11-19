@@ -13,7 +13,8 @@ message RegisterAccountRequest {
   string email = 2;
   string password = 3;
   string password_confirmation = 4;
-  string confirmation_text = 5;
+  reserved 5;
+  reserved "confirmation_text";
 }
 
 message RegisterAccountResponse {

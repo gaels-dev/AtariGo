@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Windows.Input;
 
+using AtariGo.Contracts.Validation;
 using AtariGo.Client.Commands;
 using AtariGo.Client.Models;
 using AtariGo.Client.Services;
@@ -9,7 +10,6 @@ namespace AtariGo.Client.ViewModels.Dialogs;
 
 public sealed class LoginVerificationDialogViewModel : ViewModelBase, IDisposable
 {
-    private const int CodeLength = 8;
     private readonly IAuthenticationClient _client;
     private readonly Action<LoginAttemptResult> _complete;
     private readonly CancellationTokenSource _lifetime = new CancellationTokenSource();
@@ -57,15 +57,15 @@ public sealed class LoginVerificationDialogViewModel : ViewModelBase, IDisposabl
 
     public bool CanEdit => !_isDisposed && !_isBusy && !_isFinished;
 
-    public string Title => LoginAttemptMessages.GetText("LoginVerification_Lbl_Title");
+    public string Title => AuthenticationMessages.GetText("LoginVerification_Lbl_Title");
 
-    public string CodeLabel => LoginAttemptMessages.GetText("LoginVerification_Lbl_Code");
+    public string CodeLabel => AuthenticationMessages.GetText("LoginVerification_Lbl_Code");
 
-    public string ConfirmLabel => LoginAttemptMessages.GetText("LoginVerification_Btn_Confirm");
+    public string ConfirmLabel => AuthenticationMessages.GetText("LoginVerification_Btn_Confirm");
 
-    public string ResendLabel => LoginAttemptMessages.GetText("LoginVerification_Btn_Resend");
+    public string ResendLabel => AuthenticationMessages.GetText("LoginVerification_Btn_Resend");
 
-    public string CancelLabel => LoginAttemptMessages.GetText("LoginVerification_Btn_Cancel");
+    public string CancelLabel => AuthenticationMessages.GetText("LoginVerification_Btn_Cancel");
 
     public ICommand ConfirmCommand
     {
@@ -101,10 +101,9 @@ public sealed class LoginVerificationDialogViewModel : ViewModelBase, IDisposabl
         {
             return;
         }
-        if (Code.Length != CodeLength
-            || Code.Any(character => character is < '0' or > '9'))
+        if (!VerificationCodeRules.IsValid(Code))
         {
-            Message = LoginAttemptMessages.GetText("LoginVerification_Result_InvalidCode");
+            Message = AuthenticationMessages.GetText("LoginVerification_Result_InvalidCode");
             return;
         }
         SetBusy(true);
@@ -166,7 +165,7 @@ public sealed class LoginVerificationDialogViewModel : ViewModelBase, IDisposabl
 
     private void ApplyResult(LoginAttemptResult result, bool isConfirmation = false)
     {
-        Message = LoginAttemptMessages.GetMessage(result);
+        Message = AuthenticationMessages.GetMessage(result);
         _isFinished = result.Status is LoginAttemptStatus.Success
             or LoginAttemptStatus.InvalidChallenge or LoginAttemptStatus.TemporarilyLocked
             or LoginAttemptStatus.AccountRestricted
@@ -179,7 +178,7 @@ public sealed class LoginVerificationDialogViewModel : ViewModelBase, IDisposabl
             DateTimeOffset expiry = DateTimeOffset.FromUnixTimeSeconds(
                 result.CodeExpiresAtUnixSeconds).ToLocalTime();
             _expiresAt = string.Format(CultureInfo.CurrentUICulture,
-                LoginAttemptMessages.GetText("LoginVerification_Msg_ExpiresAt"), expiry);
+                AuthenticationMessages.GetText("LoginVerification_Msg_ExpiresAt"), expiry);
         }
         OnPropertyChanged(nameof(Destination));
         OnPropertyChanged(nameof(ExpiresAt));
@@ -197,7 +196,7 @@ public sealed class LoginVerificationDialogViewModel : ViewModelBase, IDisposabl
         {
             _isFinished = true;
             Code = string.Empty;
-            Message = LoginAttemptMessages.GetText("LoginVerification_Result_Unconfirmed");
+            Message = AuthenticationMessages.GetText("LoginVerification_Result_Unconfirmed");
             SetBusy(false);
         }
     }

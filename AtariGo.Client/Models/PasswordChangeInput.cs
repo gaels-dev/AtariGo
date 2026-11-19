@@ -1,10 +1,9 @@
+using AtariGo.Contracts.Validation;
+
 namespace AtariGo.Client.Models;
 
 public sealed class PasswordChangeInput
 {
-    public const int MinimumPasswordLength = 8;
-    public const int MaximumPasswordLength = 255;
-
     public string CurrentPassword { get; set; } = string.Empty;
 
     public string NewPassword { get; set; } = string.Empty;
@@ -18,8 +17,7 @@ public sealed class PasswordChangeInput
         {
             return PasswordChangeResult.MissingFields;
         }
-        if (NewPassword.Length < MinimumPasswordLength
-            || NewPassword.Length > MaximumPasswordLength || !NewPassword.Any(char.IsUpper))
+        if (!PasswordPolicy.IsValid(NewPassword))
         {
             return PasswordChangeResult.InvalidNewPassword;
         }

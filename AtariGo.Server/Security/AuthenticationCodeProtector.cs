@@ -2,11 +2,13 @@ using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 
+using AtariGo.Contracts.Validation;
+
 namespace AtariGo.Server.Security;
 
 public sealed class AuthenticationCodeProtector
 {
-    public const int CodeLength = 8;
+    public const int CodeLength = VerificationCodeRules.Length;
     private const int MinimumKeyBytes = 32;
     private const int CodeUpperBound = 100_000_000;
     private readonly string _key;
@@ -50,7 +52,7 @@ public sealed class AuthenticationCodeProtector
         ArgumentNullException.ThrowIfNull(scope);
         ArgumentNullException.ThrowIfNull(code);
         ArgumentNullException.ThrowIfNull(expected);
-        if (code.Length != CodeLength || code.Any(character => character is < '0' or > '9'))
+        if (!VerificationCodeRules.IsValid(code))
         {
             return false;
         }
