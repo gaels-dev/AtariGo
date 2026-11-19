@@ -1,22 +1,22 @@
 # Estándar de codificación y desarrollo de Atari Go
 
-Este documento es la referencia vigente para escribir y revisar el código del proyecto.
-Aplica al trabajo de los integrantes del equipo y de los asistentes de programación.
-Su objetivo es mantener código consistente, comprensible y fácil de mantener.
+**Versión 1.5 **
 
-- Versión: 1.4 consolidada en Markdown.
-- Última revisión: 2026-11-14.
-- Documento de origen: `SOFTWARE CODING AND DEVELOPMENT STANDARD.docx`.
-- Consolidación: versión Markdown 1.2 del repositorio y PDF `EstandarV1.4.pdf`,
-  revisión 2026-11-06, conservando las decisiones posteriores adoptadas en el proyecto.
-- Autores del documento de origen: Morales Baizabal Emiliano y Amores Rivas Gael Sameí.
-- Contexto académico: Tecnologías para la Construcción de Software, Ingeniería de Software, equipo 2.
+- **Fecha:** 18 de noviembre de 2026.
+- **Autores:** Morales Baizabal Emiliano y Amores Rivas Gael Sameí.
+- **Contexto académico:** Tecnologías para la Construcción de Software, Ingeniería de Software, equipo 2.
+- **Tecnologías:** C#, .NET 10, WPF, gRPC, Protobuf, EF Core y SQL Server.
+- **Estado:** cerrado
+
+Este documento reúne las convenciones de Atari Go y explica su aplicación a cliente,
+servidor, lógica del juego y pruebas. Las reglas específicas prevalecen dentro de su alcance;
+las propuestas pendientes se gestionan según 11.4.
 
 ## Índice
 
 - [1 Introducción](#seccion-1)
   - [1.1 Propósito del Documento](#seccion-1-1)
-  - [1.2 Alcance](#seccion-1-2)
+  - [1.2 Alcance e interpretación de las reglas](#seccion-1-2)
   - [1.3 Entorno de Desarrollo](#seccion-1-3)
   - [1.4 Idioma y Localización](#seccion-1-4)
 - [2 Convenciones de Nomenclatura](#seccion-2)
@@ -33,12 +33,13 @@ Su objetivo es mantener código consistente, comprensible y fácil de mantener.
   - [2.11 Campos estáticos](#seccion-2-11)
   - [2.12 Enumeraciones](#seccion-2-12)
   - [2.13 Namespaces](#seccion-2-13)
-  - [2.14 Estructura Jerárquica dentro de la Clase](#seccion-2-14)
+  - [2.14 Organización de imports y miembros](#seccion-2-14)
   - [2.15 Eventos](#seccion-2-15)
   - [2.16 Propiedades](#seccion-2-16)
   - [2.17 Prefijos y Sufijos](#seccion-2-17)
   - [2.18 Clases de Prueba](#seccion-2-18)
   - [2.19 Métodos de Prueba](#seccion-2-19)
+  - [2.20 Records, estructuras y tuplas](#seccion-2-20)
 - [3 Estilo de Código y Formato](#seccion-3)
   - [3.1 Formato General](#seccion-3-1)
   - [3.2 Indentación](#seccion-3-2)
@@ -52,10 +53,15 @@ Su objetivo es mantener código consistente, comprensible y fácil de mantener.
   - [3.10 Uso de Var](#seccion-3-10)
   - [3.11 Números Mágicos](#seccion-3-11)
   - [3.12 Límite de Parámetros por Método](#seccion-3-12)
-  - [3.13 Retornos Únicos](#seccion-3-13)
+  - [3.13 Cláusulas de guarda y salidas anticipadas](#seccion-3-13)
   - [3.14 Lambdas y miembros con cuerpo de expresión](#seccion-3-14)
   - [3.15 Asincronía cancelación y plazos](#seccion-3-15)
   - [3.16 Condicionales ternarios](#seccion-3-16)
+  - [3.17 Accesibilidad y puntos de extensión](#seccion-3-17)
+  - [3.18 Propiedades, inicialización e inmutabilidad](#seccion-3-18)
+  - [3.19 Estructuras de control y patrones](#seccion-3-19)
+  - [3.20 LINQ y materialización de consultas](#seccion-3-20)
+  - [3.21 Cadenas, cultura y unidades](#seccion-3-21)
 - [4 Organización del Proyecto](#seccion-4)
   - [4.1 Una clase por archivo](#seccion-4-1)
   - [4.2 Responsabilidad única](#seccion-4-2)
@@ -63,12 +69,22 @@ Su objetivo es mantener código consistente, comprensible y fácil de mantener.
   - [4.4 Responsabilidades del cliente WPF](#seccion-4-4)
   - [4.5 Configuración de persistencia](#seccion-4-5)
   - [4.6 Autoridad del servidor y concurrencia](#seccion-4-6)
-  - [4.7 Contratos y comunicación gRPC](#seccion-4-7)
-  - [4.8 Semáforos asíncronos y escritura de streams](#seccion-4-8)
-- [5 Prácticas Específicas de Videojuegos](#seccion-5)
-  - [5.1 Estado de la partida](#seccion-5-1)
-  - [5.2 Consistencia entre jugadores](#seccion-5-2)
-  - [5.3 Pruebas de reglas del juego](#seccion-5-3)
+  - [4.7 Semáforos asíncronos y escritura de streams](#seccion-4-7)
+  - [4.8 DRY: una implementación por regla](#seccion-4-8)
+  - [4.9 Simplicidad y funcionalidad necesaria: KISS y YAGNI](#seccion-4-9)
+  - [4.10 Inyección de dependencias y ciclos de vida](#seccion-4-10)
+  - [4.11 Bloqueos síncronos](#seccion-4-11)
+  - [4.12 Operaciones atómicas](#seccion-4-12)
+  - [4.13 Colecciones concurrentes](#seccion-4-13)
+  - [4.14 Registros y colas en memoria](#seccion-4-14)
+- [5 Contratos y comunicación gRPC](#seccion-5)
+  - [5.1 Diseño y nombres de contratos](#seccion-5-1)
+  - [5.2 Presencia y valores predeterminados](#seccion-5-2)
+  - [5.3 Compatibilidad y evolución](#seccion-5-3)
+  - [5.4 Resultados de negocio y errores](#seccion-5-4)
+  - [5.5 Llamadas unarias, plazos y cancelación](#seccion-5-5)
+  - [5.6 Streams, dúplex y presencia](#seccion-5-6)
+  - [5.7 Verificación de cambios de contrato](#seccion-5-7)
 - [6 Manejo de Errores y Excepciones](#seccion-6)
   - [6.1 Manejo General de Excepciones](#seccion-6-1)
   - [6.2 Tipos de Excepciones](#seccion-6-2)
@@ -78,21 +94,21 @@ Su objetivo es mantener código consistente, comprensible y fácil de mantener.
   - [6.6 Manejo de Estados No Válidos](#seccion-6-6)
   - [6.7 Liberación de Recursos](#seccion-6-7)
   - [6.8 Prácticas Prohibidas de Manejo de Excepciones](#seccion-6-8)
-  - [6.9 Manejo y Retorno de Valores Nulos](#seccion-6-9)
+  - [6.9 Nulos, ausencia y resultados explícitos](#seccion-6-9)
   - [6.10 Uso de Bitácoras y Logs](#seccion-6-10)
   - [6.11 Cláusulas de guarda y validación de precondiciones](#seccion-6-11)
-- [7 Comentarios](#seccion-7)
-  - [7.1 Principios para la Documentación del Código](#seccion-7-1)
-  - [7.2 Comentarios de Una Línea](#seccion-7-2)
-  - [7.3 Comentarios de Bloque](#seccion-7-3)
-  - [7.4 Justificación de Decisiones de Diseño](#seccion-7-4)
-  - [7.5 Comentarios TODO](#seccion-7-5)
-  - [7.6 Comentarios FIXME](#seccion-7-6)
-  - [7.7 Restricciones para los Comentarios](#seccion-7-7)
+  - [6.12 Fallos no controlados y tareas de fondo](#seccion-6-12)
+- [7 Comentarios y documentación](#seccion-7)
+  - [7.1 Política de comentarios](#seccion-7-1)
+  - [7.2 Comentarios de una línea](#seccion-7-2)
+  - [7.3 Comentarios de bloque y código deshabilitado](#seccion-7-3)
+  - [7.4 Documentación de decisiones y contratos](#seccion-7-4)
+  - [7.5 Pendientes TODO](#seccion-7-5)
+  - [7.6 Defectos FIXME](#seccion-7-6)
+  - [7.7 Restricciones y mantenimiento de documentación](#seccion-7-7)
 - [8 Control de Versiones Git](#seccion-8)
   - [8.1 Mensajes de Commit](#seccion-8-1)
-  - [8.2 Estrategia de Ramificación](#seccion-8-2)
-  - [8.3 Archivo Gitignore](#seccion-8-3)
+  - [8.2 Archivo Gitignore](#seccion-8-2)
 - [9 Pruebas y Aseguramiento de Calidad](#seccion-9)
   - [9.1 Estrategia de Pruebas](#seccion-9-1)
   - [9.2 Pruebas Unitarias](#seccion-9-2)
@@ -100,20 +116,35 @@ Su objetivo es mantener código consistente, comprensible y fácil de mantener.
   - [9.4 Estructura Arrange-Act-Assert](#seccion-9-4)
   - [9.5 Categorías de pruebas](#seccion-9-5)
   - [9.6 Criterios y casos de prueba](#seccion-9-6)
+  - [9.7 Determinismo y dobles de prueba](#seccion-9-7)
+  - [9.8 Verificación del estándar](#seccion-9-8)
 - [10 Prefijos Permitidos y Abreviaciones](#seccion-10)
-- [11 Declaración de Uso de I.A](#seccion-11)
-- [12 Referencias](#seccion-12)
-- [13 Mantenimiento del estándar y trabajo con Codex](#seccion-13)
-  - [13.4 Pendientes de evolución del estándar](#seccion-13-4)
-- [14 Seguridad y protección de información](#seccion-14)
-  - [14.1 Configuración y secretos](#seccion-14-1)
-  - [14.2 Contraseñas y tokens](#seccion-14-2)
-  - [14.3 Transporte y certificados](#seccion-14-3)
-  - [14.4 Validación y mensajes al usuario](#seccion-14-4)
+  - [10.1 Prefijos y sufijos de C#](#seccion-10-1)
+  - [10.2 Vistas ViewModels y comandos](#seccion-10-2)
+  - [10.3 Servicios datos y contratos](#seccion-10-3)
+  - [10.4 Recursos abreviaciones y otros archivos](#seccion-10-4)
+  - [10.5 Assets y catálogos de recursos](#seccion-10-5)
+- [11 Mantenimiento y aplicación del estándar](#seccion-11)
+  - [11.1 Lectura y aplicación](#seccion-11-1)
+  - [11.2 Explicación y evidencia de cambios](#seccion-11-2)
+  - [11.3 Propuestas y documentación compartida](#seccion-11-3)
+  - [11.4 Adopción de reglas y propuestas pendientes](#seccion-11-4)
+- [12 Seguridad y protección de información](#seccion-12)
+  - [12.1 Configuración y secretos](#seccion-12-1)
+  - [12.2 Contraseñas y tokens](#seccion-12-2)
+  - [12.3 Transporte y certificados](#seccion-12-3)
+  - [12.4 Validación y mensajes al usuario](#seccion-12-4)
+  - [12.5 Verificación por correo, recuperación y límites de envío](#seccion-12-5)
+- [13 Declaración de Uso de I.A](#seccion-13)
+- [14 Referencias](#seccion-14)
+
+---
 
 <a id="seccion-1"></a>
 
 ## 1 Introducción
+
+
 
 <a id="seccion-1-1"></a>
 
@@ -127,15 +158,30 @@ El estándar servirá como referencia común para las actividades de desarrollo 
 
 <a id="seccion-1-2"></a>
 
-### 1.2 Alcance
+### 1.2 Alcance e interpretación de las reglas
 
-Este estándar será aplicable al desarrollo y mantenimiento del código fuente del videojuego.
+El estándar aplica al código C# escrito a mano del cliente WPF, servidor, lógica del juego
+y proyectos de pruebas. Las reglas específicas de otros archivos están en 10.3 a 10.5.
+El cliente utiliza WPF, el transporte utiliza gRPC y Protobuf, y el servidor utiliza EF Core
+con SQL Server. No se incorporan convenciones de WCF o Unity como requisitos de estas capas.
 
-Las disposiciones establecidas deberán ser utilizadas por todos los integrantes que participen en la implementación, modificación, revisión o mantenimiento del código del proyecto.
+- **Debe / deberá:** requisito obligatorio dentro de su alcance.
+- **No debe / está prohibido:** práctica excluida.
+- **Se permite / puede:** alternativa válida bajo las condiciones indicadas.
 
-El estándar comprende las convenciones relacionadas con el lenguaje C#, incluyendo aspectos de estilo y formato del código, organización de archivos y namespaces, manejo de errores y excepciones, así como otras prácticas de desarrollo definidas en las secciones correspondientes de este documento.
+Las firmas impuestas por interfaces externas, overrides y herramientas conservan su contrato.
+La excepción afecta a esa firma, no a toda la clase. Las fuentes generadas se modifican desde
+su origen y no se reformatean manualmente. Una entidad de EF no se considera generada sin
+una fuente y un procedimiento reproducible que lo demuestren.
 
-Las reglas establecidas serán aplicables al código desarrollado específicamente para el proyecto y deberán mantenerse durante las diferentes etapas de desarrollo. Las ampliaciones de esta revisión y su alcance están identificados en el registro de cambios.
+Las reglas particulares, como la declaración de semáforos, precisan las generales. La
+precedencia de nombres de campos está en 10.1.Las instrucciones expresas del responsable prevalecen 
+y sus excepciones deben quedar claras.
+
+Los ejemplos son fragmentos didácticos: pueden omitir imports, tipos colaboradores y miembros
+no relacionados. Un ejemplo **correcto** debe respetar las reglas relevantes para lo que
+demuestra; no implica que todo el fragmento sea una unidad compilable independiente.
+Los ejemplos **incorrectos** muestran deliberadamente una práctica prohibida.
 
 <a id="seccion-1-3"></a>
 
@@ -204,9 +250,20 @@ una hora local con una fecha UTC ni se resta un desplazamiento para calcular un 
 “UTC-6” expresa aquí un desplazamiento fijo; cambiarlo por una zona horaria identificada
 requiere documentar esa decisión.
 
+Las cadenas con formato deberán conservar los marcadores requeridos por sus llamadas entre
+culturas. Por ejemplo, si se utilizan `{0}` y `{1}`, una traducción no debe introducir `{2}`
+sin el argumento correspondiente. El texto de los correos también se obtiene de recursos
+localizados. No se exige renombrar las claves existentes para añadir un sufijo nuevo.
+
+Usar la cultura de presentación para fechas y números visibles; los formatos técnicos y
+valores intercambiados por protocolo siguen 3.21 y 5. Los assets con texto traducible
+requieren una representación localizada; los assets sin texto no se duplican por idioma.
+
 <a id="seccion-2"></a>
 
 ## 2 Convenciones de Nomenclatura
+
+
 
 <a id="seccion-2-1"></a>
 
@@ -336,6 +393,12 @@ public void SetScore(int NewScore)
 }
 ```
 
+Los parámetros posicionales de un `record` que generan propiedades públicas usan PascalCase,
+como `SessionIdentity(int UserId, string UserName)`. Esta es una excepción expresa porque
+su identificador también nombra la propiedad sintetizada. Los parámetros ordinarios de
+métodos y constructores, incluidos constructores que no generan esas propiedades, conservan
+camelCase. Las firmas externas mantienen los nombres exigidos por su contrato.
+
 <a id="seccion-2-7"></a>
 
 ### 2.7 Campos Privados
@@ -356,7 +419,7 @@ private string playerUsername;
 
 Esta regla se aplica a campos de instancia privados e internos que no son constantes.
 Los campos estáticos y los campos `[ThreadStatic]` siguen las reglas específicas de 2.11
-y 10, respectivamente. `readonly` no convierte un campo en una constante.
+y 11, respectivamente. `readonly` no convierte un campo en una constante.
 
 <a id="seccion-2-8"></a>
 
@@ -377,7 +440,7 @@ public float moveSpeed;
 ```
 
 Para campos públicos constantes o estáticos se aplica primero la categoría específica
-establecida en 2.10, 2.11 y 10. Exponer un campo mutable requiere justificar por qué una
+establecida en 2.10, 2.11 y 11. Exponer un campo mutable requiere justificar por qué una
 propiedad no representa adecuadamente la operación o el dato.
 
 <a id="seccion-2-9"></a>
@@ -476,6 +539,15 @@ enum game_state
 }
 ```
 
+Preferir un nombre singular cuando el enum representa una selección. Si se define realmente
+una combinación de bits, documentar ese significado y utilizar `[Flags]` con valores adecuados.
+No convertir enums existentes en banderas ni renombrarlos por una preferencia editorial.
+
+El valor cero debe tener un significado definido por su contrato.
+Los enums Protobuf siguen su convención de valor inicial no especificado.
+No renumerar valores publicados o persistidos. Una conversión debe tratar de forma controlada
+los valores desconocidos, sin aceptarlos silenciosamente como un estado exitoso.
+
 <a id="seccion-2-13"></a>
 
 ### 2.13 Namespaces
@@ -513,151 +585,12 @@ tipo parcial del code-behind.
 
 <a id="seccion-2-14"></a>
 
-### 2.14 Estructura Jerárquica dentro de la Clase
+### 2.14 Organización de imports y miembros
 
-Los miembros de una clase deben organizarse en un orden lógico y estricto para facilitar la lectura. El orden obligatorio es:
+El orden de un tipo escrito a mano es el siguiente:
 
-- Directivas using: Sistema (.NET) primero, luego terceros/librerías, y finalmente propios del proyecto (cada grupo separado por un salto de línea).
-
-- Declaración de namespace y class.
-
-- Constantes y Campos Estáticos: Públicos seguidos de privados.
-
-- Campos de Instancia (Atributos): Públicos, protegidos y privados.
-
-- Constructores: Estático, por defecto y parametrizados.
-
-- Propiedades: Getters y setters.
-
-- Métodos Normales: Públicos, protegidos y privados.
-
-- Métodos Sobrescritos (override): Al final de la clase (ej. ToString(), Equals()).
-
-**Correcto**
-
-```csharp
-using System;
-
-using Newtonsoft.Json;
-
-using AtariGo.Core.Utils;
-
-namespace AtariGo.Core.AI
-{
-    public class EnemyAI
-    {
-        public const int MaxHealth = 100;
-        private static int enemyCount;
-        public bool IsActive;
-        protected bool isAlerted;
-        private float _speed;
-
-        static EnemyAI()
-        {
-            enemyCount = 0;
-        }
-
-        public EnemyAI()
-        {
-            _speed = 1.0f;
-        }
-
-        public EnemyAI(float speed)
-        {
-            _speed = speed;
-        }
-
-        public float Speed
-        {
-            get
-            {
-                return _speed;
-            }
-            set
-            {
-                _speed = value;
-            }
-        }
-
-        public void Patrol()
-        {
-        }
-
-        protected void Move()
-        {
-        }
-
-        private void Scan()
-        {
-        }
-
-        public override string ToString()
-        {
-            return "Enemy";
-        }
-    }
-}
-```
-
-**Incorrecto**
-
-```csharp
-using AtariGo.Core.Utils;
-using System;
-using Newtonsoft.Json;
-namespace AtariGo.Core.AI
-{
-    public class EnemyAI
-    {
-        public override string ToString()
-        {
-            return "Enemy";
-        }
-        private void Scan()
-        {
-        }
-        protected void Move()
-        {
-        }
-        public bool IsActive;
-        private float _speed;
-        public float Speed
-        {
-            get
-            {
-                return _speed;
-            }
-            set
-            {
-                _speed = value;
-            }
-        }
-        public EnemyAI()
-        {
-            _speed = 1.0f;
-        }
-        public void Patrol()
-        {
-        }
-        public EnemyAI(float speed)
-        {
-            _speed = speed;
-        }
-        static EnemyAI()
-        {
-            enemyCount = 0;
-        }
-        protected bool isAlerted;
-        public const int MaxHealth = 100;
-        private static int enemyCount;
-    }
-}
-```
-
-Para categorías antes no indicadas, aplicar este orden completo:
-
-1. `using` de `System`, después APIs de plataforma `Microsoft`, después terceros y después
-   proyectos `AtariGo`, con una línea en blanco entre grupos presentes.
+1. Imports de `System`, APIs `Microsoft`, terceros y proyectos `AtariGo`, con una línea
+   en blanco entre grupos presentes.
 2. Namespace y declaración del tipo.
 3. Constantes y campos estáticos.
 4. Campos de instancia.
@@ -665,13 +598,42 @@ Para categorías antes no indicadas, aplicar este orden completo:
 6. Eventos.
 7. Propiedades e indexadores.
 8. Métodos normales.
-9. Métodos `override`, al final, aunque su visibilidad los situaría antes.
+9. Métodos `override`, al final, independientemente de su visibilidad.
 
-Dentro de una categoría con visibilidad, usar público, protegido, interno y privado.
-Los eventos que implementan un contrato de .NET conservan el nombre de ese contrato.
-Los `using` necesarios solo dentro de un namespace siguen los mismos grupos.
-La estructura de `Program.cs` con instrucciones de nivel superior no se trata como una
-clase escrita a mano.
+Dentro de cada categoría con visibilidad se utiliza público, protegido, interno y privado.
+Mantener las declaraciones relacionadas legibles; no se exige un orden alfabético adicional.
+Los miembros parciales se organizan dentro de su archivo de responsabilidad según 4.1.
+
+Los imports sin uso se eliminan. Se permiten aliases descriptivos para resolver colisiones
+entre tipos de dominio, Protobuf o librerías, por ejemplo `ProtoSnapshot` y `DomainSnapshot`.
+No utilizar aliases para abreviar arbitrariamente un tipo que ya sea claro. Los imports
+ubicados dentro de un namespace conservan los grupos anteriores.
+
+Los imports implícitos o generados conservan su origen. Las instrucciones de nivel superior
+de `Program.cs` y las directivas de archivos de ensamblado no se tratan como una clase.
+
+**Correcto**
+
+```csharp
+using System.Globalization;
+
+using Grpc.Core;
+
+using AtariGo.Contracts;
+```
+
+Los tres grupos presentes están separados. La presencia de un import no autoriza conservarlo
+si el archivo no lo necesita.
+
+**Incorrecto**
+
+```csharp
+using AtariGo.Contracts;
+using System.Globalization;
+using Grpc.Core;
+```
+
+El ejemplo mezcla las categorías sin la separación elegida para el proyecto.
 
 <a id="seccion-2-15"></a>
 
@@ -714,6 +676,9 @@ public int CurrentHealth { get; private set; }
 ```csharp
 public int current_health { get; private set; }
 ```
+
+Las propiedades públicas sintetizadas por records siguen la misma convención. La forma del
+accesor y su mutabilidad se eligen según 3.18; el nombre PascalCase no obliga a exponer un setter.
 
 <a id="seccion-2-17"></a>
 
@@ -851,9 +816,45 @@ Los segmentos se escriben en `PascalCase`. El resultado esperado describe una ex
 no si la última ejecución pasó o falló. No se añade `_Failed` para marcar una prueba rota.
 Puede usarse un segmento adicional si describe un flujo o condición real del escenario.
 
+<a id="seccion-2-20"></a>
+
+### 2.20 Records, estructuras y tuplas
+
+Elegir el tipo según la identidad, igualdad y propiedad de sus datos. Una clase puede
+representar estado o comportamiento con identidad; un record es apropiado para datos cuyo
+contrato aprovecha igualdad por valor y actualizaciones con `with`. Un `readonly record
+struct` es una alternativa para un valor pequeño coherente, como una posición de tablero.
+No se obliga a convertir modelos existentes a una única forma.
+
+Los parámetros posicionales que generan propiedades públicas siguen 2.6. Las tuplas pueden
+representar agrupaciones locales o claves coherentes; sus elementos nombrados usan PascalCase
+y la variable usa camelCase. Preferir un tipo propio si la agrupación adquiere validaciones,
+identidad o un contrato difícil de comprender. No crear un tipo solo por reemplazar dos datos.
+
+**Correcto**
+
+```csharp
+public readonly record struct BoardPosition(int Row, int Column);
+(int Sender, int Room, int Recipient) key = (senderId, roomId, recipientId);
+```
+
+Cada forma expresa una agrupación con significado. Una tupla se entiende por sus nombres,
+no por recordar el orden de `Item1`, `Item2` y `Item3`.
+
+**Incorrecto**
+
+```csharp
+public readonly record struct BoardPosition(int row, int column);
+```
+
+Los nombres generarían propiedades públicas que contradicen 2.16.
+Un record con listas o arreglos no garantiza inmutabilidad profunda; su propiedad está en 3.18.
+
 <a id="seccion-3"></a>
 
 ## 3 Estilo de Código y Formato
+
+
 
 <a id="seccion-3-1"></a>
 
@@ -908,8 +909,12 @@ var playerScore = CalculatePlayerScore(player, completedObjectives, elapsedTime,
 
 El límite incluye indentación y comentarios del C# escrito a mano. No se rompe una cadena
 cambiando su valor ni una firma externa por cumplir el ancho. Los archivos generados se
-tratan según 4.1. XAML, Protobuf, documentación y scripts tienen reglas específicas en 10;
+tratan según 4.1. XAML, Protobuf, documentación y scripts tienen reglas específicas en 11;
 este límite C# no se extiende implícitamente a esos lenguajes.
+
+Para firmas extensas se permite dividir los parámetros en líneas de continuación. Si el
+identificador de un método de prueba ya requiere una línea completa, se permite separar el
+tipo de retorno del identificador. No abreviar el escenario hasta perder su significado.
 
 <a id="seccion-3-4"></a>
 
@@ -937,6 +942,10 @@ public void CalculateScore() {
 Un miembro con cuerpo de expresión, por ejemplo `IsOnline => _isOnline`, no abre un bloque
 y no necesita llaves. Su uso se rige por 3.14. Una lambda con bloque sí coloca la llave de
 apertura en una línea nueva.
+
+Los cuerpos de `if`, `else`, `for`, `foreach`, `while`, `do`, `lock` y `using` con bloque
+conservan las llaves aunque contengan una sola instrucción. Las declaraciones `using`
+sin bloque y los miembros con cuerpo de expresión mantienen su sintaxis propia.
 
 <a id="seccion-3-5"></a>
 
@@ -978,6 +987,10 @@ public class PlayerSession
 }
 ```
 
+Utilizar normalmente una línea vacía para separar fases o miembros. No añadir líneas vacías
+para alinear visualmente archivos ni reformatear contenido ajeno a una tarea por preferencias
+de espaciado que no cambien su legibilidad o incumplan una regla explícita.
+
 <a id="seccion-3-6"></a>
 
 ### 3.6 Espacios en Blanco
@@ -1005,6 +1018,12 @@ public void CalculateTotals()
     int finalScore = ( baseScore * multiplier );
 }
 ```
+
+Las llamadas no llevan un espacio entre el identificador y `(`. Se utiliza un espacio después
+de comas y se conservan juntos el acceso a miembros y sus puntos. Los atributos se colocan
+en la declaración a la que pertenecen; los atributos de parámetros, como `[CallerMemberName]`,
+permanecen junto al parámetro. Las inicializaciones y accesores breves siguen las excepciones
+expresas de 3.4 y 3.14, sin compactar varias acciones independientes.
 
 <a id="seccion-3-7"></a>
 
@@ -1100,6 +1119,23 @@ public void UpdatePlayerState()
 }
 ```
 
+Declarar una variable por declaración cuando representan valores independientes. Las partes
+de un `for` y la deconstrucción de una tupla coherente conservan su sintaxis propia. No dividir
+esas estructuras únicamente para aumentar el número de líneas.
+
+**Correcto**
+
+```csharp
+int row = position.Row;
+int column = position.Column;
+```
+
+**Incorrecto**
+
+```csharp
+int row = position.Row, column = position.Column;
+```
+
 <a id="seccion-3-10"></a>
 
 ### 3.10 Uso de Var
@@ -1128,6 +1164,11 @@ public void InitializePlayer()
 Las llamadas, `await`, consultas LINQ y expresiones condicionales se declaran con tipo
 explícito aunque el compilador pueda inferirlo. Los tipos anónimos son una excepción
 necesaria porque no tienen nombre utilizable; conservar `var` en ese caso.
+
+Cuando el tipo está escrito explícitamente a la izquierda, se permite construcción dirigida
+por el contexto, por ejemplo `List<int> scores = new();`. Las convenciones particulares como
+`new SemaphoreSlim(1, 1)` en 4.7 prevalecen. No se prohíben todas las inferencias del lenguaje:
+se exige que el tipo y la intención puedan entenderse en la declaración.
 
 <a id="seccion-3-11"></a>
 
@@ -1161,6 +1202,15 @@ valores significan un estado de base de datos, un límite de jugadores o una reg
 deben tener nombre. Los datos que constituyen el escenario de una prueba pueden escribirse
 como literales; no se extraen constantes sin aportar significado. Los números de campos
 Protobuf y los tamaños de presentación XAML no se evalúan como constantes de negocio C#.
+
+El mismo criterio aplica a cadenas que codifican estados o políticas compartidas. Reutilizar
+el catálogo correspondiente, como `DatabaseValues`, cuando representa el mismo concepto.
+Un mensaje de excepción, nombre de recurso o literal único no exige una constante adicional
+solo por ser una cadena. No crear un catálogo genérico que mezcle dominios independientes.
+
+Usar `const` para valores de compilación estables, `static readonly` para valores calculados
+una vez y configuración para parámetros que el diseño permite variar por entorno. Esta
+distinción no obliga a convertir todas las constantes existentes en opciones configurables.
 
 <a id="seccion-3-12"></a>
 
@@ -1208,50 +1258,67 @@ public Task RespondToRequestAsync(
 }
 ```
 
+En firmas propias que reciben cancelación, colocar normalmente `CancellationToken` al final.
+Los modificadores `ref`, `out`, `in` y `params` no eliminan el parámetro del conteo. Un
+parámetro `params` cuenta como uno declarado, pero no debe ocultar datos sin relación.
+
+Se permite `ref` cuando la actualización por referencia es parte del contrato, como
+`SetProperty(ref field, value)` o `Interlocked.Exchange`. Se permiten los patrones `Try…`
+con `out` cuando expresan claramente una comprobación; evitar varios parámetros de salida
+para devolver simultáneamente estado, datos y mensajes que pertenecen a un resultado coherente.
+No introducir `in` ni copias alternativas sin una necesidad de contrato o rendimiento medida.
+
+Los argumentos con nombre se utilizan cuando aclaran indicadores booleanos o valores del
+mismo tipo. Los opcionales deben tener un significado estable; no acumular banderas para
+representar operaciones distintas. Los mensajes gRPC se definen en `.proto`; no trasladar
+modificadores de parámetros C# a una supuesta firma de red.
+
 <a id="seccion-3-13"></a>
 
-### 3.13 Retornos Únicos
+### 3.13 Cláusulas de guarda y salidas anticipadas
 
-Debe evitarse el uso de múltiples declaraciones return dentro de un método a menos que sea estrictamente necesario para cláusulas de guarda (guard clauses) al inicio del método. Se debe priorizar un único punto de salida para mantener claro el flujo de ejecución.
+Comprobar las precondiciones disponibles antes de ejecutar el trabajo dependiente. Se permiten
+retornos tempranos para entradas inválidas, estados que no requieren trabajo y resultados
+que terminan la operación. Una condición puede descubrirse después de una consulta o cálculo;
+su rechazo no tiene que trasladarse artificialmente al principio del método.
+
+Las salidas deben mantener claras las obligaciones del flujo. No omitir confirmaciones,
+transiciones necesarias o liberación de recursos. Utilizar `using` y `finally` cuando
+corresponda. No se exige una variable mutable ni anidamiento adicional para obtener un único
+punto de salida. Los retornos de lambdas y funciones locales pertenecen a su propia función.
 
 **Correcto**
 
 ```csharp
-public bool ValidateConnection(string token)
+public RoomOperationResult GetRoom(int roomId)
 {
-    if (string.IsNullOrEmpty(token))
+    PrivateRoom? room = FindRoom(roomId);
+    if (room is null)
     {
-        return false;
+        return new RoomOperationResult(RoomOperationStatus.NotFound);
     }
-    return TokenService.Verify(token);
+    return new RoomOperationResult(RoomOperationStatus.Success, room);
 }
 ```
+
+La guarda utiliza el resultado de una búsqueda sin mantener una variable de resultado mutable.
 
 **Incorrecto**
 
 ```csharp
-public bool ValidateConnection(string token)
+public void SaveProgress(bool canSave)
 {
-    if (string.IsNullOrEmpty(token))
+    _writeGate.Wait();
+    if (!canSave)
     {
-        return false;
+        return;
     }
-    if (TokenService.Verify(token))
-    {
-        return true;
-    }
-    return false;
+    PersistProgress();
+    _writeGate.Release();
 }
 ```
 
-Una cláusula de guarda comprueba una precondición y termina antes del flujo principal;
-pueden existir varias guardas consecutivas. No se fuerza una variable mutable ni anidamiento
-adicional solo para evitar esas salidas. Los retornos de una lambda o función local se
-evalúan dentro de esa función y no como salidas del método que la contiene.
-
-La cláusula de guarda debe comprobar una precondición al inicio del método y terminar el
-flujo cuando no se cumple. No se añadirán retornos dentro de ramas anidadas si una expresión
-de retorno sencilla mantiene claro el resultado.
+La salida omite la liberación; además bloquea una espera que debe seguir el patrón de 4.7.
 
 <a id="seccion-3-14"></a>
 
@@ -1327,10 +1394,17 @@ Una tarea descartada con `_ =` necesita un propietario, manejo de errores y un f
 explicables; no es una forma de ignorar fallos. Evitar actualizaciones de una pantalla después
 de que su propietario la haya cerrado.
 
-Las llamadas remotas usan un plazo finito definido por política compartida. Reutilizar el
+Las llamadas unarias remotas usan un plazo finito definido por política compartida.
+Los streams mantienen propietario, cancelación y cierre según 5.6; no heredan
+automáticamente el plazo breve de una llamada unaria. Reutilizar el
 canal de comunicación por proceso cliente; la autenticación se mantiene por sesión y por
 llamada. No repetir automáticamente operaciones que cambian datos sin garantizar idempotencia.
 Una cancelación local o un plazo agotado no demuestran que el servidor haya deshecho el cambio.
+
+La convención `Async` también se aplica a métodos propios que realizan trabajo asíncrono
+mediante `ValueTask` o enumeración asíncrona. Una API externa como `MoveNext` conserva su
+nombre. No aplicar `ConfigureAwait(false)` indiscriminadamente a código que necesita volver
+al hilo WPF; la elección depende del contexto de ejecución y de quién actualiza la interfaz.
 
 <a id="seccion-3-16"></a>
 
@@ -1341,9 +1415,199 @@ sin efectos secundarios. No anidar ternarios. Cuando hay varias condiciones o ac
 usar `if`, `switch` o un método con nombre. `??`, `?.` y `?:` son operadores distintos;
 no sustituir uno por otro sin conservar el significado de `null` y de la condición.
 
+<a id="seccion-3-17"></a>
+
+### 3.17 Accesibilidad y puntos de extensión
+
+Utilizar la visibilidad necesaria para la colaboración real y declararla explícitamente
+cuando el lenguaje y la firma lo permitan. Los detalles de implementación no se exponen
+solo para facilitar una prueba. Un miembro público entre ensamblados puede ser parte de
+una colaboración legítima aunque no sea un endpoint de red.
+
+`protected`, `virtual` y `abstract` expresan puntos de extensión reales. No se exige marcar
+todas las clases como `sealed` ni convertir todas las públicas en internas. Antes de
+restringir acceso se revisan consumidores, bindings, DI, EF y herramientas. Se conservan
+las firmas externas y los miembros parciales que requiere el framework.
+
+**Correcto**
+
+```csharp
+private readonly IFriendClient _friendClient;
+public ICommand SearchCommand { get; }
+```
+
+El servicio pertenece al ViewModel y el comando debe estar disponible para el binding.
+
+**Incorrecto**
+
+```csharp
+public IFriendClient FriendClient;
+```
+
+Exponer una dependencia mutable sin necesidad permite reemplazar un detalle interno.
+
+<a id="seccion-3-18"></a>
+
+### 3.18 Propiedades, inicialización e inmutabilidad
+
+Utilizar propiedades automáticas si no se necesita lógica de acceso. Seleccionar `get`,
+`init`, `private set` o `set` según quién debe modificar el dato. Un campo de respaldo tiene
+sentido para notificación WPF, validación o coordinación; no se añade para repetir un acceso.
+
+Preferir `readonly` en dependencias y referencias que permanecen estables. Se permite
+mutabilidad cuando corresponde al estado del juego, una propiedad enlazada, configuración,
+materialización de EF o retirada coordinada de una referencia. No se exige añadir `required`
+o `init` a todos los modelos. El contrato de inicialización debe evitar estados requeridos
+ausentes; `required` no sustituye validar una entrada externa en ejecución.
+
+Un campo `readonly` impide reasignar la referencia; no vuelve inmutable su objeto. `with`
+copia las referencias de un record, no clona automáticamente sus listas o arreglos. Cuando
+una operación produce una nueva instantánea y necesita modificar una colección compartida,
+debe respetar su propiedad y copiar el contenido que no pueda alterar en el estado anterior.
+No reemplazar todas las colecciones por tipos inmutables si el diseño ya controla su acceso.
+
+**Correcto**
+
+```csharp
+StoneColor[] board = (StoneColor[])state.Board.Clone();
+board[index] = player;
+GameState next = state with { Board = board };
+```
+
+La jugada modifica un arreglo propio de la nueva instantánea.
+
+**Incorrecto**
+
+```csharp
+GameState next = state with { };
+next.Board[index] = player;
+```
+
+La copia conserva el arreglo y modifica también la instantánea anterior.
+
+<a id="seccion-3-19"></a>
+
+### 3.19 Estructuras de control y patrones
+
+Usar `foreach` al recorrer elementos cuando no se necesita un índice; `for` cuando la posición
+o avance forman parte del algoritmo; `while` cuando la continuidad depende del estado.
+Los bucles de operaciones cancelables respetan el token de su propietario. `break` y
+`continue` se permiten si aclaran la terminación o descarte de un elemento sin omitir trabajo
+obligatorio. Los cuerpos de control siguen 3.4.
+
+Se permiten patrones de declaración y guardas negativas para comprobar un tipo sin repetir
+casts. `is null` e `is not null` expresan ausencia; no reemplazar mecánicamente una igualdad
+sobrecargada cuando su significado sea parte del contrato. Se permiten patrones relacionales
+y lógicos y expresiones `switch` legibles. No convertir todos los `if` a patrones.
+
+Un `switch` debe definir cómo trata los valores posibles y desconocidos según su contrato.
+Evitar decisiones anidadas difíciles de seguir; extraer lógica solo cuando aporte un nombre
+y una responsabilidad claros, respetando 3.14 y 4.3.
+
+**Correcto**
+
+```csharp
+if (value is not int avatarId)
+{
+    return DependencyProperty.UnsetValue;
+}
+```
+
+La guarda comprueba y obtiene el valor en un solo paso.
+
+**Incorrecto**
+
+```csharp
+if (value is int)
+{
+    int avatarId = (int)value;
+    ApplyAvatar(avatarId);
+}
+```
+
+La comprobación y el cast repiten una operación que puede expresar el patrón de declaración.
+
+<a id="seccion-3-20"></a>
+
+### 3.20 LINQ y materialización de consultas
+
+Utilizar LINQ para consultas legibles sin efectos secundarios; no modificar el dominio desde
+predicados o proyecciones usados como consultas. La sintaxis encadenada existente es válida;
+un bucle también lo es si expresa mejor el trabajo. No imponer una longitud de cadena arbitraria.
+
+`IEnumerable<T>` puede diferir la ejecución; `IQueryable<T>` conserva una expresión que el
+proveedor puede traducir. Materializar al necesitar una instantánea estable o antes de que
+termine el contexto o protección requeridos para enumerar. No añadir `ToList()` a toda consulta.
+
+Sobre una colección ordinaria compartida y mutable, la selección de una instantánea se
+realiza bajo la sincronización correspondiente. No devolver una consulta diferida que
+enumerará esa colección fuera de su protección. Las colecciones concurrentes siguen 4.13.
+En EF, filtrar y proyectar antes de materializar; no sustituir una expresión traducible por
+un método C# que el proveedor no pueda ejecutar. Las consultas solo de lectura evalúan
+conscientemente el seguimiento según 4.5.
+
+**Correcto**
+
+```csharp
+lock (_sync)
+{
+    snapshot = _entries.Values.Where(entry => entry.IsActive).ToArray();
+}
+```
+
+El resultado ya está materializado antes de abandonar la protección de la colección.
+
+**Incorrecto**
+
+```csharp
+lock (_sync)
+{
+    return _entries.Values.Where(entry => entry.IsActive);
+}
+```
+
+La enumeración se aplaza hasta que el consumidor ya está fuera del bloqueo.
+
+<a id="seccion-3-21"></a>
+
+### 3.21 Cadenas, cultura y unidades
+
+Elegir comparación según el significado del dato. Los identificadores técnicos, claves y
+tokens se comparan con reglas estables; no dependen de la cultura de interfaz. Una búsqueda
+o presentación de lenguaje natural puede necesitar comparación cultural. Seleccionar
+`Ordinal` u `OrdinalIgnoreCase` cuando corresponda y conservar la normalización y collation
+que exige la identidad persistida. No cambiar globalmente la semántica de nombres o correos.
+
+La normalización es específica de cada campo. Un nombre puede admitir `Trim`; una contraseña
+no se recorta ni cambia de mayúsculas para facilitar su validación. Los códigos que conservan
+ceros iniciales se tratan como cadenas según su contrato.
+
+Las fechas y números visibles usan la cultura de presentación. Los formatos técnicos deben
+ser estables y no depender accidentalmente de esa cultura. Los nombres deben dejar clara
+la unidad cuando pueda confundirse, como `RetryAfterSeconds` o `TimeoutMilliseconds`.
+Un tipo como `TimeSpan` o el contexto explícito también puede aportar esa unidad; no se
+renombran todos los identificadores existentes por redundancia.
+
+**Correcto**
+
+```csharp
+bool isSameKey = string.Equals(firstKey, secondKey, StringComparison.Ordinal);
+TimeSpan timeout = TimeSpan.FromSeconds(RequestTimeoutSeconds);
+```
+
+**Incorrecto**
+
+```csharp
+string password = request.Password.Trim().ToLower();
+```
+
+La transformación altera la credencial recibida en lugar de comprobarla conforme a su contrato.
+
 <a id="seccion-4"></a>
 
 ## 4 Organización del Proyecto
+
+
 
 <a id="seccion-4-1"></a>
 
@@ -1364,24 +1628,29 @@ son recursos, XAML o `.proto`. Los archivos de entidades o de EF Core no quedan 
 por parecer generados: debe existir una fuente y un proceso reproducible de generación
 para tratarlos así.
 
+Se permiten partes escritas a mano de un mismo tipo cuando separan una responsabilidad
+identificable y estrechamente relacionada. El archivo principal conserva `Tipo.cs` y las
+partes usan `Tipo.Responsabilidad.cs`, como `GameBoardViewModel.Gameplay.cs` y
+`GamePlayer.GameSession.cs`. Comparten namespace e identidad; cada archivo contiene ese
+único tipo parcial. La partición no debe ocultar dependencias, duplicar miembros ni sustituir
+una separación de responsabilidades que realmente requiera tipos distintos.
+
 <a id="seccion-4-2"></a>
 
 ### 4.2 Responsabilidad única
 
 Todas las clases deben adherirse estrictamente al Principio de Responsabilidad Única (SRP). Cada clase debe tener un único propósito bien definido dentro del sistema y, por lo tanto, "una única razón para cambiar". No se deberán mezclar diferentes dominios o capas lógicas en un mismo componente.
 
+Evaluar el propósito, las dependencias y los motivos de cambio. Coordinar varios pasos de
+un mismo caso de uso no exige una clase por paso. El tamaño es una señal para revisar, no
+una prueba suficiente de incumplimiento. Una extracción debe tener un nombre y una función
+que ayuden a seguir el flujo, además de respetar los límites de 4.3.
+
 <a id="seccion-4-3"></a>
 
 ### 4.3 Complejidad Ciclomática y Tamaño de Métodos
 
-Para garantizar la legibilidad y mantenibilidad, la complejidad ciclomática de cualquier método no deberá superar un valor de 10. Asimismo, los métodos deberán ser pequeños y concisos, no excediendo las 50 líneas de código. Si un método supera estas métricas, deberá refactorizarse dividiendo su lógica en métodos de apoyo más pequeños.
-
-Para las 50 líneas se cuenta el cuerpo de cada método, constructor, función local o
-accesor: líneas físicas que contienen código, sin firma, líneas vacías, comentarios solos
-ni líneas que contienen únicamente llaves. Una línea con código y comentario sí cuenta.
-Se incluyen las líneas de lambdas escritas dentro del cuerpo; mover código a una lambda
-no sirve para ocultar el tamaño del método. Una cadena multilínea cuenta sus líneas de
-contenido. La regla de parámetros es independiente de esta medición.
+Para garantizar la legibilidad y mantenibilidad, la complejidad ciclomática de cualquier método no deberá superar un valor de 10. 
 
 La complejidad se evalúa por función, incluidas lambdas y funciones locales, sin sumar sus
 ramificaciones a la función contenedora. Se parte de 1 y se añade una unidad por `if`, bucle,
@@ -1503,6 +1772,21 @@ User? user = users.FirstOrDefault(
     currentUser => currentUser.UserId == userId);
 ```
 
+Los datos externos incluidos en SQL deben utilizar parámetros. Las APIs de EF Core que
+parametrizan valores interpolados, como `FromSqlInterpolated`, no equivalen a concatenar
+valores externos dentro del texto de una consulta. No interpolar identificadores SQL sin
+una selección controlada. El cliente no recibe entidades rastreadas ni detalles de consultas.
+
+Los controles de concurrencia y unicidad de SQL mantienen su función aunque exista un
+semáforo en el proceso. Confirmar la transacción antes de publicar un estado persistido.
+No compartir un contexto entre tareas paralelas ni mantener una transacción durante el
+envío de un correo o una interacción de interfaz.
+
+Las entidades y mapeos existentes se mantienen desde su fuente real. No regenerarlos ni
+ejecutar migraciones por rutina. La restricción vigente del proyecto prohíbe crear tablas
+nuevas; una reorganización del código no autoriza cambios al esquema. Cualquier cambio
+de columna indispensable requiere una decisión explícita y un procedimiento verificable.
+
 <a id="seccion-4-6"></a>
 
 ### 4.6 Autoridad del servidor y concurrencia
@@ -1526,75 +1810,7 @@ esperas de red se realizan fuera de la sección crítica que protege el estado e
 
 <a id="seccion-4-7"></a>
 
-### 4.7 Contratos y comunicación gRPC
-
-Los archivos `.proto` definirán el contrato de comunicación entre cliente y servidor. Los
-mensajes representarán los datos intercambiados y las operaciones representarán acciones o
-consultas claramente identificadas.
-
-Los contratos serán independientes de las clases internas de aplicación, del modelo de EF
-Core y de los ViewModels. Los servicios gRPC actuarán como adaptadores de transporte:
-recibirán el mensaje, invocarán la operación correspondiente y traducirán su respuesta al
-contrato gRPC.
-
-Los cambios a un contrato deberán considerar su compatibilidad con los clientes que todavía
-puedan utilizar versiones anteriores. No se reutilizarán números de campos Protobuf
-eliminados. Los campos que ya no se utilicen deberán reservarse cuando sea necesario
-mantener la compatibilidad.
-
-Los errores previstos deberán comunicarse mediante estados gRPC y mensajes controlados. No
-se enviarán al cliente mensajes internos de excepciones, consultas SQL, rutas locales ni
-detalles de configuración. Las excepciones inesperadas deberán registrarse en el servidor
-con contexto seguro y transformarse en una respuesta adecuada en el límite de transporte.
-
-En el cliente, el adaptador gRPC traducirá los estados conocidos a resultados de aplicación;
-los ViewModels no deberán depender directamente de excepciones de transporte.
-
-Las llamadas que puedan tardar deberán utilizar cancelación y plazos cuando la operación
-lo permita. El cliente deberá distinguir entre una respuesta de negocio, una cancelación y
-un fallo de transporte. Una cancelación local o un plazo agotado no demuestran que el
-servidor haya revertido una operación que ya comenzó.
-
-Los canales gRPC se reutilizarán durante la vida del proceso cliente. Los metadatos de
-autenticación se añadirán desde el servicio responsable de la comunicación, no desde las
-vistas.
-
-Las operaciones que cambien datos no deberán repetirse automáticamente salvo que su diseño
-garantice idempotencia. Las operaciones de consulta podrán reintentarse solo cuando la
-política de comunicación lo permita.
-
-**Correcto**
-
-```csharp
-try
-{
-    LoginResponse response = await _client.LoginAsync(
-        request,
-        cancellationToken: cancellationToken).ResponseAsync;
-}
-catch (RpcException exception)
-    when (exception.StatusCode == StatusCode.Unauthenticated)
-{
-    return AuthenticationResult.InvalidCredentials;
-}
-```
-
-**Incorrecto**
-
-```csharp
-try
-{
-    LoginResponse response = await _client.LoginAsync(request).ResponseAsync;
-}
-catch (Exception exception)
-{
-    ShowMessage(exception.ToString());
-}
-```
-
-<a id="seccion-4-8"></a>
-
-### 4.8 Semáforos asíncronos y escritura de streams
+### 4.7 Semáforos asíncronos y escritura de streams
 
 Cuando varias operaciones asíncronas puedan acceder al mismo recurso que exige exclusión
 mutua, se utilizará `SemaphoreSlim` o una única tarea propietaria que serialice ese acceso.
@@ -1672,7 +1888,7 @@ dejar esperando a los demás envíos. Tampoco colocar `WaitAsync` dentro de un `
 `finally` libere incondicionalmente: una cancelación durante la adquisición ejecutaría una
 liberación sin permiso adquirido.
 
-Se permite encapsular el permiso en un objeto `IDisposable`, como `FriendMutationLease`,
+Se permite encapsular el permiso en un objeto `IDisposable`, como `AsyncOperationLease`,
 consumido mediante `using`: el compilador garantiza el `finally` de liberación. El objeto
 devuelve el permiso una sola vez, incluso si se llama a `Dispose()` repetidamente; no es
 propietario del semáforo ni lo destruye. Su referencia al propietario puede ser mutable para
@@ -1714,97 +1930,338 @@ el cierre mediante `IAsyncDisposable` espera esa finalización sin bloquear el h
 repetido no vuelve a destruir los recursos. En conexiones gRPC se cierra la llamada para
 interrumpir el transporte antes de esperar que terminen sus envíos.
 
+<a id="seccion-4-8"></a>
+
+### 4.8 DRY: una implementación por regla
+
+Mantener una fuente autoritativa para cada regla o cálculo realmente compartido. Extraer
+implementación común cuando significado, comportamiento y motivos de cambio coincidan.
+La semejanza textual por sí sola no obliga a unificar conceptos distintos.
+
+Se permiten validaciones preventivas de interfaz y autoritativas de servidor; no eliminar
+la segunda para evitar repetición. También son válidos mapeos entre mensajes y dominio que
+mantienen independencia de capas. Preferir reutilizar un componente existente antes de
+crear un helper genérico que agrupe operaciones no relacionadas.
+
+**Correcto:** compartir construcción de cabeceras en la política de transporte y conservar
+la autorización en cada operación del servidor.
+
+**Incorrecto:** copiar la misma política de plazo en cada adaptador o retirar la validación
+del servidor porque el cliente ya comprobó el dato.
+
+<a id="seccion-4-9"></a>
+
+### 4.9 Simplicidad y funcionalidad necesaria: KISS y YAGNI
+
+Elegir la solución más simple que cumpla los requisitos actuales con responsabilidades
+claras. Una nueva clase, interfaz, capa, opción o punto de extensión necesita una función
+presente y explicable. No añadirlos solo para un uso hipotético o una futura implementación
+que aún no existe. Una abstracción puede justificarse por aislamiento y pruebas, sin exigir
+dos implementaciones de producción.
+
+Conservar abstracciones útiles que separan red, persistencia y presentación. Revisar
+consumidores de C#, XAML, DI y herramientas antes de eliminar un tipo o miembro aparentemente
+sin referencias. Las capas de paso requieren un propósito; no se eliminan automáticamente
+si forman una frontera de aplicación legítima.
+
+**Correcto:** reutilizar el emisor de correo para recuperar contraseña y enviar invitaciones,
+manteniendo el contenido y los permisos propios de cada caso de uso.
+
+**Incorrecto:** crear proveedores y opciones para canales de notificación no solicitados.
+
+<a id="seccion-4-10"></a>
+
+### 4.10 Inyección de dependencias y ciclos de vida
+
+Registrar los servicios del servidor en su composición de arranque o registro cohesivo.
+Elegir ciclo de vida según estado y dependencias: un singleton puede poseer un registro
+compartido sincronizado; un servicio scoped puede utilizar un contexto de la operación;
+un transient se utiliza cuando se necesita una instancia independiente de corta duración.
+
+No retener desde un singleton una instancia scoped de `DbContext` ni compartirla entre
+operaciones concurrentes. Los servicios de fondo crean y liberan scopes para su trabajo
+cuando necesitan dependencias scoped. Una llamada de streaming puede durar más que una
+operación unaria; no asumir que esa duración vuelve seguro paralelizar el uso de su contexto.
+
+El contenedor libera los recursos que posee. El código libera los scopes y objetos que crea
+y posee; no destruye una dependencia compartida recibida sin ese contrato. Se permite
+construcción explícita de objetos de corta duración y componentes del cliente cuando su
+propiedad está clara. No imponer otro contenedor ni localizar servicios desde cualquier clase.
+
+**Correcto:** un servicio de reloj recibe `IServiceScopeFactory`, obtiene un contexto dentro
+de un scope de trabajo y termina ese scope al completar la operación.
+
+**Incorrecto:** guardar un contexto scoped en un registro singleton para reutilizarlo en
+todas las solicitudes.
+
+<a id="seccion-4-11"></a>
+
+### 4.11 Bloqueos síncronos
+
+Para proteger estado síncrono compartido, conservar una referencia privada, estable y
+dedicada como identidad del bloqueo. El patrón del proyecto utiliza `private readonly
+object` y un nombre que, junto al contexto, permita reconocer el estado protegido.
+
+```csharp
+private readonly object _stateLock = new object();
+```
+
+La misma instancia debe coordinar las operaciones que preservan una invariante. No bloquear
+sobre `this`, cadenas o tipos accesibles a otros componentes. Mantener breve el bloque y
+evitar I/O de red dentro de él. No usar `await` ni suspender una enumeración con `yield`
+mientras se conserva ese bloqueo; para exclusión asíncrona utilizar 4.7.
+
+Los bloqueos anidados requieren un orden consistente y una razón clara. No añadir un
+segundo bloqueo sin comprobar la coordinación existente. No se exige migrar los objetos de
+sincronización a `System.Threading.Lock`; esa alternativa está disponible para el entorno,
+pero su adopción requiere una decisión y revisión propias.
+
+**Correcto:** modificar la colección y obtener su instantánea bajo `_stateLock`, liberarlo
+y después realizar la llamada de red.
+
+**Incorrecto:** usar `lock (this)` o crear `new object()` como bloqueo dentro de cada llamada,
+porque las operaciones no comparten una protección privada y estable.
+
+<a id="seccion-4-12"></a>
+
+### 4.12 Operaciones atómicas
+
+Utilizar `Interlocked` cuando la operación necesita actualizar y observar un campo de forma
+atómica. Una secuencia de actualizaciones que mantiene una invariante entre varios datos
+requiere la coordinación correspondiente; un contador atómico no protege todo el objeto.
+
+La retirada atómica de una referencia permite que un permiso se devuelva una sola vez.
+La referencia del propietario puede ser mutable por esa razón; no sustituirla por `readonly`
+si con ello se pierde la garantía de cierre idempotente.
+
+**Correcto**
+
+```csharp
+Interlocked.Exchange(ref _owner, null)?.Exit(_gate);
+```
+
+Solo quien obtiene el propietario anterior puede devolver ese permiso.
+
+**Incorrecto**
+
+```csharp
+if (_owner is not null)
+{
+    _owner.Exit(_gate);
+    _owner = null;
+}
+```
+
+Dos llamadas concurrentes pueden observar la misma referencia y liberar dos veces.
+
+<a id="seccion-4-13"></a>
+
+### 4.13 Colecciones concurrentes
+
+Se permiten colecciones concurrentes para operaciones independientes realizadas por varios
+hilos y colecciones ordinarias protegidas por un bloqueo para transiciones compuestas.
+La elección depende de qué regla debe mantenerse; no se reemplazan todos los diccionarios
+por `ConcurrentDictionary`.
+
+Una operación segura del diccionario no vuelve seguros sus valores mutables ni hace atómica
+la secuencia consultar, validar y actualizar. Coordinar esa secuencia cuando preserve una
+invariante. La enumeración concurrente puede ser válida sin representar una instantánea
+transaccional; no prometer una foto global coherente si el mecanismo no la proporciona.
+
+**Correcto:** `TryAdd` para un alta independiente, o un bloqueo común para reemplazar una
+conexión y actualizar el estado relacionado como una transición.
+
+**Incorrecto:** comprobar `ContainsKey` y después escribir suponiendo que nadie puede
+intervenir entre ambas operaciones porque el diccionario es concurrente.
+
+<a id="seccion-4-14"></a>
+
+### 4.14 Registros y colas en memoria
+
+Cada registro o cola compartida debe tener propietario y una política comprensible de
+vida y limpieza. Distinguir estado temporal, persistencia y lo que se pierde al reiniciar.
+Conservar los límites y condiciones de saturación definidos por cada componente; no usar
+una cifra global para todas las estructuras.
+
+Cuando una cola está acotada, documentar si espera, rechaza o termina la conexión al llenarse.
+Un registro con vencimiento debe explicar cuándo elimina entradas. Un vencimiento limita
+duración y no demuestra por sí mismo una cantidad máxima de altas durante ese intervalo.
+La descripción no atribuirá capacidad limitada a una estructura que no la implementa.
+
+Las mejoras de capacidad adicionales se evalúan y verifican en su componente antes de
+afirmar su garantía. Esta regla no introduce un máximo universal nuevo sobre registros
+existentes ni autoriza borrar entradas vigentes para hacer espacio sin un contrato definido.
+
+**Correcto:** una cola de eventos mantiene su capacidad explícita y cierra de forma controlada
+un consumidor que no admite más eventos conforme a su política.
+
+**Incorrecto:** presentar un registro con TTL como si ese TTL garantizara un máximo de memoria,
+o descartar silenciosamente acciones aceptadas para reducir su tamaño.
+
 <a id="seccion-5"></a>
 
-## 5 Prácticas Específicas de Videojuegos
+## 5 Contratos y comunicación gRPC
+
+La frontera entre cliente y servidor se define mediante `.proto`. Los servicios y mensajes
+se generan con las herramientas del proyecto; no se escriben manualmente sustitutos de esas
+clases generadas. Las reglas específicas de nombres están en 10.3.
+
+Los adaptadores gRPC autentican, traducen y delegan; las decisiones de dominio y persistencia
+conservan sus responsabilidades. Las subsecciones siguientes precisan la frontera sin
+imponer una arquitectura nueva de repositorios, envolturas o interceptores.
 
 <a id="seccion-5-1"></a>
 
-### 5.1 Estado de la partida
+### 5.1 Diseño y nombres de contratos
 
-El estado de una partida deberá tener una representación definida y validable. Las reglas
-para colocar fichas, cambiar turnos, determinar capturas y reconocer el fin de la partida
-deberán implementarse en componentes de dominio identificables y verificables.
+Cada solicitud, respuesta o evento representa una consulta, acción o notificación clara.
+Los mensajes no exponen entidades EF, objetos rastreados ni ViewModels. Se permiten comandos
+y resultados internos que separen aplicación y transporte aunque algunos campos coincidan.
+Evitar copias intermedias que no aporten validación, independencia o una responsabilidad propia.
 
-La validación de una jugada no deberá depender exclusivamente de la interfaz. El servidor
-será responsable de validar las acciones recibidas de un cliente antes de aceptar un cambio
-de estado compartido.
+**Correcto:** convertir una solicitud Protobuf a un comando del caso de uso antes de invocar
+la aplicación y traducir su resultado a la respuesta.
 
-Las vistas podrán representar el estado de la partida, pero no serán la fuente autoritativa
-de las reglas ni del resultado.
-
-**Correcto**
-
-```csharp
-MoveValidationResult result = gameRules.ValidateMove(
-    currentGameState,
-    requestedMove);
-```
-
-**Incorrecto**
-
-```csharp
-private void BoardCell_Click(object sender, RoutedEventArgs e)
-{
-    if (BoardGrid.SelectedItem == null)
-    {
-        return;
-    }
-    SaveMoveDirectlyToDatabase();
-}
-```
+**Incorrecto:** devolver una entidad EF o hacer que un servicio de dominio consulte controles
+de WPF para resolver una operación.
 
 <a id="seccion-5-2"></a>
 
-### 5.2 Consistencia entre jugadores
+### 5.2 Presencia y valores predeterminados
 
-Cuando una partida se comunique por red, el servidor deberá conservar la autoridad sobre
-el estado aceptado de la partida. El cliente enviará acciones y actualizará su presentación
-a partir de respuestas o eventos recibidos del servidor.
+Definir el significado de cero, cadena vacía, ausencia y variante de `oneof` en cada contrato.
+En escalares proto3 con presencia implícita, el valor predeterminado no permite distinguir
+por sí solo entre un campo omitido y ese mismo valor enviado explícitamente. Usar presencia
+explícita o `oneof` cuando esa distinción sea necesaria para una operación nueva o modificada.
+No añadir `optional` a todos los campos existentes sin una necesidad y revisión de compatibilidad.
 
-Los mensajes de red deberán permitir identificar la partida y el estado al que pertenecen.
-El servidor deberá rechazar acciones que no correspondan al jugador, turno o estado actual.
+Los enums Protobuf conservan su valor inicial no especificado. Los adaptadores tratan valores
+desconocidos de forma controlada según la operación. Una variante desconocida no debe
+interpretarse automáticamente como una autorización o una acción exitosa.
 
-La reconexión de un jugador deberá recuperar el estado vigente desde la autoridad definida
-para la partida. No se deberá asumir que el estado local del cliente sigue siendo válido
-después de una desconexión.
+**Correcto:** comprobar `EventCase` para identificar una jugada, rendición o mensaje de chat.
 
-Los tiempos de espera para una desconexión y sus consecuencias deberán ser reglas de
-dominio configurables y documentadas, no valores literales distribuidos por el código.
-
-**Correcto**
-
-```csharp
-if (move.GameId != gameState.GameId
-    || move.PlayerId != gameState.CurrentPlayerId)
-{
-    return MoveValidationResult.Rejected;
-}
-```
-
-**Incorrecto**
-
-```csharp
-if (playerName == "Player1")
-{
-    AcceptMove();
-}
-```
+**Incorrecto:** suponer que un mensaje sin variante seleccionada representa una jugada válida
+en la posición predeterminada del tablero.
 
 <a id="seccion-5-3"></a>
 
-### 5.3 Pruebas de reglas del juego
+### 5.3 Compatibilidad y evolución
 
-Cada regla implementada deberá contar con pruebas que cubran los resultados válidos y los
-casos límite relevantes. Las pruebas deberán incluir, cuando aplique, movimientos fuera
-del tablero, posiciones ocupadas, cambio de turno, capturas y condiciones de finalización.
+Conservar números y significado de campos publicados. Al eliminar campos, reservar sus
+números y nombres para impedir reutilización accidental. Revisar tipos, valores de enums,
+paquetes y nombres de servicios u operaciones antes de modificar un contrato publicado.
 
-Las pruebas deberán validar el estado resultante y no depender de elementos visuales para
-determinar si una regla del juego se cumplió.
+Agregar un campo no elimina la necesidad de definir qué hace un cliente que no lo recibe.
+Un cambio debe considerar tanto compatibilidad binaria como comportamiento. No renumerar
+contratos ni crear una versión nueva completa por una preferencia de nombres.
+
+**Correcto**
+
+```proto
+message ExampleRequest {
+  reserved 2;
+  reserved "legacy_name";
+  string identifier = 1;
+  string culture_name = 3;
+}
+```
+
+**Incorrecto:** asignar el número `2` eliminado a una nueva propiedad con otro significado.
+
+<a id="seccion-5-4"></a>
+
+### 5.4 Resultados de negocio y errores
+
+Los rechazos previstos se representan con el resultado o estado definido por la operación.
+Se permiten resultados de negocio dentro de una respuesta y estados gRPC controlados en el
+límite de transporte. No se obliga a sustituir todas las respuestas por una envoltura única.
+
+Distinguir resultado de negocio, cancelación, vencimiento y fallo técnico. No presentar un
+fallo de SQL como una validación inválida ni mostrar el detalle de una excepción remota al
+jugador. Los ViewModels reciben resultados o motivos de aplicación, sin depender directamente
+de `RpcException`. El adaptador cliente realiza esa traducción.
+
+Las excepciones inesperadas se registran con contexto seguro en el límite responsable y
+se convierten en un fallo controlado. No enviar consultas SQL, rutas, credenciales o pilas
+de llamadas para conservar la causa. No se exige un interceptor nuevo si el adaptador ya
+delimita adecuadamente la operación.
+
+**Correcto:** una verificación devuelve `InvalidCode`; un fallo técnico informa un resultado
+no confirmado o un estado gRPC controlado, conforme al contrato.
+
+**Incorrecto:** capturar cualquier excepción y devolver éxito, lista vacía o un supuesto
+rechazo de negocio para esconder el problema.
+
+<a id="seccion-5-5"></a>
+
+### 5.5 Llamadas unarias, plazos y cancelación
+
+Las llamadas unarias utilizan la política compartida de plazo finito. El adaptador propaga
+la cancelación del propietario; el servidor utiliza la cancelación del contexto en las
+operaciones que la admitan. La autenticación pertenece a cada sesión y llamada; el canal
+se reutiliza durante la vida del proceso cliente.
+
+Una cancelación local o un plazo vencido no prueban que el servidor haya revertido un
+cambio ya iniciado. Los reintentos de escrituras necesitan una garantía de idempotencia.
+Las consultas solo se reintentan según una política explícita; evitar bucles inmediatos
+sin cancelación ni control de frecuencia. No cambiar todos los plazos para uniformar
+operaciones que tienen necesidades distintas.
+
+**Correcto:** configurar opciones mediante `GrpcCallPolicy` y distinguir el resultado no
+confirmado de un rechazo confirmado.
+
+**Incorrecto:** repetir un registro o una jugada automáticamente al vencer el plazo sin
+comprobar si la primera solicitud produjo el cambio.
+
+<a id="seccion-5-6"></a>
+
+### 5.6 Streams, dúplex y presencia
+
+La presencia utiliza comunicación dúplex; no se implementa heartbeat de aplicación. El
+cliente abre la conexión con el evento inicial previsto por el contrato y recibe eventos
+del servidor. Una caída de red se reconoce cuando el transporte detecta la terminación;
+no se promete detección instantánea.
+
+El stream tiene un propietario y se cancela o cierra cuando termina su uso. No aplicar a toda
+su vida el plazo breve de una llamada unaria. Conservar una única escritura pendiente por
+stream según 4.7. Las colas de salida y su saturación siguen su política de entrega; un
+cliente lento no debe provocar escrituras concurrentes sobre el mismo stream.
+
+Coordinar las tareas de lectura y escritura: observar sus fallos, cancelar la compañera al
+terminar y liberar los recursos sin dejar tareas sin propietario. La reconexión recupera
+el estado vigente y descarta respuestas de conexiones sustituidas. Los temporizadores de
+partida y limpieza no se consideran heartbeat porque no son sondeos periódicos de presencia.
+
+**Correcto:** un stream de presencia permanece abierto hasta cancelación, cierre o fallo y
+se libera al terminar su propietario.
+
+**Incorrecto:** mantener un stream de una pantalla cerrada o ejecutar varias escrituras
+simultáneas sobre la misma conexión.
+
+<a id="seccion-5-7"></a>
+
+### 5.7 Verificación de cambios de contrato
+
+Los cambios de contrato deben verificar los casos relevantes de campos omitidos, valores
+desconocidos y datos incompatibles, además del flujo válido. Añadir pruebas focalizadas en
+el comportamiento del adaptador y sus consumidores cuando esa cobertura falte.
+
+No se exige una prueba mecánica de serialización por cada mensaje si solo repite el trabajo
+de Protobuf. Una prueba de compatibilidad debe comprobar una consecuencia observable, como
+rechazar un evento sin acción reconocida o no interpretar un estado desconocido como éxito.
+
+**Correcto:** procesar un valor de resultado desconocido y verificar que el cliente no inicia
+una sesión ni conserva un token como si se hubiera autenticado.
+
+**Incorrecto:** cambiar números de campos y dar por compatible el contrato porque ambos
+proyectos compilan utilizando simultáneamente el archivo nuevo.
 
 <a id="seccion-6"></a>
 
 ## 6 Manejo de Errores y Excepciones
+
+
 
 <a id="seccion-6-1"></a>
 
@@ -2142,55 +2599,53 @@ catch (Exception)
 
 <a id="seccion-6-9"></a>
 
-### 6.9 Manejo y Retorno de Valores Nulos
+### 6.9 Nulos, ausencia y resultados explícitos
 
-Se debe evitar en lo posible el retorno de valores nulos. En su lugar, se priorizará devolver colecciones vacías (como Enumerable.Empty<T>() o listas vacías) o utilizar el patrón Null Object.
+Una ausencia válida en una búsqueda singular puede expresarse con `T?`. Una consulta válida
+sin elementos devuelve una colección vacía. Una dependencia obligatoria ausente se rechaza
+según 6.11. Un fallo de red o una sesión inválida no deben confundirse con una búsqueda vacía.
 
-Cuando sea estrictamente necesario indicar que una variable o tipo de retorno puede ser nulo, se deberá utilizar el operador ? propio de C# para tipos de referencia anulables (Nullable reference types).
+Declarar la nulabilidad conforme al contrato y mantener el análisis nullable habilitado.
+`?.` es válido para referencias realmente opcionales cuando omitir la operación es seguro.
+`??` puede aportar un valor alternativo válido; no debe ocultar un estado requerido ausente.
+`!` necesita una invariante conocida, como la materialización controlada de una navegación
+de EF; no reemplaza validar un dato externo.
+
+No se exige crear Null Objects para evitar todos los `null`. Utilizar un resultado explícito
+si hay estados distintos que no pueden distinguirse mediante el contrato existente. Revisar
+los llamadores antes de cambiar el significado de ausencia o el tipo de retorno.
 
 **Correcto**
 
 ```csharp
-public Player? FindPlayerByEmail(string email)
+public Player? FindPlayer(string userName)
 {
-    if (string.IsNullOrEmpty(email))
-    {
-        return null;
-    }
-    return _players.FirstOrDefault(player => player.Email == email);
-}
-
-public List<Player> GetActivePlayers()
-{
-    return new List<Player>();
+    ArgumentException.ThrowIfNullOrWhiteSpace(userName);
+    return _players.FirstOrDefault(player => player.UserName == userName);
 }
 ```
+
+El tipo hace explícita la ausencia legítima de un jugador.
 
 **Incorrecto**
 
 ```csharp
-public Player FindPlayerByEmail(string email)
+catch (RpcException)
 {
-    return null;
-}
-
-public List<Player> GetActivePlayers()
-{
-    return null;
+    return Array.Empty<FriendPresenceEntry>();
 }
 ```
 
-Una colección vacía significa que la consulta válida no encontró elementos; no significa
-sesión inválida ni fallo de red. Un resultado de búsqueda singular puede devolver `T?` si
-la ausencia es esperada y el contrato lo documenta. Los estados de negocio diferentes deben
-representarse explícitamente; no reemplazar todo `null` por un objeto ficticio ni usar `!`
-para silenciar una validación ausente. No cambiar una API existente sin revisar sus llamadores.
+El código presenta un fallo de transporte como una consulta exitosa sin amigos.
 
 <a id="seccion-6-10"></a>
 
 ### 6.10 Uso de Bitácoras y Logs
 
-Cualquier evento significativo, cambio de estado crítico o captura de excepción deberá registrarse utilizando un sistema formal de bitácoras (Logging). No se deberá utilizar la consola estándar (Console.WriteLine) para la salida de mensajes de producción. Los logs deberán incluir contexto suficiente y utilizar niveles apropiados (Info, Warning, Error).
+Registrar los eventos significativos y fallos técnicos en el límite que conoce su contexto.
+Una captura que convierte un rechazo previsto no obliga a registrar cada capa ni cada
+validación rutinaria. No utilizar `Console.WriteLine` como diagnóstico de clases de
+producción. Mantener los mecanismos y niveles descritos a continuación.
 
 **Correcto**
 
@@ -2226,7 +2681,7 @@ El servidor utiliza `ILogger<T>` y mensajes con plantillas de parámetros. Los d
 del cliente utilizan `Trace` con un listener de archivo iniciado por `App`. Se crea un archivo
 por ejecución en `%LOCALAPPDATA%/AtariGo/logs`, con fecha y desplazamiento UTC-6 en cada evento.
 Si no hay permiso o falla el archivo, el diagnóstico cae a `Debug` sin impedir el arranque.
-La retención automática sigue pendiente; no se eliminan logs existentes en esta entrega.
+El mecanismo actual no elimina automáticamente los archivos de ejecuciones anteriores.
 `Trace` sin un listener configurado no debe presentarse como una bitácora persistida.
 
 Registrar información suficiente para distinguir operación, estado y causa sin secretos.
@@ -2234,6 +2689,24 @@ No registrar contraseñas, tokens, claves privadas ni cadenas de conexión. Evit
 la misma excepción en cada capa. La cancelación solicitada es un resultado esperado: no se
 registra como error. Si se registra una excepción completa, revisar que no exponga datos
 sensibles; se puede registrar tipo, código y contexto saneado en su lugar.
+
+| Nivel | Criterio de uso |
+| --- | --- |
+| Trace / Debug | Detalle de desarrollo o diagnóstico fino; aplicar filtros según el entorno. |
+| Information | Inicio, término o transición significativa de una operación o componente. |
+| Warning | Condición anormal de la que la operación puede recuperarse de forma controlada. |
+| Error | Fallo inesperado de una operación; el proceso puede seguir atendiendo otras. |
+| Critical | Fallo que compromete el proceso o su capacidad de continuar de forma segura. |
+
+Las plantillas técnicas se escriben en inglés. En `ILogger`, los marcadores nombrados
+describen datos seguros, como `{GameId}` y `{Status}`; en `Trace` se conserva el formato
+compatible con el listener. No se impone una migración del cliente a otra API de logging.
+Los identificadores de correlación se aprovechan cuando están disponibles; no se exige
+crear un protocolo nuevo de correlación para todas las operaciones.
+
+No registrar solicitudes completas de autenticación ni el `ToString()` de un record que
+pueda incluir contraseñas o códigos. La persistencia y retención de diagnósticos debe
+describirse conforme a lo implementado, sin afirmar que la salida de consola se archiva.
 
 <a id="seccion-6-11"></a>
 
@@ -2297,225 +2770,162 @@ public GrpcMatchmakingClient(
 }
 ```
 
+Las invariantes internas y los datos externos son condiciones distintas. Si se utiliza
+`Debug.Assert`, su función es comprobar una suposición de desarrollo; no sustituye validar
+permisos, códigos, rangos o datos recibidos por red. No se exige incorporar aserciones a
+todos los métodos. Los datos pasivos pueden validar sus reglas en la frontera responsable
+sin duplicar una misma comprobación en cada miembro que solo los representa.
+
+<a id="seccion-6-12"></a>
+
+### 6.12 Fallos no controlados y tareas de fondo
+
+Cada operación remota, comando asíncrono y tarea de fondo debe tener un límite responsable
+de observar sus fallos y determinar si termina, reintenta o deja de prestar la función.
+Los servicios de reloj y limpieza no están protegidos por el manejo de errores de una
+llamada gRPC independiente; mantienen su propio límite.
+
+Una cancelación solicitada por el propietario termina de forma esperada. Un fallo técnico
+se informa sin exponer información privada y sin continuar sobre un estado inválido.
+No capturar globalmente todos los errores para permitir que la interfaz siga ejecutándose
+como si nada hubiera ocurrido. Los manejadores de último recurso no sustituyen el tratamiento
+de una operación conocida ni garantizan recuperación.
+
+No se exige una clase nueva de interceptor ni instalar todos los hooks de excepciones del
+runtime. Se añaden mecanismos cuando resuelven un caso demostrado y su alcance está definido.
+
+**Correcto:** el servicio de reloj registra una operación fallida y conserva una política
+explícita para el siguiente ciclo; la cancelación del servidor termina el bucle.
+
+**Incorrecto:** iniciar una tarea de fondo sin propietario y descartar su excepción para
+mantener artificialmente el proceso en ejecución.
+
 <a id="seccion-7"></a>
 
-## 7 Comentarios
+## 7 Comentarios y documentación
+
+
 
 <a id="seccion-7-1"></a>
 
-### 7.1 Principios para la Documentación del Código
+### 7.1 Política de comentarios
 
-Los comentarios y la documentación del código deberán utilizarse para explicar información que no sea evidente a partir del propio código.
+El código debe expresar su intención mediante nombres y responsabilidades claros. Está
+prohibido añadir comentarios al código de producción salvo autorización explícita para
+un comentario específico. 
 
-Los comentarios deberán aportar información útil para comprender la intención, el comportamiento, las restricciones o las decisiones relevantes del código. No deberán utilizarse para describir de manera redundante lo que el código ya expresa claramente.
+Los comentarios de pruebas están permitidos y siguen 10.4. Se conserva la excepción sin
+comentarios del módulo MFA y sus pruebas relacionadas de autenticación, credenciales,
+correo de autenticación, recuperación y protección de códigos. La excepción no se extiende
+a cualquier otra prueba por utilizar un servicio que también intervenga en MFA.
 
-Los comentarios deberán mantenerse actualizados cuando se modifique el código al que hacen referencia. Un comentario que contradiga el comportamiento actual del código deberá corregirse o eliminarse.
-
-Los comentarios deberán redactarse de forma clara, concisa y consistente. Cuando un comentario describa una decisión o comportamiento importante, deberá explicar principalmente el motivo o la intención, en lugar de repetir cómo funciona el código.
-
-**Correcto**
-
-```csharp
-// Prevents the player from moving while the game is paused.
-if (game.IsPaused)
-{
-    return;
-}
-```
-
-**Incorrecto**
-
-```csharp
-// Check if game is paused.
-if (game.IsPaused)
-{
-    return;
-}
-```
+Los ejemplos de comentarios de este capítulo describen formato para contextos autorizados
+o de pruebas. No autorizan incorporarlos automáticamente en producción.
 
 <a id="seccion-7-2"></a>
 
-### 7.2 Comentarios de Una Línea
+### 7.2 Comentarios de una línea
 
-Los comentarios de una sola línea deberán utilizarse para explicaciones breves relacionadas con una instrucción, sección o decisión específica del código.
+Cuando estén permitidos, usar `//` en una línea independiente, redactar en inglés y explicar
+una intención no evidente. Una oración comienza con mayúscula y termina con punto. Los
+marcadores estructurales `// Arrange`, `// Act` y `// Assert` no requieren punto.
 
-Deberán utilizarse mediante el delimitador //.
-
-El comentario deberá colocarse preferentemente en una línea independiente de la instrucción que documenta. Deberá comenzar con una letra mayúscula y terminar con un punto cuando constituya una oración completa.
-
-**Correcto**
+**Correcto en una prueba fuera de la excepción de 9.4**
 
 ```csharp
-// Keep the previous position to restore it if movement is blocked.
-Vector3 previousPosition = transform.position;
+// Arrange
+var position = new BoardPosition(0, 0);
 ```
 
 **Incorrecto**
 
 ```csharp
-Vector3 previousPosition = transform.position; // previous position
+int count = 0; // set count to zero
 ```
+
+El comentario está al final y repite una instrucción evidente.
 
 <a id="seccion-7-3"></a>
 
-### 7.3 Comentarios de Bloque
+### 7.3 Comentarios de bloque y código deshabilitado
 
-Los comentarios de bloque deberán utilizarse únicamente cuando sea necesario documentar una sección que requiera una explicación más extensa y que no pueda expresarse adecuadamente mediante comentarios de una sola línea.
+Los comentarios `/* ... */` solo se utilizan en contextos autorizados cuando una explicación
+extensa los justifica. No son el formato habitual ni un modo de conservar código muerto.
+El código obsoleto se elimina; su historial permanece en Git.
 
-Los comentarios de bloque deberán utilizar el formato /* */.
+**Correcto:** retirar una implementación sustituida después de comprobar sus consumidores.
 
-No deberán utilizarse comentarios de bloque como sustituto habitual de los comentarios de una sola línea.
-
-Los comentarios de bloque no deberán utilizarse para ocultar código obsoleto o deshabilitado. El código que ya no sea necesario deberá eliminarse mediante el sistema de control de versiones.
-
-**Correcto**
-
-```csharp
-/*
- * The initial position is stored before starting the
- * movement sequence so it can be restored if needed.
- */
-Vector3 initialPosition = transform.position;
-```
-
-**Incorrecto**
-
-```csharp
-/*
- * This is the player.
- * This gets the position.
- * The position is stored.
- * Then the position can be used.
- */
-Vector3 initialPosition = transform.position;
-```
+**Incorrecto:** conservar métodos completos deshabilitados dentro de un comentario de bloque
+con la intención de que otro integrante descubra cuál implementación debe utilizar.
 
 <a id="seccion-7-4"></a>
 
-### 7.4 Justificación de Decisiones de Diseño
+### 7.4 Documentación de decisiones y contratos
 
-Los comentarios deberán documentar las decisiones de diseño cuando la razón de una implementación no sea evidente a partir del código.
+Las decisiones relevantes de concurrencia, seguridad, compatibilidad y propiedad de recursos
+se documentan cuando su motivo no es evidente. Utilizar documentación del proyecto para
+explicar restricciones y contratos sin añadir comentarios de producción no autorizados.
+Un identificador público no necesita XML que solo repita su nombre.
 
-La documentación de una decisión de diseño deberá explicar principalmente el motivo de la decisión, la restricción que la originó o el problema que busca evitar.
+Si se autoriza documentación XML para una frontera concreta, las etiquetas deben coincidir
+con su firma y describir entradas, resultados, efectos y fallos pertinentes. No se exige
+XML en todos los miembros públicos, pruebas o implementaciones internas.
 
-No deberá utilizarse un comentario para justificar una implementación arbitraria cuando una solución más clara o simple pueda eliminar la necesidad de dicha explicación.
+**Correcto:** documentar por qué un semáforo se conserva durante la transición persistente
+y qué operaciones utilizan el mismo permiso.
 
-Las decisiones importantes que afecten la arquitectura, rendimiento, compatibilidad, seguridad, comportamiento del videojuego o mantenimiento del código deberán documentarse cuando su propósito no sea evidente.
-
-**Correcto**
-
-```csharp
-// Cache the calculated path to avoid recalculating it every frame.
-GamePath path = pathfinder.CalculatePath(target);
-```
-
-**Incorrecto**
-
-```csharp
-// Calculate the path.
-GamePath path = pathfinder.CalculatePath(target);
-```
+**Incorrecto:** describir únicamente que `GetRoom` obtiene una sala, sin aportar contrato
+ni una restricción que no pueda conocerse por su declaración.
 
 <a id="seccion-7-5"></a>
 
-### 7.5 Comentarios TODO
+### 7.5 Pendientes TODO
 
-Los comentarios TODO deberán utilizarse únicamente para identificar trabajo pendiente que sea relevante para el desarrollo del proyecto.
+Cuando un contexto admita comentarios, un TODO utiliza `// TODO:` y una acción concreta
+en inglés. Los trabajos de producción pendientes se registran en el seguimiento del proyecto
+o documentación autorizada; un TODO no es una excepción a la prohibición de 7.1.
 
-Cada comentario TODO deberá describir claramente qué debe realizarse y, cuando sea necesario, proporcionar suficiente contexto para identificar la tarea.
+**Correcto en un contexto autorizado:** `// TODO: Add the expired-code boundary case.`
 
-Los comentarios TODO no deberán utilizarse para almacenar tareas permanentes ni para sustituir el sistema de seguimiento de tareas del proyecto cuando exista uno disponible.
+**Incorrecto:** `// TODO: Finish later.`
 
-Las tareas importantes identificadas mediante TODO deberán trasladarse al sistema de seguimiento correspondiente cuando representen trabajo que deba planificarse o asignarse.
-
-**Correcto**
-
-```csharp
-// TODO: Replace the temporary player spawn position with the level spawn point.
-Vector3 spawnPosition = Vector3.zero;
-```
-
-**Incorrecto**
-
-```csharp
-// TODO: Fix this later.
-Vector3 spawnPosition = Vector3.zero;
-```
+La nota debe permitir identificar el trabajo, y no sustituye asignación o planificación.
 
 <a id="seccion-7-6"></a>
 
-### 7.6 Comentarios FIXME
+### 7.6 Defectos FIXME
 
-Los comentarios FIXME deberán utilizarse para identificar código que presenta un problema conocido y requiere una corrección.
+Cuando esté permitido, utilizar `// FIXME:` para un defecto conocido con su condición de
+activación. Registrar su seguimiento cuando necesite planificación. Una nota no autoriza
+mantener un fallo indefinidamente ni sustituye corregirlo en el alcance de una tarea.
 
-Cada comentario FIXME deberá describir el problema de manera específica y deberá indicar, cuando sea necesario, la condición que debe corregirse.
+**Correcto en un contexto autorizado:** describir que un resultado tardío actualiza una
+pantalla cerrada e identificar la condición que lo reproduce.
 
-Los comentarios FIXME no deberán utilizarse para ocultar errores conocidos de manera indefinida. Los problemas identificados deberán registrarse en el sistema de seguimiento del proyecto cuando requieran seguimiento, asignación o planificación.
+**Incorrecto:** `// FIXME: Broken.`
 
-**Correcto**
-
-```csharp
-// FIXME: Prevent duplicate damage when this method is called twice during the same frame.
-ApplyDamage(damage);
-```
-
-**Incorrecto**
-
-```csharp
-// FIXME: This does not work correctly.
-ApplyDamage(damage);
-```
+No añadir estos comentarios al código de producción sin la autorización prevista en 7.1.
 
 <a id="seccion-7-7"></a>
 
-### 7.7 Restricciones para los Comentarios
+### 7.7 Restricciones y mantenimiento de documentación
 
-Los comentarios deberán cumplir las siguientes restricciones:
+Los comentarios y documentos no deben contener credenciales ni datos privados, contradecir
+la implementación, justificar código innecesario o narrar instrucciones evidentes.
+Actualizar la explicación cuando cambien las condiciones que documenta. Una regla pendiente
+se mantiene fuera de las obligaciones vigentes conforme a 11.4.
 
-- No deberán describir información que sea evidente a partir del código.
+**Correcto:** una explicación del contrato indica que cancelar una llamada no prueba que
+la escritura remota haya sido revertida.
 
-- No deberán contener información incorrecta, desactualizada o contradictoria con la implementación.
-
-- No deberán utilizarse para justificar código que debería refactorizar.
-
-- No deberán utilizarse para ocultar código obsoleto o deshabilitado.
-
-- No deberán contener información confidencial, credenciales, contraseñas, claves privadas o información sensible.
-
-- Los comentarios TODO y FIXME deberán ser específicos y deberán mantenerse bajo control durante el desarrollo.
-
-- Los comentarios deberán colocarse en una línea independiente cuando describan una sección o instrucción completa.
-
-- Los comentarios deberán actualizarse o eliminarse cuando la implementación a la que hacen referencia cambie.
-
-- Los comentarios no deberán utilizarse para justificar prácticas que contradigan las reglas establecidas en este estándar.
-
-**Correcto**
-
-```csharp
-public int CalculateScore(int baseScore, int bonus)
-{
-    return baseScore + bonus;
-}
-```
-
-**Incorrecto**
-
-```csharp
-// This method calculates the player's movement speed.
-// It gets the base speed.
-// Then it multiplies the base speed.
-// The result is returned.
-// Do not change this code because it works.
-public float CalculateMovementSpeed()
-{
-    return baseSpeed * speedMultiplier;
-}
-```
+**Incorrecto:** una explicación garantiza reversión automática o detección instantánea de
+una desconexión sin que el sistema implemente esas garantías.
 
 <a id="seccion-8"></a>
 
 ## 8 Control de Versiones Git
+
+
 
 <a id="seccion-8-1"></a>
 
@@ -2555,34 +2965,15 @@ específica. No hacer commit ni push sin que el usuario lo solicite para la tare
 
 <a id="seccion-8-2"></a>
 
-### 8.2 Estrategia de Ramificación
-
-La rama `main` representará las versiones estables del proyecto. La rama `develop` será
-la rama de integración del trabajo en curso.
-
-Por decisión del responsable del proyecto del 2026-11-16, por ahora todos los cambios se
-desarrollarán directamente en `develop`, incluidos los commits y los pushes solicitados.
-No se crearán nuevas ramas hasta que el responsable indique expresamente otro flujo.
-Antes de hacer commit se revisarán los cambios y se ejecutarán las verificaciones pertinentes.
-La publicación de una versión estable se realizará mediante la integración del estado
-aprobado de `develop` en `main`, cuando el responsable la solicite.
-
-No se deberán integrar directamente cambios incompletos en `main`. Los conflictos deberán
-resolverse revisando el comportamiento afectado; no se deberán descartar cambios de otros
-integrantes sin verificar su propósito.
-
-Las ramas históricas no se renombrarán ni se publicarán cambios en ellas para sustituir
-este flujo de trabajo sin una instrucción explícita del responsable.
-
-<a id="seccion-8-3"></a>
-
-### 8.3 Archivo Gitignore
+### 8.2 Archivo Gitignore
 
 Utilizar un archivo `.gitignore` adecuado para evitar subir carpetas temporales o de compilación.
 
 <a id="seccion-9"></a>
 
 ## 9 Pruebas y Aseguramiento de Calidad
+
+
 
 <a id="seccion-9-1"></a>
 
@@ -2596,17 +2987,31 @@ La estrategia de pruebas del proyecto se centrará en garantizar la estabilidad 
 
 Las pruebas unitarias deberán enfocarse en validar el comportamiento de un único componente, método o clase de forma aislada, sin depender de bases de datos, redes o sistemas de archivos. Toda la lógica de reglas (por ejemplo, validaciones de turnos o condiciones de victoria) debe estar cubierta por pruebas unitarias.
 
+Las pruebas utilizan MSTest y las dependencias declaradas en sus proyectos. Utilizar
+`[TestClass]` y `[TestMethod]` para su descubrimiento; los datos parametrizados representan
+escenarios explícitos. Las pruebas asíncronas devuelven tareas, se esperan y conservan el
+sufijo `Async`; no se implementan como `async void` ni como verificadores manuales ocultos
+al ejecutor de pruebas.
+
 <a id="seccion-9-3"></a>
 
 ### 9.3 Pruebas de Integración
 
 Las pruebas de integración validarán que dos o más módulos interactúen correctamente entre sí. Se utilizarán para asegurar que la comunicación entre la lógica del juego y los servicios externos (como la base de datos o el sistema de emparejamiento) fluya sin pérdida de datos ni estados inválidos.
 
+La frontera que la prueba afirma verificar debe ser real: una prueba de persistencia no
+reemplaza esa persistencia por un stub. Se permiten dobles de dependencias externas ajenas
+a la frontera evaluada, como un emisor de correo controlado. Identificar si se verificó
+SQLite, SQL Server, transporte local o una conexión real entre computadoras.
+
 <a id="seccion-9-4"></a>
 
 ### 9.4 Estructura Arrange-Act-Assert
 
-Todas las pruebas automatizadas deberán dividirse claramente en tres bloques utilizando comentarios: preparar (Arrange), ejecutar (Act) y validar (Assert).
+Las pruebas se organizan en preparar (Arrange), ejecutar (Act) y validar (Assert).
+Fuera de la excepción sin comentarios definida en 7.1, esas fases se identifican con
+`// Arrange`, `// Act` y `// Assert`. Las pruebas del módulo exceptuado conservan las
+fases reconocibles mediante estructura y espacios, sin añadir esos marcadores.
 
 - Arrange: Configura el estado inicial, inicializa variables y prepara los objetos necesarios.
 
@@ -2644,6 +3049,11 @@ public void TestPlaceStone()
 }
 ```
 
+Cada prueba verifica un comportamiento identificable; puede incluir varias aserciones
+sobre ese resultado. Una integración puede necesitar una secuencia como guardar y volver
+a consultar. No imponer una única llamada literal ni extraer helpers artificiales para
+ocultar pasos necesarios. Separar escenarios sin relación que dificulten localizar un fallo.
+
 <a id="seccion-9-5"></a>
 
 ### 9.5 Categorías de pruebas
@@ -2651,7 +3061,7 @@ public void TestPlaceStone()
 Las clases de pruebas nuevas o revisadas se marcan con `[TestCategory("Unit")]` cuando
 no necesitan servicios externos y con `[TestCategory("Integration")]` cuando comprueban
 transporte u otros límites reales. La ubicación de carpeta por sí sola no filtra la ejecución.
-Las pruebas de heartbeat/presencia heredadas quedan sin cambios hasta su sustitución.
+Las pruebas de presencia verifican dúplex y su ciclo de vida según 5.6.
 La ejecución completa de la solución debe mantenerse además de cualquier filtro por categoría.
 
 <a id="seccion-9-6"></a>
@@ -2702,12 +3112,62 @@ public void TestMove()
 }
 ```
 
+<a id="seccion-9-7"></a>
+
+### 9.7 Determinismo y dobles de prueba
+
+Controlar las dependencias que puedan cambiar el resultado de forma ajena al escenario.
+Utilizar `TimeProvider` cuando el vencimiento o avance del tiempo sea lo que se prueba;
+coordinar concurrencia mediante señales o transportes controlados cuando corresponda.
+No depender de una pausa arbitraria para asegurar que otra tarea terminó.
+
+Se permiten identificadores aleatorios cuando solo aportan unicidad y no afectan el
+resultado esperado. Los datos literales del escenario no requieren constantes por rutina.
+No enviar correo real ni utilizar credenciales reales como requisito de una prueba unitaria.
+
+Los stubs devuelven datos predeterminados; los grabadores conservan interacciones observables;
+los transportes controlados permiten ordenar eventos. Sus nombres deben indicar esa función
+según 10.1. Mantener limpieza determinista de scopes, archivos y bases temporales.
+
+**Correcto:** avanzar el reloj controlado hasta el vencimiento y comprobar el estado final.
+
+**Incorrecto:** dormir varios segundos y asumir que el código venció o que el envío terminó
+por el mero transcurso de tiempo de pared.
+
+<a id="seccion-9-8"></a>
+
+### 9.8 Verificación del estándar
+
+Combinar compilación, formato, pruebas y revisión del comportamiento. `.editorconfig`
+configura convenciones y sugerencias; no demuestra responsabilidad única ni verifica por
+sí solo todas las reglas de este documento. Los analizadores adicionales se adoptan
+explícitamente y sus métricas deben compararse con 4.3 antes de tratarlas como obligatorias.
+
+Para cambios de código, utilizar desde la raíz de la solución:
+
+```powershell
+dotnet build .\AtariGo.slnx
+dotnet test .\AtariGo.slnx --no-build
+```
+
+El cliente y sus pruebas necesitan Windows por WPF. Para cambios solo documentales,
+verificar contenido, estructura, enlaces y diferencias; no se necesita ejecutar el juego.
+Las herramientas y los informes utilizados deben identificar alcance, versión y limitaciones.
+Los resultados locales no se presentan como una verificación entre computadoras.
+
+Las fuentes generadas se excluyen de refactors manuales. Una herramienta no puede renombrar
+contratos, eliminar bindings o ampliar dependencias solo para silenciar un aviso. Una
+comprobación local opcional ignorada por Git no se convierte en dependencia obligatoria
+para quien clone el repositorio.
+
 <a id="seccion-10"></a>
 
 ## 10 Prefijos Permitidos y Abreviaciones
 
 Esta sección define las convenciones específicas del repositorio. Las reglas del framework
 se conservan cuando el nombre forma parte de un contrato externo.
+
+<a id="seccion-10-1"></a>
 
 ### 10.1 Prefijos y sufijos de C#
 
@@ -2731,6 +3191,14 @@ se conservan cuando el nombre forma parte de un contrato externo.
 Prioridad para campos: `const`, después `[ThreadStatic]`, después `static` y después
 visibilidad de instancia. El prefijo `s_` está prohibido. Una variable local
 que recibe un delegado no obtiene automáticamente el sufijo `Callback`.
+
+Los tipos auxiliares de pruebas utilizan nombres que describen su función. Se conservan
+familias coherentes como `StubFriendClient`, `RecordingInterceptor`, transportes `Controlled…`
+y `Failing…`, y sufijos `TestHost`, `TestDatabase` y `TestContext`. No todos estos tipos
+son clases de pruebas y no necesitan terminar en `Tests`. Las verificaciones de una función
+completa pueden nombrarse por esa función; su categoría identifica el alcance de integración.
+
+<a id="seccion-10-2"></a>
 
 ### 10.2 Vistas ViewModels y comandos
 
@@ -2758,6 +3226,8 @@ Los nombres de partes de plantilla que pertenecen a WPF, como `PART_ContentHost`
 conservan exactamente. Una parte visual propia puede llamarse `CheckBorder`; renombrarla
 requiere actualizar también `TargetName`, `ElementName`, bindings y code-behind.
 
+<a id="seccion-10-3"></a>
+
 ### 10.3 Servicios datos y contratos
 
 | Elemento | Convención | Ejemplo |
@@ -2780,6 +3250,8 @@ En `.proto`, mantener nombres de mensajes y operaciones en PascalCase, campos en
 y valores de enum en mayúsculas con guiones bajos y prefijo del enum. Esa convención es
 específica de Protobuf y no contradice la de C#. No reutilizar números de campos eliminados;
 reservarlos y revisar compatibilidad antes de cambiar contratos.
+
+<a id="seccion-10-4"></a>
 
 ### 10.4 Recursos abreviaciones y otros archivos
 
@@ -2804,122 +3276,72 @@ código nuevo; no se extraen todos los tamaños de presentación como constantes
 JSON y Protobuf siguen la estructura y formato coherentes de su archivo. La documentación
 puede escribirse en español. Las fuentes generadas conservan las convenciones del generador.
 
+En contenido nuevo, JSON y Protobuf usan dos espacios por nivel y XAML usa cuatro, conforme
+a `.editorconfig`. PowerShell mantiene variables camelCase, parámetros PascalCase y nombres
+descriptivos `Verbo-Sustantivo.ps1`; no se imponen las métricas de métodos C# a sus funciones.
+Los scripts SQL mantienen identificadores del esquema y una presentación consistente de
+cláusulas. No renombrar tablas o columnas para uniformar estilo ni ejecutar scripts como
+parte de una simple revisión documental.
+
+<a id="seccion-10-5"></a>
+
+### 10.5 Assets y catálogos de recursos
+
+Los assets deben tener nombres y ubicación que permitan identificar su función y sus
+referencias. Mantener catálogos estables basados en identificadores cuando forman parte
+del diseño, como `Assets/Avatars/avatar_1.png` a `avatar_20.png`. Esos números representan
+opciones del catálogo, no archivos genéricos sin significado.
+
+Los recursos nuevos siguen la familia semántica de su carpeta. No crear copias por cultura de imágenes sin texto
+traducible ni trasladar una ruta física del servidor a un contrato de cliente.
+
+**Correcto:** construir la referencia al avatar desde un identificador validado del catálogo.
+
+**Incorrecto:** renombrar los archivos del catálogo por estética sin actualizar el convertidor
+y sus referencias, o aceptar una ruta arbitraria enviada por el cliente como avatar.
+
 <a id="seccion-11"></a>
 
-## 11 Declaración de Uso de I.A
+## 11 Mantenimiento y aplicación del estándar
 
-Se utilizaron herramientas de Inteligencia Artificial (IA) como recurso de apoyo durante la creación de este estándar de desarrollo.
 
-La IA se utilizó para ayudar con:
 
-- La organización, propuesta de secciones y estructuración general del documento.
+<a id="seccion-11-1"></a>
 
-- La mejora de la redacción y semántica de algunas reglas.
+### 11.1 Lectura y aplicación
 
-- La generación de código de ejemplo (correcto e incorrecto) para su revisión.
+Los integrantes y asistentes consultan el estándar y las instrucciones aplicables antes
+de modificar código. Las convenciones se aplican dentro de su alcance; una firma externa
+conserva su contrato y su lógica auxiliar mantiene las reglas propias.
 
-- La comparación de diferentes recomendaciones de codificación.
+Una herramienta o preferencia personal no sustituye una decisión documentada. Si existe
+una contradicción, identificar la regla, el efecto y la decisión del responsable antes de
+realizar una transformación que altere contratos o comportamiento. El código previo no
+autoriza repetir un incumplimiento confirmado; una propuesta no adoptada tampoco crea
+automáticamente una nueva obligación sobre ese código.
 
-- La identificación de posibles inconsistencias entre las distintas secciones.
+<a id="seccion-11-2"></a>
 
-- La asistencia en la búsqueda y organización de las referencias.
+### 11.2 Explicación y evidencia de cambios
+
+Cada entrega explica en español qué cambió, por qué, cómo se verificó y qué limitaciones
+permanecen. El código y los textos técnicos siguen 1.4. Las comprobaciones identifican el
+entorno y su alcance; una compilación no acredita una partida entre computadoras.
+
+Distinguir cambios de formato, correcciones de comportamiento y decisiones de diseño.
+Si se informa un conteo de líneas o archivos, indicar la base de comparación y tratar
+renombres, archivos nuevos y fuentes generadas de forma consistente. No presentar una
+estimación sintáctica como una medición semántica exacta.
 
 <a id="seccion-12"></a>
 
-## 12 Referencias
-
-- Microsoft. (2023, 3 de octubre). Capitalization conventions. Microsoft Learn. https://learn.microsoft.com/en-us/dotnet/standard/design-guidelines/capitalization-conventions
-
-- Microsoft. (2023, 3 de octubre). Design guidelines for exceptions. Microsoft Learn. https://learn.microsoft.com/en-us/dotnet/standard/design-guidelines/exceptions
-
-- Microsoft. (2023, 3 de octubre). General naming conventions. Microsoft Learn. https://learn.microsoft.com/en-us/dotnet/standard/design-guidelines/general-naming-conventions
-
-- Microsoft. (2023, 14 de diciembre). Best practices for writing unit tests. Microsoft Learn. https://learn.microsoft.com/en-us/dotnet/core/testing/unit-testing-best-practices
-
-- Microsoft. (2024, 18 de enero). C# coding conventions. Microsoft Learn. https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/coding-style/coding-conventions
-
-- Microsoft. (2024, 25 de febrero). Exception handling (C# programming guide). Microsoft Learn. https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/exceptions/exception-handling
-
-- Microsoft. (2024, 12 de marzo). Nullable reference types. Microsoft Learn. https://learn.microsoft.com/en-us/dotnet/csharp/nullable-references
-
-- van der Til, J., Costello, M., & Calvarro Nelson, J. (2026, March 10). Integration tests in ASP.NET Core. Microsoft Learn. https://learn.microsoft.com/enus/aspnet/core/test/integration-tests?view=aspnetcore-10.0
-
-- Unity Technologies. (n.d.-b). Naming and code style tips for C# scripting in Unity. Unity. Retrieved August 29, 2026, from https://unity.com/how-to/naming-andcode-style-tips-c-scripting-unity
-
-- Microsoft. (s. f.). SemaphoreSlim Class. Microsoft Learn. https://learn.microsoft.com/en-us/dotnet/api/system.threading.semaphoreslim?view=net-10.0
-
-- Microsoft. (s. f.). The lock statement. Microsoft Learn. https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/statements/lock
-
-- gRPC Authors. (s. f.). Interface `IAsyncStreamWriter<T>`. gRPC C#. https://grpc.github.io/grpc/csharp/api/Grpc.Core.IAsyncStreamWriter-1.html
-
-<a id="seccion-13"></a>
-
-## 13 Mantenimiento del estándar y trabajo con Codex
-
-### 13.1 Lectura y aplicación
-
-Antes de modificar código, Codex debe leer `AGENTS.md` y este estándar, además de las
-instrucciones específicas que existan en la carpeta afectada. Debe aplicar las reglas
-vigentes a cada cambio que realice. La presencia de código antiguo que incumpla una regla
-no es autorización para repetir el incumplimiento.
-
-Los archivos generados deben modificarse mediante su fuente o herramienta generadora;
-no deben reformatearse manualmente para satisfacer ejemplos del estándar. Si una firma
-impuesta por un framework o por código generado entra en conflicto con una regla,
-Codex debe explicar la restricción concreta y proponer cómo documentarla. No debe cambiar
-contratos externos para cumplir una métrica de estilo.
-
-### 13.2 Explicación de los cambios
-
-Cada entrega debe explicar en español qué cambió, por qué y cómo funciona, con enlaces
-a los archivos relevantes. Las explicaciones deben permitir al responsable del proyecto
-comprender y mantener el código. Se deben informar las comprobaciones realizadas y sus
-límites; no se debe presentar una prueba local como evidencia de una prueba entre máquinas.
-El código y los comentarios continúan en inglés según la sección 1.4.
-
-### 13.3 Propuestas de mejora
-
-Cuando aparezca una necesidad no cubierta, una contradicción o una regla difícil de aplicar,
-Codex debe proponer una mejora concreta. Cada propuesta debe indicar el problema, la regla
-sugerida, un ejemplo cuando ayude y el impacto sobre el código existente.
-
-Cuando se necesite un registro escrito, las propuestas se guardan localmente en
-`docs/local/PROPUESTAS_ESTANDAR.md` con estado pendiente. El registro anterior
-`PROPUESTAS_ESTANDAR.md` en la raíz puede consultarse si existe. Ambos son opcionales y no
-se publican por defecto; su ausencia al clonar no impide trabajar ni obliga a reconstruirlos.
-
-Las propuestas no pasan a ser obligatorias hasta que el responsable las adopte explícitamente.
-Las reglas adoptadas se incorporan completas a este estándar compartido. Si el usuario ya
-solicita una modificación concreta del estándar, esa solicitud autoriza realizarla directamente.
-Este mecanismo no exige detener el trabajo para consultar decisiones rutinarias ya autorizadas.
-
-Los informes de auditoría, notas del chat y registros de cambios de trabajo se guardan en
-`docs/local/`, excluida de Git. Los informes anteriores `AUDITORIA_CODIGO.md` y
-`CAMBIOS_ESTANDAR.md` de la raíz también se conservan como documentos locales opcionales.
-`CODING_STANDARD.md` y `AGENTS.md` permanecen como documentación compartida; sus instrucciones
-no deben depender de enlaces a informes ignorados. No es necesario generar un Markdown
-adicional cuando la explicación en el chat sea suficiente, salvo solicitud del usuario.
+## 12 Seguridad y protección de información
 
 
-<a id="seccion-13-4"></a>
 
-### 13.4 Pendientes de evolución del estándar
+<a id="seccion-12-1"></a>
 
-Las propuestas de reglas que todavía no hayan sido adoptadas deberán mantenerse fuera de
-las obligaciones vigentes del estándar. Una propuesta pendiente deberá identificar el
-problema que busca resolver y la regla sugerida.
-
-Cuando el equipo adopte una propuesta, la regla completa deberá incorporarse en la sección
-correspondiente del estándar. No se mantendrán listas de observaciones que contradigan o
-dupliquen las reglas vigentes.
-
-<a id="seccion-14"></a>
-
-## 14 Seguridad y protección de información
-
-<a id="seccion-14-1"></a>
-
-### 14.1 Configuración y secretos
+### 12.1 Configuración y secretos
 
 Las contraseñas, tokens, claves privadas y cadenas de conexión con credenciales no deberán
 guardarse en el repositorio ni escribirse directamente en el código fuente. Se obtendrán de
@@ -2944,11 +3366,27 @@ string connectionString =
     "Server=server;Database=AtariGo;User Id=admin;Password=RealPassword;";
 ```
 
-<a id="seccion-14-2"></a>
+Los secretos de desarrollo del servidor pueden obtenerse de User Secrets. Ese mecanismo
+los mantiene fuera del árbol del proyecto, pero los guarda sin cifrado en un archivo del
+perfil de usuario; no es una garantía de cifrado ni un almacén de producción. Mantener
+los permisos locales y evitar imprimir valores al configurar o diagnosticar.
 
-### 14.2 Contraseñas y tokens
+Un `UserSecretsId` identifica configuración, no es una credencial. Compartir el repositorio
+no configura automáticamente los secretos de otra computadora. Utilizar los scripts de
+configuración y un canal autorizado para entregar lo que cada entorno necesite, sin copiar
+los valores al código, argumentos visibles o mensajes de diagnóstico.
 
-Las contraseñas no se almacenarán en texto plano ni se cifrarán para poder recuperarlas.
+Una credencial SMTP debe ser recuperable por el servidor para autenticarse ante el proveedor.
+Su protección pertenece al almacenamiento de secretos. Guardar un hash de esa credencial
+no permite utilizarla en SMTP. Las contraseñas de jugadores siguen un mecanismo distinto
+definido en 12.2. No se afirma que la configuración actual use cifrado adicional.
+
+<a id="seccion-12-2"></a>
+
+### 12.2 Contraseñas y tokens
+
+Las contraseñas de los jugadores no se almacenarán en texto plano ni se cifrarán
+para poder recuperarlas.
 Se almacenarán utilizando un algoritmo de hashing de contraseñas aprobado por el proyecto
 y sus parámetros vigentes.
 
@@ -2960,9 +3398,17 @@ cliente.
 La validación de credenciales y de permisos deberá realizarse en el servidor. Ocultar un
 botón o una opción de interfaz no constituye autorización.
 
-<a id="seccion-14-3"></a>
+Utilizar el mecanismo de hashing de contraseñas del servidor, basado en `PasswordHasher<User>`,
+con su política y configuración aprobadas; no sustituirlo por un hash rápido casero.
+Los códigos de verificación siguen 12.5 y no se tratan como contraseñas persistentes.
 
-### 14.3 Transporte y certificados
+No registrar objetos completos que puedan incluir tokens, contraseñas o códigos. Retirar
+referencias temporales cuando el flujo ya no las necesita no equivale a garantizar borrado
+de todas las copias de una cadena administrada en memoria. No prometer esa garantía.
+
+<a id="seccion-12-3"></a>
+
+### 12.3 Transporte y certificados
 
 La comunicación gRPC entre cliente y servidor deberá utilizar TLS. El cliente deberá
 validar la identidad del servidor mediante la cadena de confianza y el nombre o dirección
@@ -2973,9 +3419,9 @@ No se deberá desactivar la validación de certificados para solucionar errores 
 Los certificados privados y sus claves privadas no deberán incluirse en el repositorio ni
 distribuirse junto con el cliente.
 
-<a id="seccion-14-4"></a>
+<a id="seccion-12-4"></a>
 
-### 14.4 Validación y mensajes al usuario
+### 12.4 Validación y mensajes al usuario
 
 Los datos recibidos del cliente deberán validarse en el servidor antes de realizar cambios.
 La validación de interfaz mejora la experiencia, pero no reemplaza la validación del servidor.
@@ -3002,3 +3448,94 @@ if (request.UserName.Length > 15)
         $"Invalid username in database query {sqlCommandText}");
 }
 ```
+
+<a id="seccion-12-5"></a>
+
+### 12.5 Verificación por correo, recuperación y límites de envío
+
+La verificación de acceso y la recuperación de contraseña utilizan la infraestructura
+compartida de correo, con contenido y autorización propios de cada caso de uso. Las
+invitaciones reutilizan el transporte SMTP sin adquirir permisos de autenticación.
+No duplicar emisores ni incorporar otro proveedor por una necesidad hipotética.
+
+Los códigos se generan con aleatoriedad criptográfica y se conservan protegidos conforme
+al mecanismo de autenticación. La protección vincula usuario, propósito y contexto cuando
+la operación lo requiere; un código de recuperación no se acepta para verificar un acceso.
+La verificación conserva la comparación protegida del componente responsable.
+
+El servidor controla vencimiento, intentos, reenvíos y consumo del código. La UI puede
+mostrar el tiempo restante, pero no autoriza una operación por sí sola. Las transiciones
+concurrentes que verifican y consumen un código deben mantener la consistencia prevista
+por la transacción y el coordinador del caso de uso.
+
+Mantener los plazos y límites en sus opciones o componentes responsables, como
+`LoginVerificationOptions`, `PasswordRecoveryOptions` y `RoomInvitationEmailLimiter`.
+Las cifras se consultan en esas fuentes; no se reparten literales equivalentes por las
+pantallas. Las reservas de envío y su finalización respetan la sincronización existente.
+
+Un envío SMTP fallido o una cancelación no prueban que el destinatario no recibió el correo.
+No registrar códigos ni cuerpos completos, no convertir el fallo en éxito y no reenviar
+indefinidamente. Mantener resultados controlados y la posibilidad de reintento conforme
+a la política del caso de uso. La comunicación SMTP conserva TLS y sus validaciones.
+
+La descripción del mecanismo no autoriza modificar SQL. Se conserva la estructura existente
+y las restricciones de 4.5. Los estados temporales en memoria no se presentan como si
+persistieran tras reiniciar el servidor.
+
+**Correcto:** aplicar la política de reenvío en el servidor y comunicar un instante o tiempo
+de reintento sin revelar el código ni la contraseña SMTP.
+
+**Incorrecto:** permitir el envío porque el botón ya se habilitó, reutilizar un código entre
+propósitos o registrar el cuerpo del mensaje para diagnosticar su entrega.
+<a id="seccion-13"></a>
+
+## 13 Declaración de Uso de I.A
+
+Se utilizaron herramientas de Inteligencia Artificial (IA) como recurso de apoyo durante la creación de este estándar de desarrollo.
+
+La IA se utilizó para ayudar con:
+
+- La organización, propuesta de secciones y estructuración general del documento.
+
+- La mejora de la redacción y semántica de algunas reglas.
+
+- La generación de código de ejemplo (correcto e incorrecto) para su revisión.
+
+- La comparación de diferentes recomendaciones de codificación.
+
+- La identificación de posibles inconsistencias entre las distintas secciones.
+
+- La asistencia en la búsqueda y organización de las referencias.
+
+<a id="seccion-14"></a>
+
+## 14 Referencias
+
+Estas fuentes respaldan conceptos de lenguaje, framework y seguridad. Las decisiones
+específicas de Atari Go, como prefijos, límites y orden de miembros, son convenciones del
+equipo; una alternativa válida de otra fuente no las modifica automáticamente. Fecha de
+consulta de las fuentes revisadas para esta propuesta: 18 de noviembre de 2026.
+
+- Microsoft. (s. f.). [Convenciones de C#](https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/coding-style/coding-conventions).
+- Microsoft. (s. f.). [Convenciones de nombres](https://learn.microsoft.com/en-us/dotnet/standard/design-guidelines/general-naming-conventions).
+- Microsoft. (s. f.). [Nombres de miembros](https://learn.microsoft.com/en-us/dotnet/standard/design-guidelines/names-of-type-members).
+- Microsoft. (s. f.). [Records](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/record).
+- Microsoft. (s. f.). [Tipos de referencia anulables](https://learn.microsoft.com/en-us/dotnet/csharp/nullable-references).
+- Microsoft. (s. f.). [Buenas prácticas para excepciones](https://learn.microsoft.com/en-us/dotnet/standard/exceptions/best-practices-for-exceptions).
+- Microsoft. (s. f.). [La instrucción lock](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/statements/lock).
+- Microsoft. (s. f.). [SemaphoreSlim](https://learn.microsoft.com/en-us/dotnet/api/system.threading.semaphoreslim).
+- Microsoft. (s. f.). [Interlocked](https://learn.microsoft.com/en-us/dotnet/api/system.threading.interlocked).
+- Microsoft. (s. f.). [Colecciones concurrentes](https://learn.microsoft.com/en-us/dotnet/standard/collections/thread-safe/).
+- Microsoft. (s. f.). [Ciclo de vida de DbContext](https://learn.microsoft.com/en-us/ef/core/dbcontext-configuration/).
+- Microsoft. (s. f.). [Consultas eficientes en EF Core](https://learn.microsoft.com/en-us/ef/core/performance/efficient-querying).
+- Microsoft. (s. f.). [Servicios gRPC](https://learn.microsoft.com/en-us/aspnet/core/grpc/services?view=aspnetcore-10.0).
+- Microsoft. (s. f.). [Plazos y cancelación gRPC](https://learn.microsoft.com/en-us/aspnet/core/grpc/deadlines-cancellation?view=aspnetcore-10.0).
+- Protocol Buffers. (s. f.). [Guía de proto3](https://protobuf.dev/programming-guides/proto3/).
+- Protocol Buffers. (s. f.). [Guía de estilo](https://protobuf.dev/programming-guides/style/).
+- Microsoft. (s. f.). [Logging en C# y .NET](https://learn.microsoft.com/en-us/dotnet/core/extensions/logging/overview).
+- Microsoft. (s. f.). [MSTest](https://learn.microsoft.com/en-us/dotnet/core/testing/unit-testing-mstest-writing-tests).
+- Microsoft. (s. f.). [Pruebas unitarias](https://learn.microsoft.com/en-us/dotnet/core/testing/unit-testing-best-practices).
+- Microsoft. (s. f.). [Pruebas de integración](https://learn.microsoft.com/en-us/aspnet/core/test/integration-tests?view=aspnetcore-10.0).
+- Microsoft. (s. f.). [Secretos de desarrollo](https://learn.microsoft.com/en-us/aspnet/core/security/app-secrets?view=aspnetcore-10.0).
+- Material académico proporcionado para comparación: *C# Video Game Development Standard*. Se consultó su organización y precisión; sus convenciones de WCF no son contratos de Atari Go.
+
