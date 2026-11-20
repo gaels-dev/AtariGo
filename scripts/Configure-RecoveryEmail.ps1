@@ -1,5 +1,5 @@
 param(
-    [string]$Sender,
+    [string]$SenderAddress,
     [switch]$PrepareOnly
 )
 
@@ -81,25 +81,25 @@ if (![OperatingSystem]::IsWindows())
 {
     throw 'Run this development configuration script with PowerShell 7 on Windows.'
 }
-if ([string]::IsNullOrWhiteSpace($Sender))
+if ([string]::IsNullOrWhiteSpace($SenderAddress))
 {
-    $Sender = Read-Host 'Correo remitente de Gmail'
+    $SenderAddress = Read-Host 'Correo remitente de Gmail'
 }
-$senderAddress = [System.Net.Mail.MailAddress]::new($Sender).Address
+$validatedSenderAddress = [System.Net.Mail.MailAddress]::new($SenderAddress).Address
 $secretPath = Get-RecoverySecretPath
 $settings = @{}
 if (Test-Path -LiteralPath $secretPath)
 {
     $settings = Get-Content -LiteralPath $secretPath -Raw | ConvertFrom-Json -AsHashtable
 }
-if ($settings['Smtp:Sender'] -ne $senderAddress)
+if ($settings['Smtp:Sender'] -ne $validatedSenderAddress)
 {
     $settings.Remove('Smtp:Password')
 }
 $settings['Smtp:Host'] = 'smtp.gmail.com'
 $settings['Smtp:Port'] = 465
-$settings['Smtp:Sender'] = $senderAddress
-$settings['Smtp:UserName'] = $senderAddress
+$settings['Smtp:Sender'] = $validatedSenderAddress
+$settings['Smtp:UserName'] = $validatedSenderAddress
 if ([string]::IsNullOrWhiteSpace($settings['PasswordRecovery:HmacKey']))
 {
     $randomBytes = [System.Security.Cryptography.RandomNumberGenerator]::GetBytes(64)

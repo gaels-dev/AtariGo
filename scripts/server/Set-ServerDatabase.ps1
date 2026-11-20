@@ -23,7 +23,7 @@ try {
         throw [InvalidOperationException]::new('Unable to save the database configuration.')
     }
 
-    Write-Output 'Database settings saved for Development. Run --check-database to verify them.'
+    Write-Output 'Database settings saved for Development. Restart the server to apply them.'
 }
 finally {
     $settings.Clear()

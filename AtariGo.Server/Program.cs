@@ -26,17 +26,10 @@ using AtariGo.Server.Data.Entities;
 using AtariGo.Server.Security;
 using AtariGo.Server.Services;
 
-string[] hostArguments = args
-    .Where(argument => argument != DatabaseReadinessCommand.CommandLineSwitch)
-    .ToArray();
-WebApplicationBuilder builder = WebApplication.CreateBuilder(hostArguments);
-bool checkDatabase = args.Contains(DatabaseReadinessCommand.CommandLineSwitch,
-    StringComparer.Ordinal);
-X509Certificate2? lanCertificate = null;
-if (!checkDatabase)
-{
-    lanCertificate = LanEndpointSettings.Configure(builder);
-}
+const int ConfigurationFailureExitCode = 1;
+
+WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+X509Certificate2? lanCertificate = LanEndpointSettings.Configure(builder);
 
 string? connectionString = builder.Configuration.GetConnectionString(
     DatabaseConnectionSettings.ConnectionName);
@@ -44,7 +37,6 @@ string? connectionString = builder.Configuration.GetConnectionString(
 builder.Services.AddDbContext<AtariGoDbContext>(options =>
     options.UseSqlServer(connectionString));
 builder.Services.AddSingleton(TimeProvider.System);
-builder.Services.AddScoped<DatabaseReadinessCheck>();
 
 builder.Services.AddLoginVerification();
 builder.Services.AddScoped<ICredentialsService, CredentialsService>();
@@ -105,7 +97,7 @@ if (lanCertificate is not null)
 if (!DatabaseConnectionSettings.Validate(app.Configuration, app.Logger))
 {
     lanCertificate?.Dispose();
-    Environment.ExitCode = DatabaseReadinessCommand.FailureExitCode;
+    Environment.ExitCode = ConfigurationFailureExitCode;
     return;
 }
 
@@ -128,11 +120,4 @@ app.MapGrpcService<MatchmakingGrpcService>();
 app.MapGet("/", () =>
     "Communication with gRPC endpoints must be made through a gRPC client.");
 
-if (checkDatabase)
-{
-    Environment.ExitCode = await DatabaseReadinessCommand.RunAsync(app.Services, app.Logger);
-}
-else
-{
-    await app.RunAsync();
-}
+await app.RunAsync();

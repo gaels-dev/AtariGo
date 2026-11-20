@@ -192,7 +192,7 @@ presencia y partidas. El restablecimiento no asigna por sí mismo un resultado a
 Los fallos de correo se indican sin afirmar entrega; una escritura con rollback confirmado
 permite reintentar. Un resultado de transporte perdido permanece sin confirmar.
 
-Para desarrollo con Gmail, ejecutar `scripts/Configure-RecoveryEmail.ps1 -Sender <correo>`
+Para desarrollo con Gmail, ejecutar `scripts/Configure-RecoveryEmail.ps1 -SenderAddress <correo>`
 desde PowerShell 7 e introducir la contraseña de aplicación en su entrada oculta. El script
 conserva los otros secretos del servidor y guarda `Smtp:Host`, `Smtp:Port`, `Smtp:Sender`,
 `Smtp:UserName`, `Smtp:Password` y `PasswordRecovery:HmacKey` en User Secrets, fuera del

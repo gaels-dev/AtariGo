@@ -4,7 +4,6 @@ using Microsoft.Extensions.DependencyInjection;
 
 using AtariGo.GameLogic.Rules;
 using AtariGo.Server.Application.Games;
-using AtariGo.Server.Configuration;
 using AtariGo.Server.Data;
 using AtariGo.Server.Data.Entities;
 using AtariGo.Server.Tests.RoomInvitations;
@@ -67,8 +66,6 @@ public sealed class SqlServerGameplayTests
         Assert.AreEqual(1, await read.Games.CountAsync());
         Assert.AreEqual(1, await read.Moves.CountAsync());
         Assert.AreEqual(1, await read.GameEvents.CountAsync(entry => entry.ActionId != null));
-        Assert.IsTrue(await new DatabaseReadinessCheck(read).CheckAsync(
-            CancellationToken.None) > 0);
     }
 
     [TestMethod]
@@ -154,8 +151,6 @@ public sealed class SqlServerGameplayTests
         await database.UpgradeDirectAsync();
         await database.UpgradeDirectAsync();
         // Assert
-        Assert.AreEqual(17, await new DatabaseReadinessCheck(context).CheckAsync(
-            CancellationToken.None));
         Assert.AreEqual(17, await context.Database.SqlQueryRaw<int>(
             "SELECT COUNT(*) AS Value FROM sys.tables").SingleAsync());
     }

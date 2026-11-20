@@ -2,9 +2,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 
 using AtariGo.Server.Application.Games;
+using AtariGo.Server.Application.Matchmaking;
+using AtariGo.Server.Application.Reports;
 using AtariGo.Server.Application.Rooms;
 using AtariGo.Server.Application.Sessions;
 using AtariGo.Server.Data;
+using AtariGo.Server.Data.Entities;
+using AtariGo.Server.Tests.Games;
 using AtariGo.Server.Tests.Reports;
 
 namespace AtariGo.Server.Tests.Rooms;
@@ -13,6 +17,77 @@ namespace AtariGo.Server.Tests.Rooms;
 [TestCategory("Unit")]
 public sealed class GameLifecycleServiceTests
 {
+    [TestMethod]
+    public async Task StartPublicGameAsync_TwoGuests_PersistsSharedGameAndInitialStateAsync()
+    {
+        // Arrange
+        await using GameplayTestDatabase database = await GameplayTestDatabase.CreateAsync();
+        await using AtariGoDbContext context = database.CreateContext();
+        RoomsService rooms = new RoomsService(database.Time,
+            new SessionConnectionRegistry(), NullLogger<RoomsService>.Instance);
+        GameLifecycleService service = new GameLifecycleService(rooms, context,
+            database.Time, new AllowAllAccountSanctionService());
+        Guid blackId = Guid.NewGuid();
+        Guid whiteId = Guid.NewGuid();
+        PublicMatchStartRequest request = new PublicMatchStartRequest(
+            new MatchmakingPlayer { PlayerKey = blackId.ToString(),
+                GuestName = "Black guest", GuestIdentityId = blackId },
+            new MatchmakingPlayer { PlayerKey = whiteId.ToString(),
+                GuestName = "White guest", GuestIdentityId = whiteId },
+            new LobbyConfiguration(5, 600, 30));
+
+        // Act
+        long gameId = await service.StartPublicGameAsync(request, CancellationToken.None);
+        await using AtariGoDbContext verification = database.CreateContext();
+        Game game = await verification.Games.AsNoTracking()
+            .Include(current => current.GameConfiguration)
+            .Include(current => current.GamePlayers)
+            .SingleAsync(current => current.GameId == gameId);
+
+        // Assert
+        Assert.AreNotEqual(database.GameId, gameId);
+        Assert.AreEqual("Public", game.GameType);
+        Assert.IsNull(game.RoomId);
+        Assert.AreEqual(GameRuntimeState.Waiting, game.State);
+        Assert.AreEqual(5, game.GameConfiguration.CaptureGoal);
+        Assert.AreEqual(600, game.GameConfiguration.GameTimeSeconds);
+        Assert.AreEqual(30, game.GameConfiguration.TurnTimeSeconds);
+        Assert.IsNotNull(game.BoardStateJson);
+        Assert.IsNotNull(game.TurnDeadlineUtc);
+        Assert.AreEqual(2, game.GamePlayers.Count);
+        GamePlayer black = game.GamePlayers.Single(player => player.StoneColor == "Black");
+        GamePlayer white = game.GamePlayers.Single(player => player.StoneColor == "White");
+        Assert.AreEqual(blackId, black.GuestIdentityId);
+        Assert.AreEqual(whiteId, white.GuestIdentityId);
+        Assert.AreEqual((byte)1, black.TurnOrder);
+        Assert.AreEqual((byte)2, white.TurnOrder);
+    }
+
+    [TestMethod]
+    public async Task StartPublicGameAsync_SuspendedPlayer_DoesNotPersistGameAsync()
+    {
+        // Arrange
+        DbContextOptions<AtariGoDbContext> options = new DbContextOptionsBuilder<AtariGoDbContext>()
+            .UseSqlite("Data Source=:memory:").Options;
+        await using FailingAtariGoDbContext context = new FailingAtariGoDbContext(options);
+        RoomsService rooms = new RoomsService(TimeProvider.System,
+            new SessionConnectionRegistry(), NullLogger<RoomsService>.Instance);
+        GameLifecycleService service = new GameLifecycleService(rooms, context,
+            TimeProvider.System, new AllowAllAccountSanctionService { IsSuspended = true });
+        PublicMatchStartRequest request = new PublicMatchStartRequest(
+            new MatchmakingPlayer { PlayerKey = "1", UserId = 1 },
+            new MatchmakingPlayer { PlayerKey = "guest", GuestName = "Guest",
+                GuestIdentityId = Guid.NewGuid() },
+            new LobbyConfiguration(5, 600, 30));
+
+        // Act
+        await Assert.ThrowsExactlyAsync<AccountSuspendedException>(() =>
+            service.StartPublicGameAsync(request, CancellationToken.None));
+
+        // Assert
+        Assert.AreEqual(0, context.ChangeTracker.Entries().Count());
+    }
+
     [TestMethod]
     public async Task StartGameAsync_SuspendedParticipant_ReleasesRoomReservation()
     {

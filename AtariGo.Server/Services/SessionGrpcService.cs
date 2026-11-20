@@ -124,7 +124,7 @@ public sealed class SessionGrpcService : Session.SessionBase
         IAsyncStreamReader<SessionClientEvent> requestStream,
         CancellationToken cancellationToken)
     {
-        while (await requestStream.MoveNext(cancellationToken))
+        if (await requestStream.MoveNext(cancellationToken))
         {
             throw new RpcException(new Status(
                 StatusCode.InvalidArgument,

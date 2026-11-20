@@ -23,12 +23,7 @@ La ausencia de correo o de una clave válida impide el acceso registrado, sin om
 
 Para probar: iniciar el servidor y el cliente actualizados, introducir las credenciales y
 confirmar el código recibido. El lobby solo se abre después de confirmar el código. Un
-reenvío sustituye el código anterior y respeta la espera indicada. Se puede comprobar la
-compatibilidad del esquema sin modificar datos con:
-
-```powershell
-dotnet run --project .\AtariGo.Server -- --check-database
-```
+reenvío sustituye el código anterior y respeta la espera indicada.
 
 ## Actualización de perfil y avatares
 
@@ -70,7 +65,7 @@ esa columna y su índice, que necesita la identidad de invitados ya utilizada po
 Conserva los resultados históricos. Prepara partidas activas sin movimientos y rechaza,
 sin guardar cambios parciales, partidas activas que tengan movimientos sin tablero guardado.
 Puede ejecutarse de nuevo sin duplicar columnas ni reiniciar estados existentes.
-Después, ejecutar `dotnet run --project .\AtariGo.Server -- --check-database`.
+Después, iniciar el servidor actualizado y comprobar el flujo de partida.
 
 ## Corrección de una BD que ya ejecutó la actualización anterior
 
@@ -79,11 +74,10 @@ script anterior con el mismo nombre. No volver a ejecutar una copia antigua del 
 
 1. Detener el servidor Atari Go y respaldar la BD.
 2. Abrir `Update-Gameplay.sql`, seleccionar la BD de Atari Go y ejecutar el archivo completo.
-3. Ejecutar la comprobación del esquema y arrancar la versión actualizada del servidor.
+3. Arrancar la versión actualizada del servidor y comprobar el flujo de partida.
 
 ```powershell
 sqlcmd -S "(localdb)\MSSQLLocalDB" -E -b -d AtariGoDB -i .\scripts\database\Update-Gameplay.sql
-dotnet run --project .\AtariGo.Server -- --check-database
 ```
 
 Adaptar servidor y nombre de BD a la instalación. También se puede ejecutar el archivo
