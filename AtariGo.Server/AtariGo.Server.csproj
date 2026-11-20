@@ -1,17 +1,39 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>4498b9dc-860c-4d0e-9252-624669d37e25</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
-    <Protobuf Include="Protos\greet.proto" GrpcServices="Server" />
+    <PackageReference Include="Grpc.AspNetCore.Server" Version="2.64.0" />
+    <PackageReference Include="MailKit" Version="5.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.12">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.12" />
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="9.0.21" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.12">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Grpc.AspNetCore" Version="2.64.0" />
+    <ProjectReference Include="..\AtariGo.GameLogic\AtariGo.GameLogic.csproj" />
+    <ProjectReference Include="..\AtariGo.Contracts\AtariGo.Contracts.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="..\AtariGo.Client\Properties\RecoveryEmail*.resx"
+                      Link="Properties\%(Filename)%(Extension)" />
+    <EmbeddedResource Include="..\AtariGo.Client\Properties\LoginEmail*.resx"
+                      Link="Properties\%(Filename)%(Extension)" />
+    <EmbeddedResource Include="..\AtariGo.Client\Properties\RoomInvitationEmail*.resx"
+                      Link="Properties\%(Filename)%(Extension)" />
   </ItemGroup>
 
 </Project>

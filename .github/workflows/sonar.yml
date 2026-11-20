@@ -1,0 +1,144 @@
+name: SonarQube Analysis
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: sonar-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    name: Build and analyze
+    runs-on: windows-latest
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Set up .NET SDK
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Install SonarScanner for .NET
+        run: dotnet tool install --tool-path .\.sonar\scanner dotnet-sonarscanner --version 11.3.0
+        shell: pwsh
+
+      - name: Install .NET coverage tool
+        run: dotnet tool install --tool-path .\.sonar\coverage dotnet-coverage --version 18.12.0
+        shell: pwsh
+
+      - name: Validate SonarQube configuration
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY }}
+          SONAR_ORGANIZATION: ${{ vars.SONAR_ORGANIZATION }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:SONAR_TOKEN)) {
+              throw "GitHub secret SONAR_TOKEN is missing."
+          }
+
+          if ([string]::IsNullOrWhiteSpace($env:SONAR_PROJECT_KEY)) {
+              throw "GitHub variable SONAR_PROJECT_KEY is missing."
+          }
+
+          if ([string]::IsNullOrWhiteSpace($env:SONAR_ORGANIZATION)) {
+              throw "GitHub variable SONAR_ORGANIZATION is missing."
+          }
+        shell: pwsh
+
+      - name: Begin SonarQube analysis
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY }}
+          SONAR_ORGANIZATION: ${{ vars.SONAR_ORGANIZATION }}
+        run: |
+          $metadataPath = Join-Path $env:GITHUB_WORKSPACE 'sonar-report-task.txt'
+          $coveragePath = Join-Path $env:GITHUB_WORKSPACE 'coverage.xml'
+          $arguments = @(
+              "begin"
+              "/k:$env:SONAR_PROJECT_KEY"
+              "/o:$env:SONAR_ORGANIZATION"
+              "/d:sonar.token=$env:SONAR_TOKEN"
+              "/d:sonar.host.url=https://sonarcloud.io"
+              "/d:sonar.scanner.metadataFilePath=$metadataPath"
+              "/d:sonar.cs.vscoveragexml.reportsPaths=$coveragePath"
+          )
+
+          & .\.sonar\scanner\dotnet-sonarscanner.exe @arguments
+          if ($LASTEXITCODE -ne 0) {
+              exit $LASTEXITCODE
+          }
+        shell: pwsh
+
+      - name: Build solution
+        run: dotnet build .\AtariGo.slnx --configuration Release --no-incremental
+        shell: pwsh
+
+      - name: Run tests with coverage
+        run: |
+          $coveragePath = Join-Path $env:GITHUB_WORKSPACE 'coverage.xml'
+          $testCommand = 'dotnet test .\AtariGo.slnx --configuration Release --no-build --no-restore'
+          & .\.sonar\coverage\dotnet-coverage.exe collect $testCommand -f xml -o $coveragePath
+          if ($LASTEXITCODE -ne 0) {
+              exit $LASTEXITCODE
+          }
+          if (-not (Test-Path -LiteralPath $coveragePath -PathType Leaf)) {
+              throw 'The coverage report was not created.'
+          }
+          if ((Get-Item -LiteralPath $coveragePath).Length -eq 0) {
+              throw 'The coverage report is empty.'
+          }
+        shell: pwsh
+
+      - name: End SonarQube analysis
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          $arguments = @(
+              "end"
+              "/d:sonar.token=$env:SONAR_TOKEN"
+          )
+
+          & .\.sonar\scanner\dotnet-sonarscanner.exe @arguments
+          if ($LASTEXITCODE -ne 0) {
+              exit $LASTEXITCODE
+          }
+        shell: pwsh
+
+      - name: Export SonarQube findings
+        if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY }}
+          SONAR_PR_NUMBER: ${{ github.event.pull_request.number }}
+          SONAR_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          $metadataPath = Join-Path $env:GITHUB_WORKSPACE 'sonar-report-task.txt'
+          $outputPath = Join-Path $env:GITHUB_WORKSPACE 'sonar-findings.json'
+          .\scripts\sonar\Export-SonarFindings.ps1 -ReportTaskPath $metadataPath -OutputPath $outputPath
+        shell: pwsh
+
+      - name: Upload SonarQube findings
+        if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: sonar-findings-${{ github.run_id }}
+          path: sonar-findings.json
+          if-no-files-found: error
+          retention-days: 7

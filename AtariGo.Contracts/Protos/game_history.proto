@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+option csharp_namespace = "AtariGo.Contracts";
+
+package atarigo.game_history.v1;
+
+service GameHistory {
+  rpc ListGamesByPlayer (ListGamesByPlayerRequest) returns (ListGamesByPlayerResponse);
+}
+
+message ListGamesByPlayerRequest {}
+
+message ListGamesByPlayerResponse {
+  repeated GameHistorySummary entries = 1;
+}
+
+message GameHistorySummary {
+  int64 game_id = 1;
+  int64 played_at_unix_milliseconds = 2;
+  string opponent_name = 3;
+  string result = 4;
+  string stone_color = 5;
+  string opponent_stone_color = 6;
+  string state = 7;
+}

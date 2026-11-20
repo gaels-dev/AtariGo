@@ -1,11 +1,9 @@
-# Visual Studio / User specific
 .vs/
 *.user
 *.suo
 *.userosscache
 *.sln.docstates
 
-# Build outputs and binaries
 [Bb]in/
 [Oo]bj/
 [Ll]og/
@@ -17,14 +15,34 @@ x86/
 [Aa][Rr][Mm]64/
 [Aa][Rr][Mm]/
 
-# Test results
 [Tt]est[Rr]esults/
 *.trx
 *.coverage
 *.coveragexml
 
-# OS temporary files
 .DS_Store
 Thumbs.db
 ehthumbs.db
 Desktop.ini
+
+output
+
+*.pfx
+*.p12
+*.key
+*.pem
+*.cer
+*.crt
+
+secrets.json
+configuration.local.json
+appsettings.Local.json
+appsettings.*.local.json
+.env
+.env.*
+!.env.example
+
+/AUDITORIA_CODIGO.md
+/CAMBIOS_ESTANDAR.md
+/PROPUESTAS_ESTANDAR.md
+/docs/local/

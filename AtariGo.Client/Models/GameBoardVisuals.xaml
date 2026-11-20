@@ -1,0 +1,123 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Geometry x:Key="PixelStoneOutline">
+        M12,2 H20 V4 H24 V6 H28 V10 H30 V22 H28 V26 H24 V28 H20 V30
+        H12 V28 H8 V26 H4 V22 H2 V10 H4 V6 H8 V4 H12 Z
+    </Geometry>
+    <Geometry x:Key="PixelStoneFace">
+        M12,4 H20 V6 H24 V10 H26 V20 H24 V24 H20 V26
+        H12 V24 H8 V20 H6 V10 H8 V6 H12 Z
+    </Geometry>
+    <Geometry x:Key="PixelStoneLowerEdge">
+        M4,18 H8 V22 H12 V24 H22 V22 H26 V18 H30 V22 H28 V26
+        H24 V28 H20 V30 H12 V28 H8 V26 H4 V22 Z
+    </Geometry>
+    <Geometry x:Key="PixelStoneHighlight">
+        M8,8 H12 V6 H20 V8 H16 V10 H10 V14 H6 V10 H8 Z
+    </Geometry>
+
+    <DrawingImage x:Key="BlackPixelStone">
+        <DrawingImage.Drawing>
+            <DrawingGroup>
+                <GeometryDrawing Brush="Transparent" Geometry="M0,0 H34 V36 H0 Z"/>
+                <DrawingGroup>
+                    <DrawingGroup.Transform>
+                        <TranslateTransform X="2" Y="3"/>
+                    </DrawingGroup.Transform>
+                    <GeometryDrawing Brush="#553B2917"
+                                     Geometry="{StaticResource PixelStoneOutline}"/>
+                </DrawingGroup>
+                <GeometryDrawing Brush="#151C25" Geometry="{StaticResource PixelStoneOutline}"/>
+                <GeometryDrawing Brush="#2C3745" Geometry="{StaticResource PixelStoneFace}"/>
+                <GeometryDrawing Brush="#0B111A" Geometry="{StaticResource PixelStoneLowerEdge}"/>
+                <GeometryDrawing Brush="#526172" Geometry="{StaticResource PixelStoneHighlight}"/>
+                <GeometryDrawing Brush="#6C7986" Geometry="M10,6 H14 V8 H10 Z"/>
+                <GeometryDrawing Brush="#394655" Geometry="M6,14 H8 V20 H6 Z"/>
+            </DrawingGroup>
+        </DrawingImage.Drawing>
+    </DrawingImage>
+
+    <DrawingImage x:Key="WhitePixelStone">
+        <DrawingImage.Drawing>
+            <DrawingGroup>
+                <GeometryDrawing Brush="Transparent" Geometry="M0,0 H34 V36 H0 Z"/>
+                <DrawingGroup>
+                    <DrawingGroup.Transform>
+                        <TranslateTransform X="2" Y="3"/>
+                    </DrawingGroup.Transform>
+                    <GeometryDrawing Brush="#553B2917"
+                                     Geometry="{StaticResource PixelStoneOutline}"/>
+                </DrawingGroup>
+                <GeometryDrawing Brush="#A29C89" Geometry="{StaticResource PixelStoneOutline}"/>
+                <GeometryDrawing Brush="#E8E3D3" Geometry="{StaticResource PixelStoneFace}"/>
+                <GeometryDrawing Brush="#C0BAA7" Geometry="{StaticResource PixelStoneLowerEdge}"/>
+                <GeometryDrawing Brush="#FFFCF1" Geometry="{StaticResource PixelStoneHighlight}"/>
+                <GeometryDrawing Brush="#FFFFFF" Geometry="M10,6 H14 V8 H10 Z"/>
+                <GeometryDrawing Brush="#F5F0E1" Geometry="M6,14 H8 V20 H6 Z"/>
+            </DrawingGroup>
+        </DrawingImage.Drawing>
+    </DrawingImage>
+
+    <DrawingImage x:Key="WoodenBoardSurface">
+        <DrawingImage.Drawing>
+            <DrawingGroup>
+                <GeometryDrawing Brush="#CDA565" Geometry="M0,0 H500 V500 H0 Z"/>
+                <GeometryDrawing Brush="#79502A" Geometry="M0,0 H500 V3 H3 V500 H0 Z"/>
+                <GeometryDrawing Brush="#F1D59B" Geometry="M3,3 H497 V10 H10 V497 H3 Z"/>
+                <GeometryDrawing Brush="#AE7C40" Geometry="M490,10 H497 V497 H10 V490 H490 Z"/>
+                <GeometryDrawing Brush="#D6AF72" Geometry="M18,18 H482 V482 H18 Z"/>
+                <GeometryDrawing Brush="#18FFF2CD">
+                    <GeometryDrawing.Geometry>
+                        <GeometryGroup>
+                            <RectangleGeometry Rect="27,35,3,245"/>
+                            <RectangleGeometry Rect="31,280,3,157"/>
+                            <RectangleGeometry Rect="119,22,2,204"/>
+                            <RectangleGeometry Rect="122,226,2,245"/>
+                            <RectangleGeometry Rect="273,24,3,305"/>
+                            <RectangleGeometry Rect="277,329,3,145"/>
+                            <RectangleGeometry Rect="463,53,2,349"/>
+                        </GeometryGroup>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+                <GeometryDrawing>
+                    <GeometryDrawing.Pen>
+                        <Pen Brush="#80592F" Thickness="2"/>
+                    </GeometryDrawing.Pen>
+                    <GeometryDrawing.Geometry>
+                        <GeometryGroup>
+                            <LineGeometry StartPoint="50,50" EndPoint="450,50"/>
+                            <LineGeometry StartPoint="50,100" EndPoint="450,100"/>
+                            <LineGeometry StartPoint="50,150" EndPoint="450,150"/>
+                            <LineGeometry StartPoint="50,200" EndPoint="450,200"/>
+                            <LineGeometry StartPoint="50,250" EndPoint="450,250"/>
+                            <LineGeometry StartPoint="50,300" EndPoint="450,300"/>
+                            <LineGeometry StartPoint="50,350" EndPoint="450,350"/>
+                            <LineGeometry StartPoint="50,400" EndPoint="450,400"/>
+                            <LineGeometry StartPoint="50,450" EndPoint="450,450"/>
+                            <LineGeometry StartPoint="50,50" EndPoint="50,450"/>
+                            <LineGeometry StartPoint="100,50" EndPoint="100,450"/>
+                            <LineGeometry StartPoint="150,50" EndPoint="150,450"/>
+                            <LineGeometry StartPoint="200,50" EndPoint="200,450"/>
+                            <LineGeometry StartPoint="250,50" EndPoint="250,450"/>
+                            <LineGeometry StartPoint="300,50" EndPoint="300,450"/>
+                            <LineGeometry StartPoint="350,50" EndPoint="350,450"/>
+                            <LineGeometry StartPoint="400,50" EndPoint="400,450"/>
+                            <LineGeometry StartPoint="450,50" EndPoint="450,450"/>
+                        </GeometryGroup>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+                <GeometryDrawing Brush="#69401F">
+                    <GeometryDrawing.Geometry>
+                        <GeometryGroup>
+                            <RectangleGeometry Rect="147,147,6,6"/>
+                            <RectangleGeometry Rect="347,147,6,6"/>
+                            <RectangleGeometry Rect="247,247,6,6"/>
+                            <RectangleGeometry Rect="147,347,6,6"/>
+                            <RectangleGeometry Rect="347,347,6,6"/>
+                        </GeometryGroup>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+            </DrawingGroup>
+        </DrawingImage.Drawing>
+    </DrawingImage>
+</ResourceDictionary>

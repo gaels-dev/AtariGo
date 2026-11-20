@@ -1,0 +1,170 @@
+# Base de datos para la jugabilidad
+
+## Verificación del inicio de sesión por correo
+
+El MFA no agrega tablas ni columnas y no requiere ejecutar una actualización SQL.
+Reutiliza `AuthenticationCodes` con el tipo `TwoFactor`, `Credentials.FailedAttempts`,
+`Credentials.LockedUntil`, `Sessions` y la consulta de sanciones. La recuperación conserva
+el tipo `PasswordReset`. `Create-AtariGo.sql` mantiene el esquema anterior al MFA.
+
+Los intentos pendientes se conservan temporalmente en memoria de un único proceso del
+servidor, con un límite de 10000 (`LoginVerification:MaximumPendingLogins`) y vencimiento.
+El código protegido y su consumo se guardan en SQL. Reiniciar el servidor cancela los
+intentos pendientes; el jugador debe volver a proporcionar sus credenciales. Este diseño
+requiere que todas las etapas de un intento lleguen al mismo proceso del servidor.
+
+Cambiar o recuperar la contraseña consume los códigos `TwoFactor` pendientes dentro de la
+transacción de actualización. Esto impide completar o reenviar un acceso iniciado con la
+contraseña anterior, incluso si su estado temporal todavía está en memoria.
+
+La verificación reutiliza el SMTP y `PasswordRecovery:HmacKey` configurados con
+`scripts/Configure-RecoveryEmail.ps1`. El cliente y el servidor deben actualizarse juntos.
+La ausencia de correo o de una clave válida impide el acceso registrado, sin omitir el código.
+
+Para probar: iniciar el servidor y el cliente actualizados, introducir las credenciales y
+confirmar el código recibido. El lobby solo se abre después de confirmar el código. Un
+reenvío sustituye el código anterior y respeta la espera indicada.
+
+## Actualización de perfil y avatares
+
+`Update-ProfileAvatars.sql` actualiza la BD existente para guardar `Profiles.AvatarId`
+en lugar de la imagen binaria. Asigna el avatar `1` a todos los perfiles existentes
+y crea el perfil predeterminado para las cuentas que no lo tenían. También ajusta
+`Users.UserName` a `NVARCHAR(15)` y conserva la unicidad y la restricción de nombres
+reservados. Si hay un nombre de más de 15 caracteres o un nombre reservado, detiene
+la actualización y revierte la transacción; se deben corregir esos datos antes de
+repetirla. Se puede ejecutar de nuevo después de una actualización correcta.
+
+Detener el servidor, respaldar la BD y ejecutar el script completo antes de iniciar
+la versión que usa `AvatarId`. El archivo `Create-AtariGo.sql` ya contiene el esquema
+para instalaciones nuevas y no se ejecuta sobre una BD existente. La aplicación no
+actualiza el esquema automáticamente.
+
+La jugabilidad amplía las tablas existentes `Games` y `GameEvents`. No requiere tablas
+adicionales. `Moves` conserva las jugadas y `GamePlayers` las capturas y resultados por jugador.
+El código usa exclusivamente ese esquema; no hay selección de diseños antiguos al arrancar.
+
+## Desbloqueo de avatares
+
+`Update-AvatarUnlocks.sql` amplía la restricción de `Profiles.AvatarId` de 1–5 a 1–20
+en una BD existente que ya tiene `AvatarId`. No modifica los perfiles guardados y puede
+ejecutarse de nuevo. Respaldar la BD y detener el servidor antes de aplicarlo. Las
+instalaciones nuevas ya reciben el rango 1–20 desde `Create-AtariGo.sql`. El servidor
+cuenta las victorias en partidas completadas antes de permitir un avatar del 6 al 20:
+el avatar 6 requiere 5 victorias y cada avatar siguiente requiere 5 más.
+
+## Actualización directa desde la BD anterior a la jugabilidad
+
+Si la BD no recibió ninguna de las actualizaciones de jugabilidad, usar únicamente
+`Update-Gameplay-Direct.sql`. Seleccionar la BD existente en SQL Server Management Studio,
+detener el servidor Atari Go, respaldar la BD y ejecutar el archivo completo.
+Este archivo aplica directamente las columnas, restricciones e índices finales; no crea,
+migra ni elimina tablas auxiliares. Si falta `GamePlayers.GuestIdentityId`, también añade
+esa columna y su índice, que necesita la identidad de invitados ya utilizada por el servidor.
+
+Conserva los resultados históricos. Prepara partidas activas sin movimientos y rechaza,
+sin guardar cambios parciales, partidas activas que tengan movimientos sin tablero guardado.
+Puede ejecutarse de nuevo sin duplicar columnas ni reiniciar estados existentes.
+Después, iniciar el servidor actualizado y comprobar el flujo de partida.
+
+## Corrección de una BD que ya ejecutó la actualización anterior
+
+Usar **un solo archivo: `Update-Gameplay.sql` de esta versión**. Su contenido sustituye al
+script anterior con el mismo nombre. No volver a ejecutar una copia antigua del archivo.
+
+1. Detener el servidor Atari Go y respaldar la BD.
+2. Abrir `Update-Gameplay.sql`, seleccionar la BD de Atari Go y ejecutar el archivo completo.
+3. Arrancar la versión actualizada del servidor y comprobar el flujo de partida.
+
+```powershell
+sqlcmd -S "(localdb)\MSSQLLocalDB" -E -b -d AtariGoDB -i .\scripts\database\Update-Gameplay.sql
+```
+
+Adaptar servidor y nombre de BD a la instalación. También se puede ejecutar el archivo
+completo desde SQL Server Management Studio, sin instalar `sqlcmd`.
+Se requiere una cuenta con permisos para modificar el esquema. Los permisos de la aplicación
+continúan sobre las tablas existentes: en particular, necesita consultar e insertar `GameEvents`
+y consultar/actualizar `Games`.
+
+El archivo realiza todo en una transacción:
+
+- Añade las columnas e índices necesarios a las tablas existentes.
+- Traslada el tablero completo, historial de posiciones, versión, estado y vencimiento
+  desde la estructura anterior. No reinicia los turnos ni los relojes de partidas recuperables.
+- Traslada las solicitudes y respuestas guardadas a `GameEvents`, asociándolas al
+  `GamePlayerId` que ya representa al participante. No necesita conservar otro identificador
+  de jugador en texto.
+- Reutiliza el evento original de una jugada o rendición cuando existe; conserva su ID y fecha.
+  Las respuestas sin evento previo se incorporan como eventos. Los rechazos anteriores no
+  tenían fecha propia guardada: esos eventos reciben la fecha de la migración.
+- Comprueba los datos mediante restricciones y un índice único por partida, jugador y acción.
+- Elimina `GameProgresses` y `GameActionReceipts`, incluidos sus índices y restricciones.
+
+Cualquier error revierte todo, incluidas las modificaciones de esquema: no se eliminan las
+fuentes si falla una copia o validación. Se puede volver a ejecutar el archivo después de
+una migración correcta sin duplicar acciones ni reiniciar partidas.
+Los nombres de las estructuras anteriores solo se conservan en este migrador y en las pruebas
+que reproducen su instalación para comprobar que se eliminan correctamente.
+
+El mismo archivo también admite una BD anterior a la jugabilidad. Solo prepara automáticamente
+partidas activas sin movimientos, con 120 segundos para conectar a ambos jugadores. Si hay
+movimientos sin un tablero recuperable, devuelve el error 51001 y revierte la operación.
+No reconstruye por suposición una partida antigua. Los resultados históricos se conservan.
+Los errores 51002 a 51006 indican datos de origen inválidos, identidades sin correspondencia
+u otro conflicto de migración; tampoco modifican la BD parcialmente.
+
+## Columnas del esquema final
+
+| Tabla | Columna nueva | Finalidad |
+| --- | --- | --- |
+| `Games` | `BoardStateJson` (`nvarchar(max)`, nullable) | Tablero, historial de posiciones y datos del motor. |
+| `Games` | `StateVersion` (`bigint`, valor inicial 0) | Versión de concurrencia del estado confirmado. |
+| `Games` | `TurnDeadlineUtc` (`datetime2(3)`, nullable) | Plazo oficial del turno o de conexión inicial. |
+| `GameEvents` | `ActionId` (`varchar(64)`, nullable) | Identificador de acción para reconocer reintentos. |
+| `GameEvents` | `ActionRequestJson` (`nvarchar(max)`, nullable) | Solicitud original para detectar reutilización con otros datos. |
+| `GameEvents` | `ActionResultJson` (`nvarchar(max)`, nullable) | Respuesta original para recuperar una confirmación perdida. |
+
+Se reutilizan `Games.State`, `Games.EndReason`, `Games.CurrentTurnGamePlayerId`,
+`GameEvents.GamePlayerId` y las relaciones existentes. No se almacena otra bandera terminal
+ni un segundo estado/plazo dentro del JSON del tablero. El índice
+`IX_Games_State_TurnDeadline` permite buscar vencimientos sin recorrer documentos JSON.
+`UX_GameEvents_Player_Action` impide duplicar una acción; solo afecta a eventos con `ActionId`.
+Los eventos generales, sin solicitud del jugador, conservan sus columnas de acción en NULL.
+
+El JSON del tablero corresponde a `GameState`, un objeto de dominio, no a un mensaje gRPC.
+Evita agregar tablas para cada intersección o posición histórica. La configuración de EF se
+mantiene en `GameEntityConfiguration` y `GameEventEntityConfiguration`; no hay entidades,
+DbSets ni mapeos de tablas auxiliares.
+
+`GameTimeSeconds` se conserva como compatibilidad histórica, sin limitar la partida.
+`TurnTimeSeconds` debe ser positivo. Cada jugador recibe ese tiempo completo en cada turno;
+el vencimiento cambia el turno sin declarar un perdedor.
+
+## Instalación nueva
+
+`Create-AtariGo.sql` crea directamente el esquema final, sin estructuras transitorias.
+Se usa únicamente al instalar desde cero. Crea `AtariGoDB`, las tablas actuales, sus índices
+y restricciones; no crea cuentas de jugador ni contraseñas SQL.
+No ejecutar este archivo sobre la BD que se quiere actualizar.
+
+```powershell
+sqlcmd -S "(localdb)\MSSQLLocalDB" -E -b -i .\scripts\database\Create-AtariGo.sql
+```
+
+Los scripts versionados son la referencia de esta implementación. Los archivos originales
+externos al repositorio no se modifican. La aplicación no ejecuta migraciones automáticamente.
+
+## Verificación
+
+```powershell
+dotnet build .\AtariGo.slnx
+dotnet test .\AtariGo.slnx --no-build
+```
+
+Las pruebas `SqlServer` usan Windows y SQL Server LocalDB `(localdb)\MSSQLLocalDB`.
+Crean bases temporales `AtariGoGameplayTest_...` y las eliminan al terminar, sin utilizar
+la conexión privada de la aplicación. Comprueban instalación nueva, repetición del script,
+actualización desde ambos esquemas anteriores, conservación de estados y respuestas,
+reutilización de eventos originales y rollback completo ante datos que no se puedan migrar.
+Las otras pruebas de persistencia usan SQLite aislado y las de dúplex HTTP/2 usan loopback.
+Estas comprobaciones no sustituyen una prueba LAN entre computadoras.

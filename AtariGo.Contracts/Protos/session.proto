@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+option csharp_namespace = "AtariGo.Contracts";
+
+package atarigo.session.v1;
+
+service Session {
+  rpc Connect (stream SessionClientEvent) returns (stream SessionServerEvent);
+  rpc Logout (LogoutRequest) returns (LogoutResponse);
+}
+
+message SessionClientEvent {
+  oneof event {
+    ClientConnected client_connected = 1;
+  }
+}
+
+message ClientConnected {
+}
+
+message SessionServerEvent {
+  oneof event {
+    FriendPresenceSnapshot friend_presence_snapshot = 1;
+    FriendPresenceChanged friend_presence_changed = 2;
+    FriendshipRemoved friendship_removed = 3;
+    RoomInvitationsChanged room_invitations_changed = 4;
+  }
+}
+
+message FriendPresenceSnapshot {
+  repeated FriendPresence friends = 1;
+}
+
+message FriendPresenceChanged {
+  FriendPresence friend = 1;
+}
+
+message FriendPresence {
+  int32 user_id = 1;
+  string user_name = 2;
+  bool is_online = 3;
+}
+
+message LogoutRequest {
+}
+
+message LogoutResponse {
+}
+
+message FriendshipRemoved {
+  int32 friend_user_id = 1;
+}
+
+message RoomInvitationsChanged {
+}
