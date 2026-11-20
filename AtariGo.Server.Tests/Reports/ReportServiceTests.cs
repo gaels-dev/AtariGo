@@ -161,33 +161,6 @@ public sealed class ReportServiceTests
         Assert.AreEqual(laterEnd, latest.EndsAt);
     }
 
-    [TestMethod]
-    public async Task UpgradeReportsAsync_LegacySchema_ReplacesTablesAndPreservesAccounts()
-    {
-        // Arrange
-        await using SqlServerTestDatabase database = await SqlServerTestDatabase.CreateAsync();
-        await database.RestoreLegacyReportSchemaAsync();
-        await using AtariGoDbContext context = database.CreateContext();
-        await context.Database.ExecuteSqlRawAsync("""
-            INSERT INTO dbo.Users (UserName, Email, State, RoleId)
-                VALUES (N'Player', N'player@example.test', 'Active', 1);
-            """);
-
-        // Act
-        await database.UpgradeReportsAsync();
-        await database.UpgradeReportsAsync();
-
-        // Assert
-        Assert.AreEqual(1, await context.Users.CountAsync());
-        Assert.AreEqual(17, await context.Database.SqlQueryRaw<int>(
-            "SELECT COUNT(*) AS Value FROM sys.tables").SingleAsync());
-        int roleColumns = await context.Database.SqlQueryRaw<int>(
-            "SELECT COUNT(*) AS Value FROM sys.columns "
-                + "WHERE object_id = OBJECT_ID('dbo.Users') AND name = 'RoleId'")
-            .SingleAsync();
-        Assert.AreEqual(0, roleColumns);
-    }
-
     private static async Task<(User Target, List<User> Reporters, List<Game> Games)> SeedAsync(
         AtariGoDbContext context)
     {

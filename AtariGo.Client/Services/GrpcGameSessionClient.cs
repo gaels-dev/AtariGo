@@ -52,7 +52,7 @@ public sealed class GrpcGameSessionClient : IGameSessionClient
             await call.RequestStream.WriteAsync(new GameSessionClientEvent
             {
                 JoinGame = new JoinGame { GameId = gameId }
-            });
+            }, cancellationToken);
             isConnected = true;
             return new GrpcGameSessionStream(call);
         }

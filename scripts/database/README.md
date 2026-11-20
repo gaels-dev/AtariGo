@@ -149,8 +149,8 @@ el vencimiento cambia el turno sin declarar un perdedor.
 ## Instalación nueva
 
 `Create-AtariGo.sql` crea directamente el esquema final, sin estructuras transitorias.
-Se usa únicamente al instalar desde cero. Crea `AtariGoDB`, las tablas base, sus índices y
-restricciones, y el rol `Player` de la tabla `Roles`; no crea cuentas ni contraseñas SQL.
+Se usa únicamente al instalar desde cero. Crea `AtariGoDB`, las tablas actuales, sus índices
+y restricciones; no crea cuentas de jugador ni contraseñas SQL.
 No ejecutar este archivo sobre la BD que se quiere actualizar.
 
 ```powershell

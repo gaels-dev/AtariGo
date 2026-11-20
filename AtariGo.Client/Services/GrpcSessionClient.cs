@@ -93,7 +93,7 @@ public sealed class GrpcSessionClient : ISessionClient
         await call.RequestStream.WriteAsync(new SessionClientEvent
         {
             ClientConnected = new ClientConnected()
-        });
+        }, cancellationToken);
 
         while (await call.ResponseStream.MoveNext(cancellationToken))
         {

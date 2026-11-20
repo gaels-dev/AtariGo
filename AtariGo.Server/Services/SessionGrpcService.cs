@@ -113,7 +113,7 @@ public sealed class SessionGrpcService : Session.SessionBase
             streamCancellation.Token);
 
         await Task.WhenAny(receiveTask, sendTask);
-        streamCancellation.Cancel();
+        await streamCancellation.CancelAsync();
         await ObserveStreamTasksAsync(
             receiveTask,
             sendTask,
@@ -140,7 +140,7 @@ public sealed class SessionGrpcService : Session.SessionBase
         await foreach (SessionServerEvent serverEvent in
             connection.OutboundEvents.Reader.ReadAllAsync(cancellationToken))
         {
-            await responseStream.WriteAsync(serverEvent);
+            await responseStream.WriteAsync(serverEvent, cancellationToken);
         }
     }
 

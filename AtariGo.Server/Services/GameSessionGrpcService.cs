@@ -198,7 +198,7 @@ public sealed class GameSessionGrpcService : GameSession.GameSessionBase
         }
         finally
         {
-            streamCancellation.Cancel();
+            await streamCancellation.CancelAsync();
             await ObserveCancelledTaskAsync(
                 remainingTask,
                 completedTask,
