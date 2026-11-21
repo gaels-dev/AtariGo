@@ -26,6 +26,13 @@ internal static class GameSessionGameplayMapping
         target.Winner = MapStone(board.Winner);
         target.EndReason = progress.EndReason;
         target.TurnNumber = board.TurnNumber;
+        target.TurnPaused = progress.PausedTurnRemainingMilliseconds.HasValue;
+        if (source.OpponentReconnectDeadlineUtc is DateTime reconnectDeadline)
+        {
+            target.OpponentReconnectDeadlineUnixMilliseconds = new DateTimeOffset(
+                DateTime.SpecifyKind(reconnectDeadline, DateTimeKind.Utc))
+                .ToUnixTimeMilliseconds();
+        }
         target.HasLastMove = board.LastMove.HasValue;
         if (board.LastMove is BoardPosition position)
         {
@@ -33,14 +40,19 @@ internal static class GameSessionGameplayMapping
             target.LastMoveColumn = position.Column;
         }
         long full = (long)TimeSpan.FromSeconds(source.TurnTimeSeconds).TotalMilliseconds;
-        long remaining = Math.Clamp((long)(progress.DeadlineUtc - now).TotalMilliseconds, 0, full);
+        long remaining = progress.PausedTurnRemainingMilliseconds
+            ?? Math.Clamp((long)(progress.DeadlineUtc - now).TotalMilliseconds, 0, full);
         bool playing = progress.Status == GameRuntimeState.Playing;
         target.BlackRemainingMilliseconds = playing && board.CurrentTurn == StoneColor.Black
             ? remaining : full;
         target.WhiteRemainingMilliseconds = playing && board.CurrentTurn == StoneColor.White
             ? remaining : full;
-        target.TurnEndsAtUnixMilliseconds = new DateTimeOffset(
-            DateTime.SpecifyKind(progress.DeadlineUtc, DateTimeKind.Utc)).ToUnixTimeMilliseconds();
+        if (!target.TurnPaused)
+        {
+            target.TurnEndsAtUnixMilliseconds = new DateTimeOffset(
+                DateTime.SpecifyKind(progress.DeadlineUtc, DateTimeKind.Utc))
+                .ToUnixTimeMilliseconds();
+        }
         target.ServerTimeUnixMilliseconds = new DateTimeOffset(
             DateTime.SpecifyKind(now, DateTimeKind.Utc)).ToUnixTimeMilliseconds();
     }

@@ -858,6 +858,16 @@
   <data name="GameBoard_Result_CaptureGoal" xml:space="preserve"><value>Se alcanzó el objetivo de capturas.</value></data>
   <data name="GameBoard_Result_Surrender" xml:space="preserve"><value>La partida terminó por rendición.</value></data>
   <data name="GameBoard_Result_ConnectionTimeout" xml:space="preserve"><value>La partida terminó por tiempo de espera de conexión.</value></data>
+  <data name="GameBoard_Result_DisconnectionTimeout" xml:space="preserve"><value>Se agotó el tiempo para reconectarse.</value></data>
+  <data name="GameBoard_Result_BothDisconnected" xml:space="preserve"><value>Ambos jugadores se desconectaron. La partida terminó sin ganador.</value></data>
+  <data name="GameBoard_Status_ReconnectionCountdown" xml:space="preserve"><value>Esperando reconexión del oponente: {0}</value></data>
+  <data name="GameBoard_Connection_LostTitle" xml:space="preserve"><value>Conexión perdida</value></data>
+  <data name="GameBoard_Connection_LostDescription" xml:space="preserve"><value>Revisa tu conexión. Intentamos devolverte a la partida.</value></data>
+  <data name="GameBoard_Connection_ErrorTitle" xml:space="preserve"><value>No se pudo conectar</value></data>
+  <data name="GameBoard_Connection_ErrorDescription" xml:space="preserve"><value>Comprueba tu conexión y vuelve a intentarlo.</value></data>
+  <data name="GameBoard_Connection_Retry" xml:space="preserve"><value>Reintentar</value></data>
+  <data name="GameBoard_Connection_ReconnectionExpired" xml:space="preserve"><value>Se agotó tu tiempo para reconectarte. Vuelve al lobby.</value></data>
+  <data name="GameBoard_Action_WaitingReconnect" xml:space="preserve"><value>Espera a que el otro jugador se reconecte.</value></data>
   <data name="GameBoard_GameOver_Title" xml:space="preserve"><value>Fin de la partida</value></data>
   <data name="GameBoard_GameOver_Action" xml:space="preserve"><value>Volver al lobby</value></data>
   <data name="GameBoard_Button_ReturnToMenu" xml:space="preserve"><value>Volver al menú</value></data>

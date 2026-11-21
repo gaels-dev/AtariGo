@@ -27,8 +27,17 @@ using AtariGo.Server.Security;
 using AtariGo.Server.Services;
 
 const int ConfigurationFailureExitCode = 1;
+const int ConnectionProbeDelaySeconds = 10;
+const int ConnectionProbeTimeoutSeconds = 5;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.Limits.Http2.KeepAlivePingDelay =
+        TimeSpan.FromSeconds(ConnectionProbeDelaySeconds);
+    options.Limits.Http2.KeepAlivePingTimeout =
+        TimeSpan.FromSeconds(ConnectionProbeTimeoutSeconds);
+});
 X509Certificate2? lanCertificate = LanEndpointSettings.Configure(builder);
 
 string? connectionString = builder.Configuration.GetConnectionString(

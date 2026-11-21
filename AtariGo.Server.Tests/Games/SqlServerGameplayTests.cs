@@ -328,6 +328,7 @@ public sealed class SqlServerGameplayTests
         TimeProvider? timeProvider = null)
     {
         ServiceCollection services = new ServiceCollection();
+        services.AddLogging();
         services.AddDbContext<AtariGoDbContext>(options => options.UseSqlServer(connectionString));
         services.AddSingleton(timeProvider ?? TimeProvider.System);
         services.AddSingleton<IGameSessionRegistry, GameSessionRegistry>();

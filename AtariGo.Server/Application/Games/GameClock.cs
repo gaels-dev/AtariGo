@@ -7,7 +7,8 @@ public static class GameClock
     public static GameRuntimeState Advance(GameRuntimeState runtime, DateTime now, int seconds)
     {
         ArgumentNullException.ThrowIfNull(runtime);
-        if (runtime.IsTerminal || now < runtime.DeadlineUtc)
+        if (runtime.IsTerminal || runtime.PausedTurnRemainingMilliseconds.HasValue
+            || now < runtime.DeadlineUtc)
         {
             return runtime;
         }

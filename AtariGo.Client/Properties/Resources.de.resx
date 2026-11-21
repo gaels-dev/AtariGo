@@ -858,6 +858,16 @@
   <data name="GameBoard_Result_CaptureGoal" xml:space="preserve"><value>Das Fangziel wurde erreicht.</value></data>
   <data name="GameBoard_Result_Surrender" xml:space="preserve"><value>Die Partie endete durch Aufgabe.</value></data>
   <data name="GameBoard_Result_ConnectionTimeout" xml:space="preserve"><value>Die Partie endete aufgrund einer Verbindungszeitüberschreitung.</value></data>
+  <data name="GameBoard_Result_DisconnectionTimeout" xml:space="preserve"><value>Die Frist für die Wiederverbindung ist abgelaufen.</value></data>
+  <data name="GameBoard_Result_BothDisconnected" xml:space="preserve"><value>Beide Spieler wurden getrennt. Die Partie endete ohne Sieger.</value></data>
+  <data name="GameBoard_Status_ReconnectionCountdown" xml:space="preserve"><value>Warte auf die Wiederverbindung des Gegners: {0}</value></data>
+  <data name="GameBoard_Connection_LostTitle" xml:space="preserve"><value>Verbindung verloren</value></data>
+  <data name="GameBoard_Connection_LostDescription" xml:space="preserve"><value>Prüfe deine Verbindung. Wir versuchen, dich zurück ins Spiel zu bringen.</value></data>
+  <data name="GameBoard_Connection_ErrorTitle" xml:space="preserve"><value>Verbindung nicht möglich</value></data>
+  <data name="GameBoard_Connection_ErrorDescription" xml:space="preserve"><value>Prüfe deine Verbindung und versuche es erneut.</value></data>
+  <data name="GameBoard_Connection_Retry" xml:space="preserve"><value>Erneut versuchen</value></data>
+  <data name="GameBoard_Connection_ReconnectionExpired" xml:space="preserve"><value>Deine Frist zur Wiederverbindung ist abgelaufen. Kehre zur Lobby zurück.</value></data>
+  <data name="GameBoard_Action_WaitingReconnect" xml:space="preserve"><value>Warte, bis der andere Spieler wieder verbunden ist.</value></data>
   <data name="GameBoard_GameOver_Title" xml:space="preserve"><value>Spiel vorbei</value></data>
   <data name="GameBoard_GameOver_Action" xml:space="preserve"><value>Zurück zur Lobby</value></data>
   <data name="GameBoard_Button_ReturnToMenu" xml:space="preserve"><value>Zurück zum Menü</value></data>

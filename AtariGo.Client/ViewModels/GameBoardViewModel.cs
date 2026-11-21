@@ -125,7 +125,7 @@ namespace AtariGo.Client.ViewModels
         }
 
         public bool IsMyTurn => !_isDisposed && _isPlaying && _currentTurn == _myColor
-            && _isSessionConnected && !_hasPendingAction;
+            && _isSessionConnected && !_hasPendingAction && !_turnPaused;
 
         public string TurnStatusMessage => IsMyTurn
             ? Properties.Resources.GameBoard_Status_YourTurn

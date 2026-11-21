@@ -13,5 +13,6 @@ public enum ClientFailureReason
     RequestFailed,
     InvalidRequest,
     ConnectionReplaced,
-    CapacityExceeded
+    CapacityExceeded,
+    ReconnectionExpired
 }

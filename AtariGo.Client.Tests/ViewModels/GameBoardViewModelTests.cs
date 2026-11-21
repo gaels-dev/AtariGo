@@ -1,3 +1,4 @@
+using System.IO;
 using System.Reflection;
 
 using Grpc.Core;
@@ -83,6 +84,69 @@ public sealed class GameBoardViewModelTests
             second.Sent.Single().SubmitMove.ActionId);
         Assert.AreEqual(first.Sent.Single().SubmitMove.ExpectedVersion,
             second.Sent.Single().SubmitMove.ExpectedVersion);
+    }
+
+    [TestMethod]
+    public async Task ConnectionLost_RetryFailsThenRestores_UpdatesModalAndTurnAsync()
+    {
+        // Arrange
+        StubGameSessionStream first = new StubGameSessionStream();
+        StubGameSessionStream second = new StubGameSessionStream();
+        StubGameSessionStream third = new StubGameSessionStream();
+        StubGameSessionClient client = new StubGameSessionClient();
+        client.Streams.Enqueue(first);
+        client.Streams.Enqueue(second);
+        client.Streams.Enqueue(third);
+        first.Publish(new GameSessionServerEvent { Snapshot = Snapshot(1) });
+        INavigationService navigation = DispatchProxy.Create<INavigationService,
+            RecordingNavigationProxy>();
+        using GameBoardViewModel model = OpenModel(client, navigation);
+        await WaitUntilAsync(() => model.IsMyTurn);
+
+        // Act
+        first.Fail(new IOException("The network stopped."));
+        await WaitUntilAsync(() => model.IsConnectionAlertVisible);
+        string initialTitle = model.ConnectionAlertTitle;
+        model.RetryConnectionCommand.Execute(null);
+        await WaitUntilAsync(() => client.ConnectCount == 2);
+        second.Fail(new IOException("The network is still unavailable."));
+        await WaitUntilAsync(() => model.ConnectionAlertTitle ==
+            AtariGo.Client.Properties.Resources.ResourceManager.GetString(
+                "GameBoard_Connection_ErrorTitle"));
+        third.Publish(new GameSessionServerEvent { Snapshot = Snapshot(2) });
+        await WaitUntilAsync(() => !model.IsConnectionAlertVisible);
+
+        // Assert
+        Assert.AreEqual(AtariGo.Client.Properties.Resources.ResourceManager.GetString(
+            "GameBoard_Connection_LostTitle"),
+            initialTitle);
+        Assert.IsTrue(model.IsMyTurn);
+        Assert.AreEqual(3, client.ConnectCount);
+    }
+
+    [TestMethod]
+    public async Task ApplySnapshot_OpponentReconnecting_FreezesTurnAndShowsCountdownAsync()
+    {
+        // Arrange
+        StubGameSessionStream stream = new StubGameSessionStream();
+        using GameBoardViewModel model = CreateModel(stream);
+        await WaitUntilAsync(() => model.IsMyTurn);
+        GameSessionSnapshot paused = Snapshot(2);
+        paused.TurnPaused = true;
+        paused.OpponentConnected = false;
+        paused.BlackRemainingMilliseconds = 17000;
+        paused.ServerTimeUnixMilliseconds = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        paused.OpponentReconnectDeadlineUnixMilliseconds =
+            paused.ServerTimeUnixMilliseconds + 30000;
+
+        // Act
+        stream.Publish(new GameSessionServerEvent { Snapshot = paused });
+        await WaitUntilAsync(() => !model.IsMyTurn);
+
+        // Assert
+        Assert.AreEqual("00:17", model.BlackTimeRemaining);
+        Assert.IsFalse(string.IsNullOrWhiteSpace(model.OpponentReconnectionStatus));
+        Assert.IsFalse(model.IsConnectionAlertVisible);
     }
 
     [TestMethod]

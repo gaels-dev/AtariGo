@@ -122,6 +122,10 @@ internal sealed class GameSessionState
         bool opponentConnected = Connections.ContainsKey(opponent.PlayerKey);
         bool opponentDisconnected = !opponentConnected
             && ConnectedPlayerHistory.Contains(opponent.PlayerKey);
+        DateTime? opponentReconnectDeadline = opponent.StoneColor
+            == GameSessionRules.BlackStoneColor
+                ? Progress?.BlackReconnectDeadlineUtc
+                : Progress?.WhiteReconnectDeadlineUtc;
         return new GameSessionSnapshot
         {
             GameId = Definition.GameId,
@@ -133,6 +137,7 @@ internal sealed class GameSessionState
             Opponent = opponent,
             OpponentConnected = opponentConnected,
             OpponentDisconnected = opponentDisconnected,
+            OpponentReconnectDeadlineUtc = opponentReconnectDeadline,
             MaximumChatMessageLength = GameSessionRules.MaximumChatMessageLength,
             ChatHistory = ChatHistory.ToArray(),
             ServerTimeUtc = now,

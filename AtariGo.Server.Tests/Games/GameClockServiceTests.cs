@@ -281,6 +281,16 @@ public sealed class GameClockServiceTests
             throw new NotSupportedException();
         }
 
+        public GameConnectionPresence GetPresence(long gameId)
+        {
+            return new GameConnectionPresence(false, false);
+        }
+
+        public GameRuntimeState? GetProgress(long gameId, long version)
+        {
+            return null;
+        }
+
         public void PublishProgress(long gameId, GameRuntimeState progress, long version)
         {
             throw new NotSupportedException();

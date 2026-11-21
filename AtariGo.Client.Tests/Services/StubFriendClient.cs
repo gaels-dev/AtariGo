@@ -11,6 +11,18 @@ public sealed class StubFriendClient : IFriendClient
     } =
         Task.FromResult(new SearchUsersResponse());
 
+    public Task<SendFriendRequestResponse> SendResponse
+    {
+        get; set;
+    } =
+        Task.FromResult(new SendFriendRequestResponse());
+
+    public string? LastSearchQuery { get; private set; }
+
+    public List<string> SearchQueries { get; } = new List<string>();
+
+    public int? LastRecipientUserId { get; private set; }
+
     public Task<GetIncomingFriendRequestsResponse> IncomingResponse
     {
         get; set;
@@ -77,6 +89,8 @@ public sealed class StubFriendClient : IFriendClient
         CancellationToken cancellationToken = default)
     {
         RequestToken = cancellationToken;
+        LastSearchQuery = query;
+        SearchQueries.Add(query);
         return SearchResponse;
     }
 
@@ -85,7 +99,8 @@ public sealed class StubFriendClient : IFriendClient
         CancellationToken cancellationToken = default)
     {
         RequestToken = cancellationToken;
-        return Task.FromResult(new SendFriendRequestResponse());
+        LastRecipientUserId = recipientUserId;
+        return SendResponse;
     }
 
     public Task<GetIncomingFriendRequestsResponse> GetIncomingFriendRequestsAsync(

@@ -57,6 +57,8 @@ public sealed record GameSessionSnapshot
         get; init;
     }
 
+    public DateTime? OpponentReconnectDeadlineUtc { get; init; }
+
     public int MaximumChatMessageLength
     {
         get; init;

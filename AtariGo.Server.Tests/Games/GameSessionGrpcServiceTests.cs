@@ -11,6 +11,7 @@ using AtariGo.Server.Data.Entities;
 using AtariGo.Server.Services;
 using AtariGo.Server.Tests.Rooms;
 using GameSessionSnapshot = AtariGo.Contracts.GameSessionSnapshot;
+using ProtoChatRejectionReason = AtariGo.Contracts.ChatMessageRejectionReason;
 
 namespace AtariGo.Server.Tests.Games;
 
@@ -72,6 +73,92 @@ public sealed class GameSessionGrpcServiceTests
             () => call.ResponseStream.MoveNext(timeout.Token));
         // Assert
         Assert.AreEqual(StatusCode.Unauthenticated, exception.StatusCode);
+    }
+
+    [TestMethod]
+    public async Task Connect_FirstEventIsNotJoin_RejectsInvalidArgumentAsync()
+    {
+        // Arrange
+        await using GameplayGrpcTestHost host = await GameplayGrpcTestHost.StartAsync();
+        using GrpcChannel channel = GrpcChannel.ForAddress(host.Address);
+        using CancellationTokenSource timeout = new CancellationTokenSource(
+            TimeSpan.FromSeconds(10));
+        GameSession.GameSessionClient client = new GameSession.GameSessionClient(channel);
+        using AsyncDuplexStreamingCall<GameSessionClientEvent, GameSessionServerEvent> call =
+            client.Connect(Options(host.BlackIdentity.Credential, timeout.Token));
+
+        // Act
+        await call.RequestStream.WriteAsync(new GameSessionClientEvent
+        {
+            SendChatMessage = new SendChatMessage { Text = "Hello" }
+        });
+        RpcException exception = await Assert.ThrowsAsync<RpcException>(
+            () => call.ResponseStream.MoveNext(timeout.Token));
+
+        // Assert
+        Assert.AreEqual(StatusCode.InvalidArgument, exception.StatusCode);
+    }
+
+    [TestMethod]
+    public async Task Connect_TwoCredentialTypes_RejectsInvalidArgumentAsync()
+    {
+        // Arrange
+        await using GameplayGrpcTestHost host = await GameplayGrpcTestHost.StartAsync();
+        using GrpcChannel channel = GrpcChannel.ForAddress(host.Address);
+        using CancellationTokenSource timeout = new CancellationTokenSource(
+            TimeSpan.FromSeconds(10));
+        GameSession.GameSessionClient client = new GameSession.GameSessionClient(channel);
+        Metadata headers = new Metadata
+        {
+            { "x-guest-credential", host.BlackIdentity.Credential },
+            { "authorization", "Bearer host" }
+        };
+        CallOptions options = new CallOptions(headers, cancellationToken: timeout.Token);
+        using AsyncDuplexStreamingCall<GameSessionClientEvent, GameSessionServerEvent> call =
+            client.Connect(options);
+
+        // Act
+        await call.RequestStream.WriteAsync(Join(host.Database.GameId));
+        RpcException exception = await Assert.ThrowsAsync<RpcException>(
+            () => call.ResponseStream.MoveNext(timeout.Token));
+
+        // Assert
+        Assert.AreEqual(StatusCode.InvalidArgument, exception.StatusCode);
+    }
+
+    [TestMethod]
+    public async Task Connect_GuestChat_RejectsMessageWithoutClosingGameAsync()
+    {
+        // Arrange
+        await using GameplayGrpcTestHost host = await GameplayGrpcTestHost.StartAsync();
+        using GrpcChannel channel = GrpcChannel.ForAddress(host.Address);
+        using CancellationTokenSource timeout = new CancellationTokenSource(
+            TimeSpan.FromSeconds(10));
+        GameSession.GameSessionClient client = new GameSession.GameSessionClient(channel);
+        using AsyncDuplexStreamingCall<GameSessionClientEvent, GameSessionServerEvent> call =
+            client.Connect(Options(host.BlackIdentity.Credential, timeout.Token));
+        await call.RequestStream.WriteAsync(Join(host.Database.GameId));
+        await ReadSnapshotAsync(call.ResponseStream, "Waiting", timeout.Token);
+
+        // Act
+        await call.RequestStream.WriteAsync(new GameSessionClientEvent
+        {
+            SendChatMessage = new SendChatMessage { Text = "Hello" }
+        });
+        ChatMessageRejected rejection = await ReadChatRejectionAsync(
+            call.ResponseStream, timeout.Token);
+        using AsyncDuplexStreamingCall<GameSessionClientEvent, GameSessionServerEvent> white =
+            client.Connect(Options(host.WhiteIdentity.Credential, timeout.Token));
+        await white.RequestStream.WriteAsync(Join(host.Database.GameId));
+        GameSessionSnapshot start = await ReadSnapshotAsync(call.ResponseStream,
+            "InProgress", timeout.Token);
+        await SendMoveAsync(call, start.Version, (0, 1));
+        GameSessionSnapshot played = await ReadBoardAsync(white.ResponseStream, 2, timeout.Token);
+
+        // Assert
+        Assert.AreEqual(ProtoChatRejectionReason.GuestNotAllowed,
+            rejection.Reason);
+        Assert.AreEqual(GameStoneState.Black, played.Cells[1].Stone);
     }
 
     [TestMethod]
@@ -232,5 +319,18 @@ public sealed class GameSessionGrpcServiceTests
             }
         }
         throw new InvalidOperationException("The expected move was not received.");
+    }
+
+    private static async Task<ChatMessageRejected> ReadChatRejectionAsync(
+        IAsyncStreamReader<GameSessionServerEvent> stream, CancellationToken token)
+    {
+        while (await stream.MoveNext(token))
+        {
+            if (stream.Current.ChatMessageRejected is ChatMessageRejected rejection)
+            {
+                return rejection;
+            }
+        }
+        throw new InvalidOperationException("The expected chat rejection was not received.");
     }
 }

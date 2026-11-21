@@ -59,7 +59,7 @@ public sealed class GameSessionGrpcService : GameSession.GameSessionBase
         }
         catch
         {
-            _coordinator.Disconnect(connection);
+            await _coordinator.DisconnectAsync(connection);
             connection.Dispose();
             throw;
         }
@@ -461,6 +461,13 @@ public sealed class GameSessionGrpcService : GameSession.GameSessionBase
         {
             throw SessionRequestAuthentication.CreateUnauthenticatedException();
         }
+        catch (TimeoutException)
+        {
+            _logger.LogInformation("Game reconnection grace expired. GameId: {GameId}.",
+                connection?.GameId);
+            throw new RpcException(new Status(StatusCode.FailedPrecondition,
+                "The game reconnection period expired."));
+        }
         catch (OperationCanceledException)
             when (context.CancellationToken.IsCancellationRequested)
         {
@@ -512,8 +519,26 @@ public sealed class GameSessionGrpcService : GameSession.GameSessionBase
         {
             if (connection is not null)
             {
-                _coordinator.Disconnect(connection);
-                connection.Dispose();
+                try
+                {
+                    await _coordinator.DisconnectAsync(connection);
+                }
+                catch (Microsoft.EntityFrameworkCore.DbUpdateException exception)
+                {
+                    _logger.LogError(exception,
+                        "Game disconnect could not be persisted. GameId: {GameId}.",
+                        connection.GameId);
+                }
+                catch (SqlException exception)
+                {
+                    _logger.LogError(exception,
+                        "Game disconnect could not access SQL. GameId: {GameId}.",
+                        connection.GameId);
+                }
+                finally
+                {
+                    connection.Dispose();
+                }
             }
         }
     }

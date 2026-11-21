@@ -51,6 +51,7 @@ internal sealed class GameplayTestDatabase : IAsyncDisposable
             StringComparer.OrdinalIgnoreCase.Compare);
         connection.CreateFunction("sysutcdatetime", () => DateTime.UtcNow.ToString("O"));
         ServiceCollection services = new ServiceCollection();
+        services.AddLogging();
         DbContextOptionsBuilder<AtariGoDbContext> options =
             new DbContextOptionsBuilder<AtariGoDbContext>().UseSqlite(connection);
         if (interceptor is not null)

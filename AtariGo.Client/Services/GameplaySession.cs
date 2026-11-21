@@ -12,6 +12,7 @@ public sealed class GameplaySession : IGameplaySession
 {
     private const long UninitializedVersion = -1;
     private const int UnsentAttempt = -1;
+    private const int FailureLogInterval = 10;
 
     private static readonly TimeSpan reconnectDelay = TimeSpan.FromSeconds(1);
 
@@ -19,6 +20,8 @@ public sealed class GameplaySession : IGameplaySession
     private readonly object _sync = new object();
     private readonly CancellationTokenSource _lifetimeCancellation = new CancellationTokenSource();
     private readonly CancellationToken _lifetimeToken;
+    private TaskCompletionSource _retrySignal = new TaskCompletionSource(
+        TaskCreationOptions.RunContinuationsAsynchronously);
     private IGameSessionStream? _stream;
     private CancellationTokenSource? _attempt;
     private GameSessionClientEvent? _pendingAction;
@@ -159,6 +162,32 @@ public sealed class GameplaySession : IGameplaySession
         }
     }
 
+    public void RetryConnection()
+    {
+        CancellationTokenSource? attempt;
+        lock (_sync)
+        {
+            if (_isDisposed || _state is GameplayConnectionState.Connected
+                or GameplayConnectionState.Closed)
+            {
+                return;
+            }
+            _retrySignal.TrySetResult();
+            attempt = _attempt;
+        }
+        if (attempt is not null)
+        {
+            try
+            {
+                attempt.Cancel();
+            }
+            catch (ObjectDisposedException)
+            {
+                Trace.TraceInformation("A completed game connection attempt was replaced.");
+            }
+        }
+    }
+
     private CancellationTokenSource CreateCancellation(CancellationToken cancellationToken)
     {
         lock (_sync)
@@ -182,7 +211,7 @@ public sealed class GameplaySession : IGameplaySession
                 retry = await TryReadAsync(token).ConfigureAwait(false);
                 if (retry)
                 {
-                    await Task.Delay(reconnectDelay, token).ConfigureAwait(false);
+                    await WaitForRetryAsync(token).ConfigureAwait(false);
                 }
             }
         }
@@ -203,6 +232,25 @@ public sealed class GameplaySession : IGameplaySession
         }
     }
 
+    private async Task WaitForRetryAsync(CancellationToken cancellationToken)
+    {
+        Task signal;
+        lock (_sync)
+        {
+            signal = _retrySignal.Task;
+        }
+        Task delay = Task.Delay(reconnectDelay, cancellationToken);
+        await Task.WhenAny(delay, signal).WaitAsync(cancellationToken).ConfigureAwait(false);
+        lock (_sync)
+        {
+            if (ReferenceEquals(signal, _retrySignal.Task))
+            {
+                _retrySignal = new TaskCompletionSource(
+                    TaskCreationOptions.RunContinuationsAsynchronously);
+            }
+        }
+    }
+
     private async Task<bool> TryReadAsync(CancellationToken cancellationToken)
     {
         using CancellationTokenSource attempt =
@@ -213,6 +261,11 @@ public sealed class GameplaySession : IGameplaySession
             _attemptNumber++;
             _state = GameplayConnectionState.Connecting;
             _failure = ClientFailureReason.None;
+            if (_attemptNumber == 2 || _attemptNumber % FailureLogInterval == 0)
+            {
+                Trace.TraceInformation("Retrying game stream. GameId: {0}. Attempt: {1}.",
+                    _gameId, _attemptNumber);
+            }
         }
         PublishCurrent(connectionStarted: true);
         try
@@ -269,6 +322,7 @@ public sealed class GameplaySession : IGameplaySession
                 await SendPendingAsync(cancellationToken).ConfigureAwait(false);
             }
         }
+        throw new IOException("The game stream ended before the session was closed.");
     }
 
     private bool ApplyEvent(GameSessionServerEvent serverEvent)
@@ -289,6 +343,10 @@ public sealed class GameplaySession : IGameplaySession
             }
             if (isSnapshot)
             {
+                if (_state != GameplayConnectionState.Connected && _attemptNumber > 1)
+                {
+                    Trace.TraceInformation("Game stream restored. GameId: {0}.", _gameId);
+                }
                 _version = serverEvent.Snapshot.Version;
                 _isFinished = serverEvent.Snapshot.Status is "Completed" or "Cancelled";
                 _state = GameplayConnectionState.Connected;
@@ -364,16 +422,26 @@ public sealed class GameplaySession : IGameplaySession
     private void HandleFailure(CancellationTokenSource attempt, Exception exception,
         bool chatSendFailed)
     {
-        Trace.TraceWarning("Gameplay transport failed: {0}.", exception.GetType().Name);
+        bool shouldLog;
+        bool isPermanent;
         lock (_sync)
         {
             if (_isDisposed || !ReferenceEquals(attempt, _attempt))
             {
                 return;
             }
-            _failure = GrpcClientFailures.GetReason(exception);
-            _state = IsPermanentFailure(_failure)
+            shouldLog = _attemptNumber == 1 || _attemptNumber % FailureLogInterval == 0;
+            _failure = exception is RpcException { StatusCode: StatusCode.FailedPrecondition }
+                ? ClientFailureReason.ReconnectionExpired
+                : GrpcClientFailures.GetReason(exception);
+            isPermanent = IsPermanentFailure(_failure);
+            _state = isPermanent
                 ? GameplayConnectionState.Closed : GameplayConnectionState.Recovering;
+        }
+        if (shouldLog || isPermanent)
+        {
+            Trace.TraceWarning("Game stream failed. GameId: {0}. Error: {1}. Attempt: {2}.",
+                _gameId, exception.GetType().Name, _attemptNumber);
         }
         PublishCurrent(chatSendFailed: chatSendFailed);
         lock (_sync)
@@ -418,6 +486,7 @@ public sealed class GameplaySession : IGameplaySession
     private static bool IsPermanentFailure(ClientFailureReason failure)
     {
         return failure is ClientFailureReason.SessionExpired or ClientFailureReason.PermissionDenied
-            or ClientFailureReason.InvalidRequest or ClientFailureReason.ConnectionReplaced;
+            or ClientFailureReason.InvalidRequest or ClientFailureReason.ConnectionReplaced
+            or ClientFailureReason.ReconnectionExpired;
     }
 }

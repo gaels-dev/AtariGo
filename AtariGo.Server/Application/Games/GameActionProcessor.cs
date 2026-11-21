@@ -62,6 +62,10 @@ public sealed class GameActionProcessor
         {
             return "Waiting";
         }
+        if (context.Runtime.PausedTurnRemainingMilliseconds.HasValue)
+        {
+            return "WaitingReconnect";
+        }
         if (context.Now >= context.Runtime.DeadlineUtc)
         {
             return "StaleVersion";

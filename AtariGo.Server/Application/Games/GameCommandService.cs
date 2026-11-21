@@ -1,4 +1,5 @@
 using AtariGo.Server.Data.Entities;
+using AtariGo.GameLogic.Models;
 
 namespace AtariGo.Server.Application.Games;
 
@@ -9,16 +10,19 @@ public sealed class GameCommandService
     private readonly GamePersistenceService _store;
     private readonly GameActionProcessor _processor;
     private readonly TimeProvider _timeProvider;
+    private readonly IGameSessionRegistry _registry;
 
     public GameCommandService(GamePersistenceService store, GameActionProcessor processor,
-        TimeProvider timeProvider)
+        TimeProvider timeProvider, IGameSessionRegistry registry)
     {
         ArgumentNullException.ThrowIfNull(store);
         ArgumentNullException.ThrowIfNull(processor);
         ArgumentNullException.ThrowIfNull(timeProvider);
+        ArgumentNullException.ThrowIfNull(registry);
         _store = store;
         _processor = processor;
         _timeProvider = timeProvider;
+        _registry = registry;
     }
 
     public async Task<GameOperationContext> LoadAsync(long gameId,
@@ -26,7 +30,10 @@ public sealed class GameCommandService
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(gameId);
         Game game = await _store.LoadAsync(gameId, cancellationToken);
-        return new GameOperationContext(game, GamePersistenceService.Read(game));
+        GameRuntimeState persisted = GamePersistenceService.Read(game);
+        GameRuntimeState progress = _registry.GetProgress(gameId, game.StateVersion)
+            ?? persisted;
+        return new GameOperationContext(game, progress);
     }
 
     public async Task<GameOperationResult> AdvanceAsync(GameOperationContext operation,
@@ -38,7 +45,9 @@ public sealed class GameCommandService
         GameRuntimeState runtime = operation.Progress;
         DateTime now = _timeProvider.GetUtcNow().UtcDateTime;
         int seconds = game.GameConfiguration.TurnTimeSeconds;
-        GameRuntimeState next = GameClock.Advance(runtime, now, seconds);
+        GameConnectionPresence presence = _registry.GetPresence(game.GameId);
+        GameRuntimeState resolved = GameConnectionRules.Resolve(runtime, now, presence);
+        GameRuntimeState next = GameClock.Advance(resolved, now, seconds);
         if (areBothConnected())
         {
             next = GameStateTransitions.Start(next, now, seconds);
@@ -48,6 +57,62 @@ public sealed class GameCommandService
             await _store.SaveAsync(game, next, CancellationToken.None);
         }
         return CreateResult(game, next);
+    }
+
+    public void EnsureReconnectAllowed(GameOperationContext operation, string playerKey)
+    {
+        ArgumentNullException.ThrowIfNull(operation);
+        ArgumentException.ThrowIfNullOrWhiteSpace(playerKey);
+        StoneColor color = GetPlayerColor(operation.Game, playerKey);
+        DateTime now = _timeProvider.GetUtcNow().UtcDateTime;
+        if (GameConnectionRules.HasExpiredGrace(operation.Progress, color, now))
+        {
+            throw new TimeoutException("The reconnection grace period expired.");
+        }
+    }
+
+    public Task<GameOperationResult> PlayerConnectedAsync(GameOperationContext operation,
+        string playerKey)
+    {
+        return UpdateConnectionAsync(operation, playerKey, true);
+    }
+
+    public Task<GameOperationResult> PlayerDisconnectedAsync(GameOperationContext operation,
+        string playerKey)
+    {
+        return UpdateConnectionAsync(operation, playerKey, false);
+    }
+
+    private async Task<GameOperationResult> UpdateConnectionAsync(GameOperationContext operation,
+        string playerKey, bool connected)
+    {
+        StoneColor color = GetPlayerColor(operation.Game, playerKey);
+        DateTime now = _timeProvider.GetUtcNow().UtcDateTime;
+        GameRuntimeState current = operation.Progress;
+        GameRuntimeState next = connected
+            ? GameConnectionRules.Reconnect(current, color, now)
+            : GameConnectionRules.Disconnect(current, color, now);
+        if (next != current)
+        {
+            GameConnectionPresence presence = _registry.GetPresence(operation.Game.GameId);
+            if (!connected)
+            {
+                presence = color == StoneColor.Black
+                    ? presence with { BlackConnected = false }
+                    : presence with { WhiteConnected = false };
+            }
+            next = GameConnectionRules.Resolve(next, now, presence);
+            await _store.SaveAsync(operation.Game, next, CancellationToken.None);
+        }
+        return CreateResult(operation.Game, next);
+    }
+
+    private static StoneColor GetPlayerColor(Game game, string playerKey)
+    {
+        GamePlayer player = game.GamePlayers.Single(participant =>
+            GetPlayerKey(participant) == playerKey);
+        return player.StoneColor == GameSessionRules.BlackStoneColor
+            ? StoneColor.Black : StoneColor.White;
     }
 
     public async Task<GameOperationResult> ProcessAsync(GameSessionConnection connection,

@@ -38,7 +38,7 @@ public sealed class GameSessionRegistry : IGameSessionRegistry
                         "The player does not belong to the game session.");
                 }
 
-                if (definition.Progress is not null && definition.Version >= state.Version)
+                if (definition.Progress is not null && definition.Version > state.Version)
                 {
                     state.Progress = definition.Progress;
                     state.Version = definition.Version;
@@ -146,6 +146,38 @@ public sealed class GameSessionRegistry : IGameSessionRegistry
         lock (state.SyncRoot)
         {
             return state.Connections.Count == GameSessionRules.PlayerCount;
+        }
+    }
+
+    public GameConnectionPresence GetPresence(long gameId)
+    {
+        if (!_sessions.TryGetValue(gameId, out GameSessionState? state))
+        {
+            return new GameConnectionPresence(false, false);
+        }
+        lock (state.SyncRoot)
+        {
+            bool black = false;
+            bool white = false;
+            foreach (GameSessionConnection connection in state.Connections.Values)
+            {
+                GameSessionParticipant? player = state.FindParticipant(connection.PlayerKey);
+                black |= player?.StoneColor == GameSessionRules.BlackStoneColor;
+                white |= player?.StoneColor == GameSessionRules.WhiteStoneColor;
+            }
+            return new GameConnectionPresence(black, white);
+        }
+    }
+
+    public GameRuntimeState? GetProgress(long gameId, long version)
+    {
+        if (!_sessions.TryGetValue(gameId, out GameSessionState? state))
+        {
+            return null;
+        }
+        lock (state.SyncRoot)
+        {
+            return state.Version == version ? state.Progress : null;
         }
     }
 

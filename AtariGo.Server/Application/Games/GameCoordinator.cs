@@ -10,16 +10,20 @@ public sealed class GameCoordinator : IDisposable, IAsyncDisposable
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly IGameSessionRegistry _registry;
     private readonly GameOperationGate _operations;
+    private readonly ILogger<GameCoordinator> _logger;
 
     public GameCoordinator(IServiceScopeFactory scopeFactory,
-        IGameSessionRegistry registry, GameOperationGate operations)
+        IGameSessionRegistry registry, GameOperationGate operations,
+        ILogger<GameCoordinator> logger)
     {
         ArgumentNullException.ThrowIfNull(scopeFactory);
         ArgumentNullException.ThrowIfNull(registry);
         ArgumentNullException.ThrowIfNull(operations);
+        ArgumentNullException.ThrowIfNull(logger);
         _scopeFactory = scopeFactory;
         _registry = registry;
         _operations = operations;
+        _logger = logger;
     }
 
     public async Task<GameSessionConnection> ConnectAsync(GameSessionDefinition definition,
@@ -33,6 +37,11 @@ public sealed class GameCoordinator : IDisposable, IAsyncDisposable
             .GetRequiredService<GameCommandService>();
         GameOperationContext operation = await commands.LoadAsync(
             definition.GameId, cancellationToken);
+        GameOperationResult advanced = await commands.AdvanceAsync(operation,
+            () => _registry.AreBothConnected(definition.GameId));
+        Publish(advanced);
+        operation = await commands.LoadAsync(definition.GameId, cancellationToken);
+        commands.EnsureReconnectAllowed(operation, definition.Player.PlayerKey);
         GameSessionConnection connection = _registry.Connect(definition with
         {
             Progress = operation.Progress,
@@ -40,8 +49,15 @@ public sealed class GameCoordinator : IDisposable, IAsyncDisposable
         });
         try
         {
-            Publish(await commands.AdvanceAsync(operation,
+            GameOperationResult connected = await commands.PlayerConnectedAsync(operation,
+                connection.PlayerKey);
+            Publish(connected);
+            GameOperationContext current = await commands.LoadAsync(
+                definition.GameId, cancellationToken);
+            Publish(await commands.AdvanceAsync(current,
                 () => _registry.AreBothConnected(definition.GameId)));
+            _logger.LogInformation("Game stream connected. GameId: {GameId}.",
+                connection.GameId);
         }
         catch
         {
@@ -82,13 +98,48 @@ public sealed class GameCoordinator : IDisposable, IAsyncDisposable
         GameCommandService commands = scope.ServiceProvider
             .GetRequiredService<GameCommandService>();
         GameOperationContext operation = await commands.LoadAsync(gameId, cancellationToken);
-        Publish(await commands.AdvanceAsync(operation, () => _registry.AreBothConnected(gameId)));
+        GameOperationResult result = await commands.AdvanceAsync(operation,
+            () => _registry.AreBothConnected(gameId));
+        Publish(result);
+        if (result.Progress?.IsTerminal == true && !operation.Progress.IsTerminal)
+        {
+            _logger.LogInformation(
+                "Game ended after a deadline. GameId: {GameId}. Reason: {Reason}.",
+                gameId, result.Progress.EndReason);
+        }
     }
 
-    public void Disconnect(GameSessionConnection connection)
+    public async Task DisconnectAsync(GameSessionConnection connection)
     {
         ArgumentNullException.ThrowIfNull(connection);
-        _registry.Disconnect(connection);
+        if (!_registry.IsCurrent(connection))
+        {
+            return;
+        }
+        using AsyncOperationLease lease = await _operations.EnterAsync(
+            connection.GameId, CancellationToken.None);
+        if (!_registry.IsCurrent(connection))
+        {
+            return;
+        }
+        try
+        {
+            using IServiceScope scope = _scopeFactory.CreateScope();
+            GameCommandService commands = scope.ServiceProvider
+                .GetRequiredService<GameCommandService>();
+            GameOperationContext operation = await commands.LoadAsync(
+                connection.GameId, CancellationToken.None);
+            GameOperationResult disconnected = await commands.PlayerDisconnectedAsync(
+                operation, connection.PlayerKey);
+            _registry.Disconnect(connection);
+            Publish(disconnected);
+            _logger.LogWarning("Game stream disconnected. GameId: {GameId}.",
+                connection.GameId);
+        }
+        finally
+        {
+            _registry.Disconnect(connection);
+        }
     }
 
     public async Task<ChatMessageSubmissionResult> PublishChatMessageAsync(

@@ -13,6 +13,76 @@ namespace AtariGo.Server.Tests.Games;
 public sealed class GameCoordinatorTests
 {
     [TestMethod]
+    public async Task DisconnectAsync_PlayerReturnsInTime_ResumesPersistedTurnAsync()
+    {
+        // Arrange
+        await using GameplayTestDatabase database = await GameplayTestDatabase.CreateAsync();
+        GameSessionConnection black = await database.ConnectAsync("Black");
+        await database.ConnectAsync("White");
+        database.Time.Advance(TimeSpan.FromSeconds(18));
+        // Act
+        await database.Coordinator.DisconnectAsync(black);
+        Game pausedGame = await database.ReadAsync();
+        GameRuntimeState paused = database.Registry.GetProgress(database.GameId,
+            pausedGame.StateVersion)!;
+        database.Time.Advance(TimeSpan.FromSeconds(5));
+        await database.ConnectAsync("Black");
+        Game resumedGame = await database.ReadAsync();
+        GameRuntimeState resumed = database.Registry.GetProgress(database.GameId,
+            resumedGame.StateVersion)!;
+        // Assert
+        Assert.AreEqual(12000, paused.PausedTurnRemainingMilliseconds);
+        Assert.AreEqual(30000, paused.BlackGraceRemainingMilliseconds);
+        Assert.IsNull(resumed.PausedTurnRemainingMilliseconds);
+        Assert.AreEqual(25000, resumed.BlackGraceRemainingMilliseconds);
+        Assert.AreEqual(database.Time.GetUtcNow().UtcDateTime.AddSeconds(12),
+            resumed.DeadlineUtc);
+    }
+
+    [TestMethod]
+    public async Task AdvanceAsync_DisconnectedPlayerExpires_AwardsConnectedOpponentAsync()
+    {
+        // Arrange
+        await using GameplayTestDatabase database = await GameplayTestDatabase.CreateAsync();
+        GameSessionConnection black = await database.ConnectAsync("Black");
+        await database.ConnectAsync("White");
+        await database.Coordinator.DisconnectAsync(black);
+        database.Time.Advance(TimeSpan.FromSeconds(30));
+        // Act
+        await database.Coordinator.AdvanceAsync(database.GameId, CancellationToken.None);
+        Game game = await database.ReadAsync();
+        // Assert
+        Assert.AreEqual(GameRuntimeState.Completed, game.State);
+        Assert.AreEqual("DisconnectionTimeout", game.EndReason);
+        Assert.AreEqual("Won", game.GamePlayers.Single(player =>
+            player.StoneColor == "White").Result);
+    }
+
+    [TestMethod]
+    public async Task AdvanceAsync_BothPlayersExpire_CancelsWithoutVictoryAsync()
+    {
+        // Arrange
+        await using GameplayTestDatabase database = await GameplayTestDatabase.CreateAsync();
+        GameSessionConnection black = await database.ConnectAsync("Black");
+        GameSessionConnection white = await database.ConnectAsync("White");
+        await database.Coordinator.DisconnectAsync(black);
+        database.Time.Advance(TimeSpan.FromSeconds(5));
+        await database.Coordinator.DisconnectAsync(white);
+        database.Time.Advance(TimeSpan.FromSeconds(25));
+        // Act
+        await database.Coordinator.AdvanceAsync(database.GameId, CancellationToken.None);
+        Game firstDeadline = await database.ReadAsync();
+        database.Time.Advance(TimeSpan.FromSeconds(5));
+        await database.Coordinator.AdvanceAsync(database.GameId, CancellationToken.None);
+        Game cancelled = await database.ReadAsync();
+        // Assert
+        Assert.AreEqual(GameRuntimeState.Playing, firstDeadline.State);
+        Assert.AreEqual(GameRuntimeState.Cancelled, cancelled.State);
+        Assert.AreEqual("BothDisconnected", cancelled.EndReason);
+        Assert.IsTrue(cancelled.GamePlayers.All(player => player.Result != "Won"));
+    }
+
+    [TestMethod]
     public async Task ProcessAsync_RepeatedAction_StoresOneMoveAndRestoresReceiptAsync()
     {
         // Arrange

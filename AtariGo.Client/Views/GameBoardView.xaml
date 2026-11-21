@@ -39,6 +39,7 @@
         </Grid.ColumnDefinitions>
 
         <Border Grid.Row="0" Grid.ColumnSpan="2"
+                IsEnabled="{Binding IsGameplayInteractive}"
                 Background="#2C2A29"
                 Padding="16,10">
             <Grid>
@@ -171,7 +172,8 @@
         </StackPanel>
         <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding CapturesStatus}"
                    HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,20,0,0"/>
-        <Grid Grid.Row="1" Grid.Column="0" Margin="24,48,24,24">
+        <Grid Grid.Row="1" Grid.Column="0" Margin="24,48,24,24"
+              IsEnabled="{Binding IsGameplayInteractive}">
             <Grid.RowDefinitions>
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="Auto"/>
@@ -313,6 +315,9 @@
                 <TextBlock Text="{Binding BoardStatusMessage}"
                            HorizontalAlignment="Center" TextWrapping="Wrap"
                            FontSize="16" FontWeight="Bold" Foreground="#2C2A29"/>
+                <TextBlock Text="{Binding OpponentReconnectionStatus}"
+                           HorizontalAlignment="Center" TextWrapping="Wrap"
+                           FontWeight="Bold" Foreground="#9B2C2C"/>
                 <TextBlock Text="{Binding ActionStatusMessage}"
                            HorizontalAlignment="Center" TextWrapping="Wrap"
                            Foreground="#9B2C2C" Margin="0,4,0,0"/>
@@ -324,6 +329,7 @@
         </Grid>
 
         <Border Grid.Row="1" Grid.Column="1"
+                IsEnabled="{Binding IsGameplayInteractive}"
                 Background="White"
                 BorderBrush="#2C2A29"
                 BorderThickness="1.5,0,0,0">
@@ -584,5 +590,29 @@
                 </Border>
             </Grid>
         </Border>
+
+        <Grid Grid.RowSpan="2" Grid.ColumnSpan="2" Panel.ZIndex="10"
+              Background="#99000000"
+              Visibility="{Binding IsConnectionAlertVisible,
+                  Converter={StaticResource BooleanToVisibilityConverter}}"
+              KeyboardNavigation.TabNavigation="Cycle">
+            <Border Width="420" Padding="28" Background="White"
+                    BorderBrush="#2C2A29" BorderThickness="2" CornerRadius="12"
+                    HorizontalAlignment="Center" VerticalAlignment="Center">
+                <StackPanel>
+                    <TextBlock Text="{Binding ConnectionAlertTitle}"
+                               FontSize="24" FontWeight="Bold" Foreground="#2C2A29"
+                               TextAlignment="Center" TextWrapping="Wrap"/>
+                    <TextBlock Text="{Binding ConnectionAlertDescription}"
+                               Margin="0,14,0,24" FontSize="14" Foreground="#555555"
+                               TextAlignment="Center" TextWrapping="Wrap"/>
+                    <Button Content="{Binding RetryConnectionButtonLabel}"
+                            Command="{Binding RetryConnectionCommand}"
+                            Style="{StaticResource ActionButtonStyle}"
+                            Background="#4A90E2" Foreground="White"
+                            HorizontalAlignment="Stretch"/>
+                </StackPanel>
+            </Border>
+        </Grid>
     </Grid>
 </UserControl>

@@ -64,6 +64,8 @@ message GameSessionSnapshot {
   int32 last_move_column = 27;
   int32 turn_number = 28;
   int64 server_time_unix_milliseconds = 29;
+  bool turn_paused = 30;
+  int64 opponent_reconnect_deadline_unix_milliseconds = 31;
 }
 
 message GameChatMessage {

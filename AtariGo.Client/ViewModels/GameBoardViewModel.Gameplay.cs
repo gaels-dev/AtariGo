@@ -28,9 +28,18 @@ public partial class GameBoardViewModel
     private long _clockReceivedTimestamp;
     private bool _hasPendingAction;
     private bool _isSessionConnected;
+    private bool _turnPaused;
+    private bool _isConnectionAlertVisible;
+    private bool _connectionAttemptFailed;
+    private bool _reconnectionAttemptStarted;
+    private long _opponentReconnectDeadlineMilliseconds;
+    private string _connectionAlertTitle = string.Empty;
+    private string _connectionAlertDescription = string.Empty;
     private string _actionStatusMessage = string.Empty;
 
     public ICommand PlaceStoneCommand { get; private set; } = null!;
+
+    public ICommand RetryConnectionCommand { get; private set; } = null!;
 
     public ICommand SubmitSurrenderCommand { get; private set; } = null!;
 
@@ -38,6 +47,55 @@ public partial class GameBoardViewModel
     {
         get => _actionStatusMessage;
         private set => SetProperty(ref _actionStatusMessage, value);
+    }
+
+    public bool IsConnectionAlertVisible
+    {
+        get => _isConnectionAlertVisible;
+        private set
+        {
+            if (SetProperty(ref _isConnectionAlertVisible, value))
+            {
+                OnPropertyChanged(nameof(IsGameplayInteractive));
+            }
+        }
+    }
+
+    public bool IsGameplayInteractive => !IsConnectionAlertVisible;
+
+    public string RetryConnectionButtonLabel =>
+        GetLocalizedMessage("GameBoard_Connection_Retry");
+
+    public string ConnectionAlertTitle
+    {
+        get => _connectionAlertTitle;
+        private set => SetProperty(ref _connectionAlertTitle, value);
+    }
+
+    public string ConnectionAlertDescription
+    {
+        get => _connectionAlertDescription;
+        private set => SetProperty(ref _connectionAlertDescription, value);
+    }
+
+    public string OpponentReconnectionStatus
+    {
+        get
+        {
+            if (_opponentReconnectDeadlineMilliseconds <= 0 || !_turnPaused)
+            {
+                return string.Empty;
+            }
+            double remaining = _clockSynchronization.IsSynchronized
+                ? _clockSynchronization.GetRemainingMilliseconds(
+                    _opponentReconnectDeadlineMilliseconds)
+                : 0;
+            TimeSpan duration = TimeSpan.FromMilliseconds(remaining);
+            string time = string.Format(CultureInfo.InvariantCulture, "{0:00}:{1:00}",
+                (int)duration.TotalMinutes, duration.Seconds);
+            return string.Format(CultureInfo.CurrentCulture,
+                GetLocalizedMessage("GameBoard_Status_ReconnectionCountdown"), time);
+        }
     }
 
     public bool CanSurrender => !_isDisposed && !_isFinished && !_hasPermanentSessionFailure
@@ -64,11 +122,32 @@ public partial class GameBoardViewModel
     {
         PlaceStoneCommand = new AsyncRelayCommand(PlaceStoneAsync,
             HandleGameplayFailure, _lifetimeCancellation.Token);
+        RetryConnectionCommand = new RelayCommand(RetryConnection);
         SubmitSurrenderCommand = new AsyncRelayCommand(_ => SurrenderAsync(),
             HandleGameplayFailure, _lifetimeCancellation.Token);
         _clockTimer.Interval = TimeSpan.FromMilliseconds(ClockRefreshMilliseconds);
         _clockTimer.Tick += OnClockTick;
         _clockTimer.Start();
+    }
+
+    private void RetryConnection()
+    {
+        _connectionAttemptFailed = false;
+        _reconnectionAttemptStarted = true;
+        UpdateConnectionAlert();
+        _session?.RetryConnection();
+    }
+
+    private void UpdateConnectionAlert()
+    {
+        string titleKey = _connectionAttemptFailed
+            ? "GameBoard_Connection_ErrorTitle" : "GameBoard_Connection_LostTitle";
+        string descriptionKey = _connectionAttemptFailed
+            ? "GameBoard_Connection_ErrorDescription"
+            : "GameBoard_Connection_LostDescription";
+        ConnectionAlertTitle = GetLocalizedMessage(titleKey);
+        ConnectionAlertDescription = GetLocalizedMessage(descriptionKey);
+        IsConnectionAlertVisible = true;
     }
 
     private async Task PlaceStoneAsync(object? parameter)
@@ -107,6 +186,9 @@ public partial class GameBoardViewModel
     {
         _isPlaying = snapshot.Status == "InProgress";
         _isFinished = snapshot.Status == "Completed" || snapshot.Status == "Cancelled";
+        _turnPaused = snapshot.TurnPaused;
+        _opponentReconnectDeadlineMilliseconds =
+            snapshot.OpponentReconnectDeadlineUnixMilliseconds;
         _blackClockMilliseconds = snapshot.BlackRemainingMilliseconds;
         _whiteClockMilliseconds = snapshot.WhiteRemainingMilliseconds;
         _clockReceivedTimestamp = Stopwatch.GetTimestamp();
@@ -119,7 +201,7 @@ public partial class GameBoardViewModel
         OnPropertyChanged(nameof(TurnStatusMessage));
         OnPropertyChanged(nameof(CapturesStatus));
         RefreshClockLabels();
-        if (snapshot.Status == "Completed" && !_hasShownGameEndDialog)
+        if (_isFinished && !_hasShownGameEndDialog)
         {
             _hasShownGameEndDialog = true;
             ShowGameEndDialog(snapshot);
@@ -129,6 +211,12 @@ public partial class GameBoardViewModel
     private void ShowGameEndDialog(GameSessionSnapshot snapshot)
     {
         string title = GetLocalizedMessage("GameBoard_GameOver_Title");
+        if (snapshot.Status == "Cancelled")
+        {
+            ShowResultDialog(title, GetLocalizedMessage(
+                "GameBoard_Result_" + snapshot.EndReason));
+            return;
+        }
         string outcomeKey = "GameBoard_Result_Lost";
         if (MapStone(snapshot.Winner) == MyColor)
         {
@@ -137,6 +225,11 @@ public partial class GameBoardViewModel
 
         string reasonKey = "GameBoard_Result_" + snapshot.EndReason;
         string message = GetLocalizedMessage(outcomeKey) + " " + GetLocalizedMessage(reasonKey);
+        ShowResultDialog(title, message);
+    }
+
+    private void ShowResultDialog(string title, string message)
+    {
         string actionButtonText = GetLocalizedMessage("GameBoard_GameOver_Action");
 
         GameOverDialogViewModel dialog = new GameOverDialogViewModel(title, message, actionButtonText);
@@ -166,6 +259,10 @@ public partial class GameBoardViewModel
         {
             return GetLocalizedMessage("GameBoard_Status_WaitingOpponent");
         }
+        if (snapshot.TurnPaused)
+        {
+            return GetLocalizedMessage(GetConnectionStatusResourceKey(snapshot));
+        }
         string turn = CurrentTurn == MyColor ? Properties.Resources.GameBoard_Status_YourTurn
             : Properties.Resources.GameBoard_Status_OpponentTurn;
         return snapshot.OpponentConnected ? turn : turn + " "
@@ -175,7 +272,7 @@ public partial class GameBoardViewModel
     private string FormatClock(long milliseconds, StoneColor color)
     {
         double remaining = milliseconds;
-        if (_isPlaying && CurrentTurn == color)
+        if (_isPlaying && !_turnPaused && CurrentTurn == color)
         {
             remaining = GetActiveClockMilliseconds(milliseconds);
         }
@@ -204,6 +301,7 @@ public partial class GameBoardViewModel
     {
         OnPropertyChanged(nameof(BlackTimeRemaining));
         OnPropertyChanged(nameof(WhiteTimeRemaining));
+        OnPropertyChanged(nameof(OpponentReconnectionStatus));
     }
 
     private void PromptLeaveGame()
@@ -276,6 +374,23 @@ public partial class GameBoardViewModel
         }
         _hasPendingAction = update.HasPendingAction;
         _isSessionConnected = update.State == GameplayConnectionState.Connected;
+        if (update.ConnectionStarted && IsConnectionAlertVisible)
+        {
+            _reconnectionAttemptStarted = true;
+        }
+        if (_isSessionConnected)
+        {
+            IsConnectionAlertVisible = false;
+            _connectionAttemptFailed = false;
+            _reconnectionAttemptStarted = false;
+        }
+        else if (update.State != GameplayConnectionState.Closed
+            && (update.Failure != ClientFailureReason.None || IsConnectionAlertVisible))
+        {
+            _connectionAttemptFailed |= update.Failure != ClientFailureReason.None
+                && _reconnectionAttemptStarted;
+            UpdateConnectionAlert();
+        }
         IsChatEnabled = _isSessionConnected && !_isGuest;
         if (update.ConnectionStarted)
         {
@@ -325,6 +440,15 @@ public partial class GameBoardViewModel
 
     private void ApplyClosedSession(ClientFailureReason failure)
     {
+        IsConnectionAlertVisible = false;
+        if (failure == ClientFailureReason.ReconnectionExpired)
+        {
+            _isFinished = true;
+            _hasShownGameEndDialog = true;
+            ShowResultDialog(GetLocalizedMessage("GameBoard_GameOver_Title"),
+                GetLocalizedMessage("GameBoard_Connection_ReconnectionExpired"));
+            return;
+        }
         _hasPermanentSessionFailure = true;
         _returnToMenuAfterSurrender = false;
         ActionStatusMessage = string.Empty;

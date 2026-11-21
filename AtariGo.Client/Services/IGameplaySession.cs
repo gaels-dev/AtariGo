@@ -13,4 +13,6 @@ public interface IGameplaySession : IDisposable
     Task SurrenderAsync(CancellationToken cancellationToken);
 
     Task<bool> SendChatAsync(string text, CancellationToken cancellationToken);
+
+    void RetryConnection();
 }

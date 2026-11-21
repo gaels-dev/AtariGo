@@ -15,6 +15,8 @@ public interface IGameSessionRegistry
     bool IsCurrent(GameSessionConnection connection);
 
     bool AreBothConnected(long gameId);
+    GameConnectionPresence GetPresence(long gameId);
+    GameRuntimeState? GetProgress(long gameId, long version);
 
     void PublishProgress(long gameId, GameRuntimeState progress, long version);
 
