@@ -1,3 +1,5 @@
+using System.Net.Http;
+
 using Grpc.Core;
 using Grpc.Net.Client;
 
@@ -5,6 +7,9 @@ namespace AtariGo.Client.Services
 {
     public sealed class GrpcClientConnection : IDisposable
     {
+        private const int KeepAlivePingDelaySeconds = 5;
+        private const int KeepAlivePingTimeoutSeconds = 5;
+
         private static readonly Lazy<GrpcClientConnection> sharedConnection =
             new Lazy<GrpcClientConnection>(
                 () => new GrpcClientConnection(GrpcClientSettings.ServerAddress));
@@ -23,7 +28,17 @@ namespace AtariGo.Client.Services
             }
 
             ServerAddress = GrpcClientSettings.ParseServerAddress(serverAddress.OriginalString);
-            _channel = GrpcChannel.ForAddress(ServerAddress);
+            SocketsHttpHandler handler = new SocketsHttpHandler
+            {
+                KeepAlivePingDelay = TimeSpan.FromSeconds(KeepAlivePingDelaySeconds),
+                KeepAlivePingTimeout = TimeSpan.FromSeconds(KeepAlivePingTimeoutSeconds),
+                KeepAlivePingPolicy = HttpKeepAlivePingPolicy.WithActiveRequests,
+                EnableMultipleHttp2Connections = true
+            };
+            _channel = GrpcChannel.ForAddress(ServerAddress, new GrpcChannelOptions
+            {
+                HttpHandler = handler
+            });
             CallInvoker = _channel.CreateCallInvoker();
         }
 

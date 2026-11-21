@@ -396,6 +396,7 @@ public sealed class GameplaySession : IGameplaySession
     {
         IGameSessionStream? stream;
         CancellationTokenSource? attempt;
+        CancellationToken attemptToken;
         GameSessionClientEvent action;
         lock (_sync)
         {
@@ -406,12 +407,19 @@ public sealed class GameplaySession : IGameplaySession
             }
             stream = _stream;
             attempt = _attempt;
+            attemptToken = attempt.Token;
             action = _pendingAction.Clone();
             _sentAttempt = _attemptNumber;
         }
+        using CancellationTokenSource sendCancellation =
+            CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, attemptToken);
         try
         {
-            await stream.SendEventAsync(action, cancellationToken).ConfigureAwait(false);
+            await stream.SendEventAsync(action, sendCancellation.Token).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (attemptToken.IsCancellationRequested
+            && !cancellationToken.IsCancellationRequested)
+        {
         }
         catch (Exception exception) when (IsTransportFailure(exception))
         {

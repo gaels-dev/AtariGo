@@ -25,6 +25,11 @@ internal sealed class StubGameSessionStream : IGameSessionStream
         get; set;
     }
 
+    public TaskCompletionSource? SendCompletion
+    {
+        get; set;
+    }
+
     public bool IsDisposed
     {
         get; private set;
@@ -64,7 +69,7 @@ internal sealed class StubGameSessionStream : IGameSessionStream
         }, cancellationToken);
     }
 
-    public Task SendEventAsync(GameSessionClientEvent clientEvent,
+    public async Task SendEventAsync(GameSessionClientEvent clientEvent,
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -77,7 +82,10 @@ internal sealed class StubGameSessionStream : IGameSessionStream
         {
             throw new IOException("Simulated lost confirmation.");
         }
-        return Task.CompletedTask;
+        if (SendCompletion is not null)
+        {
+            await SendCompletion.Task.WaitAsync(cancellationToken);
+        }
     }
 
     public ValueTask DisposeAsync()

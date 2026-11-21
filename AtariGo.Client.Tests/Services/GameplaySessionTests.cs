@@ -1,3 +1,5 @@
+using System.IO;
+
 using Grpc.Core;
 
 using AtariGo.Client.Models;
@@ -52,6 +54,39 @@ public sealed class GameplaySessionTests
         Assert.IsTrue(waitedForValidSnapshot);
         Assert.AreEqual(first.Sent.Single(), second.Sent.Single());
         Assert.AreEqual(3, second.Sent.Single().SubmitMove.ExpectedVersion);
+    }
+
+    [TestMethod]
+    public async Task SubmitMoveAsync_ConnectionFailsDuringWrite_UnblocksAndReplaysAsync()
+    {
+        // Arrange
+        StubGameSessionStream first = new StubGameSessionStream
+        {
+            SendCompletion = new TaskCompletionSource(
+                TaskCreationOptions.RunContinuationsAsynchronously)
+        };
+        StubGameSessionStream second = new StubGameSessionStream();
+        await using GameplaySessionTestContext context = new GameplaySessionTestContext(
+            first, second);
+        await context.StartAsync();
+
+        // Act
+        Task pendingWrite = context.Session.SubmitMoveAsync(0, 1, CancellationToken.None);
+        await GameplaySessionTestContext.WaitUntilAsync(() => first.Sent.Count == 1);
+        first.Fail(new IOException("The network stopped."));
+        await pendingWrite.WaitAsync(TimeSpan.FromSeconds(5));
+        await GameplaySessionTestContext.WaitUntilAsync(() => context.Client.ConnectCount == 2);
+        second.Publish(new GameSessionServerEvent
+        {
+            Snapshot = GameSessionTestData.Snapshot(2)
+        });
+        await GameplaySessionTestContext.WaitUntilAsync(() => second.Sent.Count == 1);
+
+        // Assert
+        Assert.AreEqual(first.Sent.Single().SubmitMove.ActionId,
+            second.Sent.Single().SubmitMove.ActionId);
+        Assert.IsTrue(context.Updates.Any(update =>
+            update.State == GameplayConnectionState.Recovering));
     }
 
     [TestMethod]
