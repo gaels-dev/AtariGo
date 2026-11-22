@@ -14,7 +14,7 @@ public static class GameConnectionRules
 
         long remaining = state.PausedTurnRemainingMilliseconds
             ?? Math.Max(0, (long)(state.DeadlineUtc - now).TotalMilliseconds);
-        DateTime deadline = now.AddMilliseconds(GetBudget(state, color));
+        DateTime deadline = now.AddMilliseconds(GameRuntimeState.ReconnectionGraceMilliseconds);
         GameRuntimeState updated = color == StoneColor.Black
             ? state with
             {
@@ -38,21 +38,33 @@ public static class GameConnectionRules
             return state;
         }
 
-        long budget = Math.Max(0, (long)(deadline.Value - now).TotalMilliseconds);
         GameRuntimeState updated = color == StoneColor.Black
             ? state with
             {
                 BlackReconnectDeadlineUtc = null,
-                BlackGraceRemainingMilliseconds = budget
+                BlackGraceRemainingMilliseconds =
+                    GameRuntimeState.ReconnectionGraceMilliseconds
             }
             : state with
             {
                 WhiteReconnectDeadlineUtc = null,
-                WhiteGraceRemainingMilliseconds = budget
+                WhiteGraceRemainingMilliseconds =
+                    GameRuntimeState.ReconnectionGraceMilliseconds
             };
+        if (updated.PendingTurnVersion.HasValue)
+        {
+            DateTime confirmationDeadline = now.AddSeconds(
+                GameRuntimeState.TurnConfirmationSeconds);
+            updated = updated with
+            {
+                TurnConfirmationDeadlineUtc = confirmationDeadline,
+                DeadlineUtc = confirmationDeadline
+            };
+        }
         if (updated.BlackReconnectDeadlineUtc is null
             && updated.WhiteReconnectDeadlineUtc is null
-            && updated.PausedTurnRemainingMilliseconds is long remaining)
+            && updated.PausedTurnRemainingMilliseconds is long remaining
+            && !updated.PendingTurnVersion.HasValue)
         {
             updated = updated with
             {
@@ -98,8 +110,7 @@ public static class GameConnectionRules
     {
         ArgumentNullException.ThrowIfNull(state);
         return state.Status == GameRuntimeState.Playing
-            && (GetBudget(state, color) == 0
-                || GetDeadline(state, color) is DateTime deadline && deadline <= now);
+            && GetDeadline(state, color) is DateTime deadline && deadline <= now;
     }
 
     private static GameRuntimeState ExpireDeadlines(GameRuntimeState state, DateTime now)
@@ -136,26 +147,22 @@ public static class GameConnectionRules
 
     private static GameRuntimeState ScheduleGrace(GameRuntimeState state)
     {
-        DateTime? black = state.BlackReconnectDeadlineUtc;
-        DateTime? white = state.WhiteReconnectDeadlineUtc;
-        if (black is null && white is null)
+        DateTime? next = state.TurnConfirmationDeadlineUtc;
+        if (state.BlackReconnectDeadlineUtc is DateTime black
+            && (next is null || black < next))
+        {
+            next = black;
+        }
+        if (state.WhiteReconnectDeadlineUtc is DateTime white
+            && (next is null || white < next))
+        {
+            next = white;
+        }
+        if (next is null)
         {
             return state;
         }
-        DateTime next;
-        if (black is null)
-        {
-            next = white!.Value;
-        }
-        else if (white is null)
-        {
-            next = black.Value;
-        }
-        else
-        {
-            next = black.Value < white.Value ? black.Value : white.Value;
-        }
-        return state with { DeadlineUtc = next };
+        return state with { DeadlineUtc = next.Value };
     }
 
     private static bool HasDeadline(GameRuntimeState state, StoneColor color)

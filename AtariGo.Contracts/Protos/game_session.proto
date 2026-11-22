@@ -14,11 +14,16 @@ message GameSessionClientEvent {
     SendChatMessage send_chat_message = 2;
     SubmitGameMove submit_move = 3;
     SurrenderGame surrender = 4;
+    AcknowledgeGameTurn acknowledge_turn = 5;
   }
 }
 
 message JoinGame {
   int64 game_id = 1;
+}
+
+message AcknowledgeGameTurn {
+  int64 version = 1;
 }
 
 message SendChatMessage {
@@ -66,6 +71,8 @@ message GameSessionSnapshot {
   int64 server_time_unix_milliseconds = 29;
   bool turn_paused = 30;
   int64 opponent_reconnect_deadline_unix_milliseconds = 31;
+  bool turn_confirmation_pending = 32;
+  int64 turn_confirmation_version = 33;
 }
 
 message GameChatMessage {

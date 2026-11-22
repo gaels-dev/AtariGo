@@ -40,9 +40,11 @@ public sealed class GameSessionGrpcServiceTests
         // Act
         await SendMoveAsync(black, start.Version, (0, 1));
         GameSessionSnapshot first = await ReadBoardAsync(white.ResponseStream, 2, timeout.Token);
-        await SendMoveAsync(white, first.Version, (0, 0));
+        GameSessionSnapshot whiteTurn = await ConfirmTurnAsync(white, first, timeout.Token);
+        await SendMoveAsync(white, whiteTurn.Version, (0, 0));
         GameSessionSnapshot second = await ReadBoardAsync(black.ResponseStream, 3, timeout.Token);
-        await SendMoveAsync(black, second.Version, (1, 0));
+        GameSessionSnapshot blackTurn = await ConfirmTurnAsync(black, second, timeout.Token);
+        await SendMoveAsync(black, blackTurn.Version, (1, 0));
         GameSessionSnapshot blackEnd = await ReadSnapshotAsync(black.ResponseStream,
             "Completed", timeout.Token);
         GameSessionSnapshot whiteEnd = await ReadSnapshotAsync(white.ResponseStream,
@@ -293,6 +295,30 @@ public sealed class GameSessionGrpcServiceTests
                 Column = position.Column
             }
         });
+    }
+
+    private static async Task<GameSessionSnapshot> ConfirmTurnAsync(
+        AsyncDuplexStreamingCall<GameSessionClientEvent, GameSessionServerEvent> call,
+        GameSessionSnapshot pending, CancellationToken cancellationToken)
+    {
+        Assert.IsTrue(pending.TurnConfirmationPending);
+        await call.RequestStream.WriteAsync(new GameSessionClientEvent
+        {
+            AcknowledgeTurn = new AcknowledgeGameTurn
+            {
+                Version = pending.TurnConfirmationVersion
+            }
+        });
+        while (await call.ResponseStream.MoveNext(cancellationToken))
+        {
+            GameSessionSnapshot? snapshot = call.ResponseStream.Current.Snapshot;
+            if (snapshot is not null && snapshot.Version > pending.Version
+                && !snapshot.TurnConfirmationPending)
+            {
+                return snapshot;
+            }
+        }
+        throw new InvalidOperationException("The turn confirmation was not received.");
     }
 
     private static async Task<GameSessionSnapshot> ReadSnapshotAsync(

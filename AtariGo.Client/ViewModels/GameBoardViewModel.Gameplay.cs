@@ -259,6 +259,14 @@ public partial class GameBoardViewModel
         {
             return GetLocalizedMessage("GameBoard_Status_WaitingOpponent");
         }
+        if (snapshot.OpponentDisconnected)
+        {
+            return GetLocalizedMessage(GetConnectionStatusResourceKey(snapshot));
+        }
+        if (snapshot.TurnConfirmationPending)
+        {
+            return GetLocalizedMessage("GameBoard_Status_ConfirmingTurn");
+        }
         if (snapshot.TurnPaused)
         {
             return GetLocalizedMessage(GetConnectionStatusResourceKey(snapshot));

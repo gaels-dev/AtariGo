@@ -142,6 +142,30 @@ public sealed class GameCoordinator : IDisposable, IAsyncDisposable
         }
     }
 
+    public async Task AcknowledgeTurnAsync(GameSessionConnection connection, long version,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(connection);
+        using AsyncOperationLease lease = await _operations.EnterAsync(
+            connection.GameId, cancellationToken);
+        if (!_registry.IsCurrent(connection))
+        {
+            return;
+        }
+        using IServiceScope scope = _scopeFactory.CreateScope();
+        GameCommandService commands = scope.ServiceProvider
+            .GetRequiredService<GameCommandService>();
+        GameOperationContext operation = await commands.LoadAsync(connection.GameId,
+            cancellationToken);
+        GameOperationResult advanced = await commands.AdvanceAsync(operation,
+            () => _registry.AreBothConnected(connection.GameId));
+        Publish(advanced);
+        operation = await commands.LoadAsync(connection.GameId, cancellationToken);
+        GameOperationResult acknowledged = await commands.AcknowledgeTurnAsync(
+            operation, connection.PlayerKey, version);
+        Publish(acknowledged);
+    }
+
     public async Task<ChatMessageSubmissionResult> PublishChatMessageAsync(
         GameSessionConnection connection, string text, CancellationToken cancellationToken)
     {

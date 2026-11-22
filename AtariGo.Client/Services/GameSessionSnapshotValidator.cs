@@ -31,6 +31,7 @@ public static class GameSessionSnapshotValidator
         return snapshot.GameId == gameId && snapshot.BoardSize == GameRules.BoardSize
             && snapshot.Cells.Count == GameRules.BoardSize * GameRules.BoardSize
             && IsValidColor(snapshot.PlayerStoneColor) && IsValidColor(snapshot.OpponentStoneColor)
+            && (!snapshot.TurnConfirmationPending || snapshot.TurnConfirmationVersion > 0)
             && snapshot.MaximumChatMessageLength > 0;
     }
 

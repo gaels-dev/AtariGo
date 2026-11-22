@@ -11,7 +11,7 @@ public sealed class GameConnectionRulesTests
         DateTimeKind.Utc);
 
     [TestMethod]
-    public void Reconnect_BeforeGraceExpires_ResumesRemainingTurnAndConsumesBudget()
+    public void Reconnect_BeforeGraceExpires_ResumesRemainingTurnWithFreshGrace()
     {
         // Arrange
         GameRuntimeState playing = CreatePlaying();
@@ -27,7 +27,7 @@ public sealed class GameConnectionRulesTests
         Assert.AreEqual(disconnectedAt.AddSeconds(30), paused.BlackReconnectDeadlineUtc);
         Assert.IsNull(restored.PausedTurnRemainingMilliseconds);
         Assert.AreEqual(returnedAt.AddSeconds(12), restored.DeadlineUtc);
-        Assert.AreEqual(25000, restored.BlackGraceRemainingMilliseconds);
+        Assert.AreEqual(30000, restored.BlackGraceRemainingMilliseconds);
     }
 
     [TestMethod]
@@ -67,7 +67,7 @@ public sealed class GameConnectionRulesTests
     }
 
     [TestMethod]
-    public void Disconnect_AfterReconnect_UsesRemainingGraceBudget()
+    public void Disconnect_AfterReconnect_StartsFreshGracePeriod()
     {
         // Arrange
         GameRuntimeState first = GameConnectionRules.Disconnect(
@@ -78,8 +78,8 @@ public sealed class GameConnectionRulesTests
         GameRuntimeState second = GameConnectionRules.Disconnect(
             returned, StoneColor.Black, start.AddSeconds(22));
         // Assert
-        Assert.AreEqual(10000, returned.BlackGraceRemainingMilliseconds);
-        Assert.AreEqual(start.AddSeconds(32), second.BlackReconnectDeadlineUtc);
+        Assert.AreEqual(30000, returned.BlackGraceRemainingMilliseconds);
+        Assert.AreEqual(start.AddSeconds(52), second.BlackReconnectDeadlineUtc);
     }
 
     private static GameRuntimeState CreatePlaying()

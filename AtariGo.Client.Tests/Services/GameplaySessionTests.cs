@@ -13,6 +13,42 @@ namespace AtariGo.Client.Tests.Services;
 public sealed class GameplaySessionTests
 {
     [TestMethod]
+    public async Task RunAsync_PendingOwnTurn_SendsAcknowledgementAsync()
+    {
+        // Arrange
+        StubGameSessionStream stream = new StubGameSessionStream();
+        await using GameplaySessionTestContext context = new GameplaySessionTestContext(stream);
+        await context.StartAsync();
+        GameSessionSnapshot pending = GameSessionTestData.Snapshot(2);
+        pending.TurnConfirmationPending = true;
+        pending.TurnConfirmationVersion = 2;
+        // Act
+        stream.Publish(new GameSessionServerEvent { Snapshot = pending });
+        await GameplaySessionTestContext.WaitUntilAsync(() => stream.Sent.Count == 1);
+        // Assert
+        Assert.AreEqual(2, stream.Sent.Single().AcknowledgeTurn.Version);
+    }
+
+    [TestMethod]
+    public async Task RunAsync_PendingOpponentTurn_DoesNotSendAcknowledgementAsync()
+    {
+        // Arrange
+        StubGameSessionStream stream = new StubGameSessionStream();
+        await using GameplaySessionTestContext context = new GameplaySessionTestContext(stream);
+        await context.StartAsync();
+        GameSessionSnapshot pending = GameSessionTestData.Snapshot(2);
+        pending.CurrentTurn = GameStoneState.White;
+        pending.TurnConfirmationPending = true;
+        pending.TurnConfirmationVersion = 2;
+        // Act
+        stream.Publish(new GameSessionServerEvent { Snapshot = pending });
+        await GameplaySessionTestContext.WaitUntilAsync(() => context.Updates.Any(update =>
+            update.ServerEvent?.Snapshot?.Version == 2));
+        // Assert
+        Assert.IsTrue(stream.Sent.IsEmpty);
+    }
+
+    [TestMethod]
     public async Task SubmitMoveAsync_ConcurrentActions_QueuesOnlyOneActionAsync()
     {
         // Arrange

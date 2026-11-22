@@ -27,6 +27,8 @@ internal static class GameSessionGameplayMapping
         target.EndReason = progress.EndReason;
         target.TurnNumber = board.TurnNumber;
         target.TurnPaused = progress.PausedTurnRemainingMilliseconds.HasValue;
+        target.TurnConfirmationPending = progress.PendingTurnVersion.HasValue;
+        target.TurnConfirmationVersion = progress.PendingTurnVersion ?? 0;
         if (source.OpponentReconnectDeadlineUtc is DateTime reconnectDeadline)
         {
             target.OpponentReconnectDeadlineUnixMilliseconds = new DateTimeOffset(

@@ -46,11 +46,17 @@ public sealed class GameCommandService
         DateTime now = _timeProvider.GetUtcNow().UtcDateTime;
         int seconds = game.GameConfiguration.TurnTimeSeconds;
         GameConnectionPresence presence = _registry.GetPresence(game.GameId);
-        GameRuntimeState resolved = GameConnectionRules.Resolve(runtime, now, presence);
+        GameRuntimeState confirmation = GameTurnConfirmationRules.Expire(runtime, now);
+        GameRuntimeState resolved = GameConnectionRules.Resolve(confirmation, now, presence);
         GameRuntimeState next = GameClock.Advance(resolved, now, seconds);
+        bool turnChanged = next.Board.TurnNumber != resolved.Board.TurnNumber;
         if (areBothConnected())
         {
             next = GameStateTransitions.Start(next, now, seconds);
+        }
+        if (next.Status == GameRuntimeState.Playing && turnChanged)
+        {
+            next = GameTurnConfirmationRules.Begin(next, game.StateVersion + 1, now, seconds);
         }
         if (next != runtime)
         {
@@ -81,6 +87,23 @@ public sealed class GameCommandService
         string playerKey)
     {
         return UpdateConnectionAsync(operation, playerKey, false);
+    }
+
+    public async Task<GameOperationResult> AcknowledgeTurnAsync(
+        GameOperationContext operation, string playerKey, long version)
+    {
+        ArgumentNullException.ThrowIfNull(operation);
+        ArgumentException.ThrowIfNullOrWhiteSpace(playerKey);
+        StoneColor color = GetPlayerColor(operation.Game, playerKey);
+        DateTime now = _timeProvider.GetUtcNow().UtcDateTime;
+        int seconds = operation.Game.GameConfiguration.TurnTimeSeconds;
+        GameRuntimeState next = GameTurnConfirmationRules.Acknowledge(
+            operation.Progress, color, version, now, seconds);
+        if (next != operation.Progress)
+        {
+            await _store.SaveAsync(operation.Game, next, CancellationToken.None);
+        }
+        return CreateResult(operation.Game, next);
     }
 
     private async Task<GameOperationResult> UpdateConnectionAsync(GameOperationContext operation,
@@ -158,6 +181,13 @@ public sealed class GameCommandService
     {
         context.Now = _timeProvider.GetUtcNow().UtcDateTime;
         GameActionResult result = _processor.Apply(context);
+        if (result.IsAccepted && !context.Command.IsSurrender
+            && context.Runtime.Status == GameRuntimeState.Playing)
+        {
+            context.Runtime = GameTurnConfirmationRules.Begin(context.Runtime,
+                operation.Version + 1, context.Now,
+                operation.Game.GameConfiguration.TurnTimeSeconds);
+        }
         bool stateChanged = context.Runtime != operation.Progress;
         long nextVersion = operation.Version;
         if (stateChanged)

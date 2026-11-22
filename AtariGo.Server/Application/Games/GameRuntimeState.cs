@@ -10,6 +10,7 @@ public sealed record GameRuntimeState
     public const string Cancelled = "Cancelled";
     public const int ConnectionGraceSeconds = 120;
     public const int ReconnectionGraceMilliseconds = 30000;
+    public const int TurnConfirmationSeconds = 3;
 
     public GameState Board { get; init; } = new GameState();
     public string Status { get; init; } = Waiting;
@@ -21,6 +22,8 @@ public sealed record GameRuntimeState
     public long? PausedTurnRemainingMilliseconds { get; init; }
     public DateTime? BlackReconnectDeadlineUtc { get; init; }
     public DateTime? WhiteReconnectDeadlineUtc { get; init; }
+    public DateTime? TurnConfirmationDeadlineUtc { get; init; }
+    public long? PendingTurnVersion { get; init; }
     public long BlackGraceRemainingMilliseconds { get; init; } = ReconnectionGraceMilliseconds;
     public long WhiteGraceRemainingMilliseconds { get; init; } = ReconnectionGraceMilliseconds;
     public bool IsTerminal => Status == Completed || Status == Cancelled;

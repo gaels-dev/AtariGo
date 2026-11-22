@@ -236,7 +236,8 @@ namespace AtariGo.Client.ViewModels
         {
             ArgumentNullException.ThrowIfNull(navigationContext);
             GameBoardViewModelContext boardContext = new GameBoardViewModelContext(
-                new GameplaySession(new GrpcGameSessionClient(SessionToken, GuestCredential)),
+                new GameplaySession(new GrpcGameSessionClient(SessionToken, GuestCredential),
+                    !GrpcClientConnection.Shared.ServerAddress.IsLoopback),
                 navigationContext.IsGuest,
                 navigationContext.PlayerName)
             {
@@ -278,7 +279,8 @@ namespace AtariGo.Client.ViewModels
         {
             ArgumentNullException.ThrowIfNull(navigationContext);
             GameBoardViewModelContext boardContext = new GameBoardViewModelContext(
-                new GameplaySession(new GrpcGameSessionClient(SessionToken, null)),
+                new GameplaySession(new GrpcGameSessionClient(SessionToken, null),
+                    !GrpcClientConnection.Shared.ServerAddress.IsLoopback),
                 false,
                 _playerName)
             {

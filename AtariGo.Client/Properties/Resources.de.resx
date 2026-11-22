@@ -861,6 +861,7 @@
   <data name="GameBoard_Result_DisconnectionTimeout" xml:space="preserve"><value>Die Frist für die Wiederverbindung ist abgelaufen.</value></data>
   <data name="GameBoard_Result_BothDisconnected" xml:space="preserve"><value>Beide Spieler wurden getrennt. Die Partie endete ohne Sieger.</value></data>
   <data name="GameBoard_Status_ReconnectionCountdown" xml:space="preserve"><value>Warte auf die Wiederverbindung des Gegners: {0}</value></data>
+  <data name="GameBoard_Status_ConfirmingTurn" xml:space="preserve"><value>Der Zug des nächsten Spielers wird bestätigt...</value></data>
   <data name="GameBoard_Connection_LostTitle" xml:space="preserve"><value>Verbindung verloren</value></data>
   <data name="GameBoard_Connection_LostDescription" xml:space="preserve"><value>Prüfe deine Verbindung. Wir versuchen, dich zurück ins Spiel zu bringen.</value></data>
   <data name="GameBoard_Connection_ErrorTitle" xml:space="preserve"><value>Verbindung nicht möglich</value></data>

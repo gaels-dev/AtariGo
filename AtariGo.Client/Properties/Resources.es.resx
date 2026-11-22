@@ -861,6 +861,7 @@
   <data name="GameBoard_Result_DisconnectionTimeout" xml:space="preserve"><value>Se agotó el tiempo para reconectarse.</value></data>
   <data name="GameBoard_Result_BothDisconnected" xml:space="preserve"><value>Ambos jugadores se desconectaron. La partida terminó sin ganador.</value></data>
   <data name="GameBoard_Status_ReconnectionCountdown" xml:space="preserve"><value>Esperando reconexión del oponente: {0}</value></data>
+  <data name="GameBoard_Status_ConfirmingTurn" xml:space="preserve"><value>Confirmando el turno del siguiente jugador...</value></data>
   <data name="GameBoard_Connection_LostTitle" xml:space="preserve"><value>Conexión perdida</value></data>
   <data name="GameBoard_Connection_LostDescription" xml:space="preserve"><value>Revisa tu conexión. Intentamos devolverte a la partida.</value></data>
   <data name="GameBoard_Connection_ErrorTitle" xml:space="preserve"><value>No se pudo conectar</value></data>

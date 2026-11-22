@@ -111,6 +111,16 @@ internal sealed class GameplayTestDatabase : IAsyncDisposable
         };
     }
 
+    public async Task AcknowledgeTurnAsync(GameSessionConnection connection)
+    {
+        Game game = await ReadAsync();
+        GameRuntimeState? progress = Registry.GetProgress(GameId, game.StateVersion);
+        if (progress?.PendingTurnVersion is long version)
+        {
+            await Coordinator.AcknowledgeTurnAsync(connection, version, CancellationToken.None);
+        }
+    }
+
     public AtariGoDbContext CreateContext()
     {
         DbContextOptions<AtariGoDbContext> options = new DbContextOptionsBuilder<AtariGoDbContext>()

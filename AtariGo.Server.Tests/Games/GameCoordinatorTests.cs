@@ -13,6 +13,68 @@ namespace AtariGo.Server.Tests.Games;
 public sealed class GameCoordinatorTests
 {
     [TestMethod]
+    public async Task ProcessAsync_NewTurn_WaitsForOpponentAcknowledgementBeforeClockStartsAsync()
+    {
+        // Arrange
+        await using GameplayTestDatabase database = await GameplayTestDatabase.CreateAsync();
+        GameSessionConnection black = await database.ConnectAsync("Black");
+        GameSessionConnection white = await database.ConnectAsync("White");
+        GameActionCommand move = await database.CreateMoveAsync(new BoardPosition(0, 1));
+        // Act
+        await database.Coordinator.ProcessAsync(black, move, CancellationToken.None);
+        Game pendingGame = await database.ReadAsync();
+        GameRuntimeState pending = database.Registry.GetProgress(database.GameId,
+            pendingGame.StateVersion)!;
+        database.Time.Advance(TimeSpan.FromSeconds(2));
+        await database.AcknowledgeTurnAsync(white);
+        Game resumedGame = await database.ReadAsync();
+        GameRuntimeState resumed = database.Registry.GetProgress(database.GameId,
+            resumedGame.StateVersion)!;
+        // Assert
+        Assert.AreEqual(pendingGame.StateVersion, pending.PendingTurnVersion);
+        Assert.AreEqual(30000, pending.PausedTurnRemainingMilliseconds);
+        Assert.AreEqual(database.Time.GetUtcNow().UtcDateTime.AddSeconds(1),
+            pending.TurnConfirmationDeadlineUtc);
+        Assert.IsNull(resumed.PendingTurnVersion);
+        Assert.IsNull(resumed.PausedTurnRemainingMilliseconds);
+        Assert.AreEqual(database.Time.GetUtcNow().UtcDateTime.AddSeconds(30),
+            resumed.DeadlineUtc);
+    }
+
+    [TestMethod]
+    public async Task AdvanceAsync_MissingTurnAcknowledgement_StartsReconnectGraceAsync()
+    {
+        // Arrange
+        await using GameplayTestDatabase database = await GameplayTestDatabase.CreateAsync();
+        GameSessionConnection black = await database.ConnectAsync("Black");
+        await database.ConnectAsync("White");
+        GameActionCommand move = await database.CreateMoveAsync(new BoardPosition(0, 1));
+        await database.Coordinator.ProcessAsync(black, move, CancellationToken.None);
+        database.Time.Advance(TimeSpan.FromSeconds(3));
+        // Act
+        await database.Coordinator.AdvanceAsync(database.GameId, CancellationToken.None);
+        Game game = await database.ReadAsync();
+        GameRuntimeState progress = database.Registry.GetProgress(database.GameId,
+            game.StateVersion)!;
+        // Assert
+        Assert.AreEqual(database.Time.GetUtcNow().UtcDateTime.AddSeconds(30),
+            progress.WhiteReconnectDeadlineUtc);
+        Assert.AreEqual(30000, progress.PausedTurnRemainingMilliseconds);
+        Assert.AreEqual(GameRuntimeState.Playing, progress.Status);
+        bool opponentNotified = false;
+        while (black.Events.TryRead(out GameSessionDelivery? delivery))
+        {
+            opponentNotified |= delivery.Snapshot?.OpponentDisconnected == true;
+        }
+        Assert.IsTrue(opponentNotified);
+        database.Time.Advance(TimeSpan.FromSeconds(30));
+        await database.Coordinator.AdvanceAsync(database.GameId, CancellationToken.None);
+        Game finished = await database.ReadAsync();
+        Assert.AreEqual(GameRuntimeState.Completed, finished.State);
+        Assert.AreEqual("DisconnectionTimeout", finished.EndReason);
+    }
+
+    [TestMethod]
     public async Task DisconnectAsync_PlayerReturnsInTime_ResumesPersistedTurnAsync()
     {
         // Arrange
@@ -34,7 +96,7 @@ public sealed class GameCoordinatorTests
         Assert.AreEqual(12000, paused.PausedTurnRemainingMilliseconds);
         Assert.AreEqual(30000, paused.BlackGraceRemainingMilliseconds);
         Assert.IsNull(resumed.PausedTurnRemainingMilliseconds);
-        Assert.AreEqual(25000, resumed.BlackGraceRemainingMilliseconds);
+        Assert.AreEqual(30000, resumed.BlackGraceRemainingMilliseconds);
         Assert.AreEqual(database.Time.GetUtcNow().UtcDateTime.AddSeconds(12),
             resumed.DeadlineUtc);
     }
@@ -118,7 +180,8 @@ public sealed class GameCoordinatorTests
         // Assert
         Assert.AreEqual(StoneColor.White, state.Board.CurrentTurn);
         Assert.AreEqual(GameRuntimeState.Playing, state.Status);
-        Assert.AreEqual(database.Time.GetUtcNow().UtcDateTime.AddSeconds(30), state.DeadlineUtc);
+        Assert.AreEqual(database.Time.GetUtcNow().UtcDateTime.AddSeconds(3),
+            state.DeadlineUtc);
         Assert.AreEqual(StoneColor.Empty, state.Board.Winner);
         Assert.AreEqual(2, state.Board.TurnNumber);
     }
@@ -188,7 +251,7 @@ public sealed class GameCoordinatorTests
             TimeSpan.FromSeconds(5));
         GameSessionDelivery delivery = await restored.Events.ReadAsync(timeout.Token);
         // Assert
-        Assert.AreEqual(GamePersistenceService.Read(before).DeadlineUtc,
+        Assert.AreEqual(database.Time.GetUtcNow().UtcDateTime.AddSeconds(3),
             GamePersistenceService.Read(after).DeadlineUtc);
         Assert.AreEqual("Black", delivery.Snapshot!.Cells[1].Stone);
         Assert.AreEqual(StoneColor.White, delivery.Snapshot.Progress!.Board.CurrentTurn);
@@ -338,7 +401,8 @@ public sealed class GameCoordinatorTests
         Assert.IsTrue(result.IsAccepted);
         Assert.AreEqual(StoneColor.Black, state.Board.Board[1]);
         Assert.AreEqual(StoneColor.White, state.Board.CurrentTurn);
-        Assert.AreEqual(database.Time.GetUtcNow().UtcDateTime.AddSeconds(30), state.DeadlineUtc);
+        Assert.AreEqual(database.Time.GetUtcNow().UtcDateTime.AddSeconds(3),
+            state.DeadlineUtc);
         Assert.AreEqual(database.Time.GetUtcNow().UtcDateTime, persisted.PlayedAt);
     }
 
@@ -350,10 +414,11 @@ public sealed class GameCoordinatorTests
         await using GameplayTestDatabase database = await GameplayTestDatabase.CreateAsync(
             interceptor);
         GameSessionConnection black = await database.ConnectAsync("Black");
-        await database.ConnectAsync("White");
+        GameSessionConnection white = await database.ConnectAsync("White");
         GameActionCommand move = await database.CreateMoveAsync(new BoardPosition(0, 1));
         await database.Coordinator.ProcessAsync(black, move, CancellationToken.None);
         GameActionResult accepted = await ReadResultAsync(black);
+        await database.AcknowledgeTurnAsync(white);
         interceptor.LookupCallback = () => database.Time.Advance(TimeSpan.FromSeconds(31));
         // Act
         await database.Coordinator.ProcessAsync(black, move, CancellationToken.None);
@@ -364,7 +429,7 @@ public sealed class GameCoordinatorTests
         // Assert
         Assert.IsTrue(accepted.IsAccepted);
         Assert.AreEqual(accepted, repeated);
-        Assert.AreEqual(accepted.Version + 1, progress.StateVersion);
+        Assert.AreEqual(accepted.Version + 2, progress.StateVersion);
         Assert.AreEqual(StoneColor.Black, state.Board.CurrentTurn);
         Assert.AreEqual(3, state.Board.TurnNumber);
         Assert.AreEqual(1, await context.Moves.CountAsync());
@@ -380,6 +445,7 @@ public sealed class GameCoordinatorTests
     private static async Task PlayAsync(GameplayTestDatabase database,
         GameSessionConnection connection, BoardPosition position)
     {
+        await database.AcknowledgeTurnAsync(connection);
         GameActionCommand command = await database.CreateMoveAsync(position);
         await database.Coordinator.ProcessAsync(connection, command, CancellationToken.None);
     }

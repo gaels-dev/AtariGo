@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.IO;
+using System.Net.NetworkInformation;
 
 using Grpc.Core;
 
@@ -17,6 +18,7 @@ public sealed class GameplaySession : IGameplaySession
     private static readonly TimeSpan reconnectDelay = TimeSpan.FromSeconds(1);
 
     private readonly IGameSessionClient _client;
+    private readonly bool _monitorNetworkAvailability;
     private readonly object _sync = new object();
     private readonly CancellationTokenSource _lifetimeCancellation = new CancellationTokenSource();
     private readonly CancellationToken _lifetimeToken;
@@ -35,10 +37,11 @@ public sealed class GameplaySession : IGameplaySession
     private GameplayConnectionState _state = GameplayConnectionState.Connecting;
     private ClientFailureReason _failure;
 
-    public GameplaySession(IGameSessionClient client)
+    public GameplaySession(IGameSessionClient client, bool monitorNetworkAvailability = false)
     {
         ArgumentNullException.ThrowIfNull(client);
         _client = client;
+        _monitorNetworkAvailability = monitorNetworkAvailability;
         _lifetimeToken = _lifetimeCancellation.Token;
     }
 
@@ -201,6 +204,10 @@ public sealed class GameplaySession : IGameplaySession
     private async Task RunCoreAsync(CancellationToken cancellationToken)
     {
         await Task.Yield();
+        if (_monitorNetworkAvailability)
+        {
+            NetworkChange.NetworkAvailabilityChanged += OnNetworkAvailabilityChanged;
+        }
         try
         {
             using CancellationTokenSource lifetime = CreateCancellation(cancellationToken);
@@ -229,6 +236,32 @@ public sealed class GameplaySession : IGameplaySession
                 _failure = GrpcClientFailures.GetReason(exception);
             }
             PublishCurrent();
+        }
+        finally
+        {
+            if (_monitorNetworkAvailability)
+            {
+                NetworkChange.NetworkAvailabilityChanged -= OnNetworkAvailabilityChanged;
+            }
+        }
+    }
+
+    private void OnNetworkAvailabilityChanged(object? sender,
+        NetworkAvailabilityEventArgs eventArgs)
+    {
+        if (eventArgs.IsAvailable)
+        {
+            RetryConnection();
+            return;
+        }
+        CancellationTokenSource? attempt;
+        lock (_sync)
+        {
+            attempt = _state == GameplayConnectionState.Closed ? null : _attempt;
+        }
+        if (attempt is not null)
+        {
+            HandleFailure(attempt, new IOException("The local network is unavailable."), false);
         }
     }
 
@@ -316,6 +349,17 @@ public sealed class GameplaySession : IGameplaySession
         {
             cancellationToken.ThrowIfCancellationRequested();
             bool acceptedSnapshot = ApplyEvent(serverEvent);
+            if (acceptedSnapshot && serverEvent.Snapshot.TurnConfirmationPending
+                && IsPlayersTurn(serverEvent.Snapshot))
+            {
+                await stream.SendEventAsync(new GameSessionClientEvent
+                {
+                    AcknowledgeTurn = new AcknowledgeGameTurn
+                    {
+                        Version = serverEvent.Snapshot.TurnConfirmationVersion
+                    }
+                }, cancellationToken).ConfigureAwait(false);
+            }
             if (!restored && acceptedSnapshot)
             {
                 restored = true;
@@ -323,6 +367,14 @@ public sealed class GameplaySession : IGameplaySession
             }
         }
         throw new IOException("The game stream ended before the session was closed.");
+    }
+
+    private static bool IsPlayersTurn(GameSessionSnapshot snapshot)
+    {
+        return snapshot.PlayerStoneColor == "Black"
+                && snapshot.CurrentTurn == GameStoneState.Black
+            || snapshot.PlayerStoneColor == "White"
+                && snapshot.CurrentTurn == GameStoneState.White;
     }
 
     private bool ApplyEvent(GameSessionServerEvent serverEvent)

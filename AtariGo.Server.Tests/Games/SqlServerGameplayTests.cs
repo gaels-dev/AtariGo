@@ -175,10 +175,11 @@ public sealed class SqlServerGameplayTests
         GameActionCommand rejected = move with
         {
             ActionId = Guid.NewGuid().ToString("N"),
-            ExpectedVersion = 2
+            ExpectedVersion = 3
         };
         GameCoordinator coordinator = before.GetRequiredService<GameCoordinator>();
         await coordinator.ProcessAsync(players.Black, move, CancellationToken.None);
+        await coordinator.AcknowledgeTurnAsync(players.White, 2, CancellationToken.None);
         await coordinator.ProcessAsync(players.White, rejected, CancellationToken.None);
         if (finishBySurrender)
         {

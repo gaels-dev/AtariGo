@@ -224,6 +224,14 @@ public sealed class GameSessionGrpcService : GameSession.GameSessionBase
                 continue;
             }
 
+            if (clientEvent.EventCase
+                == GameSessionClientEvent.EventOneofCase.AcknowledgeTurn)
+            {
+                await _coordinator.AcknowledgeTurnAsync(connection,
+                    clientEvent.AcknowledgeTurn.Version, cancellationToken);
+                continue;
+            }
+
             GameActionCommand command = MapAction(clientEvent);
             await _coordinator.ProcessAsync(connection, command, cancellationToken);
         }

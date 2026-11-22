@@ -119,13 +119,14 @@ internal sealed class GameSessionState
         GameSessionParticipant opponent = player.PlayerKey == Definition.Player.PlayerKey
             ? Definition.Opponent
             : Definition.Player;
-        bool opponentConnected = Connections.ContainsKey(opponent.PlayerKey);
-        bool opponentDisconnected = !opponentConnected
-            && ConnectedPlayerHistory.Contains(opponent.PlayerKey);
         DateTime? opponentReconnectDeadline = opponent.StoneColor
             == GameSessionRules.BlackStoneColor
                 ? Progress?.BlackReconnectDeadlineUtc
                 : Progress?.WhiteReconnectDeadlineUtc;
+        bool opponentConnected = Connections.ContainsKey(opponent.PlayerKey)
+            && !opponentReconnectDeadline.HasValue;
+        bool opponentDisconnected = !opponentConnected
+            && ConnectedPlayerHistory.Contains(opponent.PlayerKey);
         return new GameSessionSnapshot
         {
             GameId = Definition.GameId,
