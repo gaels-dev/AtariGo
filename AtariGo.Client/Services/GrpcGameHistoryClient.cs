@@ -1,9 +1,8 @@
-using System.Diagnostics;
-
 using Grpc.Core;
 
 using AtariGo.Client.Models;
 using AtariGo.Contracts;
+using AtariGo.Diagnostics;
 
 namespace AtariGo.Client.Services;
 
@@ -39,15 +38,21 @@ public sealed class GrpcGameHistoryClient : IGameHistoryClient
                 GrpcCallPolicy.CreateOptions(cancellationToken, headers)).ResponseAsync;
             cancellationToken.ThrowIfCancellationRequested();
             result = MapResponse(response);
+            ClientPlayerDiagnostics.Record(PlayerOperation.QueryHistory,
+                CreateDetails(result));
         }
         catch (RpcException exception)
         {
+            ClientPlayerDiagnostics.RecordFailure(PlayerOperation.QueryHistory, exception,
+                cancellationToken);
             ClientFailureReason reason = cancellationToken.IsCancellationRequested
                 ? ClientFailureReason.Cancelled : GrpcClientFailures.GetReason(exception);
             result = CreateFailure(reason);
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException exception)
         {
+            ClientPlayerDiagnostics.RecordFailure(PlayerOperation.QueryHistory, exception,
+                cancellationToken);
             result = CreateFailure(cancellationToken.IsCancellationRequested
                 ? ClientFailureReason.Cancelled : ClientFailureReason.Timeout);
         }
@@ -122,12 +127,22 @@ public sealed class GrpcGameHistoryClient : IGameHistoryClient
             && hasValidColors && hasValidCodes && hasValidDate;
     }
 
+    private static DiagnosticEventDetails CreateDetails(GameHistoryQueryResult result)
+    {
+        if (result.Failure != ClientFailureReason.None)
+        {
+            return new DiagnosticEventDetails
+            {
+                Outcome = DiagnosticOutcome.Unconfirmed,
+                Severity = DiagnosticSeverity.Warning,
+                Status = new DiagnosticStatus(result.Failure)
+            };
+        }
+        return new DiagnosticEventDetails { Outcome = DiagnosticOutcome.Succeeded };
+    }
+
     private static GameHistoryQueryResult CreateFailure(ClientFailureReason failure)
     {
-        if (failure != ClientFailureReason.Cancelled)
-        {
-            Trace.TraceWarning("Game history query failed: {0}.", failure);
-        }
         return new GameHistoryQueryResult { Failure = failure };
     }
 }

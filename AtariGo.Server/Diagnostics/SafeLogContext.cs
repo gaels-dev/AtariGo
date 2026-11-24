@@ -64,6 +64,7 @@ internal static class SafeLogContext
             UserId = value.UserId is > 0 ? value.UserId : fallback.UserId,
             RequestId = value.RequestId is > 0 ? value.RequestId : fallback.RequestId,
             InvitationId = value.InvitationId is > 0 ? value.InvitationId : fallback.InvitationId,
+            ReportId = value.ReportId is > 0 ? value.ReportId : fallback.ReportId,
             OperationId = value.OperationId ?? fallback.OperationId,
             ActionId = value.ActionId ?? fallback.ActionId,
             TraceId = fallback.TraceId ?? value.TraceId

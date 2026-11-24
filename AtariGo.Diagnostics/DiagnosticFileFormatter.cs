@@ -31,6 +31,7 @@ public static class DiagnosticFileFormatter
             context?.UserId,
             context?.RequestId,
             context?.InvitationId,
+            context?.ReportId,
             context?.OperationId,
             context?.ActionId,
             TraceId = context?.TraceId?.ToString(),

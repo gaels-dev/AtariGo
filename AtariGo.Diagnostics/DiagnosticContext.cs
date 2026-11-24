@@ -14,6 +14,11 @@ public sealed record DiagnosticContext
 
     public long? InvitationId { get; init; }
 
+    public long? ReportId
+    {
+        get; init;
+    }
+
     public Guid? OperationId { get; init; }
 
     public Guid? ActionId { get; init; }

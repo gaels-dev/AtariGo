@@ -36,7 +36,8 @@ public sealed class DiagnosticEvent
             return;
         }
         if (context.GameId is <= 0 || context.RoomId is <= 0 || context.UserId is <= 0
-            || context.RequestId is <= 0 || context.InvitationId is <= 0)
+            || context.RequestId is <= 0 || context.InvitationId is <= 0
+            || context.ReportId is <= 0)
         {
             throw new ArgumentOutOfRangeException(nameof(context),
                 "Diagnostic participant and resource identifiers must be positive when present.");

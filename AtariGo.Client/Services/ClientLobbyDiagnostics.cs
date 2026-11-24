@@ -21,7 +21,7 @@ internal static class ClientLobbyDiagnostics
         }
         catch (Exception failure) when (GrpcClientFailures.IsTransportFailure(failure))
         {
-            Record(operation, FailureDetails(failure, cancellationToken));
+            Record(operation, CreateFailureDetails(failure, cancellationToken));
             throw;
         }
     }
@@ -35,7 +35,7 @@ internal static class ClientLobbyDiagnostics
         }
         catch (Exception failure) when (GrpcClientFailures.IsTransportFailure(failure))
         {
-            Record(LobbyOperation.SearchRequest, FailureDetails(failure, cancellationToken));
+            Record(LobbyOperation.SearchRequest, CreateFailureDetails(failure, cancellationToken));
             throw;
         }
     }
@@ -48,10 +48,10 @@ internal static class ClientLobbyDiagnostics
     internal static void Failure(LobbyOperation operation, Exception failure,
         CancellationToken cancellationToken)
     {
-        Record(operation, FailureDetails(failure, cancellationToken));
+        Record(operation, CreateFailureDetails(failure, cancellationToken));
     }
 
-    private static DiagnosticEventDetails FailureDetails(Exception failure,
+    internal static DiagnosticEventDetails CreateFailureDetails(Exception failure,
         CancellationToken cancellationToken)
     {
         Exception cause = failure is ClientRequestException request

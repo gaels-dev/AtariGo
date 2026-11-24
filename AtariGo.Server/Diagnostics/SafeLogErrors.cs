@@ -22,6 +22,10 @@ internal static class SafeLogErrors
             {
                 return DiagnosticError.FromException(sql, sql.Number);
             }
+            if (current is RpcException rpc)
+            {
+                return DiagnosticError.FromException(rpc, (int)rpc.StatusCode);
+            }
             current = current.InnerException;
         }
         return exception is not null ? DiagnosticError.FromException(exception) : ReadType(state);
