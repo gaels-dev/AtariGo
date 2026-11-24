@@ -1,8 +1,8 @@
-using System.Diagnostics;
 using System.IO;
 
 using AtariGo.Client.Models;
 using AtariGo.Contracts;
+using AtariGo.Diagnostics;
 
 namespace AtariGo.Client.Services;
 
@@ -162,10 +162,12 @@ public sealed class PrivateRoomSession : IPrivateRoomSession
     private async Task ObserveAsync(CancellationToken cancellationToken)
     {
         await Task.Yield();
+        CancellationToken ownerToken = cancellationToken;
         try
         {
             using CancellationTokenSource observation = CreateCancellation(cancellationToken);
             CancellationToken token = observation.Token;
+            ownerToken = token;
             bool fullSnapshot = false;
             bool finished = IsFinished(Room);
             PublishCurrent();
@@ -184,11 +186,11 @@ public sealed class PrivateRoomSession : IPrivateRoomSession
         catch (Exception exception) when (_lifetimeToken.IsCancellationRequested
             || GrpcCallPolicy.IsRequestedCancellation(exception, cancellationToken))
         {
-            Trace.TraceInformation("Room observation stopped with its owner.");
+            ClientLobbyDiagnostics.Failure(LobbyOperation.RoomObservation, exception, ownerToken);
         }
         catch (Exception exception)
         {
-            Trace.TraceWarning("Room observation failed: {0}.", exception.GetType().Name);
+            ClientLobbyDiagnostics.Failure(LobbyOperation.RoomObservation, exception, ownerToken);
             ReportFailure(GrpcClientFailures.GetReason(exception), false, true);
         }
     }
@@ -219,12 +221,14 @@ public sealed class PrivateRoomSession : IPrivateRoomSession
             when (GrpcClientFailures.IsTransportFailure(exception)
                 && !GrpcCallPolicy.IsRequestedCancellation(exception, token))
         {
+            ClientLobbyDiagnostics.Failure(LobbyOperation.RoomObservation, exception, token);
             ReportFailure(GrpcClientFailures.GetReason(exception), false, true);
             finished = GrpcClientFailures.GetReason(exception) is ClientFailureReason.SessionExpired
                 or ClientFailureReason.PermissionDenied or ClientFailureReason.NotFound;
         }
-        catch (IOException)
+        catch (IOException exception)
         {
+            ClientLobbyDiagnostics.Failure(LobbyOperation.RoomObservation, exception, token);
             ReportFailure(ClientFailureReason.RequestFailed, false, true);
         }
         return finished;
@@ -277,7 +281,7 @@ public sealed class PrivateRoomSession : IPrivateRoomSession
         }
         catch (Exception exception) when (!token.IsCancellationRequested)
         {
-            Trace.TraceWarning("Room state recovery failed: {0}.", exception.GetType().Name);
+            ClientLobbyDiagnostics.Failure(LobbyOperation.RoomRecovery, exception, token);
             ReportFailure(GrpcClientFailures.GetReason(exception), false, true);
         }
     }

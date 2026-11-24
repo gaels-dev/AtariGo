@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 
+using AtariGo.Diagnostics;
 using AtariGo.Server.Application.RoomInvitations;
 
 namespace AtariGo.Server.Application.Rooms;
@@ -26,6 +27,7 @@ public sealed class RoomsService : IRoomsService
     private readonly TimeProvider _timeProvider;
     private readonly RoomInvitationRegistry _invitations;
     private readonly IRoomInvitationNotifier _invitationNotifier;
+    private readonly ILogger _logger;
     private int _lastRoomId;
 
     public RoomsService(
@@ -36,6 +38,7 @@ public sealed class RoomsService : IRoomsService
         ArgumentNullException.ThrowIfNull(timeProvider);
         ArgumentNullException.ThrowIfNull(invitationNotifier);
         ArgumentNullException.ThrowIfNull(logger);
+        _logger = logger;
         _timeProvider = timeProvider;
         _invitationNotifier = invitationNotifier;
         _invitations = new RoomInvitationRegistry(invitationNotifier, logger);
@@ -70,7 +73,7 @@ public sealed class RoomsService : IRoomsService
             {
                 Host = host
             };
-            var entry = new RoomEntry(room, _timeProvider.GetUtcNow().Add(roomLifetime));
+            var entry = new RoomEntry(room, _timeProvider.GetUtcNow().Add(roomLifetime), _logger);
             _rooms.Add(roomId, entry);
             try
             {
@@ -83,6 +86,7 @@ public sealed class RoomsService : IRoomsService
             }
 
             _lastRoomId = roomId;
+            entry.Record(LobbyOperation.RoomCreated, host.UserId);
             return new RoomOperationResult(RoomOperationStatus.Success, room);
         }
     }

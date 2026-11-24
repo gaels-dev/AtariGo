@@ -1,4 +1,6 @@
+using AtariGo.Diagnostics;
 using AtariGo.Server.Application.Rooms;
+using AtariGo.Server.Diagnostics;
 
 namespace AtariGo.Server.Application.RoomInvitations;
 
@@ -45,6 +47,7 @@ internal sealed class RoomInvitationRegistry
             Recipient = recipient
         };
         _entries.Add(entry.InvitationId, entry);
+        Record(entry, LobbyOperation.InvitationCreated);
         Notify(entry);
         return entry;
     }
@@ -89,6 +92,10 @@ internal sealed class RoomInvitationRegistry
             State = nextStatus
         };
         _entries[entry.InvitationId] = updated;
+        if (entry.State != nextStatus)
+        {
+            Record(updated, LobbyOperation.InvitationChanged);
+        }
         Notify(updated);
         return updated;
     }
@@ -123,11 +130,22 @@ internal sealed class RoomInvitationRegistry
         }
     }
 
+    private void Record(RoomInvitationEntry entry, LobbyOperation operation)
+    {
+        ServerLobbyDiagnostics.Record(_logger, operation, new DiagnosticEventDetails
+        {
+            Outcome = DiagnosticOutcome.Succeeded,
+            Status = new DiagnosticStatus(entry.State),
+            Context = new DiagnosticContext
+            {
+                InvitationId = entry.InvitationId,
+                RoomId = entry.RoomId
+            }
+        });
+    }
+
     private void Notify(RoomInvitationEntry entry)
     {
-        _logger.LogInformation(
-            "Room invitation {InvitationId} in room {RoomId}: {State}.",
-            entry.InvitationId, entry.RoomId, entry.State);
         _notifier.NotifyRoomInvitationsChanged(entry.Sender.UserId);
         _notifier.NotifyRoomInvitationsChanged(entry.Recipient.UserId);
     }

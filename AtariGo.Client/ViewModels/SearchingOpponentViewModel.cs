@@ -1,10 +1,9 @@
-using System.Diagnostics;
 using System.Globalization;
 using System.Windows.Input;
 using System.Windows.Threading;
 
-using AtariGo.Client.Models;
 using AtariGo.Client.Commands;
+using AtariGo.Client.Models;
 using AtariGo.Client.Properties;
 using AtariGo.Client.Services;
 using AtariGo.Contracts;
@@ -137,7 +136,6 @@ public sealed class SearchingOpponentViewModel : ViewModelBase, IDisposable
             when (cancellationToken.IsCancellationRequested)
         {
             StopCountdown();
-            Trace.TraceInformation("Public matchmaking search was cancelled.");
         }
         catch (Exception exception)
             when (GrpcCallPolicy.IsRequestedCancellation(
@@ -145,7 +143,6 @@ public sealed class SearchingOpponentViewModel : ViewModelBase, IDisposable
                 cancellationToken))
         {
             StopCountdown();
-            Trace.TraceInformation("Public matchmaking stream was cancelled.");
         }
         catch (Exception exception) when (GrpcClientFailures.IsTransportFailure(exception))
         {

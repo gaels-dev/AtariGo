@@ -22,16 +22,22 @@ internal static class ClientIdentityDiagnostics
     internal static void Failure(IdentityOperation operation, Exception failure,
         CancellationToken cancellationToken)
     {
+        Record(operation, FailureDetails(failure, cancellationToken));
+    }
+
+    internal static DiagnosticEventDetails FailureDetails(Exception failure,
+        CancellationToken cancellationToken)
+    {
         bool cancelled = cancellationToken.IsCancellationRequested
             && (failure is OperationCanceledException aborted
                 && aborted.CancellationToken == cancellationToken
                 || failure is RpcException { StatusCode: StatusCode.Cancelled });
-        Record(operation, new DiagnosticEventDetails
+        return new DiagnosticEventDetails
         {
             Outcome = cancelled ? DiagnosticOutcome.Cancelled : DiagnosticOutcome.Unconfirmed,
             Severity = cancelled ? DiagnosticSeverity.Information : DiagnosticSeverity.Warning,
             Error = DiagnosticError.FromException(failure,
                 failure is RpcException rpc ? (int)rpc.StatusCode : null)
-        });
+        };
     }
 }

@@ -1,4 +1,3 @@
-using System.Text;
 using System.Data.Common;
 
 using Microsoft.EntityFrameworkCore;
@@ -14,15 +13,7 @@ public static class ServerIdentityDiagnostics
     public static void Record(ILogger logger, IdentityOperation operation,
         DiagnosticEventDetails details)
     {
-        ArgumentNullException.ThrowIfNull(logger);
-        ArgumentNullException.ThrowIfNull(details);
-        LogLevel level = (LogLevel)details.Severity;
-        if (logger.IsEnabled(level))
-        {
-            DiagnosticEvent entry = IdentityDiagnostics.Create(operation, details);
-            var id = new EventId((int)operation, operation.ToString());
-            logger.Log(level, id, entry, null, Format);
-        }
+        ServerDiagnosticEvents.Record(logger, IdentityDiagnostics.Create(operation, details));
     }
 
     public static void Completed(ILogger logger, IdentityOperation operation, Enum status)
@@ -44,11 +35,6 @@ public static class ServerIdentityDiagnostics
             Outcome = cancelled ? DiagnosticOutcome.Cancelled : DiagnosticOutcome.Unconfirmed,
             Error = SafeLogErrors.Read(failure.Error, (object?)null)
         });
-    }
-
-    private static string Format(DiagnosticEvent entry, Exception? failure)
-    {
-        return Encoding.UTF8.GetString(DiagnosticFileFormatter.Format(entry)).TrimEnd('\n');
     }
 
     private static DiagnosticSeverity GetSeverity(Exception failure, bool cancelled)

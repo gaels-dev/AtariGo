@@ -1,5 +1,3 @@
-using System.Diagnostics;
-
 namespace AtariGo.Diagnostics;
 
 public static class IdentityDiagnostics
@@ -14,14 +12,7 @@ public static class IdentityDiagnostics
         }
         var definition = new DiagnosticEventDefinition((int)operation,
             isClient ? "AtariGo.Client.Identity" : "AtariGo.Server.Identity", operation.ToString());
-        details = details with
-        {
-            Context = (details.Context ?? new DiagnosticContext()) with
-            {
-                TraceId = details.Context?.TraceId ?? Activity.Current?.TraceId
-            }
-        };
-        return new DiagnosticEvent(definition, details, DateTimeOffset.UtcNow);
+        return DiagnosticEventFactory.Create(definition, details);
     }
 
     public static DiagnosticEventDetails Result(IdentityOperation operation, Enum status)
