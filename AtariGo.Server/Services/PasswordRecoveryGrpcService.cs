@@ -5,8 +5,10 @@ using Microsoft.EntityFrameworkCore;
 using Grpc.Core;
 
 using AtariGo.Contracts;
+using AtariGo.Diagnostics;
 using AtariGo.Server.Application.Authentication;
 using AtariGo.Server.Application.PasswordRecovery;
+using AtariGo.Server.Diagnostics;
 
 namespace AtariGo.Server.Services;
 
@@ -34,26 +36,26 @@ public sealed class PasswordRecoveryGrpcService : PasswordRecovery.PasswordRecov
         return _limiter.TryAcquireRecovery(address);
     }
 
-    private async Task<PasswordRecoveryResponse> ExecuteAsync(Func<Task<RecoveryResult>> operation)
+    private async Task<PasswordRecoveryResponse> ExecuteAsync(Func<Task<RecoveryResult>> operation,
+        IdentityOperation diagnosticOperation, CancellationToken cancellationToken)
     {
         try
         {
             RecoveryResult result = await operation();
-            if (result == RecoveryResult.NotSaved)
-            {
-                _logger.LogWarning("The password reset write was rolled back.");
-            }
+            ServerIdentityDiagnostics.Completed(_logger, diagnosticOperation, result);
             return CreateResponse(result);
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException exception)
         {
+            ServerIdentityDiagnostics.Failure(_logger, diagnosticOperation,
+                (exception, cancellationToken));
             throw new RpcException(new Status(StatusCode.Cancelled,
                 "The password recovery operation was not confirmed."));
         }
         catch (Exception exception) when (exception is DbException or DbUpdateException)
         {
-            _logger.LogError("Password recovery failed with {ErrorType}.",
-                exception.GetType().Name);
+            ServerIdentityDiagnostics.Failure(_logger, diagnosticOperation,
+                (exception, cancellationToken));
             throw new RpcException(new Status(StatusCode.Unavailable,
                 "The password recovery operation was not confirmed."));
         }
@@ -81,6 +83,8 @@ public sealed class PasswordRecoveryGrpcService : PasswordRecovery.PasswordRecov
     {
         if (!CanRequest(context))
         {
+            ServerIdentityDiagnostics.Completed(_logger, IdentityOperation.RequestPasswordRecovery,
+                RecoveryResult.RateLimited);
             return Task.FromResult(CreateResponse(RecoveryResult.RateLimited));
         }
         var command = new RecoveryRequestCommand
@@ -88,7 +92,8 @@ public sealed class PasswordRecoveryGrpcService : PasswordRecovery.PasswordRecov
             Identifier = request.Identifier,
             CultureName = request.CultureName
         };
-        return ExecuteAsync(() => _recovery.RequestAsync(command, context.CancellationToken));
+        return ExecuteAsync(() => _recovery.RequestAsync(command, context.CancellationToken),
+            IdentityOperation.RequestPasswordRecovery, context.CancellationToken);
     }
 
     public override Task<PasswordRecoveryResponse> ResetPassword(ResetPasswordRequest request,
@@ -96,6 +101,8 @@ public sealed class PasswordRecoveryGrpcService : PasswordRecovery.PasswordRecov
     {
         if (!CanRequest(context))
         {
+            ServerIdentityDiagnostics.Completed(_logger, IdentityOperation.ResetPassword,
+                RecoveryResult.RateLimited);
             return Task.FromResult(CreateResponse(RecoveryResult.RateLimited));
         }
         var command = new PasswordResetCommand
@@ -105,6 +112,7 @@ public sealed class PasswordRecoveryGrpcService : PasswordRecovery.PasswordRecov
             NewPassword = request.NewPassword,
             Confirmation = request.Confirmation
         };
-        return ExecuteAsync(() => _recovery.ResetAsync(command, context.CancellationToken));
+        return ExecuteAsync(() => _recovery.ResetAsync(command, context.CancellationToken),
+            IdentityOperation.ResetPassword, context.CancellationToken);
     }
 }

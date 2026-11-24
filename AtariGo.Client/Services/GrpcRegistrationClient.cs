@@ -2,6 +2,7 @@ using Grpc.Core;
 
 using AtariGo.Client.Models;
 using AtariGo.Contracts;
+using AtariGo.Diagnostics;
 
 namespace AtariGo.Client.Services
 {
@@ -27,16 +28,20 @@ namespace AtariGo.Client.Services
             ArgumentNullException.ThrowIfNull(registrationDraft);
 
             var request = new RegisterAccountRequest
-                {
-                    UserName = registrationDraft.UserName,
-                    Email = registrationDraft.Email,
-                    Password = registrationDraft.Password,
-                    PasswordConfirmation = registrationDraft.PasswordConfirmation
-                };
+            {
+                UserName = registrationDraft.UserName,
+                Email = registrationDraft.Email,
+                Password = registrationDraft.Password,
+                PasswordConfirmation = registrationDraft.PasswordConfirmation
+            };
             try
             {
-                return await GrpcCallPolicy.ExecuteAsync(() => _client.RegisterAccountAsync(
-                    request, GrpcCallPolicy.CreateOptions(cancellationToken)).ResponseAsync);
+                RegisterAccountResponse response = await GrpcCallPolicy.ExecuteAsync(() =>
+                    _client.RegisterAccountAsync(request,
+                        GrpcCallPolicy.CreateOptions(cancellationToken)).ResponseAsync);
+                ClientIdentityDiagnostics.Completed(IdentityOperation.RegisterAccount,
+                    response.Result);
+                return response;
             }
             finally
             {

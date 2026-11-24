@@ -3,6 +3,8 @@ using Microsoft.EntityFrameworkCore;
 
 using AtariGo.Server.Data;
 using AtariGo.Server.Data.Entities;
+using AtariGo.Diagnostics;
+using AtariGo.Server.Diagnostics;
 
 namespace AtariGo.Server.Application.Authentication;
 
@@ -53,11 +55,22 @@ public sealed class RegistrationService : IRegistrationService
 
         if (existingAccountStatus.HasValue)
         {
+            ServerIdentityDiagnostics.Completed(_logger, IdentityOperation.RegisterAccount,
+                existingAccountStatus.Value);
             return existingAccountStatus.Value;
         }
 
         User user = CreateUser(command);
-        return await SaveNewUserAsync(user, cancellationToken);
+        RegistrationStatus status = await SaveNewUserAsync(user, cancellationToken);
+        if (status == RegistrationStatus.Success)
+        {
+            ServerIdentityDiagnostics.Record(_logger, IdentityOperation.RegisterAccount,
+                IdentityDiagnostics.Result(IdentityOperation.RegisterAccount, status) with
+                {
+                    Context = new DiagnosticContext { UserId = user.UserId }
+                });
+        }
+        return status;
     }
 
     private async Task<RegistrationStatus?> FindExistingAccountStatusAsync(
@@ -112,8 +125,8 @@ public sealed class RegistrationService : IRegistrationService
         }
         catch (DbUpdateException exception)
         {
-            _logger.LogWarning("Could not register account: {ErrorType}.",
-                exception.GetType().Name);
+            ServerIdentityDiagnostics.Failure(_logger, IdentityOperation.RegisterAccount,
+                (exception, cancellationToken));
             _dbContext.ChangeTracker.Clear();
             return RegistrationStatus.Error;
         }

@@ -5,7 +5,9 @@ using Microsoft.EntityFrameworkCore;
 using Grpc.Core;
 
 using AtariGo.Contracts;
+using AtariGo.Diagnostics;
 using AtariGo.Server.Application.Authentication;
+using AtariGo.Server.Diagnostics;
 
 namespace AtariGo.Server.Services;
 
@@ -41,30 +43,41 @@ public sealed class AuthenticationGrpcService : Authentication.AuthenticationBas
     }
 
     private async Task<LoginResponse> ExecuteAsync(Func<Task<LoginOperationResult>> operation,
-        ServerCallContext context)
+        ServerCallContext context, IdentityOperation diagnosticOperation)
     {
         string address = context.GetHttpContext().Connection.RemoteIpAddress?.ToString()
             ?? "unknown";
         if (!_limiter.TryAcquireLogin(address))
         {
+            ServerIdentityDiagnostics.Completed(_logger, diagnosticOperation,
+                LoginStatus.RateLimited);
             return new LoginResponse { Result = LoginResult.RateLimited };
         }
         try
         {
             LoginOperationResult result = await operation();
-            _logger.LogInformation("Login operation {Operation} completed with {Status}.",
-                context.Method, result.Status);
+            ServerIdentityDiagnostics.Record(_logger, diagnosticOperation,
+                IdentityDiagnostics.Result(diagnosticOperation, result.Status) with
+                {
+                    Context = new DiagnosticContext
+                    {
+                        UserId = result.UserId > 0 ? result.UserId : null
+                    }
+                });
             return CreateResponse(result);
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException exception)
         {
+            ServerIdentityDiagnostics.Failure(_logger, diagnosticOperation,
+                (exception, context.CancellationToken));
             throw new RpcException(new Status(StatusCode.Cancelled,
                 "The login operation was not confirmed."));
         }
         catch (Exception exception) when (exception is DbException or DbUpdateException
             or InvalidOperationException)
         {
-            _logger.LogError("Login failed with {ErrorType}.", exception.GetType().Name);
+            ServerIdentityDiagnostics.Failure(_logger, diagnosticOperation,
+                (exception, context.CancellationToken));
             throw new RpcException(new Status(StatusCode.Unavailable,
                 "The login operation was not confirmed."));
         }
@@ -102,6 +115,13 @@ public sealed class AuthenticationGrpcService : Authentication.AuthenticationBas
         return loginResults.GetValueOrDefault(status, LoginResult.InvalidCredentials);
     }
 
+    private async Task<LoginOperationResult> CancelAsync(string token,
+        CancellationToken cancellationToken)
+    {
+        await _authentication.CancelAsync(token, cancellationToken);
+        return new LoginOperationResult(LoginStatus.InvalidChallenge);
+    }
+
     public override async Task<LoginResponse> Login(LoginRequest request, ServerCallContext context)
     {
         var command = new LoginCommand
@@ -113,7 +133,7 @@ public sealed class AuthenticationGrpcService : Authentication.AuthenticationBas
         try
         {
             return await ExecuteAsync(() => _authentication.LoginAsync(command,
-                context.CancellationToken), context);
+                context.CancellationToken), context, IdentityOperation.Login);
         }
         finally
         {
@@ -129,7 +149,7 @@ public sealed class AuthenticationGrpcService : Authentication.AuthenticationBas
         {
             return await ExecuteAsync(() => _authentication.VerifyAsync(
                 new LoginCodeCommand(request.ChallengeToken, request.Code),
-                context.CancellationToken), context);
+                context.CancellationToken), context, IdentityOperation.VerifyLoginCode);
         }
         finally
         {
@@ -142,17 +162,14 @@ public sealed class AuthenticationGrpcService : Authentication.AuthenticationBas
     {
         return ExecuteAsync(() => _authentication.ResendAsync(
             new LoginChallengeCommand(request.ChallengeToken, request.CultureName),
-            context.CancellationToken), context);
+            context.CancellationToken), context, IdentityOperation.ResendLoginCode);
     }
 
     public override async Task<CancelLoginResponse> CancelLogin(CancelLoginRequest request,
         ServerCallContext context)
     {
-        await ExecuteAsync(async () =>
-        {
-            await _authentication.CancelAsync(request.ChallengeToken, context.CancellationToken);
-            return new LoginOperationResult(LoginStatus.InvalidChallenge);
-        }, context);
+        await ExecuteAsync(() => CancelAsync(request.ChallengeToken, context.CancellationToken),
+            context, IdentityOperation.CancelLogin);
         return new CancelLoginResponse();
     }
 }

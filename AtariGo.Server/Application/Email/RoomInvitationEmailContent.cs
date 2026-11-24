@@ -20,6 +20,7 @@ public static class RoomInvitationEmailContent
         CultureInfo culture = SelectCulture(cultureName);
         return new EmailMessage
         {
+            Purpose = EmailPurpose.RoomInvitation,
             Recipient = recipient,
             Subject = GetText("Subject", culture),
             Body = string.Format(culture,

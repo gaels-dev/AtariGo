@@ -2,8 +2,10 @@ using Grpc.Core;
 
 using AtariGo.Server.Concurrency;
 using AtariGo.Contracts;
+using AtariGo.Diagnostics;
 using AtariGo.Server.Application.Sessions;
 using AtariGo.Server.Application.Social;
+using AtariGo.Server.Diagnostics;
 
 namespace AtariGo.Server.Services;
 
@@ -153,22 +155,16 @@ public sealed class SessionGrpcService : Session.SessionBase
         {
             await Task.WhenAll(receiveTask, sendTask);
         }
-        catch (OperationCanceledException)
-            when (cancellationToken.IsCancellationRequested)
+        catch (Exception exception) when (exception is IOException
+            || cancellationToken.IsCancellationRequested
+            && exception is OperationCanceledException or RpcException
+            { StatusCode: StatusCode.Cancelled })
         {
-            _logger.LogInformation("Real-time session stream stopped by cancellation.");
-        }
-        catch (RpcException exception)
-            when (cancellationToken.IsCancellationRequested
-                && exception.StatusCode == StatusCode.Cancelled)
-        {
-            _logger.LogInformation("Real-time session RPC ended by cancellation.");
-        }
-        catch (IOException exception)
-        {
-            _logger.LogInformation(
-                exception,
-                "Real-time session transport ended when the client closed the stream.");
+            if (exception is IOException)
+            {
+                ServerIdentityDiagnostics.Failure(_logger, IdentityOperation.PresenceDisconnected,
+                    (exception, cancellationToken));
+            }
         }
     }
 
@@ -184,6 +180,12 @@ public sealed class SessionGrpcService : Session.SessionBase
                     connection.ConnectionInfo.SessionId,
                     CancellationToken.None);
             }
+            ServerIdentityDiagnostics.Record(_logger, IdentityOperation.PresenceDisconnected,
+                new DiagnosticEventDetails
+                {
+                    Outcome = DiagnosticOutcome.Stopped,
+                    Context = new DiagnosticContext { UserId = connection.ConnectionInfo.UserId }
+                });
         }
         finally
         {
@@ -211,6 +213,12 @@ public sealed class SessionGrpcService : Session.SessionBase
         await RequireClientConnectionAsync(requestStream, context.CancellationToken);
         SessionConnectionLease connection = await OpenConnectionAsync(
             sessionToken, context.CancellationToken);
+        using IDisposable? diagnosticScope = _logger.BeginScope(new DiagnosticContext
+        {
+            UserId = connection.ConnectionInfo.UserId
+        });
+        ServerIdentityDiagnostics.Record(_logger, IdentityOperation.PresenceConnected,
+            new DiagnosticEventDetails { Outcome = DiagnosticOutcome.Started });
         try
         {
             await SendPresenceSnapshotAsync(
@@ -234,6 +242,8 @@ public sealed class SessionGrpcService : Session.SessionBase
         await _sessionService.LogoutAsync(
             SessionRequestAuthentication.GetSessionToken(context),
             context.CancellationToken);
+        ServerIdentityDiagnostics.Record(_logger, IdentityOperation.Logout,
+            new DiagnosticEventDetails { Outcome = DiagnosticOutcome.Stopped });
         return new LogoutResponse();
     }
 }

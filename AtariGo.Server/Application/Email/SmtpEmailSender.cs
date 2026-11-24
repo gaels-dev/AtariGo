@@ -3,7 +3,11 @@ using Microsoft.Extensions.Options;
 using MailKit;
 using MailKit.Net.Smtp;
 using MailKit.Security;
+
 using MimeKit;
+
+using AtariGo.Diagnostics;
+using AtariGo.Server.Diagnostics;
 
 namespace AtariGo.Server.Application.Email;
 
@@ -44,14 +48,33 @@ public sealed class SmtpEmailSender : IEmailSender
         try
         {
             await SendMessageAsync(message, cancellationToken);
+            ServerIdentityDiagnostics.Record(_logger, GetOperation(message.Purpose),
+                new DiagnosticEventDetails { Outcome = DiagnosticOutcome.Succeeded });
         }
         catch (Exception exception) when (exception is not OperationCanceledException
             && EmailDeliveryService.IsDeliveryFailure(exception))
         {
-            _logger.LogWarning("Email delivery failed with {ErrorType}.",
-                exception.GetType().Name);
+            ServerIdentityDiagnostics.Failure(_logger, GetOperation(message.Purpose),
+                (exception, cancellationToken));
             throw;
         }
+        catch (OperationCanceledException exception)
+        {
+            ServerIdentityDiagnostics.Failure(_logger, GetOperation(message.Purpose),
+                (exception, cancellationToken));
+            throw;
+        }
+    }
+
+    private static IdentityOperation GetOperation(EmailPurpose purpose)
+    {
+        return purpose switch
+        {
+            EmailPurpose.LoginVerification => IdentityOperation.SubmitLoginEmail,
+            EmailPurpose.PasswordRecovery => IdentityOperation.SubmitRecoveryEmail,
+            EmailPurpose.RoomInvitation => IdentityOperation.SubmitInvitationEmail,
+            _ => IdentityOperation.SubmitEmail
+        };
     }
 
     private async Task SendMessageAsync(EmailMessage email,

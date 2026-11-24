@@ -4,6 +4,8 @@ using AtariGo.Server.Concurrency;
 using AtariGo.Server.Application.Sessions;
 using AtariGo.Server.Application.Social;
 using AtariGo.Server.Data;
+using AtariGo.Diagnostics;
+using AtariGo.Server.Diagnostics;
 
 namespace AtariGo.Server.Application.Friendships;
 
@@ -61,9 +63,6 @@ public sealed class FriendshipsService : IFriendshipsService
                 && friendship.FriendUserId == secondUserId)
             .ExecuteDeleteAsync(cancellationToken);
         _connections.RemoveFriendship(identity.UserId, friendUserId);
-        _logger.LogInformation(
-            "Friendship removal for users {UserId} and {FriendUserId}: {Removed}.",
-            identity.UserId, friendUserId, removed > 0);
         RemoveFriendshipResult removalResult;
         if (removed > 0)
         {
@@ -74,6 +73,11 @@ public sealed class FriendshipsService : IFriendshipsService
             removalResult = RemoveFriendshipResult.NotFriends;
         }
 
+        ServerIdentityDiagnostics.Record(_logger, IdentityOperation.RemoveFriendship,
+            IdentityDiagnostics.Result(IdentityOperation.RemoveFriendship, removalResult) with
+            {
+                Context = new DiagnosticContext { UserId = identity.UserId }
+            });
         return removalResult;
     }
 }

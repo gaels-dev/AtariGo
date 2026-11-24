@@ -16,6 +16,18 @@ public sealed class ClientFileTraceListener : TraceListener
 
     public DiagnosticStorageStatus Status => _writer.Status;
 
+    private static TraceEventType GetSeverity(DiagnosticSeverity severity)
+    {
+        return severity switch
+        {
+            DiagnosticSeverity.Critical => TraceEventType.Critical,
+            DiagnosticSeverity.Error => TraceEventType.Error,
+            DiagnosticSeverity.Warning => TraceEventType.Warning,
+            DiagnosticSeverity.Information => TraceEventType.Information,
+            _ => TraceEventType.Verbose
+        };
+    }
+
     public override bool IsThreadSafe => true;
 
     public override void Write(string? message)
@@ -37,6 +49,13 @@ public sealed class ClientFileTraceListener : TraceListener
     public override void TraceEvent(TraceEventCache? eventCache, string source,
         TraceEventType eventType, int id, string? format, params object?[]? args)
     {
+        if (args is [DiagnosticEvent entry])
+        {
+            TraceData(eventCache, entry.Definition.Source,
+                GetSeverity(entry.Details.Severity),
+                entry.Definition.Id, entry);
+            return;
+        }
         if (Filter is not null
             && !Filter.ShouldTrace(eventCache, source, eventType, id, format, args, null, null))
         {

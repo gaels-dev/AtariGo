@@ -3,8 +3,10 @@ using System.Data.Common;
 using Grpc.Core;
 
 using AtariGo.Contracts;
+using AtariGo.Diagnostics;
 using AtariGo.Server.Application.Credentials;
 using AtariGo.Server.Application.Sessions;
+using AtariGo.Server.Diagnostics;
 
 namespace AtariGo.Server.Services;
 
@@ -43,6 +45,11 @@ public sealed class CredentialsGrpcService : Credentials.CredentialsBase
         };
         ChangePasswordResult result = await _credentials.ChangePasswordAsync(identity, command,
             context.CancellationToken);
+        ServerIdentityDiagnostics.Record(_logger, IdentityOperation.ChangePassword,
+            IdentityDiagnostics.Result(IdentityOperation.ChangePassword, result) with
+            {
+                Context = new DiagnosticContext { UserId = identity.UserId }
+            });
         return new ChangePasswordResponse { Status = MapResult(result) };
     }
 
@@ -67,14 +74,18 @@ public sealed class CredentialsGrpcService : Credentials.CredentialsBase
         {
             return await ChangeCredentialAsync(request, context);
         }
-        catch (OperationCanceledException) when (context.CancellationToken.IsCancellationRequested)
+        catch (OperationCanceledException exception)
+            when (context.CancellationToken.IsCancellationRequested)
         {
+            ServerIdentityDiagnostics.Failure(_logger, IdentityOperation.ChangePassword,
+                (exception, context.CancellationToken));
             throw new RpcException(new Status(StatusCode.Cancelled,
                 "The password change was not confirmed."));
         }
         catch (DbException exception)
         {
-            _logger.LogError("Password change failed with {ErrorType}.", exception.GetType().Name);
+            ServerIdentityDiagnostics.Failure(_logger, IdentityOperation.ChangePassword,
+                (exception, context.CancellationToken));
             throw new RpcException(new Status(StatusCode.Unavailable,
                 "The password change was not confirmed."));
         }

@@ -1,10 +1,10 @@
-using System.Diagnostics;
 using System.Globalization;
 
 using Grpc.Core;
 
 using AtariGo.Client.Models;
 using AtariGo.Contracts;
+using AtariGo.Diagnostics;
 
 namespace AtariGo.Client.Services;
 
@@ -33,7 +33,8 @@ public sealed class GrpcPasswordRecoveryClient : IPasswordRecoveryClient
             CultureName = CultureInfo.CurrentUICulture.Name
         };
         return ExecuteAsync(() => _client.RequestPasswordRecoveryAsync(request,
-            GrpcCallPolicy.CreateOptions(cancellationToken)).ResponseAsync);
+            GrpcCallPolicy.CreateOptions(cancellationToken)).ResponseAsync,
+            IdentityOperation.RequestPasswordRecovery, cancellationToken);
     }
 
     public async Task<PasswordRecoveryResult> ResetAsync(PasswordRecoveryInput input,
@@ -55,7 +56,8 @@ public sealed class GrpcPasswordRecoveryClient : IPasswordRecoveryClient
         try
         {
             return await ExecuteAsync(() => _client.ResetPasswordAsync(request,
-                GrpcCallPolicy.CreateOptions(cancellationToken)).ResponseAsync);
+                GrpcCallPolicy.CreateOptions(cancellationToken)).ResponseAsync,
+                IdentityOperation.ResetPassword, cancellationToken);
         }
         finally
         {
@@ -66,17 +68,19 @@ public sealed class GrpcPasswordRecoveryClient : IPasswordRecoveryClient
     }
 
     private static async Task<PasswordRecoveryResult> ExecuteAsync(
-        Func<Task<PasswordRecoveryResponse>> operation)
+        Func<Task<PasswordRecoveryResponse>> operation, IdentityOperation diagnosticOperation,
+        CancellationToken cancellationToken)
     {
         try
         {
             PasswordRecoveryResponse response = await operation();
-            return MapStatus(response.Status);
+            PasswordRecoveryResult result = MapStatus(response.Status);
+            ClientIdentityDiagnostics.Completed(diagnosticOperation, result);
+            return result;
         }
         catch (Exception exception) when (exception is RpcException or OperationCanceledException)
         {
-            Trace.TraceWarning("Password recovery was not confirmed. Error type: {0}.",
-                exception.GetType().Name);
+            ClientIdentityDiagnostics.Failure(diagnosticOperation, exception, cancellationToken);
             return PasswordRecoveryResult.Unconfirmed;
         }
     }
