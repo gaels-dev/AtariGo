@@ -1,4 +1,6 @@
 <Solution>
+  <Project Path="AtariGo.Diagnostics/AtariGo.Diagnostics.csproj" />
+  <Project Path="AtariGo.Diagnostics.Tests/AtariGo.Diagnostics.Tests.csproj" />
   <Project Path="AtariGo.GameLogic/AtariGo.GameLogic.csproj" />
   <Project Path="AtariGo.GameLogic.Tests/AtariGo.GameLogic.Tests.csproj" />
   <Project Path="AtariGo.Client.Tests/AtariGo.Client.Tests.csproj" />
