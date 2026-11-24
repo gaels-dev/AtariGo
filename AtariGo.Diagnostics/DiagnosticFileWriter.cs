@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Threading.Channels;
 
 namespace AtariGo.Diagnostics;
@@ -50,10 +49,16 @@ public sealed class DiagnosticFileWriter : IAsyncDisposable
             if (record is null || record.Length > _options.MaximumFileBytes
                 || !_queue.Writer.TryWrite((record, null)))
             {
-                _status = _status with { Rejected = _status.Rejected + 1 };
+                _status = _status with
+                {
+                    Rejected = _status.Rejected + 1
+                };
                 return false;
             }
-            _status = _status with { Accepted = _status.Accepted + 1 };
+            _status = _status with
+            {
+                Accepted = _status.Accepted + 1
+            };
             return true;
         }
     }
@@ -133,7 +138,11 @@ public sealed class DiagnosticFileWriter : IAsyncDisposable
         }
         lock (_stateLock)
         {
-            _status = _status with { Written = _status.Written + 1, IsDegraded = false };
+            _status = _status with
+            {
+                Written = _status.Written + 1,
+                IsDegraded = false
+            };
         }
     }
 
@@ -153,7 +162,6 @@ public sealed class DiagnosticFileWriter : IAsyncDisposable
     private void RecordFailure(Exception failure)
     {
         DiagnosticError error = DiagnosticError.FromException(failure);
-        Debug.WriteLine($"Diagnostic storage unavailable: {error.TypeName}.");
         lock (_stateLock)
         {
             _status = _status with

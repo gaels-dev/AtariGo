@@ -28,4 +28,9 @@ public sealed record DiagnosticEventDetails
     {
         get; init;
     }
+
+    public DiagnosticStatus? Status
+    {
+        get; init;
+    }
 }

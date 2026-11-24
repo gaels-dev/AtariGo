@@ -25,6 +25,7 @@
   <ItemGroup>
     <ProjectReference Include="..\AtariGo.GameLogic\AtariGo.GameLogic.csproj" />
     <ProjectReference Include="..\AtariGo.Contracts\AtariGo.Contracts.csproj" />
+    <ProjectReference Include="..\AtariGo.Diagnostics\AtariGo.Diagnostics.csproj" />
   </ItemGroup>
 
   <ItemGroup>

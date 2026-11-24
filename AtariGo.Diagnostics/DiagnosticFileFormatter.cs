@@ -3,18 +3,20 @@ using System.Text.Json;
 
 namespace AtariGo.Diagnostics;
 
-internal static class DiagnosticFileFormatter
+public static class DiagnosticFileFormatter
 {
     private const int DisplayOffsetHours = -6;
     private static readonly TimeSpan displayOffset = TimeSpan.FromHours(DisplayOffsetHours);
 
-    internal static bool CanFormat(DiagnosticEvent entry)
+    public static bool CanFormat(DiagnosticEvent entry)
     {
+        ArgumentNullException.ThrowIfNull(entry);
         return entry.TimestampUtc.UtcTicks >= -displayOffset.Ticks;
     }
 
-    internal static byte[] Format(DiagnosticEvent entry)
+    public static byte[] Format(DiagnosticEvent entry)
     {
+        ArgumentNullException.ThrowIfNull(entry);
         DiagnosticContext? context = entry.Details.Context;
         var payload = new
         {
@@ -34,6 +36,7 @@ internal static class DiagnosticFileFormatter
             TraceId = context?.TraceId?.ToString(),
             entry.Details.Error,
             entry.Details.TraceEventId,
+            entry.Details.Status,
             ApplicationVersion = entry.Details.ApplicationVersion?.ToString()
         };
         return Encoding.UTF8.GetBytes(JsonSerializer.Serialize(payload) + "\n");
