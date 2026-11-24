@@ -2,6 +2,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 using AtariGo.GameLogic.Models;
 using AtariGo.GameLogic.Rules;
@@ -43,7 +44,7 @@ internal sealed class GameplayTestDatabase : IAsyncDisposable
     public Guid WhiteGuestId { get; } = Guid.NewGuid();
 
     public static async Task<GameplayTestDatabase> CreateAsync(
-        DbCommandInterceptor? interceptor = null)
+        DbCommandInterceptor? interceptor = null, ILoggerFactory? loggerFactory = null)
     {
         SqliteConnection connection = new SqliteConnection("Data Source=:memory:");
         await connection.OpenAsync();
@@ -52,6 +53,10 @@ internal sealed class GameplayTestDatabase : IAsyncDisposable
         connection.CreateFunction("sysutcdatetime", () => DateTime.UtcNow.ToString("O"));
         ServiceCollection services = new ServiceCollection();
         services.AddLogging();
+        if (loggerFactory is not null)
+        {
+            services.AddSingleton(loggerFactory);
+        }
         DbContextOptionsBuilder<AtariGoDbContext> options =
             new DbContextOptionsBuilder<AtariGoDbContext>().UseSqlite(connection);
         if (interceptor is not null)

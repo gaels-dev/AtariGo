@@ -3,9 +3,12 @@ using Microsoft.Data.SqlClient;
 using Grpc.Core;
 
 using AtariGo.Contracts;
+using AtariGo.Diagnostics;
+using AtariGo.Server.Diagnostics;
 using AtariGo.Server.Application.Games;
 using AtariGo.Server.Application.Matchmaking;
 using AtariGo.Server.Application.Sessions;
+
 using SessionSnapshotModel = AtariGo.Server.Application.Games.GameSessionSnapshot;
 using ProtoSessionSnapshot = AtariGo.Contracts.GameSessionSnapshot;
 using ProtoChatRejectionReason = AtariGo.Contracts.ChatMessageRejectionReason;
@@ -284,21 +287,26 @@ public sealed class GameSessionGrpcService : GameSession.GameSessionBase
         {
             await task;
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException exception)
             when (cancellationToken.IsCancellationRequested)
         {
-            _logger.LogDebug("The paired game stream task stopped after cancellation.");
+            ServerGameDiagnostics.RecordFailure(_logger,
+                (GameOperation.PairedStream, new DiagnosticContext()),
+                (exception, cancellationToken));
         }
         catch (RpcException exception)
             when (cancellationToken.IsCancellationRequested
                 && exception.StatusCode == StatusCode.Cancelled)
         {
-            _logger.LogDebug("The paired game RPC stopped after cancellation.");
+            ServerGameDiagnostics.RecordFailure(_logger,
+                (GameOperation.PairedStream, new DiagnosticContext()),
+                (exception, cancellationToken));
         }
         catch (Exception exception) when (completedTask.IsFaulted)
         {
-            _logger.LogWarning("The paired game stream also failed with {ErrorType}.",
-                exception.GetType().Name);
+            ServerGameDiagnostics.RecordFailure(_logger,
+                (GameOperation.PairedStream, new DiagnosticContext()),
+                (exception, cancellationToken));
         }
     }
 
@@ -449,6 +457,79 @@ public sealed class GameSessionGrpcService : GameSession.GameSessionBase
         }
     }
 
+    private void RecordFailure(GameOperation operation, GameSessionConnection? connection,
+        (Exception Error, CancellationToken Cancellation) failure)
+    {
+        ServerGameDiagnostics.RecordFailure(_logger,
+            (operation, ServerGameDiagnostics.CreateContext(connection)), failure);
+    }
+
+    private Exception? MapFailure(Exception exception, GameSessionConnection? connection,
+        CancellationToken cancellationToken)
+    {
+        if (exception is OperationCanceledException && connection?.IsRevoked == true)
+        {
+            return SessionRequestAuthentication.CreateUnauthenticatedException();
+        }
+        GameOperation operation = exception is TimeoutException
+            ? GameOperation.ReconnectExpired : GameOperation.StreamFailure;
+        RecordFailure(operation, connection, (exception, cancellationToken));
+        if (exception is TimeoutException)
+        {
+            return new RpcException(new Status(StatusCode.FailedPrecondition,
+                "The game reconnection period expired."));
+        }
+        if (IsCancelledTransport(exception, cancellationToken))
+        {
+            return null;
+        }
+        return MapStorageFailure(exception);
+    }
+
+    private static bool IsCancelledTransport(Exception exception,
+        CancellationToken cancellationToken)
+    {
+        return cancellationToken.IsCancellationRequested
+            && exception is OperationCanceledException or IOException
+                or RpcException { StatusCode: StatusCode.Cancelled };
+    }
+
+    private static Exception MapStorageFailure(Exception exception)
+    {
+        string? message = exception switch
+        {
+            IOException => "The game connection was interrupted. Reconnect to recover its result.",
+            Microsoft.EntityFrameworkCore.DbUpdateException =>
+                "The game action could not be confirmed. Reconnect to recover its result.",
+            SqlException => "The game session is temporarily unavailable.",
+            _ => null
+        };
+        return message is null ? exception : new RpcException(new Status(StatusCode.Unavailable,
+            message));
+    }
+
+    private async Task CloseConnectionAsync(GameSessionConnection connection)
+    {
+        try
+        {
+            await _coordinator.DisconnectAsync(connection);
+        }
+        catch (Microsoft.EntityFrameworkCore.DbUpdateException exception)
+        {
+            RecordFailure(GameOperation.Disconnected, connection,
+                (exception, CancellationToken.None));
+        }
+        catch (SqlException exception)
+        {
+            RecordFailure(GameOperation.Disconnected, connection,
+                (exception, CancellationToken.None));
+        }
+        finally
+        {
+            connection.Dispose();
+        }
+    }
+
     public override async Task Connect(
         IAsyncStreamReader<GameSessionClientEvent> requestStream,
         IServerStreamWriter<GameSessionServerEvent> responseStream,
@@ -465,88 +546,23 @@ public sealed class GameSessionGrpcService : GameSession.GameSessionBase
             await RunDuplexStreamAsync(streamContext, connection);
             RequireActiveConnection(connection);
         }
-        catch (OperationCanceledException) when (connection?.IsRevoked == true)
+        catch (Exception exception)
         {
-            throw SessionRequestAuthentication.CreateUnauthenticatedException();
-        }
-        catch (TimeoutException)
-        {
-            _logger.LogInformation("Game reconnection grace expired. GameId: {GameId}.",
-                connection?.GameId);
-            throw new RpcException(new Status(StatusCode.FailedPrecondition,
-                "The game reconnection period expired."));
-        }
-        catch (OperationCanceledException)
-            when (context.CancellationToken.IsCancellationRequested)
-        {
-            _logger.LogInformation(
-                "Game session stream closed by client. GameId: {GameId}",
-                connection?.GameId);
-        }
-        catch (RpcException exception)
-            when (context.CancellationToken.IsCancellationRequested
-                && exception.StatusCode == StatusCode.Cancelled)
-        {
-            _logger.LogInformation(
-                "Game session RPC cancelled by client. GameId: {GameId}",
-                connection?.GameId);
-        }
-        catch (IOException exception)
-            when (context.CancellationToken.IsCancellationRequested)
-        {
-            _logger.LogInformation(
-                exception,
-                "Game session transport closed by client. GameId: {GameId}",
-                connection?.GameId);
-        }
-        catch (IOException exception)
-        {
-            _logger.LogWarning("Game transport failed with {ErrorType}. GameId: {GameId}",
-                exception.GetType().Name, connection?.GameId);
-            throw new RpcException(new Status(StatusCode.Unavailable,
-                "The game connection was interrupted. Reconnect to recover its result."));
-        }
-        catch (Microsoft.EntityFrameworkCore.DbUpdateException exception)
-        {
-            _logger.LogError(exception, "Game persistence failed. GameId: {GameId}",
-                connection?.GameId);
-            throw new RpcException(new Status(StatusCode.Unavailable,
-                "The game action could not be confirmed. Reconnect to recover its result."));
-        }
-        catch (SqlException exception)
-        {
-            _logger.LogError(
-                exception,
-                "Database access failed while connecting to game {GameId}.",
-                connection?.GameId);
-            throw new RpcException(new Status(
-                StatusCode.Unavailable,
-                "The game session is temporarily unavailable."));
+            Exception? mapped = MapFailure(exception, connection, context.CancellationToken);
+            if (ReferenceEquals(mapped, exception))
+            {
+                throw;
+            }
+            if (mapped is not null)
+            {
+                throw mapped;
+            }
         }
         finally
         {
             if (connection is not null)
             {
-                try
-                {
-                    await _coordinator.DisconnectAsync(connection);
-                }
-                catch (Microsoft.EntityFrameworkCore.DbUpdateException exception)
-                {
-                    _logger.LogError(exception,
-                        "Game disconnect could not be persisted. GameId: {GameId}.",
-                        connection.GameId);
-                }
-                catch (SqlException exception)
-                {
-                    _logger.LogError(exception,
-                        "Game disconnect could not access SQL. GameId: {GameId}.",
-                        connection.GameId);
-                }
-                finally
-                {
-                    connection.Dispose();
-                }
+                await CloseConnectionAsync(connection);
             }
         }
     }

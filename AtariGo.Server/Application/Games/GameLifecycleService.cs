@@ -1,3 +1,5 @@
+using AtariGo.Diagnostics;
+using AtariGo.Server.Diagnostics;
 using AtariGo.Server.Application.Rooms;
 using AtariGo.Server.Application.Matchmaking;
 using AtariGo.Server.Application.Reports;
@@ -15,12 +17,14 @@ public sealed class GameLifecycleService : IGameLifecycleService
     private readonly AtariGoDbContext _dbContext;
     private readonly TimeProvider _timeProvider;
     private readonly IAccountSanctionService _sanctions;
+    private readonly ILogger _logger;
 
     public GameLifecycleService(
         IRoomsService roomsService,
         AtariGoDbContext dbContext,
         TimeProvider timeProvider,
-        IAccountSanctionService sanctions)
+        IAccountSanctionService sanctions,
+        ILogger<GameLifecycleService> logger)
     {
         ArgumentNullException.ThrowIfNull(roomsService);
         ArgumentNullException.ThrowIfNull(dbContext);
@@ -31,6 +35,8 @@ public sealed class GameLifecycleService : IGameLifecycleService
         _dbContext = dbContext;
         _timeProvider = timeProvider;
         _sanctions = sanctions;
+        ArgumentNullException.ThrowIfNull(logger);
+        _logger = logger;
     }
 
     public async Task<RoomOperationResult> StartGameAsync(
@@ -109,6 +115,7 @@ public sealed class GameLifecycleService : IGameLifecycleService
         _dbContext.Games.Add(game);
         GamePersistenceService.Initialize(game, game.GameConfiguration.CaptureGoal, now);
         await _dbContext.SaveChangesAsync(cancellationToken);
+        RecordCreated(game.GameId);
         return game.GameId;
     }
 
@@ -181,7 +188,17 @@ public sealed class GameLifecycleService : IGameLifecycleService
         _dbContext.Games.Add(game);
         GamePersistenceService.Initialize(game, game.GameConfiguration.CaptureGoal, now);
         await _dbContext.SaveChangesAsync(cancellationToken);
+        RecordCreated(game.GameId);
         return game.GameId;
+    }
+
+    private void RecordCreated(long gameId)
+    {
+        ServerGameDiagnostics.Record(_logger, GameOperation.Created, new DiagnosticEventDetails
+        {
+            Outcome = DiagnosticOutcome.Succeeded,
+            Context = new DiagnosticContext { GameId = gameId }
+        });
     }
 
     private static GameConfiguration CreateConfiguration(LobbyConfiguration configuration)

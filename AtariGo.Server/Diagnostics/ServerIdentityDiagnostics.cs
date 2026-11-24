@@ -24,17 +24,23 @@ public static class ServerIdentityDiagnostics
     public static void Failure(ILogger logger, IdentityOperation operation,
         (Exception Error, CancellationToken Cancellation) failure)
     {
+        Record(logger, operation, CreateFailureDetails(failure));
+    }
+
+    internal static DiagnosticEventDetails CreateFailureDetails(
+        (Exception Error, CancellationToken Cancellation) failure)
+    {
         ArgumentNullException.ThrowIfNull(failure.Error);
         bool cancelled = failure.Cancellation.IsCancellationRequested
             && (failure.Error is OperationCanceledException aborted
                 && aborted.CancellationToken == failure.Cancellation
                 || failure.Error is RpcException { StatusCode: StatusCode.Cancelled });
-        Record(logger, operation, new DiagnosticEventDetails
+        return new DiagnosticEventDetails
         {
             Severity = GetSeverity(failure.Error, cancelled),
             Outcome = cancelled ? DiagnosticOutcome.Cancelled : DiagnosticOutcome.Unconfirmed,
             Error = SafeLogErrors.Read(failure.Error, (object?)null)
-        });
+        };
     }
 
     private static DiagnosticSeverity GetSeverity(Exception failure, bool cancelled)

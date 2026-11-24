@@ -1,7 +1,9 @@
-using AtariGo.Server.Concurrency;
 using Microsoft.EntityFrameworkCore;
 
+using AtariGo.Server.Concurrency;
 using AtariGo.Server.Data;
+using AtariGo.Diagnostics;
+using AtariGo.Server.Diagnostics;
 
 namespace AtariGo.Server.Application.Games;
 
@@ -56,8 +58,12 @@ public sealed class GameCoordinator : IDisposable, IAsyncDisposable
                 definition.GameId, cancellationToken);
             Publish(await commands.AdvanceAsync(current,
                 () => _registry.AreBothConnected(definition.GameId)));
-            _logger.LogInformation("Game stream connected. GameId: {GameId}.",
-                connection.GameId);
+            ServerGameDiagnostics.Record(_logger, GameOperation.Connected,
+                new DiagnosticEventDetails
+                {
+                    Outcome = DiagnosticOutcome.Succeeded,
+                    Context = ServerGameDiagnostics.CreateContext(connection)
+                });
         }
         catch
         {
@@ -101,12 +107,7 @@ public sealed class GameCoordinator : IDisposable, IAsyncDisposable
         GameOperationResult result = await commands.AdvanceAsync(operation,
             () => _registry.AreBothConnected(gameId));
         Publish(result);
-        if (result.Progress?.IsTerminal == true && !operation.Progress.IsTerminal)
-        {
-            _logger.LogInformation(
-                "Game ended after a deadline. GameId: {GameId}. Reason: {Reason}.",
-                gameId, result.Progress.EndReason);
-        }
+
     }
 
     public async Task DisconnectAsync(GameSessionConnection connection)
@@ -133,8 +134,12 @@ public sealed class GameCoordinator : IDisposable, IAsyncDisposable
                 operation, connection.PlayerKey);
             _registry.Disconnect(connection);
             Publish(disconnected);
-            _logger.LogWarning("Game stream disconnected. GameId: {GameId}.",
-                connection.GameId);
+            ServerGameDiagnostics.Record(_logger, GameOperation.Disconnected,
+                new DiagnosticEventDetails
+                {
+                    Outcome = DiagnosticOutcome.Succeeded,
+                    Context = ServerGameDiagnostics.CreateContext(connection)
+                });
         }
         finally
         {
@@ -173,8 +178,9 @@ public sealed class GameCoordinator : IDisposable, IAsyncDisposable
         ArgumentNullException.ThrowIfNull(text);
         if (!GameSessionRules.TryGetUserId(connection.PlayerKey, out int userId))
         {
-            return _registry.RejectChatMessage(
-                connection, ChatMessageRejectionReason.GuestNotAllowed);
+            return RecordChat(connection, _registry.RejectChatMessage(
+                connection, ChatMessageRejectionReason.GuestNotAllowed),
+                ChatMessageRejectionReason.GuestNotAllowed);
         }
         using IServiceScope scope = _scopeFactory.CreateScope();
         AtariGoDbContext dbContext = scope.ServiceProvider
@@ -189,9 +195,11 @@ public sealed class GameCoordinator : IDisposable, IAsyncDisposable
                 && sanction.EndsAt > now, cancellationToken);
         if (isMuted)
         {
-            return _registry.RejectChatMessage(connection, ChatMessageRejectionReason.Muted);
+            return RecordChat(connection,
+                _registry.RejectChatMessage(connection, ChatMessageRejectionReason.Muted),
+                ChatMessageRejectionReason.Muted);
         }
-        return _registry.PublishChatMessage(connection, text);
+        return RecordChat(connection, _registry.PublishChatMessage(connection, text));
     }
 
     public void Dispose()
@@ -202,6 +210,20 @@ public sealed class GameCoordinator : IDisposable, IAsyncDisposable
     public ValueTask DisposeAsync()
     {
         return _operations.DisposeAsync();
+    }
+
+    private ChatMessageSubmissionResult RecordChat(GameSessionConnection connection,
+        ChatMessageSubmissionResult result, ChatMessageRejectionReason? reason = null)
+    {
+        ServerGameDiagnostics.Record(_logger, GameOperation.ChatSubmission,
+            new DiagnosticEventDetails
+            {
+                Outcome = result == ChatMessageSubmissionResult.Accepted
+                    ? DiagnosticOutcome.Succeeded : DiagnosticOutcome.Rejected,
+                Context = ServerGameDiagnostics.CreateContext(connection),
+                Status = new DiagnosticStatus((Enum?)reason ?? result)
+            });
+        return result;
     }
 
     private void Publish(GameOperationResult result)

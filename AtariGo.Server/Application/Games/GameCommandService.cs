@@ -1,3 +1,5 @@
+using AtariGo.Diagnostics;
+using AtariGo.Server.Diagnostics;
 using AtariGo.Server.Data.Entities;
 using AtariGo.GameLogic.Models;
 
@@ -11,9 +13,11 @@ public sealed class GameCommandService
     private readonly GameActionProcessor _processor;
     private readonly TimeProvider _timeProvider;
     private readonly IGameSessionRegistry _registry;
+    private readonly ILogger _logger;
 
     public GameCommandService(GamePersistenceService store, GameActionProcessor processor,
-        TimeProvider timeProvider, IGameSessionRegistry registry)
+        TimeProvider timeProvider, IGameSessionRegistry registry,
+        ILogger<GameCommandService> logger)
     {
         ArgumentNullException.ThrowIfNull(store);
         ArgumentNullException.ThrowIfNull(processor);
@@ -23,6 +27,8 @@ public sealed class GameCommandService
         _processor = processor;
         _timeProvider = timeProvider;
         _registry = registry;
+        ArgumentNullException.ThrowIfNull(logger);
+        _logger = logger;
     }
 
     public async Task<GameOperationContext> LoadAsync(long gameId,
@@ -121,8 +127,14 @@ public sealed class GameCommandService
             if (!connected)
             {
                 presence = color == StoneColor.Black
-                    ? presence with { BlackConnected = false }
-                    : presence with { WhiteConnected = false };
+                    ? presence with
+                    {
+                        BlackConnected = false
+                    }
+                    : presence with
+                    {
+                        WhiteConnected = false
+                    };
             }
             next = GameConnectionRules.Resolve(next, now, presence);
             await _store.SaveAsync(operation.Game, next, CancellationToken.None);
@@ -147,6 +159,13 @@ public sealed class GameCommandService
         if (command.ActionId.Length > MaximumActionIdLength
             || !Guid.TryParseExact(command.ActionId, "N", out _))
         {
+            ServerGameDiagnostics.Record(_logger, GameOperation.ActionRejected,
+                new DiagnosticEventDetails
+                {
+                    Outcome = DiagnosticOutcome.Rejected,
+                    Context = ServerGameDiagnostics.CreateContext(connection),
+                    Status = new DiagnosticStatus(GameDiagnosticReason.InvalidAction)
+                });
             return new GameOperationResult
             {
                 GameId = connection.GameId,

@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 
 using AtariGo.Server.Data;
+using AtariGo.Diagnostics;
+using AtariGo.Server.Diagnostics;
 
 namespace AtariGo.Server.Application.Games;
 
@@ -60,21 +62,29 @@ public sealed class GameClockService : BackgroundService
                 }
                 catch (DbUpdateConcurrencyException exception)
                 {
-                    _logger.LogWarning(exception, "A concurrent game transition will be reloaded.");
+                    ServerGameDiagnostics.RecordFailure(_logger,
+                        (GameOperation.ClockSupervision, new DiagnosticContext()),
+                        (exception, stoppingToken));
                 }
                 catch (System.Data.Common.DbException exception)
                 {
-                    _logger.LogError(exception, "Game clocks cannot access the database.");
+                    ServerGameDiagnostics.RecordFailure(_logger,
+                        (GameOperation.ClockSupervision, new DiagnosticContext()),
+                        (exception, stoppingToken));
                 }
                 catch (DbUpdateException exception)
                 {
-                    _logger.LogError(exception, "A game clock transition could not be persisted.");
+                    ServerGameDiagnostics.RecordFailure(_logger,
+                        (GameOperation.ClockSupervision, new DiagnosticContext()),
+                        (exception, stoppingToken));
                 }
             }
         }
-        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+        catch (OperationCanceledException exception) when (stoppingToken.IsCancellationRequested)
         {
-            _logger.LogInformation("Game clock supervision stopped.");
+            ServerGameDiagnostics.RecordFailure(_logger,
+                (GameOperation.ClockSupervision, new DiagnosticContext()),
+                (exception, stoppingToken));
         }
     }
 }

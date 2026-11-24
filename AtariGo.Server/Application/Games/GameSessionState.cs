@@ -1,5 +1,8 @@
 using System.Threading.Channels;
 
+using AtariGo.Diagnostics;
+using AtariGo.Server.Diagnostics;
+
 
 namespace AtariGo.Server.Application.Games;
 
@@ -7,9 +10,13 @@ internal sealed class GameSessionState
 {
     private const string EmptyStone = "Empty";
 
-    public GameSessionState(GameSessionDefinition definition)
+    private readonly ILogger _logger;
+
+    public GameSessionState(GameSessionDefinition definition, ILogger logger)
     {
         ArgumentNullException.ThrowIfNull(definition);
+        ArgumentNullException.ThrowIfNull(logger);
+        _logger = logger;
         Definition = definition;
         Progress = definition.Progress;
         Version = definition.Version;
@@ -185,9 +192,17 @@ internal sealed class GameSessionState
             out GameSessionConnection? currentConnection)
             && ReferenceEquals(connection, currentConnection))
         {
-            if (!connection.EventWriter.TryWrite(delivery))
+            if (!connection.EventWriter.TryWrite(delivery)
+                && connection.EventWriter.TryComplete(
+                    new IOException("The game client is too slow.")))
             {
-                connection.EventWriter.TryComplete(new IOException("The game client is too slow."));
+                ServerGameDiagnostics.Record(_logger, GameOperation.Backpressure,
+                    new DiagnosticEventDetails
+                    {
+                        Outcome = DiagnosticOutcome.Unconfirmed,
+                        Severity = DiagnosticSeverity.Warning,
+                        Context = ServerGameDiagnostics.CreateContext(connection)
+                    });
             }
         }
     }

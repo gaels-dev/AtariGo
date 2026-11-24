@@ -1,12 +1,16 @@
+using System.Text.Json;
+
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 using AtariGo.GameLogic.Rules;
 using AtariGo.Server.Application.Games;
 using AtariGo.Server.Data;
 using AtariGo.Server.Data.Entities;
 using AtariGo.Server.Tests.RoomInvitations;
+using AtariGo.Server.Tests.Diagnostics;
 
 namespace AtariGo.Server.Tests.Games;
 
@@ -23,7 +27,9 @@ public sealed class SqlServerGameplayTests
     {
         // Arrange
         await using SqlServerTestDatabase database = await SqlServerTestDatabase.CreateAsync();
-        ServiceCollection services = CreateServices(database.ConnectionString);
+        await using var logs = new ServerLogTestHost(fileLevel: "Information");
+        ServiceCollection services = CreateServices(database.ConnectionString,
+            loggerFactory: logs.Application.Services.GetRequiredService<ILoggerFactory>());
         await using ServiceProvider provider = services.BuildServiceProvider();
         Guid blackId = Guid.NewGuid();
         Guid whiteId = Guid.NewGuid();
@@ -66,6 +72,12 @@ public sealed class SqlServerGameplayTests
         Assert.AreEqual(1, await read.Games.CountAsync());
         Assert.AreEqual(1, await read.Moves.CountAsync());
         Assert.AreEqual(1, await read.GameEvents.CountAsync(entry => entry.ActionId != null));
+        string? actionId = await read.GameEvents.Where(entry => entry.ActionId != null)
+            .Select(entry => entry.ActionId).SingleAsync(CancellationToken.None);
+        JsonElement committed = (await logs.ReadEventsAsync(CancellationToken.None)).Single(entry =>
+            entry.GetProperty("Operation").GetString() == "ActionCommitted");
+        Assert.AreEqual(Guid.ParseExact(actionId!, "N"),
+            committed.GetProperty("ActionId").GetGuid());
     }
 
     [TestMethod]
@@ -320,16 +332,22 @@ public sealed class SqlServerGameplayTests
     {
         return new GameActionCommand
         {
-            ActionId = Guid.NewGuid().ToString("N"), ExpectedVersion = version,
-            Row = row, Column = column
+            ActionId = Guid.NewGuid().ToString("N"),
+            ExpectedVersion = version,
+            Row = row,
+            Column = column
         };
     }
 
     private static ServiceCollection CreateServices(string connectionString,
-        TimeProvider? timeProvider = null)
+        TimeProvider? timeProvider = null, ILoggerFactory? loggerFactory = null)
     {
         ServiceCollection services = new ServiceCollection();
         services.AddLogging();
+        if (loggerFactory is not null)
+        {
+            services.AddSingleton(loggerFactory);
+        }
         services.AddDbContext<AtariGoDbContext>(options => options.UseSqlServer(connectionString));
         services.AddSingleton(timeProvider ?? TimeProvider.System);
         services.AddSingleton<IGameSessionRegistry, GameSessionRegistry>();
