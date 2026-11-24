@@ -1,68 +1,79 @@
 using System.Diagnostics;
-using System.Globalization;
-using System.IO;
+
+using AtariGo.Diagnostics;
 
 namespace AtariGo.Client.Services;
 
-public sealed class ClientFileTraceListener : TextWriterTraceListener
+public sealed class ClientFileTraceListener : TraceListener
 {
-    private const int DisplayOffsetHours = -6;
+    private readonly DiagnosticFileWriter _writer;
 
-    private static readonly TimeSpan displayOffset = TimeSpan.FromHours(DisplayOffsetHours);
-
-    private bool _hasWriteFailure;
-
-    public ClientFileTraceListener(string filePath)
-        : base(filePath)
+    public ClientFileTraceListener(DiagnosticFileWriter writer)
     {
+        ArgumentNullException.ThrowIfNull(writer);
+        _writer = writer;
     }
 
-    private void WriteEvent(TraceEventType eventType, string? message)
+    public DiagnosticStorageStatus Status => _writer.Status;
+
+    public override bool IsThreadSafe => true;
+
+    public override void Write(string? message)
     {
-        if (_hasWriteFailure)
+        TraceEvent(null, "AtariGo.Client", TraceEventType.Information, 0, message);
+    }
+
+    public override void WriteLine(string? message)
+    {
+        Write(message);
+    }
+
+    public override void TraceEvent(TraceEventCache? eventCache, string source,
+        TraceEventType eventType, int id, string? message)
+    {
+        TraceEvent(eventCache, source, eventType, id, message, null);
+    }
+
+    public override void TraceEvent(TraceEventCache? eventCache, string source,
+        TraceEventType eventType, int id, string? format, params object?[]? args)
+    {
+        if (Filter is not null
+            && !Filter.ShouldTrace(eventCache, source, eventType, id, format, args, null, null))
         {
             return;
         }
+        var trace = new ClientTraceEvent(source, eventType, id);
+        _writer.TryWrite(trace.Create(format, args));
+    }
 
-        try
+    public override void TraceData(TraceEventCache? eventCache, string source,
+        TraceEventType eventType, int id, params object?[]? data)
+    {
+        if (Filter is not null
+            && !Filter.ShouldTrace(eventCache, source, eventType, id, null, null, null, data))
         {
-            DateTimeOffset timestamp = DateTimeOffset.UtcNow.ToOffset(displayOffset);
-            base.WriteLine($"{timestamp:O} {eventType}: {message}");
-            Flush();
+            return;
         }
-        catch (IOException exception)
+        if (data is not null)
         {
-            _hasWriteFailure = true;
-            Debug.WriteLine($"Client log write failed: {exception.GetType().Name}.");
-        }
-        catch (UnauthorizedAccessException exception)
-        {
-            _hasWriteFailure = true;
-            Debug.WriteLine($"Client log access failed: {exception.GetType().Name}.");
+            foreach (DiagnosticEvent entry in data.OfType<DiagnosticEvent>())
+            {
+                _writer.TryWrite(entry);
+            }
         }
     }
 
-    public override void TraceEvent(
-        TraceEventCache? eventCache,
-        string source,
-        TraceEventType eventType,
-        int id,
-        string? message)
+    public override void TraceData(TraceEventCache? eventCache, string source,
+        TraceEventType eventType, int id, object? data)
     {
-        WriteEvent(eventType, message);
-    }
-
-    public override void TraceEvent(
-        TraceEventCache? eventCache,
-        string source,
-        TraceEventType eventType,
-        int id,
-        string? format,
-        params object?[]? args)
-    {
-        string? message = args is null
-            ? format
-            : string.Format(CultureInfo.InvariantCulture, format ?? string.Empty, args);
-        WriteEvent(eventType, message);
+        if (Filter is not null
+            && !Filter.ShouldTrace(eventCache, source, eventType, id, null, null, data, null))
+        {
+            return;
+        }
+        if (data is DiagnosticEvent entry)
+        {
+            _writer.TryWrite(entry);
+        }
     }
 }

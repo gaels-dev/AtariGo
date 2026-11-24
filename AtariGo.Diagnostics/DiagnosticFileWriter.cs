@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Threading.Channels;
 
 namespace AtariGo.Diagnostics;
@@ -152,6 +153,7 @@ public sealed class DiagnosticFileWriter : IAsyncDisposable
     private void RecordFailure(Exception failure)
     {
         DiagnosticError error = DiagnosticError.FromException(failure);
+        Debug.WriteLine($"Diagnostic storage unavailable: {error.TypeName}.");
         lock (_stateLock)
         {
             _status = _status with

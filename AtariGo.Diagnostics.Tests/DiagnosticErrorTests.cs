@@ -7,6 +7,30 @@ namespace AtariGo.Diagnostics.Tests;
 public sealed class DiagnosticErrorTests
 {
     [TestMethod]
+    public void FromType_NonExceptionType_RejectsInput()
+    {
+        // Arrange
+        Type type = typeof(string);
+        // Act
+        ArgumentException failure = Assert.ThrowsExactly<ArgumentException>(
+            () => DiagnosticError.FromType(type));
+        // Assert
+        Assert.AreEqual("exceptionType", failure.ParamName);
+    }
+
+    [TestMethod]
+    public void FromType_NullType_RejectsInput()
+    {
+        // Arrange
+        Type type = null!;
+        // Act
+        ArgumentNullException failure = Assert.ThrowsExactly<ArgumentNullException>(
+            () => DiagnosticError.FromType(type));
+        // Assert
+        Assert.AreEqual("exceptionType", failure.ParamName);
+    }
+
+    [TestMethod]
     public void FromException_DatabaseFailure_PreservesOnlyTechnicalCodes()
     {
         // Arrange

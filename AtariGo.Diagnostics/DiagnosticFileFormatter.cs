@@ -32,7 +32,9 @@ internal static class DiagnosticFileFormatter
             context?.OperationId,
             context?.ActionId,
             TraceId = context?.TraceId?.ToString(),
-            entry.Details.Error
+            entry.Details.Error,
+            entry.Details.TraceEventId,
+            ApplicationVersion = entry.Details.ApplicationVersion?.ToString()
         };
         return Encoding.UTF8.GetBytes(JsonSerializer.Serialize(payload) + "\n");
     }

@@ -1,6 +1,8 @@
 using System.Diagnostics;
 using System.Windows.Input;
 
+using AtariGo.Diagnostics;
+
 namespace AtariGo.Client.Commands;
 
 public sealed class AsyncRelayCommand : ICommand
@@ -41,16 +43,14 @@ public sealed class AsyncRelayCommand : ICommand
         {
             await _execute(parameter);
         }
-        catch (Exception) when (_cancellationToken.IsCancellationRequested)
+        catch (OperationCanceledException exception) when (
+            _cancellationToken.IsCancellationRequested
+            && exception.CancellationToken == _cancellationToken)
         {
             Trace.TraceInformation("Async command cancelled by its owner.");
         }
         catch (Exception exception)
         {
-            Trace.TraceError(
-                "Async command failed. Exception type: {0}.",
-                exception.GetType().Name);
-
             try
             {
                 _onError(exception);
@@ -59,8 +59,8 @@ public sealed class AsyncRelayCommand : ICommand
             {
                 Trace.TraceError(
                     "Async command failure handler failed. Exception types: {0}, {1}.",
-                    exception.GetType().Name,
-                    handlerException.GetType().Name);
+                    DiagnosticError.FromException(handlerException),
+                    DiagnosticError.FromException(exception));
             }
         }
         finally
