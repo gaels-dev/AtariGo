@@ -1,5 +1,3 @@
-using System.Text;
-
 using AtariGo.Diagnostics;
 
 namespace AtariGo.Server.Diagnostics;
@@ -19,6 +17,6 @@ internal static class ServerDiagnosticEvents
 
     private static string Format(DiagnosticEvent entry, Exception? failure)
     {
-        return Encoding.UTF8.GetString(DiagnosticFileFormatter.Format(entry)).TrimEnd('\n');
+        return DiagnosticConsoleFormatter.Format(entry);
     }
 }

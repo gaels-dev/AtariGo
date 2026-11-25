@@ -11,6 +11,8 @@ internal sealed class RecordingLogProvider : ILoggerProvider, ILogger, ISupportE
 
     internal ConcurrentQueue<object> States { get; } = new ConcurrentQueue<object>();
 
+    internal ConcurrentQueue<EventId> EventIds { get; } = new ConcurrentQueue<EventId>();
+
     internal ConcurrentQueue<string> Messages { get; } = new ConcurrentQueue<string>();
 
     internal ConcurrentQueue<Exception> Exceptions { get; } = new ConcurrentQueue<Exception>();
@@ -34,6 +36,7 @@ internal sealed class RecordingLogProvider : ILoggerProvider, ILogger, ISupportE
     public void Log<TState>(LogLevel logLevel, EventId eventId, TState state,
         Exception? exception, Func<TState, Exception?, string> formatter)
     {
+        EventIds.Enqueue(eventId);
         if (state is not null)
         {
             States.Enqueue(state);

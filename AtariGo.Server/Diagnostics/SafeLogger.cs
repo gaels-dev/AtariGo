@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using System.Globalization;
 using System.Runtime.CompilerServices;
-using System.Text;
 
 using AtariGo.Diagnostics;
 
@@ -47,7 +46,7 @@ internal sealed class SafeLogger : ILogger
             Status = SafeLogContext.ReadStatus(state)
         };
         DiagnosticEvent entry = CreateEntry(eventId, state, details);
-        _inner.Log(logLevel, new EventId(entry.Definition.Id, entry.Definition.Operation), entry,
+        _inner.Log(logLevel, new EventId(eventId.Id, entry.Definition.Operation), entry,
             null, Format);
     }
 
@@ -67,7 +66,10 @@ internal sealed class SafeLogger : ILogger
             .ToString(CultureInfo.InvariantCulture);
         var definition = new DiagnosticEventDefinition(eventId.Id > 0 ? eventId.Id : UnnamedEventId,
             _category, operation);
-        return new DiagnosticEvent(definition, details, DateTimeOffset.UtcNow);
+        return new DiagnosticEvent(definition, details with
+        {
+            Host = SafeLogHost.Read(state, operation)
+        }, DateTimeOffset.UtcNow);
     }
 
     private DiagnosticContext ReadContext<TState>(TState state)
@@ -87,6 +89,6 @@ internal sealed class SafeLogger : ILogger
 
     private static string Format(DiagnosticEvent entry, Exception? exception)
     {
-        return Encoding.UTF8.GetString(DiagnosticFileFormatter.Format(entry)).TrimEnd('\n');
+        return DiagnosticConsoleFormatter.Format(entry);
     }
 }

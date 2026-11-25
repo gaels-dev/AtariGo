@@ -158,7 +158,11 @@ public sealed class DiagnosticFileWriterTests
     {
         // Arrange
         using var directory = new DiagnosticTestDirectory();
-        DiagnosticFileOptions options = directory.Options with { MaximumFileBytes = 512 };
+        DiagnosticFileOptions options = directory.Options with
+        {
+            MaximumFileBytes = DiagnosticFileFormatter.Format(
+                DiagnosticTestDirectory.CreateEntry(1)).Length
+        };
         await using var writer = new DiagnosticFileWriter(options);
         // Act
         Assert.IsTrue(writer.TryWrite(DiagnosticTestDirectory.CreateEntry(1)));
@@ -204,8 +208,10 @@ public sealed class DiagnosticFileWriterTests
         using var directory = new DiagnosticTestDirectory();
         DiagnosticFileOptions options = directory.Options with
         {
-            MaximumFileBytes = 512,
-            MaximumTotalBytes = 512
+            MaximumFileBytes = DiagnosticFileFormatter.Format(
+                DiagnosticTestDirectory.CreateEntry(1)).Length,
+            MaximumTotalBytes = DiagnosticFileFormatter.Format(
+                DiagnosticTestDirectory.CreateEntry(1)).Length
         };
         // Act
         await using (var first = new DiagnosticFileWriter(options))
@@ -233,8 +239,10 @@ public sealed class DiagnosticFileWriterTests
         using var directory = new DiagnosticTestDirectory();
         DiagnosticFileOptions options = directory.Options with
         {
-            MaximumFileBytes = 512,
-            MaximumTotalBytes = 512
+            MaximumFileBytes = DiagnosticFileFormatter.Format(
+                DiagnosticTestDirectory.CreateEntry(1)).Length,
+            MaximumTotalBytes = DiagnosticFileFormatter.Format(
+                DiagnosticTestDirectory.CreateEntry(1)).Length
         };
         await using var first = new DiagnosticFileWriter(options);
         Assert.IsTrue(first.TryWrite(DiagnosticTestDirectory.CreateEntry(1)));

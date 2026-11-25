@@ -1,6 +1,8 @@
 using System.IO;
 using System.Text.Json;
 
+using AtariGo.Diagnostics.Tests.Testing;
+
 using AtariGo.Diagnostics;
 
 namespace AtariGo.Client.Tests.Services;
@@ -36,7 +38,7 @@ internal sealed class ClientDiagnosticTestDirectory : IDisposable
             using var reader = new StreamReader(stream);
             while (reader.ReadLine() is string line)
             {
-                using JsonDocument document = JsonDocument.Parse(line);
+                using JsonDocument document = DiagnosticLogReader.Parse(line);
                 entries.Add(document.RootElement.Clone());
             }
         }

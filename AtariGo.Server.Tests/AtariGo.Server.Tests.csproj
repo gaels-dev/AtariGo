@@ -22,4 +22,8 @@
     <None Include="..\scripts\database\*.sql" Link="DatabaseScripts\%(Filename)%(Extension)"
           CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\AtariGo.Diagnostics.Tests\Testing\DiagnosticLogReader.cs"
+             Link="Testing\DiagnosticLogReader.cs" />
+  </ItemGroup>
 </Project>

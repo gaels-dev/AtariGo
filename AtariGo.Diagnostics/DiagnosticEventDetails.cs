@@ -33,4 +33,9 @@ public sealed record DiagnosticEventDetails
     {
         get; init;
     }
+
+    public DiagnosticHostContext? Host
+    {
+        get; init;
+    }
 }

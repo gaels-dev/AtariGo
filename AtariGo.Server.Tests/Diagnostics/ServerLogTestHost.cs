@@ -1,5 +1,7 @@
 using System.Text.Json;
 
+using AtariGo.Diagnostics.Tests.Testing;
+
 using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -76,7 +78,7 @@ internal sealed class ServerLogTestHost : IAsyncDisposable
             using var reader = new StreamReader(stream);
             while (await reader.ReadLineAsync(cancellationToken) is string line)
             {
-                using JsonDocument document = JsonDocument.Parse(line);
+                using JsonDocument document = DiagnosticLogReader.Parse(line);
                 entries.Add(document.RootElement.Clone());
             }
         }

@@ -5,6 +5,28 @@ internal static class SafeLogOperations
     private static readonly Dictionary<string, string> operations =
         new Dictionary<string, string>(StringComparer.Ordinal)
         {
+            ["Application started. Press Ctrl+C to shut down."] = "ApplicationStarted",
+            ["Application is shutting down..."] = "ApplicationStopping",
+            ["Now listening on: {address}"] = "ServerListening",
+            ["Hosting environment: {EnvName}"] = "HostingEnvironmentConfigured",
+            ["Content root path: {ContentRoot}"] = "ContentRootConfigured",
+            ["Overriding address(es) '{addresses}'. Binding to endpoints defined via "
+                + "IConfiguration and/or UseKestrel() instead."] = "KestrelEndpointsOverrideUrls",
+            ["Overriding endpoints defined via IConfiguration and/or UseKestrel() because "
+                + "{settingName} is set to true. Binding to address(es) '{addresses}' instead."] =
+                "HostingUrlsOverrideKestrelEndpoints",
+            ["The ASP.NET Core developer certificate is not trusted. For information about "
+                + "trusting the ASP.NET Core developer certificate, see "
+                + "https://aka.ms/aspnet/https-trust-dev-cert"] =
+                "DevelopmentCertificateNotTrusted",
+            ["The ASP.NET Core developer certificate is only trusted by some clients. "
+                + "For information about trusting the ASP.NET Core developer certificate, see "
+                + "https://aka.ms/aspnet/https-trust-dev-cert"] =
+                "DevelopmentCertificatePartiallyTrusted",
+            ["HTTP/2 is not enabled for {Endpoint}. The endpoint is configured to use HTTP/1.1 "
+                + "and HTTP/2, but TLS is not enabled. HTTP/2 requires TLS application protocol "
+                + "negotiation. Connections to this endpoint will use HTTP/1.1."] =
+                "Http2DisabledWithoutTls",
             ["A concurrent game transition will be reloaded."] =
                 "AConcurrentGameTransitionWillBeReloaded",
             ["A game clock transition could not be persisted."] =

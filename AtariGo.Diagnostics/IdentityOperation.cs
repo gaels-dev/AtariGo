@@ -23,5 +23,6 @@ public enum IdentityOperation
     SubmitRecoveryEmail = 3018,
     SubmitInvitationEmail = 3019,
     QueryFriends = 3020,
-    RevokeSessions = 3021
+    RevokeSessions = 3021,
+    OpenGuestSession = 3022
 }

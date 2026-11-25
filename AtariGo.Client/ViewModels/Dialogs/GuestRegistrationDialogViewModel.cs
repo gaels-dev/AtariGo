@@ -5,6 +5,7 @@ using AtariGo.Client.Commands;
 using AtariGo.Client.Models;
 using AtariGo.Client.Services;
 using AtariGo.Contracts.Validation;
+using AtariGo.Diagnostics;
 
 namespace AtariGo.Client.ViewModels.Dialogs;
 
@@ -155,8 +156,10 @@ public sealed class GuestRegistrationDialogViewModel : ViewModelBase, IDisposabl
         }
     }
 
-    private void HandleFailure(Exception _)
+    private void HandleFailure(Exception exception)
     {
+        ClientIdentityDiagnostics.Failure(IdentityOperation.OpenGuestSession, exception,
+            _lifetimeToken);
         if (!_isDisposed)
         {
             ErrorMessage = AuthenticationMessages.GetText("GuestRegistration_Err_Connection");

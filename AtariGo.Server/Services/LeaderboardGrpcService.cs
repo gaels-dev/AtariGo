@@ -1,5 +1,3 @@
-using Microsoft.Extensions.Logging.Abstractions;
-
 using Grpc.Core;
 
 using AtariGo.Contracts;
@@ -13,11 +11,6 @@ public sealed class LeaderboardGrpcService : Leaderboard.LeaderboardBase
 {
     private readonly ILeaderboardService _leaderboardService;
     private readonly ILogger _logger;
-
-    public LeaderboardGrpcService(ILeaderboardService leaderboardService)
-        : this(leaderboardService, NullLogger<LeaderboardGrpcService>.Instance)
-    {
-    }
 
     public LeaderboardGrpcService(ILeaderboardService leaderboardService,
         ILogger<LeaderboardGrpcService> logger)
