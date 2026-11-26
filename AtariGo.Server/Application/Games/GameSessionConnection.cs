@@ -8,11 +8,12 @@ public sealed class GameSessionConnection : IDisposable
 
     internal GameSessionConnection(
         long gameId,
-        string playerKey,
+        GameSessionParticipant player,
         Channel<GameSessionDelivery> events)
     {
         GameId = gameId;
-        PlayerKey = playerKey;
+        PlayerKey = player.PlayerKey;
+        StoneColor = player.StoneColor;
         Events = events.Reader;
         EventWriter = events.Writer;
     }
@@ -40,6 +41,8 @@ public sealed class GameSessionConnection : IDisposable
     {
         get;
     }
+
+    public string StoneColor { get; }
 
     public ChannelReader<GameSessionDelivery> Events
     {

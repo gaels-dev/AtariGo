@@ -12,18 +12,22 @@ public sealed class GamePersistenceService
     private readonly TimeProvider _timeProvider;
     private readonly IGameSessionRegistry _registry;
     private readonly GameReplayService _replay;
+    private readonly ILogger<GamePersistenceService> _logger;
 
     public GamePersistenceService(AtariGoDbContext dbContext, TimeProvider timeProvider,
-        IGameSessionRegistry registry, GameReplayService replay)
+        IGameSessionRegistry registry, GameReplayService replay,
+        ILogger<GamePersistenceService> logger)
     {
         ArgumentNullException.ThrowIfNull(dbContext);
         ArgumentNullException.ThrowIfNull(timeProvider);
         ArgumentNullException.ThrowIfNull(registry);
         ArgumentNullException.ThrowIfNull(replay);
+        ArgumentNullException.ThrowIfNull(logger);
         _dbContext = dbContext;
         _timeProvider = timeProvider;
         _registry = registry;
         _replay = replay;
+        _logger = logger;
     }
 
     public Task<Game> LoadAsync(long gameId, CancellationToken cancellationToken)
@@ -75,6 +79,12 @@ public sealed class GamePersistenceService
                 context.Game.StateVersion);
         }
         _registry.RememberAction(context, result);
+        if (result.IsAccepted && context.Command.IsSurrender)
+        {
+            _logger.LogInformation("Surrender accepted. GameId: {GameId}. "
+                + "StoneColor: {StoneColor}. Winner: {Winner}.",
+                context.Game.GameId, context.Player.StoneColor, context.Runtime.Board.Winner);
+        }
     }
 
     public async Task SaveAsync(Game game, GameRuntimeState state,
@@ -82,6 +92,7 @@ public sealed class GamePersistenceService
     {
         ArgumentNullException.ThrowIfNull(game);
         ArgumentNullException.ThrowIfNull(state);
+        bool isNewFinish = state.IsTerminal && !game.FinishedAt.HasValue;
         if (state.IsTerminal && game.FinishedAt is null)
         {
             game.FinishedAt = _timeProvider.GetUtcNow().UtcDateTime;
@@ -97,6 +108,12 @@ public sealed class GamePersistenceService
         UpdateParticipants(game, state);
         await _dbContext.SaveChangesAsync(cancellationToken);
         _registry.StoreProgress(game.GameId, state, game.StateVersion);
+        if (isNewFinish && state.EndReason != DatabaseValues.GameEndReasons.Surrender)
+        {
+            _logger.LogInformation("Game finished. GameId: {GameId}. "
+                + "Reason: {Reason}. Winner: {Winner}.",
+                game.GameId, state.EndReason, state.Board.Winner);
+        }
     }
 
     public async Task CloseInterruptedGamesAsync(CancellationToken cancellationToken)

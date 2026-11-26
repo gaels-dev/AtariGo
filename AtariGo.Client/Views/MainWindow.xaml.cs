@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Windows;
 
 using AtariGo.Client.Models;
@@ -69,14 +70,40 @@ namespace AtariGo.Client.Views
             }
 
             _closePending = true;
+            try
+            {
+                if (!await PrepareCloseAsync())
+                {
+                    return;
+                }
+                _allowClose = true;
+                await Dispatcher.InvokeAsync(new Action(Close));
+            }
+            catch (Exception exception)
+            {
+                Trace.TraceError("Application shutdown failed. Error: {0}.",
+                    exception.GetType().Name);
+            }
+            finally
+            {
+                _closePending = false;
+            }
+        }
+
+        private async Task<bool> PrepareCloseAsync()
+        {
             if (DataContext is MainViewModel viewModel)
             {
+                bool allowed = await viewModel.RequestApplicationCloseAsync(
+                    CancellationToken.None);
+                if (!allowed)
+                {
+                    return false;
+                }
                 viewModel.Dispose();
                 await viewModel.RevokeGuestIdentityAsync();
             }
-
-            _allowClose = true;
-            await Dispatcher.InvokeAsync(new Action(Close));
+            return true;
         }
 
         private void OnClosed(object? sender, EventArgs eventArgs)

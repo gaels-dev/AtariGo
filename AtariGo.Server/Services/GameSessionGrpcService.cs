@@ -486,7 +486,7 @@ public sealed class GameSessionGrpcService : GameSession.GameSessionBase
         catch (OperationCanceledException)
             when (context.CancellationToken.IsCancellationRequested)
         {
-            _logger.LogInformation(
+            _logger.LogDebug(
                 "Game session stream closed by client. GameId: {GameId}",
                 connection?.GameId);
         }
@@ -494,20 +494,22 @@ public sealed class GameSessionGrpcService : GameSession.GameSessionBase
             when (context.CancellationToken.IsCancellationRequested
                 && exception.StatusCode == StatusCode.Cancelled)
         {
-            _logger.LogInformation(
+            _logger.LogDebug(
                 "Game session RPC cancelled by client. GameId: {GameId}",
                 connection?.GameId);
         }
         catch (IOException exception)
             when (context.CancellationToken.IsCancellationRequested)
         {
-            _logger.LogInformation(
+            _logger.LogDebug(
                 exception,
                 "Game session transport closed by client. GameId: {GameId}",
                 connection?.GameId);
         }
         catch (IOException exception)
         {
+            _logger.LogDebug(exception, "Game transport failed. GameId: {GameId}.",
+                connection?.GameId);
             _logger.LogWarning("Game transport failed with {ErrorType}. GameId: {GameId}",
                 exception.GetType().Name, connection?.GameId);
             throw new RpcException(new Status(StatusCode.Unavailable,

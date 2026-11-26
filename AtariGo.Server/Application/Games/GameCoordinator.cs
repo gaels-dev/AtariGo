@@ -1,6 +1,6 @@
-using AtariGo.Server.Concurrency;
 using Microsoft.EntityFrameworkCore;
 
+using AtariGo.Server.Concurrency;
 using AtariGo.Server.Data;
 
 namespace AtariGo.Server.Application.Games;
@@ -56,8 +56,7 @@ public sealed class GameCoordinator : IDisposable, IAsyncDisposable
                 definition.GameId, cancellationToken);
             Publish(await commands.AdvanceAsync(current,
                 () => _registry.AreBothConnected(definition.GameId)));
-            _logger.LogInformation("Game stream connected. GameId: {GameId}.",
-                connection.GameId);
+            LogConnection(definition, operation.Progress);
         }
         catch
         {
@@ -101,12 +100,6 @@ public sealed class GameCoordinator : IDisposable, IAsyncDisposable
         GameOperationResult result = await commands.AdvanceAsync(operation,
             () => _registry.AreBothConnected(gameId));
         Publish(result);
-        if (result.Progress?.IsTerminal == true && !operation.Progress.IsTerminal)
-        {
-            _logger.LogInformation(
-                "Game ended after a deadline. GameId: {GameId}. Reason: {Reason}.",
-                gameId, result.Progress.EndReason);
-        }
     }
 
     public async Task DisconnectAsync(GameSessionConnection connection)
@@ -133,7 +126,7 @@ public sealed class GameCoordinator : IDisposable, IAsyncDisposable
                 operation, connection.PlayerKey);
             _registry.Disconnect(connection);
             Publish(disconnected);
-            LogDisconnection(connection, operation.Progress.IsTerminal);
+            LogDisconnection(connection, disconnected.Progress ?? operation.Progress);
         }
         finally
         {
@@ -211,17 +204,40 @@ public sealed class GameCoordinator : IDisposable, IAsyncDisposable
         }
     }
 
-    private void LogDisconnection(GameSessionConnection connection, bool isFinished)
+    private void LogConnection(GameSessionDefinition definition, GameRuntimeState previous)
     {
-        if (connection.IsGracefulClosure && isFinished)
+        DateTime? reconnectDeadline = previous.WhiteReconnectDeadlineUtc;
+        if (definition.Player.StoneColor == DatabaseValues.StoneColors.Black)
+        {
+            reconnectDeadline = previous.BlackReconnectDeadlineUtc;
+        }
+        if (reconnectDeadline.HasValue)
+        {
+            _logger.LogInformation("Game stream reconnected. GameId: {GameId}. "
+                + "StoneColor: {StoneColor}.", definition.GameId, definition.Player.StoneColor);
+        }
+        else
+        {
+            _logger.LogInformation("Game stream connected. GameId: {GameId}. "
+                + "StoneColor: {StoneColor}.", definition.GameId, definition.Player.StoneColor);
+        }
+    }
+
+    private void LogDisconnection(GameSessionConnection connection, GameRuntimeState progress)
+    {
+        if (connection.IsGracefulClosure && progress.IsTerminal)
         {
             _logger.LogInformation("Completed game stream closed gracefully. GameId: {GameId}.",
                 connection.GameId);
         }
         else
         {
-            _logger.LogWarning("Game stream disconnected. GameId: {GameId}.",
-                connection.GameId);
+            _logger.LogWarning("Game stream disconnected. GameId: {GameId}. "
+                + "StoneColor: {StoneColor}. State: {State}. "
+                + "BlackReconnectDeadlineUtc: {BlackDeadline}. "
+                + "WhiteReconnectDeadlineUtc: {WhiteDeadline}.",
+                connection.GameId, connection.StoneColor, progress.Status,
+                progress.BlackReconnectDeadlineUtc, progress.WhiteReconnectDeadlineUtc);
         }
     }
 }

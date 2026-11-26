@@ -55,6 +55,10 @@ el avatar 6 requiere 5 victorias y cada avatar siguiente requiere 5 más.
 
 ## Actualización a movimientos relacionales
 
+`Update-RelationalGameplay.sql` es un archivo local de actualización, excluido de Git.
+No forma parte de la compilación ni de las pruebas compartidas. Un clon del repositorio
+solo necesita `Create-AtariGo.sql` para crear el esquema actual desde cero.
+
 Para la BD de pruebas con el esquema JSON anterior, detener el servidor y ejecutar
 `Update-RelationalGameplay.sql` completo. Seleccionar la instancia correcta; el archivo usa
 `AtariGoDB`. Si la instalación tiene otro nombre, ajustar su instrucción `USE`.
@@ -159,6 +163,25 @@ registra como `Information` con el mensaje `Completed game stream closed gracefu
 Las interrupciones inesperadas conservan sus advertencias. No se modifican el resultado
 de la partida, los contratos Protobuf ni el esquema SQL para implementar este cierre.
 
+La X de la ventana solicita confirmación antes de abandonar una partida en curso. Cancelar
+mantiene la ventana y la conexión abiertas. Al confirmar, se espera cualquier acción previa,
+se envía la rendición y se espera una confirmación del servidor antes de cerrar ordenadamente.
+La confirmación, el envío y el cierre de la conexión usan un plazo de comunicación de tres
+segundos después de aceptar el aviso. Si no se confirma el resultado, se cancela el transporte
+y el servidor conserva la resolución por desconexión; el cliente no asigna una derrota local.
+Una partida ya terminada se cierra sin otra rendición ni una nueva confirmación de abandono.
+
+Las desconexiones sin aviso mantienen los 30 segundos de gracia. Los logs de advertencia
+identifican la partida, el color del participante y los plazos de reconexión de ambos colores. La
+reconexión del stream, la rendición aceptada y el resultado final se registran como información.
+La aceptación de rendición se registra después de persistir y no se repite al reenviar la
+misma acción. El detalle de transporte se conserva en Debug en el servicio de partidas.
+La categoría de infraestructura `Grpc.AspNetCore.Server.ServerCallHandler` usa el mínimo
+Warning para evitar sus mensajes informativos de lectura duplicados; sus warnings y errores
+permanecen habilitados. Los fallos de persistencia continúan registrándose como errores.
+Los eventos de conexión, reconexión, desconexión y rendición identifican al participante por
+`StoneColor` dentro de `GameId`, sin registrar `PlayerKey`, `GamePlayerId` ni credenciales.
+
 ## Normalización y asuntos pendientes
 
 - `GamePlayers.CapturedStones` es un total materializado de las capturas de `Moves`, mantenido
@@ -211,7 +234,8 @@ dotnet test .\AtariGo.slnx --no-build
 
 Las pruebas `SqlServer` usan Windows y SQL Server LocalDB `(localdb)\MSSQLLocalDB`.
 Crean bases temporales `AtariGoGameplayTest_...` y las eliminan al terminar, sin utilizar
-la conexión privada de la aplicación. Comprueban instalación nueva, sustitución de partidas
-de prueba, reconstrucción de sus capturas, repetición del script y rollback ante participantes
-incompletos. Las pruebas de persistencia restantes usan SQLite aislado y las de dúplex HTTP/2
+la conexión privada de la aplicación. Comprueban la creación del esquema relacional desde
+`Create-AtariGo.sql` y los servicios que acceden a SQL Server. El script local de actualización
+no se ejecuta ni se copia como parte de estas pruebas. Las pruebas de persistencia restantes
+usan SQLite aislado y las de dúplex HTTP/2
 usan loopback. Estas comprobaciones no sustituyen una prueba LAN entre computadoras.

@@ -33,6 +33,8 @@ internal sealed class GameplayGrpcTestHost : IAsyncDisposable
 
     public string Address => _app.Urls.Single();
 
+    public GameCoordinator Coordinator => _app.Services.GetRequiredService<GameCoordinator>();
+
     public IssuedGuestIdentity BlackIdentity { get; private set; } = null!;
 
     public IssuedGuestIdentity WhiteIdentity { get; private set; } = null!;
@@ -43,10 +45,8 @@ internal sealed class GameplayGrpcTestHost : IAsyncDisposable
         WebApplicationBuilder builder = WebApplication.CreateBuilder();
         builder.Configuration.Sources.Clear();
         builder.Logging.ClearProviders();
-        if (logs is not null)
-        {
-            builder.Logging.AddProvider(logs);
-        }
+        builder.Logging.AddFilter("Grpc.AspNetCore.Server.ServerCallHandler", LogLevel.Warning);
+        builder.Logging.AddProvider(logs ?? new GameStreamLogProvider());
         builder.WebHost.ConfigureKestrel(options => options.Listen(IPAddress.Loopback, 0,
             endpoint => endpoint.Protocols = HttpProtocols.Http2));
         builder.Services.AddGrpc();

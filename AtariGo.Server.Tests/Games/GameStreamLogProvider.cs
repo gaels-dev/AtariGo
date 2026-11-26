@@ -29,6 +29,11 @@ internal sealed class GameStreamLogProvider : ILoggerProvider
     private void Record(LogLevel level, string message, Exception? exception)
     {
         Entries.Enqueue((level, message, exception));
+        if (level >= LogLevel.Error && exception is not null)
+        {
+            Console.Error.WriteLine(message);
+            Console.Error.WriteLine(exception);
+        }
         if (level == LogLevel.Warning
             && message.StartsWith("Game stream disconnected.", StringComparison.Ordinal))
         {

@@ -70,8 +70,9 @@ internal sealed class GameSessionState
         return null;
     }
 
-    public GameSessionConnection CreateConnection(string playerKey)
+    public GameSessionConnection CreateConnection(GameSessionParticipant player)
     {
+        ArgumentNullException.ThrowIfNull(player);
         Channel<GameSessionDelivery> events = Channel.CreateBounded<GameSessionDelivery>(
             new BoundedChannelOptions(GameSessionRules.MaximumPendingEvents)
             {
@@ -79,7 +80,7 @@ internal sealed class GameSessionState
                 SingleWriter = false,
                 FullMode = BoundedChannelFullMode.Wait
             });
-        return new GameSessionConnection(Definition.GameId, playerKey, events);
+        return new GameSessionConnection(Definition.GameId, player, events);
     }
 
     public void ReplaceConnection(GameSessionConnection connection)

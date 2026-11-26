@@ -14,7 +14,7 @@ namespace AtariGo.Client.Tests.ViewModels;
 
 [TestClass]
 [TestCategory("Unit")]
-public sealed class GameBoardViewModelTests
+public sealed partial class GameBoardViewModelTests
 {
     [TestMethod]
     public async Task ApplySnapshot_BackgroundUpdate_UsesCapturedUiContextAsync()
@@ -218,7 +218,11 @@ public sealed class GameBoardViewModelTests
         await WaitUntilAsync(() => model.IsMyTurn);
         // Act
         stream.Fail(new RpcException(new Status(status, "Simulated permanent failure.")));
-        await WaitUntilAsync(() => stream.IsDisposed && model.CanLeaveGame);
+        bool HasPermanentExit()
+        {
+            return stream.IsDisposed && model.CanLeaveGame && !model.CanSurrender;
+        }
+        await WaitUntilAsync(HasPermanentExit);
         model.LeaveGameCommand.Execute(null);
         model.LeaveGameCommand.Execute(null);
         // Assert

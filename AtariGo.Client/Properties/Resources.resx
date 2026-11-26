@@ -1042,4 +1042,13 @@
   <data name="Recovery_Btn_Close" xml:space="preserve">
     <value>Back to sign in</value>
   </data>
+  <data name="GameBoard_Exit_Title" xml:space="preserve">
+    <value>Close Atari Go</value>
+  </data>
+  <data name="GameBoard_Exit_Message" xml:space="preserve">
+    <value>Do you want to abandon the game and close the application? Abandoning counts as a loss.</value>
+  </data>
+  <data name="GameBoard_Exit_Confirm" xml:space="preserve">
+    <value>Abandon</value>
+  </data>
 </root>

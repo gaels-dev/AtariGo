@@ -42,7 +42,4 @@ appsettings.*.local.json
 .env.*
 !.env.example
 
-/AUDITORIA_CODIGO.md
-/CAMBIOS_ESTANDAR.md
-/PROPUESTAS_ESTANDAR.md
 /docs/local/

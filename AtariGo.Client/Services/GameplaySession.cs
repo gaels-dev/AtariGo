@@ -123,6 +123,10 @@ public sealed partial class GameplaySession : IGameplaySession
         CancellationTokenSource? attempt;
         lock (_sync)
         {
+            if (_isExiting)
+            {
+                return false;
+            }
             stream = _state == GameplayConnectionState.Connected ? _stream : null;
             attempt = _attempt;
         }
@@ -154,6 +158,7 @@ public sealed partial class GameplaySession : IGameplaySession
             }
             _isDisposed = true;
             _pendingAction = null;
+            SignalExitStateChanged();
         }
         try
         {
@@ -403,28 +408,21 @@ public sealed partial class GameplaySession : IGameplaySession
         GameplaySessionUpdate update;
         lock (_sync)
         {
-            if (_isDisposed || _isClosing || _state == GameplayConnectionState.Closed
-                || (isSnapshot && serverEvent.Snapshot.Version < _version))
+            if (!CanApplyEvent(serverEvent, isSnapshot))
             {
                 return false;
             }
             if (isSnapshot)
             {
-                if (_state != GameplayConnectionState.Connected && _attemptNumber > 1)
-                {
-                    Trace.TraceInformation("Game stream restored. GameId: {0}.", _gameId);
-                }
-                _version = serverEvent.Snapshot.Version;
-                _isFinished = serverEvent.Snapshot.Status is "Completed" or "Cancelled";
-                _state = GameplayConnectionState.Connected;
-                _failure = ClientFailureReason.None;
+                ApplySnapshotState(serverEvent.Snapshot);
             }
             bool matching = IsMatchingResult(serverEvent);
             bool surrender = matching && _pendingAction?.Surrender is not null;
             if (matching)
             {
-                _pendingAction = null;
+                CompletePendingAction(serverEvent.ActionResult, surrender);
             }
+            SignalExitStateChanged();
             update = CreateUpdate() with
             {
                 ServerEvent = serverEvent.Clone(),
@@ -436,10 +434,37 @@ public sealed partial class GameplaySession : IGameplaySession
         return isSnapshot;
     }
 
+    private bool CanApplyEvent(GameSessionServerEvent serverEvent, bool isSnapshot)
+    {
+        return !_isDisposed && !_isClosing && _state != GameplayConnectionState.Closed
+            && (!isSnapshot || serverEvent.Snapshot.Version >= _version);
+    }
+
+    private void ApplySnapshotState(GameSessionSnapshot snapshot)
+    {
+        if (_state != GameplayConnectionState.Connected && _attemptNumber > 1)
+        {
+            Trace.TraceInformation("Game stream restored. GameId: {0}.", _gameId);
+        }
+        _version = snapshot.Version;
+        _isFinished = snapshot.Status is "Completed" or "Cancelled";
+        _state = GameplayConnectionState.Connected;
+        _failure = ClientFailureReason.None;
+    }
+
+    private void CompletePendingAction(GameActionResponse result, bool isSurrender)
+    {
+        _pendingAction = null;
+        if (isSurrender && result.IsAccepted)
+        {
+            _exitSurrenderAccepted = true;
+        }
+    }
+
     private bool SetPendingAction(GameSessionClientEvent action)
     {
-        if (_isDisposed || _isClosing || _isFinished || _state != GameplayConnectionState.Connected
-            || _pendingAction is not null)
+        if (_isDisposed || _isClosing || _isFinished || _pendingAction is not null
+            || !CanQueueAction(action))
         {
             return false;
         }
@@ -512,6 +537,7 @@ public sealed partial class GameplaySession : IGameplaySession
             isPermanent = IsPermanentFailure(_failure);
             _state = isPermanent
                 ? GameplayConnectionState.Closed : GameplayConnectionState.Recovering;
+            SignalExitStateChanged();
         }
         if (shouldLog || isPermanent)
         {

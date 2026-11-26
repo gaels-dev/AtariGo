@@ -167,6 +167,15 @@ namespace AtariGo.Client.ViewModels
             UpdatePlayerAvatarId(profile.AvatarId);
         }
 
+        public Task<bool> RequestApplicationCloseAsync(CancellationToken cancellationToken)
+        {
+            if (CurrentViewModel is GameBoardViewModel game)
+            {
+                return game.RequestApplicationCloseAsync(cancellationToken);
+            }
+            return Task.FromResult(true);
+        }
+
         public void Dispose()
         {
             if (_isDisposed)

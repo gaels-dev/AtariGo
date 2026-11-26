@@ -62,7 +62,7 @@ public partial class GameBoardViewModel
         }
     }
 
-    public bool IsGameplayInteractive => !IsConnectionAlertVisible;
+    public bool IsGameplayInteractive => !IsConnectionAlertVisible && !_isClosingApplication;
 
     public string RetryConnectionButtonLabel =>
         GetLocalizedMessage("GameBoard_Connection_Retry");
@@ -100,9 +100,11 @@ public partial class GameBoardViewModel
     }
 
     public bool CanSurrender => !_isDisposed && !_isFinished && !_hasPermanentSessionFailure
+        && !_isClosingApplication
         && _isSessionConnected && !_hasPendingAction;
 
-    public bool CanLeaveGame => !_isDisposed && !_isLeaving && (!GameId.HasValue || _isFinished
+    public bool CanLeaveGame => !_isDisposed && !_isLeaving && !_isClosingApplication
+        && (!GameId.HasValue || _isFinished
         || _hasPermanentSessionFailure || CanSurrender);
 
     public string CapturesStatus => string.Format(CultureInfo.CurrentCulture,
@@ -203,6 +205,10 @@ public partial class GameBoardViewModel
         OnPropertyChanged(nameof(TurnStatusMessage));
         OnPropertyChanged(nameof(CapturesStatus));
         RefreshClockLabels();
+        if (_isFinished && CompleteExitConfirmation())
+        {
+            return;
+        }
         if (_isFinished && !_hasShownGameEndDialog)
         {
             _hasShownGameEndDialog = true;
@@ -332,7 +338,7 @@ public partial class GameBoardViewModel
 
     private void ReturnToMainMenu()
     {
-        if (_isDisposed || _isLeaving)
+        if (_isDisposed || _isLeaving || _isClosingApplication)
         {
             return;
         }
@@ -405,7 +411,7 @@ public partial class GameBoardViewModel
 
     private void ApplySessionUpdate(GameplaySessionUpdate update)
     {
-        if (_isDisposed || _isLeaving)
+        if (_isDisposed || _isLeaving || _isClosingApplication)
         {
             return;
         }

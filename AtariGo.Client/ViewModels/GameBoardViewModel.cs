@@ -127,7 +127,8 @@ namespace AtariGo.Client.ViewModels
             }
         }
 
-        public bool IsMyTurn => !_isDisposed && !_isLeaving && _isPlaying && _currentTurn == _myColor
+        public bool IsMyTurn => !_isDisposed && !_isLeaving && !_isClosingApplication
+            && _isPlaying && _currentTurn == _myColor
             && _isSessionConnected && !_hasPendingAction && !_turnPaused;
 
         public string TurnStatusMessage => IsMyTurn
@@ -304,6 +305,7 @@ namespace AtariGo.Client.ViewModels
             }
 
             _isDisposed = true;
+            _applicationExitConfirmation?.TrySetResult(false);
             _clockTimer.Stop();
             _clockTimer.Tick -= OnClockTick;
             _lifetimeCancellation.Cancel();

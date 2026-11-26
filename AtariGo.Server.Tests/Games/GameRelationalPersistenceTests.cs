@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 
 using AtariGo.GameLogic.Models;
 using AtariGo.GameLogic.Rules;
@@ -71,7 +72,8 @@ public sealed class GameRelationalPersistenceTests
         await using GameplayTestDatabase database = await GameplayTestDatabase.CreateAsync();
         await using AtariGoDbContext context = database.CreateContext();
         GamePersistenceService store = new GamePersistenceService(context, database.Time,
-            database.Registry, new GameReplayService(new GameRulesEngine()));
+            database.Registry, new GameReplayService(new GameRulesEngine()),
+            NullLogger<GamePersistenceService>.Instance);
 
         await store.CloseInterruptedGamesAsync(CancellationToken.None);
 
@@ -84,7 +86,8 @@ public sealed class GameRelationalPersistenceTests
         AtariGoDbContext context)
     {
         return new GamePersistenceService(context, database.Time,
-            new GameSessionRegistry(database.Time), new GameReplayService(new GameRulesEngine()));
+            new GameSessionRegistry(database.Time), new GameReplayService(new GameRulesEngine()),
+            NullLogger<GamePersistenceService>.Instance);
     }
 
     private static async Task PlayAsync(GameplayTestDatabase database,

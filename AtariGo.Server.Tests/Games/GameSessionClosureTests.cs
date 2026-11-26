@@ -9,7 +9,7 @@ namespace AtariGo.Server.Tests.Games;
 
 [TestClass]
 [TestCategory("Integration")]
-public sealed class GameSessionClosureTests
+public sealed partial class GameSessionClosureTests
 {
     [TestMethod]
     public async Task
@@ -76,7 +76,7 @@ public sealed class GameSessionClosureTests
         Assert.AreEqual("Completed", (await host.Database.ReadAsync()).State);
     }
 
-    private static async Task FinishGameAsync(long gameId,
+    private static async Task<GameSessionClientEvent> FinishGameAsync(long gameId,
         AsyncDuplexStreamingCall<GameSessionClientEvent, GameSessionServerEvent> black,
         AsyncDuplexStreamingCall<GameSessionClientEvent, GameSessionServerEvent> white)
     {
@@ -88,12 +88,14 @@ public sealed class GameSessionClosureTests
         await white.RequestStream.WriteAsync(join);
         await ReadStatusAsync(black.ResponseStream, "InProgress");
         await ReadStatusAsync(white.ResponseStream, "InProgress");
-        await black.RequestStream.WriteAsync(new GameSessionClientEvent
+        GameSessionClientEvent surrender = new GameSessionClientEvent
         {
             Surrender = new SurrenderGame { ActionId = Guid.NewGuid().ToString("N") }
-        });
+        };
+        await black.RequestStream.WriteAsync(surrender);
         await ReadStatusAsync(black.ResponseStream, "Completed");
         await ReadStatusAsync(white.ResponseStream, "Completed");
+        return surrender;
     }
 
     private static async Task ReadStatusAsync(IAsyncStreamReader<GameSessionServerEvent> reader,

@@ -44,7 +44,7 @@ public sealed partial class GameSessionRegistry : IGameSessionRegistry
                     state.Version = definition.Version;
                 }
                 GameSessionConnection connection =
-                    state.CreateConnection(player.PlayerKey);
+                    state.CreateConnection(player);
                 state.ReplaceConnection(connection);
                 state.LastActivityUtc = _timeProvider.GetUtcNow().UtcDateTime;
                 PublishSnapshots(state);

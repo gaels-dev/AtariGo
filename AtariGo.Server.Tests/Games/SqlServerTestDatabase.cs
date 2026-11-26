@@ -25,7 +25,7 @@ internal sealed class SqlServerTestDatabase : IAsyncDisposable
         try
         {
             string create = await File.ReadAllTextAsync(ScriptPath("Create-AtariGo.sql"));
-            await database.ExecuteAsync(create.Replace("AtariGoDB", database._databaseName), true);
+            await ExecuteAsync(create.Replace("AtariGoDB", database._databaseName));
             return database;
         }
         catch
@@ -40,17 +40,6 @@ internal sealed class SqlServerTestDatabase : IAsyncDisposable
         DbContextOptions<AtariGoDbContext> options = new DbContextOptionsBuilder<AtariGoDbContext>()
             .UseSqlServer(ConnectionString).Options;
         return new AtariGoDbContext(options);
-    }
-
-    public async Task ExecuteScriptAsync(string file)
-    {
-        string script = await File.ReadAllTextAsync(ScriptPath(file));
-        await ExecuteAsync(script.Replace("AtariGoDB", _databaseName), false);
-    }
-
-    public Task ExecuteSqlAsync(string sql)
-    {
-        return ExecuteAsync(sql, false);
     }
 
     public async ValueTask DisposeAsync()
@@ -69,10 +58,9 @@ internal sealed class SqlServerTestDatabase : IAsyncDisposable
         await command.ExecuteNonQueryAsync();
     }
 
-    private async Task ExecuteAsync(string script, bool master)
+    private static async Task ExecuteAsync(string script)
     {
-        await using SqlConnection connection = new SqlConnection(
-            master ? MasterConnection : ConnectionString);
+        await using SqlConnection connection = new SqlConnection(MasterConnection);
         await connection.OpenAsync();
         foreach (string batch in Regex.Split(script, @"^\s*GO\s*$", RegexOptions.Multiline))
         {
