@@ -1,12 +1,9 @@
 using System.Data.Common;
 
+using Grpc.Core;
 using Microsoft.EntityFrameworkCore;
 
-using Grpc.Core;
-
 using AtariGo.Contracts;
-using AtariGo.Diagnostics;
-using AtariGo.Server.Diagnostics;
 using AtariGo.Server.Application.Reports;
 using AtariGo.Server.Application.Sessions;
 using AtariGo.Server.Data;
@@ -30,6 +27,32 @@ public sealed class ReportsGrpcService : Reports.ReportsBase
         _logger = logger;
     }
 
+    public override async Task<SubmitReportResponse> SubmitReport(
+        SubmitReportRequest request, ServerCallContext context)
+    {
+        try
+        {
+            return await SubmitAuthorizedReportAsync(request, context);
+        }
+        catch (OperationCanceledException) when (context.CancellationToken.IsCancellationRequested)
+        {
+            throw new RpcException(new Status(StatusCode.Cancelled,
+                "The report request was cancelled."));
+        }
+        catch (DbException exception)
+        {
+            throw CreateFailure(exception, StatusCode.Unavailable);
+        }
+        catch (DbUpdateException exception)
+        {
+            throw CreateFailure(exception, StatusCode.Aborted);
+        }
+        catch (InvalidOperationException exception)
+        {
+            throw CreateFailure(exception, StatusCode.Internal);
+        }
+    }
+
     private async Task<SubmitReportResponse> SubmitAuthorizedReportAsync(
         SubmitReportRequest request, ServerCallContext context)
     {
@@ -44,16 +67,6 @@ public sealed class ReportsGrpcService : Reports.ReportsBase
             request.GameId, MapCategory(request.Category), request.Description);
         ReportSubmissionResult result = await _reports.SubmitReportAsync(
             identity, command, context.CancellationToken);
-        ServerPlayerDiagnostics.Record(_logger, PlayerOperation.SubmitReport,
-            PlayerDiagnostics.CreateResult(result.Status) with
-            {
-                Context = new DiagnosticContext
-                {
-                    UserId = identity.UserId,
-                    GameId = request.GameId > 0 ? request.GameId : null,
-                    ReportId = result.ReportId > 0 ? result.ReportId : null
-                }
-            });
         return new SubmitReportResponse
         {
             Result = MapResult(result.Status),
@@ -85,49 +98,9 @@ public sealed class ReportsGrpcService : Reports.ReportsBase
         };
     }
 
-    private static RpcException CreateFailure(StatusCode status)
+    private RpcException CreateFailure(Exception exception, StatusCode status)
     {
+        _logger.LogError(exception, "Report submission failed with {Status}.", status);
         return new RpcException(new Status(status, "The report could not be submitted."));
-    }
-
-    public override async Task<SubmitReportResponse> SubmitReport(
-        SubmitReportRequest request, ServerCallContext context)
-    {
-        try
-        {
-            return await SubmitAuthorizedReportAsync(request, context);
-        }
-        catch (OperationCanceledException exception)
-            when (context.CancellationToken.IsCancellationRequested)
-        {
-            ServerPlayerDiagnostics.RecordFailure(_logger, PlayerOperation.SubmitReport,
-                (exception, context.CancellationToken));
-            throw new RpcException(new Status(StatusCode.Cancelled,
-                "The report request was cancelled."));
-        }
-        catch (DbException exception)
-        {
-            ServerPlayerDiagnostics.RecordFailure(_logger, PlayerOperation.SubmitReport,
-                (exception, context.CancellationToken));
-            throw CreateFailure(StatusCode.Unavailable);
-        }
-        catch (DbUpdateException exception)
-        {
-            ServerPlayerDiagnostics.RecordFailure(_logger, PlayerOperation.SubmitReport,
-                (exception, context.CancellationToken));
-            throw CreateFailure(StatusCode.Aborted);
-        }
-        catch (InvalidOperationException exception)
-        {
-            ServerPlayerDiagnostics.RecordFailure(_logger, PlayerOperation.SubmitReport,
-                (exception, context.CancellationToken));
-            throw CreateFailure(StatusCode.Internal);
-        }
-        catch (Exception exception)
-        {
-            ServerPlayerDiagnostics.RecordFailure(_logger, PlayerOperation.SubmitReport,
-                (exception, context.CancellationToken));
-            throw;
-        }
     }
 }

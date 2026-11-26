@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.IO;
 using System.Net.NetworkInformation;
 
@@ -5,7 +6,6 @@ using Grpc.Core;
 
 using AtariGo.Client.Models;
 using AtariGo.Contracts;
-using AtariGo.Diagnostics;
 
 namespace AtariGo.Client.Services;
 
@@ -32,8 +32,6 @@ public sealed class GameplaySession : IGameplaySession
     private long _version = UninitializedVersion;
     private int _attemptNumber;
     private int _sentAttempt = UnsentAttempt;
-    private int _loggedFailureAttempt;
-    private Guid _attemptId;
     private bool _isDisposed;
     private bool _isFinished;
     private GameplayConnectionState _state = GameplayConnectionState.Connecting;
@@ -188,7 +186,7 @@ public sealed class GameplaySession : IGameplaySession
             }
             catch (ObjectDisposedException)
             {
-                RecordConnection(GameOperation.ConnectionAttempt, DiagnosticOutcome.Cancelled);
+                Trace.TraceInformation("A completed game connection attempt was replaced.");
             }
         }
     }
@@ -206,7 +204,6 @@ public sealed class GameplaySession : IGameplaySession
     private async Task RunCoreAsync(CancellationToken cancellationToken)
     {
         await Task.Yield();
-        CancellationToken ownerToken = cancellationToken;
         if (_monitorNetworkAvailability)
         {
             NetworkChange.NetworkAvailabilityChanged += OnNetworkAvailabilityChanged;
@@ -215,7 +212,6 @@ public sealed class GameplaySession : IGameplaySession
         {
             using CancellationTokenSource lifetime = CreateCancellation(cancellationToken);
             CancellationToken token = lifetime.Token;
-            ownerToken = token;
             bool retry = true;
             while (retry && !token.IsCancellationRequested)
             {
@@ -229,15 +225,11 @@ public sealed class GameplaySession : IGameplaySession
         catch (Exception exception) when (_lifetimeToken.IsCancellationRequested
             || GrpcCallPolicy.IsRequestedCancellation(exception, cancellationToken))
         {
-            ClientGameDiagnostics.RecordFailure(
-                (GameOperation.StreamFailure, CreateDiagnosticContext()),
-                exception, ownerToken);
+            Trace.TraceInformation("Gameplay session stopped with its owner.");
         }
         catch (Exception exception)
         {
-            ClientGameDiagnostics.RecordFailure(
-                (GameOperation.StreamFailure, CreateDiagnosticContext()),
-                exception, ownerToken);
+            Trace.TraceWarning("Gameplay session failed: {0}.", exception.GetType().Name);
             lock (_sync)
             {
                 _state = GameplayConnectionState.Closed;
@@ -300,12 +292,12 @@ public sealed class GameplaySession : IGameplaySession
         {
             _attempt = attempt;
             _attemptNumber++;
-            _attemptId = Guid.NewGuid();
             _state = GameplayConnectionState.Connecting;
             _failure = ClientFailureReason.None;
-            if (_attemptNumber is 1 or 2 || _attemptNumber % FailureLogInterval == 0)
+            if (_attemptNumber == 2 || _attemptNumber % FailureLogInterval == 0)
             {
-                RecordConnection(GameOperation.ConnectionAttempt, DiagnosticOutcome.Started);
+                Trace.TraceInformation("Retrying game stream. GameId: {0}. Attempt: {1}.",
+                    _gameId, _attemptNumber);
             }
         }
         PublishCurrent(connectionStarted: true);
@@ -313,11 +305,9 @@ public sealed class GameplaySession : IGameplaySession
         {
             await ReadEventsAsync(attempt.Token).ConfigureAwait(false);
         }
-        catch (OperationCanceledException exception) when (attempt.IsCancellationRequested)
+        catch (OperationCanceledException) when (attempt.IsCancellationRequested)
         {
-            ClientGameDiagnostics.RecordFailure(
-                (GameOperation.ConnectionAttempt, CreateDiagnosticContext()),
-                exception, attempt.Token);
+            Trace.TraceInformation("Gameplay connection attempt stopped.");
         }
         catch (Exception exception) when (IsTransportFailure(exception))
         {
@@ -398,19 +388,26 @@ public sealed class GameplaySession : IGameplaySession
         GameplaySessionUpdate update;
         lock (_sync)
         {
-            if (ShouldIgnore(serverEvent, isSnapshot))
+            if (_isDisposed || _state == GameplayConnectionState.Closed
+                || (isSnapshot && serverEvent.Snapshot.Version < _version))
             {
                 return false;
             }
             if (isSnapshot)
             {
-                ApplySnapshot(serverEvent.Snapshot);
+                if (_state != GameplayConnectionState.Connected && _attemptNumber > 1)
+                {
+                    Trace.TraceInformation("Game stream restored. GameId: {0}.", _gameId);
+                }
+                _version = serverEvent.Snapshot.Version;
+                _isFinished = serverEvent.Snapshot.Status is "Completed" or "Cancelled";
+                _state = GameplayConnectionState.Connected;
+                _failure = ClientFailureReason.None;
             }
             bool matching = IsMatchingResult(serverEvent);
             bool surrender = matching && _pendingAction?.Surrender is not null;
             if (matching)
             {
-                RecordConfirmation(serverEvent.ActionResult);
                 _pendingAction = null;
             }
             update = CreateUpdate() with
@@ -422,54 +419,6 @@ public sealed class GameplaySession : IGameplaySession
         }
         Updated?.Invoke(update);
         return isSnapshot;
-    }
-
-    private bool ShouldIgnore(GameSessionServerEvent serverEvent, bool isSnapshot)
-    {
-        return _isDisposed || _state == GameplayConnectionState.Closed
-            || (isSnapshot && serverEvent.Snapshot.Version < _version);
-    }
-
-    private void ApplySnapshot(GameSessionSnapshot snapshot)
-    {
-        if (_state != GameplayConnectionState.Connected)
-        {
-            RecordConnection(_attemptNumber > 1 ? GameOperation.Restored : GameOperation.Connected,
-                DiagnosticOutcome.Succeeded);
-        }
-        _version = snapshot.Version;
-        _isFinished = snapshot.Status is "Completed" or "Cancelled";
-        _state = GameplayConnectionState.Connected;
-        _failure = ClientFailureReason.None;
-    }
-
-    private void RecordConfirmation(GameActionResponse response)
-    {
-        Guid? actionId = Guid.TryParseExact(response.ActionId, "N", out Guid parsed)
-            ? parsed : null;
-        ClientGameDiagnostics.Record(response.IsAccepted
-            ? GameOperation.ActionCommitted : GameOperation.ActionRejected,
-            new DiagnosticEventDetails
-            {
-                Outcome = response.IsAccepted
-                    ? DiagnosticOutcome.Succeeded : DiagnosticOutcome.Rejected,
-                Context = CreateDiagnosticContext() with { ActionId = actionId },
-                Status = GameDiagnostics.CreateReason(response.Rejection)
-            });
-    }
-
-    private DiagnosticContext CreateDiagnosticContext()
-    {
-        return new DiagnosticContext { GameId = _gameId, OperationId = _attemptId };
-    }
-
-    private void RecordConnection(GameOperation operation, DiagnosticOutcome outcome)
-    {
-        ClientGameDiagnostics.Record(operation, new DiagnosticEventDetails
-        {
-            Outcome = outcome,
-            Context = CreateDiagnosticContext()
-        });
     }
 
     private bool SetPendingAction(GameSessionClientEvent action)
@@ -535,27 +484,24 @@ public sealed class GameplaySession : IGameplaySession
     {
         bool shouldLog;
         bool isPermanent;
-        DiagnosticContext diagnosticContext;
         lock (_sync)
         {
             if (_isDisposed || !ReferenceEquals(attempt, _attempt))
             {
                 return;
             }
+            shouldLog = _attemptNumber == 1 || _attemptNumber % FailureLogInterval == 0;
             _failure = exception is RpcException { StatusCode: StatusCode.FailedPrecondition }
                 ? ClientFailureReason.ReconnectionExpired
                 : GrpcClientFailures.GetReason(exception);
             isPermanent = IsPermanentFailure(_failure);
-            shouldLog = ShouldRecordFailure(isPermanent);
-            diagnosticContext = CreateDiagnosticContext();
             _state = isPermanent
                 ? GameplayConnectionState.Closed : GameplayConnectionState.Recovering;
         }
-        if (shouldLog)
+        if (shouldLog || isPermanent)
         {
-            ClientGameDiagnostics.RecordFailure((chatSendFailed
-                ? GameOperation.ChatSubmission : GameOperation.StreamFailure, diagnosticContext),
-                exception, attempt.Token);
+            Trace.TraceWarning("Game stream failed. GameId: {0}. Error: {1}. Attempt: {2}.",
+                _gameId, exception.GetType().Name, _attemptNumber);
         }
         PublishCurrent(chatSendFailed: chatSendFailed);
         lock (_sync)
@@ -565,17 +511,6 @@ public sealed class GameplaySession : IGameplaySession
                 attempt.Cancel();
             }
         }
-    }
-
-    private bool ShouldRecordFailure(bool isPermanent)
-    {
-        bool sampled = _attemptNumber == 1 || _attemptNumber % FailureLogInterval == 0;
-        bool shouldLog = (sampled || isPermanent) && _loggedFailureAttempt != _attemptNumber;
-        if (shouldLog)
-        {
-            _loggedFailureAttempt = _attemptNumber;
-        }
-        return shouldLog;
     }
 
     private void PublishCurrent(bool chatSendFailed = false, bool invalidSnapshot = false,

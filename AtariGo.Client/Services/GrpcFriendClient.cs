@@ -1,7 +1,6 @@
 using Grpc.Core;
 
 using AtariGo.Contracts;
-using AtariGo.Diagnostics;
 
 namespace AtariGo.Client.Services;
 
@@ -37,17 +36,18 @@ public sealed class GrpcFriendClient : IFriendClient
                 GrpcCallPolicy.CreateHeaders(_sessionToken))).ResponseAsync);
     }
 
-    public async Task<SendFriendRequestResponse> SendFriendRequestAsync(
+    public Task<SendFriendRequestResponse> SendFriendRequestAsync(
         int recipientUserId,
         CancellationToken cancellationToken = default)
     {
-        var request = new SendFriendRequestRequest { RecipientUserId = recipientUserId };
-        CallOptions options = GrpcCallPolicy.CreateOptions(cancellationToken,
-            GrpcCallPolicy.CreateHeaders(_sessionToken));
-        SendFriendRequestResponse response = await GrpcCallPolicy.ExecuteAsync(() =>
-            _client.SendFriendRequestAsync(request, options).ResponseAsync);
-        ClientIdentityDiagnostics.Completed(IdentityOperation.SendFriendRequest, response.Status);
-        return response;
+        return GrpcCallPolicy.ExecuteAsync(() => _client.SendFriendRequestAsync(
+            new SendFriendRequestRequest
+            {
+                RecipientUserId = recipientUserId
+            },
+            GrpcCallPolicy.CreateOptions(
+                cancellationToken,
+                GrpcCallPolicy.CreateHeaders(_sessionToken))).ResponseAsync);
     }
 
     public Task<GetIncomingFriendRequestsResponse>
@@ -61,24 +61,21 @@ public sealed class GrpcFriendClient : IFriendClient
                 GrpcCallPolicy.CreateHeaders(_sessionToken))).ResponseAsync);
     }
 
-    public async Task<RespondToFriendRequestResponse>
+    public Task<RespondToFriendRequestResponse>
         RespondToFriendRequestAsync(
             long requestId,
             bool accept,
             CancellationToken cancellationToken = default)
     {
-        var request = new RespondToFriendRequestRequest { RequestId = requestId, Accept = accept };
-        CallOptions options = GrpcCallPolicy.CreateOptions(cancellationToken,
-            GrpcCallPolicy.CreateHeaders(_sessionToken));
-        RespondToFriendRequestResponse response = await GrpcCallPolicy.ExecuteAsync(() =>
-            _client.RespondToFriendRequestAsync(request, options).ResponseAsync);
-        ClientIdentityDiagnostics.Record(IdentityOperation.RespondToFriendRequest,
-            IdentityDiagnostics.Result(
-                IdentityOperation.RespondToFriendRequest, response.Status) with
+        return GrpcCallPolicy.ExecuteAsync(() => _client.RespondToFriendRequestAsync(
+            new RespondToFriendRequestRequest
             {
-                Context = new DiagnosticContext { RequestId = requestId > 0 ? requestId : null }
-            });
-        return response;
+                RequestId = requestId,
+                Accept = accept
+            },
+            GrpcCallPolicy.CreateOptions(
+                cancellationToken,
+                GrpcCallPolicy.CreateHeaders(_sessionToken))).ResponseAsync);
     }
 
     public Task<ListFriendRequestsBySenderResponse> ListFriendRequestsBySenderAsync(
@@ -96,20 +93,13 @@ public sealed class GrpcFriendClient : IFriendClient
                 GrpcCallPolicy.CreateHeaders(_sessionToken))).ResponseAsync);
     }
 
-    public async Task<CancelFriendRequestResponse> CancelFriendRequestAsync(
+    public Task<CancelFriendRequestResponse> CancelFriendRequestAsync(
         long requestId,
         CancellationToken cancellationToken = default)
     {
-        var request = new CancelFriendRequestRequest { RequestId = requestId };
-        CallOptions options = GrpcCallPolicy.CreateOptions(cancellationToken,
-            GrpcCallPolicy.CreateHeaders(_sessionToken));
-        CancelFriendRequestResponse response = await GrpcCallPolicy.ExecuteAsync(() =>
-            _client.CancelFriendRequestAsync(request, options).ResponseAsync);
-        ClientIdentityDiagnostics.Record(IdentityOperation.CancelFriendRequest,
-            IdentityDiagnostics.Result(IdentityOperation.CancelFriendRequest, response.Status) with
-            {
-                Context = new DiagnosticContext { RequestId = requestId > 0 ? requestId : null }
-            });
-        return response;
+        return GrpcCallPolicy.ExecuteAsync(() => _client.CancelFriendRequestAsync(
+            new CancelFriendRequestRequest { RequestId = requestId },
+            GrpcCallPolicy.CreateOptions(cancellationToken,
+                GrpcCallPolicy.CreateHeaders(_sessionToken))).ResponseAsync);
     }
 }

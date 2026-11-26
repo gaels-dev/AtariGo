@@ -5,12 +5,9 @@ namespace AtariGo.Server.Tests.Games;
 internal sealed class GameSessionTestCallContext : ServerCallContext
 {
     private readonly Metadata _headers;
-    private readonly CancellationToken _cancellation;
 
-    public GameSessionTestCallContext(string credential,
-        CancellationToken cancellationToken = default)
+    public GameSessionTestCallContext(string credential)
     {
-        _cancellation = cancellationToken;
         _headers = new Metadata { { "x-guest-credential", credential } };
     }
 
@@ -24,7 +21,7 @@ internal sealed class GameSessionTestCallContext : ServerCallContext
 
     protected override Metadata RequestHeadersCore => _headers;
 
-    protected override CancellationToken CancellationTokenCore => _cancellation;
+    protected override CancellationToken CancellationTokenCore => CancellationToken.None;
 
     protected override Metadata ResponseTrailersCore { get; } = new Metadata();
 

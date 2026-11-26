@@ -19,11 +19,8 @@
     <ProjectReference Include="..\AtariGo.Server\AtariGo.Server.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\scripts\database\*.sql" Link="DatabaseScripts\%(Filename)%(Extension)"
+    <None Include="..\scripts\database\Create-AtariGo.sql"
+          Link="DatabaseScripts\Create-AtariGo.sql"
           CopyToOutputDirectory="PreserveNewest" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="..\AtariGo.Diagnostics.Tests\Testing\DiagnosticLogReader.cs"
-             Link="Testing\DiagnosticLogReader.cs" />
   </ItemGroup>
 </Project>

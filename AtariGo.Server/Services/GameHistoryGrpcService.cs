@@ -3,8 +3,6 @@ using System.Data.Common;
 using Grpc.Core;
 
 using AtariGo.Contracts;
-using AtariGo.Diagnostics;
-using AtariGo.Server.Diagnostics;
 using AtariGo.Server.Application.GameHistory;
 using AtariGo.Server.Application.Sessions;
 
@@ -43,12 +41,6 @@ public sealed class GameHistoryGrpcService : GameHistory.GameHistoryBase
         {
             response.Entries.Add(MapEntry(entry));
         }
-        ServerPlayerDiagnostics.Record(_logger, PlayerOperation.QueryHistory,
-            new DiagnosticEventDetails
-            {
-                Outcome = DiagnosticOutcome.Succeeded,
-                Context = new DiagnosticContext { UserId = identity.UserId }
-            });
         return response;
     }
 
@@ -67,8 +59,10 @@ public sealed class GameHistoryGrpcService : GameHistory.GameHistoryBase
         };
     }
 
-    private static RpcException CreateFailure(StatusCode status)
+    private RpcException CreateFailure(Exception exception, StatusCode status)
     {
+        _logger.LogError("Game history query failed with {ErrorType}: {Status}.",
+            exception.GetType().Name, status);
         return new RpcException(new Status(status, "The game history is unavailable."));
     }
 
@@ -79,30 +73,17 @@ public sealed class GameHistoryGrpcService : GameHistory.GameHistoryBase
         {
             return await ReadHistoryAsync(context);
         }
-        catch (OperationCanceledException exception)
-            when (context.CancellationToken.IsCancellationRequested)
+        catch (OperationCanceledException) when (context.CancellationToken.IsCancellationRequested)
         {
-            ServerPlayerDiagnostics.RecordFailure(_logger, PlayerOperation.QueryHistory,
-                (exception, context.CancellationToken));
             throw new RpcException(new Status(StatusCode.Cancelled, "The query was cancelled."));
         }
         catch (DbException exception)
         {
-            ServerPlayerDiagnostics.RecordFailure(_logger, PlayerOperation.QueryHistory,
-                (exception, context.CancellationToken));
-            throw CreateFailure(StatusCode.Unavailable);
+            throw CreateFailure(exception, StatusCode.Unavailable);
         }
         catch (InvalidOperationException exception)
         {
-            ServerPlayerDiagnostics.RecordFailure(_logger, PlayerOperation.QueryHistory,
-                (exception, context.CancellationToken));
-            throw CreateFailure(StatusCode.Internal);
-        }
-        catch (Exception exception)
-        {
-            ServerPlayerDiagnostics.RecordFailure(_logger, PlayerOperation.QueryHistory,
-                (exception, context.CancellationToken));
-            throw;
+            throw CreateFailure(exception, StatusCode.Internal);
         }
     }
 }

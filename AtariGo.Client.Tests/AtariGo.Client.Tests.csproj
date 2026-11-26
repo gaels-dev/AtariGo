@@ -17,8 +17,4 @@
   <ItemGroup>
     <ProjectReference Include="..\AtariGo.Client\AtariGo.Client.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <Compile Include="..\AtariGo.Diagnostics.Tests\Testing\DiagnosticLogReader.cs"
-             Link="Testing\DiagnosticLogReader.cs" />
-  </ItemGroup>
 </Project>

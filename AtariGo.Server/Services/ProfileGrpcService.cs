@@ -5,8 +5,6 @@ using Microsoft.EntityFrameworkCore;
 using Grpc.Core;
 
 using AtariGo.Contracts;
-using AtariGo.Diagnostics;
-using AtariGo.Server.Diagnostics;
 using AtariGo.Server.Application.Profile;
 using AtariGo.Server.Application.Sessions;
 
@@ -45,8 +43,9 @@ public sealed class ProfileGrpcService : Profile.ProfileBase
         return identity.UserId;
     }
 
-    private static RpcException CreateUnavailableException()
+    private RpcException CreateUnavailableException(Exception exception)
     {
+        _logger.LogError(exception, "Profile request failed.");
         return new RpcException(new Status(StatusCode.Unavailable,
             "The profile is temporarily unavailable."));
     }
@@ -95,33 +94,15 @@ public sealed class ProfileGrpcService : Profile.ProfileBase
             {
                 throw SessionRequestAuthentication.CreateUnauthenticatedException();
             }
-            var response = new GetProfileResponse { Profile = MapProfile(snapshot) };
-            ServerPlayerDiagnostics.Record(_logger, PlayerOperation.ReadProfile,
-                new DiagnosticEventDetails
-                {
-                    Outcome = DiagnosticOutcome.Succeeded,
-                    Context = new DiagnosticContext { UserId = userId }
-                });
-            return response;
+            return new GetProfileResponse { Profile = MapProfile(snapshot) };
         }
-        catch (OperationCanceledException exception)
-            when (context.CancellationToken.IsCancellationRequested)
+        catch (OperationCanceledException) when (context.CancellationToken.IsCancellationRequested)
         {
-            ServerPlayerDiagnostics.RecordFailure(_logger, PlayerOperation.ReadProfile,
-                (exception, context.CancellationToken));
             throw new RpcException(new Status(StatusCode.Cancelled, "The request was cancelled."));
         }
         catch (DbException exception)
         {
-            ServerPlayerDiagnostics.RecordFailure(_logger, PlayerOperation.ReadProfile,
-                (exception, context.CancellationToken));
-            throw CreateUnavailableException();
-        }
-        catch (Exception exception)
-        {
-            ServerPlayerDiagnostics.RecordFailure(_logger, PlayerOperation.ReadProfile,
-                (exception, context.CancellationToken));
-            throw;
+            throw CreateUnavailableException(exception);
         }
     }
 
@@ -148,37 +129,19 @@ public sealed class ProfileGrpcService : Profile.ProfileBase
             {
                 response.Profile = MapProfile(result.Profile);
             }
-            ServerPlayerDiagnostics.Record(_logger, PlayerOperation.UpdateProfile,
-                PlayerDiagnostics.CreateResult(result.Status) with
-                {
-                    Context = new DiagnosticContext { UserId = userId }
-                });
             return response;
         }
-        catch (OperationCanceledException exception)
-            when (context.CancellationToken.IsCancellationRequested)
+        catch (OperationCanceledException) when (context.CancellationToken.IsCancellationRequested)
         {
-            ServerPlayerDiagnostics.RecordFailure(_logger, PlayerOperation.UpdateProfile,
-                (exception, context.CancellationToken));
             throw new RpcException(new Status(StatusCode.Cancelled, "The request was cancelled."));
         }
         catch (DbUpdateException exception)
         {
-            ServerPlayerDiagnostics.RecordFailure(_logger, PlayerOperation.UpdateProfile,
-                (exception, context.CancellationToken));
-            throw CreateUnavailableException();
+            throw CreateUnavailableException(exception);
         }
         catch (DbException exception)
         {
-            ServerPlayerDiagnostics.RecordFailure(_logger, PlayerOperation.UpdateProfile,
-                (exception, context.CancellationToken));
-            throw CreateUnavailableException();
-        }
-        catch (Exception exception)
-        {
-            ServerPlayerDiagnostics.RecordFailure(_logger, PlayerOperation.UpdateProfile,
-                (exception, context.CancellationToken));
-            throw;
+            throw CreateUnavailableException(exception);
         }
     }
 }

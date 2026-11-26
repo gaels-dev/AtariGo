@@ -269,6 +269,8 @@ public sealed class ProfileCustomizationViewModel : ViewModelBase, IDisposable
         {
             return;
         }
+        Trace.TraceWarning("Profile request failed with status {0}.",
+            GrpcClientFailures.GetReason(exception));
         string key = GrpcClientFailures.GetReason(exception) == ClientFailureReason.SessionExpired
             ? "Connection_Err_SessionExpired" : "ProfileCustomization_Err_Unavailable";
         StatusMessage = Localize(key);

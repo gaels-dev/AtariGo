@@ -1,7 +1,6 @@
 using Grpc.Core;
 
 using AtariGo.Contracts;
-using AtariGo.Diagnostics;
 
 namespace AtariGo.Client.Services;
 
@@ -23,16 +22,13 @@ public sealed class GrpcFriendshipsClient : IFriendshipsClient
         _client = new Friendships.FriendshipsClient(callInvoker);
     }
 
-    public async Task<RemoveFriendshipResponse> RemoveFriendshipAsync(
+    public Task<RemoveFriendshipResponse> RemoveFriendshipAsync(
         int friendUserId,
         CancellationToken cancellationToken = default)
     {
-        var request = new RemoveFriendshipRequest { FriendUserId = friendUserId };
-        CallOptions options = GrpcCallPolicy.CreateOptions(cancellationToken,
-            GrpcCallPolicy.CreateHeaders(_sessionToken));
-        RemoveFriendshipResponse response = await GrpcCallPolicy.ExecuteAsync(() =>
-            _client.RemoveFriendshipAsync(request, options).ResponseAsync);
-        ClientIdentityDiagnostics.Completed(IdentityOperation.RemoveFriendship, response.Status);
-        return response;
+        return GrpcCallPolicy.ExecuteAsync(() => _client.RemoveFriendshipAsync(
+            new RemoveFriendshipRequest { FriendUserId = friendUserId },
+            GrpcCallPolicy.CreateOptions(cancellationToken,
+                GrpcCallPolicy.CreateHeaders(_sessionToken))).ResponseAsync);
     }
 }

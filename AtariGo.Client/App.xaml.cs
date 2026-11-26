@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Globalization;
 using System.Windows;
 
@@ -9,14 +10,8 @@ namespace AtariGo.Client
     {
         private const int InvalidConfigurationExitCode = 1;
 
-        private readonly ClientDiagnostics _diagnostics;
+        private ClientDiagnostics? _diagnostics;
         private GrpcClientConnection? _grpcConnection;
-
-        public App(ClientDiagnostics diagnostics)
-        {
-            ArgumentNullException.ThrowIfNull(diagnostics);
-            _diagnostics = diagnostics;
-        }
 
         private static string GetLocalizedMessage(string resourceKey)
         {
@@ -27,13 +22,14 @@ namespace AtariGo.Client
 
         protected override void OnStartup(StartupEventArgs e)
         {
+            _diagnostics = ClientDiagnostics.TryStart();
             try
             {
                 _grpcConnection = GrpcClientConnection.Shared;
             }
             catch (ArgumentException exception)
             {
-                _diagnostics.RecordFailure("InvalidGrpcConfiguration", exception);
+                Trace.TraceError("Invalid gRPC configuration: {0}", exception.Message);
                 MessageBox.Show(
                     GetLocalizedMessage("Connection_Err_InvalidAddress"),
                     GetLocalizedMessage("Connection_Title_ConfigurationError"),
@@ -53,6 +49,7 @@ namespace AtariGo.Client
             }
             finally
             {
+                _diagnostics?.Dispose();
                 base.OnExit(e);
             }
         }

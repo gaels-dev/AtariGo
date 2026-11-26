@@ -44,8 +44,6 @@ public sealed class GameSessionConnection : IDisposable
         get;
     }
 
-    internal Guid DiagnosticId { get; } = Guid.NewGuid();
-
     internal ChannelWriter<GameSessionDelivery> EventWriter
     {
         get;

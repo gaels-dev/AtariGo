@@ -1,8 +1,6 @@
 using Grpc.Core;
 
 using AtariGo.Contracts;
-using AtariGo.Diagnostics;
-using AtariGo.Server.Diagnostics;
 using AtariGo.Server.Application.Leaderboard;
 
 namespace AtariGo.Server.Services;
@@ -10,13 +8,9 @@ namespace AtariGo.Server.Services;
 public sealed class LeaderboardGrpcService : Leaderboard.LeaderboardBase
 {
     private readonly ILeaderboardService _leaderboardService;
-    private readonly ILogger _logger;
 
-    public LeaderboardGrpcService(ILeaderboardService leaderboardService,
-        ILogger<LeaderboardGrpcService> logger)
+    public LeaderboardGrpcService(ILeaderboardService leaderboardService)
     {
-        ArgumentNullException.ThrowIfNull(logger);
-        _logger = logger;
         ArgumentNullException.ThrowIfNull(leaderboardService);
         _leaderboardService = leaderboardService;
     }
@@ -43,22 +37,11 @@ public sealed class LeaderboardGrpcService : Leaderboard.LeaderboardBase
         GetTopPlayersRequest request,
         ServerCallContext context)
     {
-        try
-        {
-            IReadOnlyList<PlayerLeaderboardEntry> players =
-                await _leaderboardService.GetTopPlayersAsync(
-                    request.Limit,
-                    context.CancellationToken);
-            GetTopPlayersResponse response = CreateResponse(players);
-            ServerPlayerDiagnostics.Record(_logger, PlayerOperation.QueryLeaderboard,
-                new DiagnosticEventDetails { Outcome = DiagnosticOutcome.Succeeded });
-            return response;
-        }
-        catch (Exception exception)
-        {
-            ServerPlayerDiagnostics.RecordFailure(_logger, PlayerOperation.QueryLeaderboard,
-                (exception, context.CancellationToken));
-            throw;
-        }
+        IReadOnlyList<PlayerLeaderboardEntry> players =
+            await _leaderboardService.GetTopPlayersAsync(
+                request.Limit,
+                context.CancellationToken);
+
+        return CreateResponse(players);
     }
 }

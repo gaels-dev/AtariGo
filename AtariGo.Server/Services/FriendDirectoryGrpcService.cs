@@ -5,9 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Grpc.Core;
 
 using AtariGo.Contracts;
-using AtariGo.Diagnostics;
 using AtariGo.Server.Application.Friends;
-using AtariGo.Server.Diagnostics;
 
 namespace AtariGo.Server.Services;
 
@@ -110,18 +108,18 @@ public sealed class FriendDirectoryGrpcService : FriendDirectory.FriendDirectory
         catch (DbUpdateConcurrencyException exception)
         {
             throw CreatePersistenceFailure(operationName, StatusCode.Aborted,
-                exception);
+                exception.GetType().Name);
         }
         catch (DbUpdateException exception)
         {
             throw CreatePersistenceFailure(operationName,
                 GetDatabaseFailureStatus(exception.InnerException as DbException),
-                exception);
+                exception.GetType().Name);
         }
         catch (DbException exception)
         {
             throw CreatePersistenceFailure(operationName, GetDatabaseFailureStatus(exception),
-                exception);
+                exception.GetType().Name);
         }
 
         return result;
@@ -130,10 +128,10 @@ public sealed class FriendDirectoryGrpcService : FriendDirectory.FriendDirectory
     private RpcException CreatePersistenceFailure(
         string operationName,
         StatusCode status,
-        Exception failure)
+        string errorType)
     {
-        ServerIdentityDiagnostics.Failure(_logger, GetOperation(operationName),
-            (failure, CancellationToken.None));
+        _logger.LogError("Friend operation {Operation} failed with {ErrorType}: {Status}.",
+            operationName, errorType, status);
         string message = "The friend operation could not be completed or confirmed.";
         if (status == StatusCode.Aborted)
         {
@@ -141,19 +139,6 @@ public sealed class FriendDirectoryGrpcService : FriendDirectory.FriendDirectory
         }
 
         return new RpcException(new Status(status, message));
-    }
-
-    private static IdentityOperation GetOperation(string name)
-    {
-        return name switch
-        {
-            nameof(IFriendService.SendFriendRequestAsync) => IdentityOperation.SendFriendRequest,
-            nameof(IFriendService.RespondToFriendRequestAsync)
-                => IdentityOperation.RespondToFriendRequest,
-            nameof(IFriendService.CancelFriendRequestAsync)
-                => IdentityOperation.CancelFriendRequest,
-            _ => IdentityOperation.QueryFriends
-        };
     }
 
     public override async Task<SearchUsersResponse> SearchUsers(
@@ -199,8 +184,7 @@ public sealed class FriendDirectoryGrpcService : FriendDirectory.FriendDirectory
             throw CreateUnauthenticatedException();
         }
 
-        ServerIdentityDiagnostics.Completed(_logger, IdentityOperation.SendFriendRequest,
-            result.Value);
+        _logger.LogInformation("Friend request send result: {Status}.", result.Value);
         return new SendFriendRequestResponse
         {
             Status = MapStatus(result.Value)
@@ -267,11 +251,8 @@ public sealed class FriendDirectoryGrpcService : FriendDirectory.FriendDirectory
             throw CreateUnauthenticatedException();
         }
 
-        ServerIdentityDiagnostics.Record(_logger, IdentityOperation.RespondToFriendRequest,
-            IdentityDiagnostics.Result(IdentityOperation.RespondToFriendRequest, result.Value) with
-            {
-                Context = new DiagnosticContext { RequestId = friendRequestResponse.RequestId }
-            });
+        _logger.LogInformation("Friend request {RequestId} response: {Status}.",
+            friendRequestResponse.RequestId, result.Value);
         return new RespondToFriendRequestResponse
         {
             Status = MapResponseStatus(result.Value)
@@ -337,11 +318,8 @@ public sealed class FriendDirectoryGrpcService : FriendDirectory.FriendDirectory
             throw CreateUnauthenticatedException();
         }
 
-        ServerIdentityDiagnostics.Record(_logger, IdentityOperation.CancelFriendRequest,
-            IdentityDiagnostics.Result(IdentityOperation.CancelFriendRequest, result.Value) with
-            {
-                Context = new DiagnosticContext { RequestId = cancelFriendRequest.RequestId }
-            });
+        _logger.LogInformation("Friend request {RequestId} cancellation: {Status}.",
+            cancelFriendRequest.RequestId, result.Value);
         CancelFriendRequestStatus status;
         if (result == CancelFriendRequestResult.Cancelled)
         {

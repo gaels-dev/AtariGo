@@ -1,10 +1,10 @@
+using System.Diagnostics;
 using System.Globalization;
 
 using Grpc.Core;
 
 using AtariGo.Client.Models;
 using AtariGo.Contracts;
-using AtariGo.Diagnostics;
 
 namespace AtariGo.Client.Services;
 
@@ -51,8 +51,7 @@ public sealed class GrpcAuthenticationClient : IAuthenticationClient
         try
         {
             return await ExecuteAsync(() => _client.LoginAsync(request,
-                GrpcCallPolicy.CreateOptions(cancellationToken)).ResponseAsync,
-                IdentityOperation.Login, cancellationToken);
+                GrpcCallPolicy.CreateOptions(cancellationToken)).ResponseAsync);
         }
         finally
         {
@@ -69,8 +68,7 @@ public sealed class GrpcAuthenticationClient : IAuthenticationClient
         try
         {
             return await ExecuteAsync(() => _client.VerifyLoginCodeAsync(request,
-                GrpcCallPolicy.CreateOptions(cancellationToken)).ResponseAsync,
-                IdentityOperation.VerifyLoginCode, cancellationToken);
+                GrpcCallPolicy.CreateOptions(cancellationToken)).ResponseAsync);
         }
         finally
         {
@@ -89,8 +87,7 @@ public sealed class GrpcAuthenticationClient : IAuthenticationClient
             CultureName = CultureInfo.CurrentUICulture.Name
         };
         return ExecuteAsync(() => _client.ResendLoginCodeAsync(request,
-            GrpcCallPolicy.CreateOptions(cancellationToken)).ResponseAsync,
-            IdentityOperation.ResendLoginCode, cancellationToken);
+            GrpcCallPolicy.CreateOptions(cancellationToken)).ResponseAsync);
     }
 
     public async Task CancelLoginAsync(string token, CancellationToken cancellationToken)
@@ -100,23 +97,20 @@ public sealed class GrpcAuthenticationClient : IAuthenticationClient
         {
             await _client.CancelLoginAsync(new CancelLoginRequest { ChallengeToken = token },
                 GrpcCallPolicy.CreateOptions(cancellationToken)).ResponseAsync;
-            ClientIdentityDiagnostics.Record(IdentityOperation.CancelLogin,
-                new DiagnosticEventDetails { Outcome = DiagnosticOutcome.Succeeded });
         }
         catch (Exception exception) when (exception is RpcException or OperationCanceledException)
         {
-            ClientIdentityDiagnostics.Failure(IdentityOperation.CancelLogin, exception,
-                cancellationToken);
+            Trace.TraceInformation("Pending login cancellation was not confirmed. Error type: {0}.",
+                exception.GetType().Name);
         }
     }
 
-    private static async Task<LoginAttemptResult> ExecuteAsync(Func<Task<LoginResponse>> operation,
-        IdentityOperation diagnosticOperation, CancellationToken cancellationToken)
+    private static async Task<LoginAttemptResult> ExecuteAsync(Func<Task<LoginResponse>> operation)
     {
         try
         {
             LoginResponse response = await operation();
-            var result = new LoginAttemptResult
+            return new LoginAttemptResult
             {
                 Status = MapStatus(response.Result),
                 UserName = response.UserName,
@@ -127,19 +121,11 @@ public sealed class GrpcAuthenticationClient : IAuthenticationClient
                 CodeExpiresAtUnixSeconds = response.CodeExpiresAtUnixSeconds,
                 RetryAtUnixSeconds = response.RetryAtUnixSeconds
             };
-            ClientIdentityDiagnostics.Record(diagnosticOperation,
-                IdentityDiagnostics.Result(diagnosticOperation, result.Status) with
-                {
-                    Context = new DiagnosticContext
-                    {
-                        UserId = response.UserId > 0 ? response.UserId : null
-                    }
-                });
-            return result;
         }
         catch (Exception exception) when (exception is RpcException or OperationCanceledException)
         {
-            ClientIdentityDiagnostics.Failure(diagnosticOperation, exception, cancellationToken);
+            Trace.TraceWarning("Login was not confirmed. Error type: {0}.",
+                exception.GetType().Name);
             return new LoginAttemptResult { Status = LoginAttemptStatus.Unconfirmed };
         }
     }

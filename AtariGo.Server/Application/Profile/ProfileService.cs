@@ -1,10 +1,7 @@
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging.Abstractions;
 
 using AtariGo.Contracts.Validation;
-using AtariGo.Diagnostics;
-using AtariGo.Server.Diagnostics;
 using AtariGo.Server.Data;
 using AtariGo.Server.Data.Entities;
 
@@ -17,18 +14,9 @@ public sealed class ProfileService : IProfileService
 
     private readonly AtariGoDbContext _dbContext;
     private readonly TimeProvider _timeProvider;
-    private readonly ILogger _logger;
 
     public ProfileService(AtariGoDbContext dbContext, TimeProvider timeProvider)
-        : this(dbContext, timeProvider, NullLogger<ProfileService>.Instance)
     {
-    }
-
-    public ProfileService(AtariGoDbContext dbContext, TimeProvider timeProvider,
-        ILogger<ProfileService> logger)
-    {
-        ArgumentNullException.ThrowIfNull(logger);
-        _logger = logger;
         ArgumentNullException.ThrowIfNull(dbContext);
         ArgumentNullException.ThrowIfNull(timeProvider);
         _dbContext = dbContext;
@@ -98,12 +86,6 @@ public sealed class ProfileService : IProfileService
             return new ProfileUpdateResult(ProfileUpdateStatus.UserNameTaken);
         }
 
-        ServerPlayerDiagnostics.Record(_logger, PlayerOperation.ProfileSaved,
-            new DiagnosticEventDetails
-            {
-                Outcome = DiagnosticOutcome.Succeeded,
-                Context = new DiagnosticContext { UserId = input.UserId }
-            });
         UserProfileSnapshot snapshot = await CreateSnapshotAsync(user, cancellationToken);
         return new ProfileUpdateResult(ProfileUpdateStatus.Updated, snapshot);
     }

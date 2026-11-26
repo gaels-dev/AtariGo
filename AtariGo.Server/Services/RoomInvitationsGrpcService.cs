@@ -1,11 +1,9 @@
 using Grpc.Core;
 
 using AtariGo.Contracts;
-using AtariGo.Diagnostics;
 using AtariGo.Server.Application.RoomInvitations;
 using AtariGo.Server.Application.Rooms;
 using AtariGo.Server.Application.Sessions;
-using AtariGo.Server.Diagnostics;
 
 namespace AtariGo.Server.Services;
 
@@ -47,8 +45,11 @@ public sealed class RoomInvitationsGrpcService : RoomInvitations.RoomInvitations
         return new LobbyParticipant(identity.UserId, identity.UserName);
     }
 
-    private static RoomInvitationEntry RequireInvitation(RoomInvitationResult result)
+    private RoomInvitationEntry RequireInvitation(RoomInvitationResult result)
     {
+        _logger.LogInformation(
+            "Room invitation {InvitationId} for room {RoomId}: {Status}.",
+            result.Invitation?.InvitationId, result.Invitation?.RoomId, result.Status);
         if (result.Status != RoomInvitationOperationStatus.Success)
         {
             StatusCode code = result.Status switch
@@ -63,15 +64,6 @@ public sealed class RoomInvitationsGrpcService : RoomInvitations.RoomInvitations
 
         return result.Invitation
             ?? throw new InvalidOperationException("Invitation result is missing.");
-    }
-
-    private static DiagnosticContext InvitationContext(int userId, long invitationId)
-    {
-        return new DiagnosticContext
-        {
-            UserId = userId,
-            InvitationId = invitationId > 0 ? invitationId : null
-        };
     }
 
     private static RoomInvitation MapInvitation(RoomInvitationEntry entry)
@@ -135,9 +127,8 @@ public sealed class RoomInvitationsGrpcService : RoomInvitations.RoomInvitations
         };
         RoomInvitationResult result = await _roomInvitationsService.SendAsync(
             command, sender, context.CancellationToken);
-        ServerLobbyDiagnostics.Result(_logger, (LobbyOperation.SendInvitationRequest,
-            new DiagnosticContext { RoomId = request.RoomId, UserId = sender.UserId }),
-            result.Status);
+        _logger.LogInformation("Invitation send in room {RoomId}: {Status}.",
+            request.RoomId, result.Status);
         var response = new SendRoomInvitationResponse
         {
             DeliveryStatus = MapDelivery(result),
@@ -182,8 +173,6 @@ public sealed class RoomInvitationsGrpcService : RoomInvitations.RoomInvitations
         var command = new RespondRoomInvitationCommand(request.InvitationId, request.Accept);
         RoomInvitationResult result = await _roomInvitationsService.RespondAsync(
             command, recipient, context.CancellationToken);
-        ServerLobbyDiagnostics.Result(_logger, (LobbyOperation.RespondInvitationRequest,
-            InvitationContext(recipient.UserId, request.InvitationId)), result.Status);
         var response = new RespondRoomInvitationResponse
         {
             Invitation = MapInvitation(RequireInvitation(result))
@@ -202,8 +191,6 @@ public sealed class RoomInvitationsGrpcService : RoomInvitations.RoomInvitations
         LobbyParticipant sender = await AuthenticateAsync(context);
         RoomInvitationResult result = _roomsService.CancelRoomInvitation(
             request.InvitationId, sender.UserId);
-        ServerLobbyDiagnostics.Result(_logger, (LobbyOperation.CancelInvitationRequest,
-            InvitationContext(sender.UserId, request.InvitationId)), result.Status);
         return new CancelRoomInvitationResponse
         {
             Invitation = MapInvitation(RequireInvitation(result))

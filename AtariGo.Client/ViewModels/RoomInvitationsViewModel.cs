@@ -5,8 +5,8 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Windows.Input;
 
-using AtariGo.Client.Commands;
 using AtariGo.Client.Models;
+using AtariGo.Client.Commands;
 using AtariGo.Client.Services;
 using AtariGo.Contracts;
 
@@ -450,6 +450,7 @@ public sealed class RoomInvitationsViewModel : ViewModelBase, IDisposable
     {
         if (!_isDisposed)
         {
+            Trace.TraceWarning("Invitation mutation unconfirmed: {0}.", exception.GetType().Name);
             Message = Text(GetMutationFailureKey(exception));
             RequestRefresh();
         }

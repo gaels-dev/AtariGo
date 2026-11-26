@@ -1,10 +1,6 @@
-using Microsoft.Extensions.Logging.Abstractions;
-
-using AtariGo.Contracts;
-using AtariGo.Diagnostics;
 using AtariGo.Server.Application.Games;
+using AtariGo.Contracts;
 using AtariGo.Server.Data;
-using AtariGo.Server.Diagnostics;
 
 namespace AtariGo.Server.Application.Matchmaking;
 
@@ -18,18 +14,9 @@ public sealed class InMemoryPublicMatchmakingQueue
     private readonly Dictionary<string, MatchmakingTicket> _activeTickets =
         new Dictionary<string, MatchmakingTicket>(StringComparer.Ordinal);
     private readonly TimeProvider _timeProvider;
-    private readonly ILogger _logger;
 
     public InMemoryPublicMatchmakingQueue(TimeProvider timeProvider)
-        : this(timeProvider, NullLogger<InMemoryPublicMatchmakingQueue>.Instance)
     {
-    }
-
-    public InMemoryPublicMatchmakingQueue(TimeProvider timeProvider,
-        ILogger<InMemoryPublicMatchmakingQueue> logger)
-    {
-        ArgumentNullException.ThrowIfNull(logger);
-        _logger = logger;
         ArgumentNullException.ThrowIfNull(timeProvider);
         _timeProvider = timeProvider;
     }
@@ -41,8 +28,6 @@ public sealed class InMemoryPublicMatchmakingQueue
         {
             if (_activeTickets.ContainsKey(player.PlayerKey))
             {
-                Record(LobbyOperation.SearchRequest, DiagnosticOutcome.Rejected,
-                    new DiagnosticContext { UserId = player.UserId });
                 return null;
             }
 
@@ -53,8 +38,6 @@ public sealed class InMemoryPublicMatchmakingQueue
             {
                 SearchQueued = new SearchQueued()
             });
-            Record(LobbyOperation.SearchQueued, DiagnosticOutcome.Succeeded,
-                new DiagnosticContext { UserId = player.UserId });
             PairWaitingPlayers();
             return ticket;
         }
@@ -71,8 +54,6 @@ public sealed class InMemoryPublicMatchmakingQueue
                 ticket.QueueNode = null;
                 _activeTickets.Remove(ticket.Player.PlayerKey);
                 ticket.Notifications.Writer.TryComplete();
-                Record(LobbyOperation.SearchCancelled, DiagnosticOutcome.Cancelled,
-                    new DiagnosticContext { UserId = ticket.Player.UserId });
                 return;
             }
 
@@ -110,8 +91,6 @@ public sealed class InMemoryPublicMatchmakingQueue
         {
             match.IsCompleted = true;
             match.GameCompletion.TrySetResult(gameId);
-            Record(LobbyOperation.MatchStarted, DiagnosticOutcome.Succeeded,
-                new DiagnosticContext { OperationId = match.MatchId, GameId = gameId });
             PublishGameStarted(match, gameId);
             RemovePlayer(match.BlackTicket);
             RemovePlayer(match.WhiteTicket);
@@ -127,8 +106,6 @@ public sealed class InMemoryPublicMatchmakingQueue
         {
             match.IsCompleted = true;
             match.GameCompletion.TrySetResult(0);
-            Record(LobbyOperation.MatchStartFailed, DiagnosticOutcome.Unconfirmed,
-                new DiagnosticContext { OperationId = match.MatchId });
             RemovePlayer(match.BlackTicket);
             RemovePlayer(match.WhiteTicket);
             match.BlackTicket.Notifications.Writer.TryComplete();
@@ -157,8 +134,6 @@ public sealed class InMemoryPublicMatchmakingQueue
         blackTicket.Match = match;
         whiteTicket.Match = match;
         PublishCountdown(match);
-        Record(LobbyOperation.MatchPaired, DiagnosticOutcome.Succeeded,
-            new DiagnosticContext { OperationId = match.MatchId });
     }
 
     private static void PublishCountdown(PublicMatchState match)
@@ -177,12 +152,6 @@ public sealed class InMemoryPublicMatchmakingQueue
         MatchmakingTicket cancellingTicket)
     {
         match.IsCompleted = true;
-        Record(LobbyOperation.CountdownCancelled, DiagnosticOutcome.Cancelled,
-            new DiagnosticContext
-            {
-                OperationId = match.MatchId,
-                UserId = cancellingTicket.Player.UserId
-            });
         match.CountdownCancellation.Cancel();
         MatchmakingTicket remainingTicket = GetOtherTicket(match, cancellingTicket);
         cancellingTicket.Match = null;
@@ -258,18 +227,6 @@ public sealed class InMemoryPublicMatchmakingQueue
                 TurnTimeSeconds = PublicGameRules.TurnTimeSeconds
             }
         };
-    }
-
-    private void Record(LobbyOperation operation, DiagnosticOutcome outcome,
-        DiagnosticContext context)
-    {
-        ServerLobbyDiagnostics.Record(_logger, operation, new DiagnosticEventDetails
-        {
-            Outcome = outcome,
-            Context = context,
-            Severity = outcome == DiagnosticOutcome.Unconfirmed
-                ? DiagnosticSeverity.Warning : DiagnosticSeverity.Information
-        });
     }
 
     private void RemovePlayer(MatchmakingTicket ticket)

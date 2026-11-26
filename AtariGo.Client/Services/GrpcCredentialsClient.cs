@@ -1,8 +1,9 @@
+using System.Diagnostics;
+
 using Grpc.Core;
 
 using AtariGo.Client.Models;
 using AtariGo.Contracts;
-using AtariGo.Diagnostics;
 
 namespace AtariGo.Client.Services;
 
@@ -46,20 +47,17 @@ public sealed class GrpcCredentialsClient : ICredentialsClient
             ChangePasswordResponse response = await _client.ChangePasswordAsync(request,
                 GrpcCallPolicy.CreateOptions(cancellationToken, headers)).ResponseAsync;
             result = MapStatus(response.Status);
-            ClientIdentityDiagnostics.Completed(IdentityOperation.ChangePassword, result);
         }
         catch (RpcException exception)
         {
             result = exception.StatusCode == StatusCode.Unauthenticated
                 ? PasswordChangeResult.SessionExpired : PasswordChangeResult.Unconfirmed;
-            ClientIdentityDiagnostics.Failure(IdentityOperation.ChangePassword, exception,
-                cancellationToken);
+            LogFailure(exception, cancellationToken);
         }
         catch (OperationCanceledException exception)
         {
             result = PasswordChangeResult.Unconfirmed;
-            ClientIdentityDiagnostics.Failure(IdentityOperation.ChangePassword, exception,
-                cancellationToken);
+            LogFailure(exception, cancellationToken);
         }
         finally
         {
@@ -85,4 +83,12 @@ public sealed class GrpcCredentialsClient : ICredentialsClient
         };
     }
 
+    private static void LogFailure(Exception exception, CancellationToken cancellationToken)
+    {
+        if (!cancellationToken.IsCancellationRequested)
+        {
+            Trace.TraceWarning("Password change was not confirmed. Error type: {0}.",
+                exception.GetType().Name);
+        }
+    }
 }

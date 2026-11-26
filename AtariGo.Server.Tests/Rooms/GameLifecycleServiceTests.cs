@@ -26,23 +26,14 @@ public sealed class GameLifecycleServiceTests
         RoomsService rooms = new RoomsService(database.Time,
             new SessionConnectionRegistry(), NullLogger<RoomsService>.Instance);
         GameLifecycleService service = new GameLifecycleService(rooms, context,
-            database.Time, new AllowAllAccountSanctionService(),
-            NullLogger<GameLifecycleService>.Instance);
+            database.Time, new AllowAllAccountSanctionService());
         Guid blackId = Guid.NewGuid();
         Guid whiteId = Guid.NewGuid();
         PublicMatchStartRequest request = new PublicMatchStartRequest(
-            new MatchmakingPlayer
-            {
-                PlayerKey = blackId.ToString(),
-                GuestName = "Black guest",
-                GuestIdentityId = blackId
-            },
-            new MatchmakingPlayer
-            {
-                PlayerKey = whiteId.ToString(),
-                GuestName = "White guest",
-                GuestIdentityId = whiteId
-            },
+            new MatchmakingPlayer { PlayerKey = blackId.ToString(),
+                GuestName = "Black guest", GuestIdentityId = blackId },
+            new MatchmakingPlayer { PlayerKey = whiteId.ToString(),
+                GuestName = "White guest", GuestIdentityId = whiteId },
             new LobbyConfiguration(5, 600, 30));
 
         // Act
@@ -82,16 +73,11 @@ public sealed class GameLifecycleServiceTests
         RoomsService rooms = new RoomsService(TimeProvider.System,
             new SessionConnectionRegistry(), NullLogger<RoomsService>.Instance);
         GameLifecycleService service = new GameLifecycleService(rooms, context,
-            TimeProvider.System, new AllowAllAccountSanctionService { IsSuspended = true },
-            NullLogger<GameLifecycleService>.Instance);
+            TimeProvider.System, new AllowAllAccountSanctionService { IsSuspended = true });
         PublicMatchStartRequest request = new PublicMatchStartRequest(
             new MatchmakingPlayer { PlayerKey = "1", UserId = 1 },
-            new MatchmakingPlayer
-            {
-                PlayerKey = "guest",
-                GuestName = "Guest",
-                GuestIdentityId = Guid.NewGuid()
-            },
+            new MatchmakingPlayer { PlayerKey = "guest", GuestName = "Guest",
+                GuestIdentityId = Guid.NewGuid() },
             new LobbyConfiguration(5, 600, 30));
 
         // Act
@@ -114,7 +100,7 @@ public sealed class GameLifecycleServiceTests
         PrivateRoom room = CreateRoomWithOpponent(roomsService);
         var sanctions = new AllowAllAccountSanctionService { IsSuspended = true };
         var service = new GameLifecycleService(roomsService, dbContext,
-            TimeProvider.System, sanctions, NullLogger<GameLifecycleService>.Instance);
+            TimeProvider.System, sanctions);
         var request = new RoomStartRequest(room.RoomId, room.Version, room.Host.UserId);
 
         // Act
@@ -143,8 +129,7 @@ public sealed class GameLifecycleServiceTests
             NullLogger<RoomsService>.Instance);
         PrivateRoom room = CreateRoomWithOpponent(roomsService);
         var service = new GameLifecycleService(roomsService, dbContext,
-            TimeProvider.System, new AllowAllAccountSanctionService(),
-            NullLogger<GameLifecycleService>.Instance);
+            TimeProvider.System, new AllowAllAccountSanctionService());
         var request = new RoomStartRequest(room.RoomId, room.Version, room.Host.UserId);
 
         // Act

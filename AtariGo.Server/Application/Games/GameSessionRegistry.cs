@@ -1,24 +1,14 @@
 using System.Collections.Concurrent;
 
-using Microsoft.Extensions.Logging.Abstractions;
-
 namespace AtariGo.Server.Application.Games;
 
 public sealed class GameSessionRegistry : IGameSessionRegistry
 {
     private readonly ConcurrentDictionary<long, GameSessionState> _sessions = new();
     private readonly TimeProvider _timeProvider;
-    private readonly ILogger _logger;
 
     public GameSessionRegistry(TimeProvider timeProvider)
-        : this(timeProvider, NullLogger<GameSessionRegistry>.Instance)
     {
-    }
-
-    public GameSessionRegistry(TimeProvider timeProvider, ILogger<GameSessionRegistry> logger)
-    {
-        ArgumentNullException.ThrowIfNull(logger);
-        _logger = logger;
         ArgumentNullException.ThrowIfNull(timeProvider);
         _timeProvider = timeProvider;
     }
@@ -309,11 +299,11 @@ public sealed class GameSessionRegistry : IGameSessionRegistry
             && ReferenceEquals(currentConnection, connection);
     }
 
-    private GameSessionState CreateState(
+    private static GameSessionState CreateState(
         long _,
         GameSessionDefinition definition)
     {
-        return new GameSessionState(definition, _logger);
+        return new GameSessionState(definition);
     }
 
     private bool IsCurrentState(long gameId, GameSessionState state)

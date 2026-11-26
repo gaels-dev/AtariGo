@@ -1,8 +1,9 @@
+using System.Diagnostics;
+
 using Grpc.Core;
 
 using AtariGo.Client.Models;
 using AtariGo.Contracts;
-using AtariGo.Diagnostics;
 
 namespace AtariGo.Client.Services;
 
@@ -44,21 +45,15 @@ public sealed class GrpcReportsClient : IReportClient
                 }, GrpcCallPolicy.CreateOptions(cancellationToken, headers)).ResponseAsync;
             cancellationToken.ThrowIfCancellationRequested();
             result = MapResponse(response);
-            ClientPlayerDiagnostics.Record(PlayerOperation.SubmitReport,
-                CreateDetails(result));
         }
         catch (RpcException exception)
         {
-            ClientPlayerDiagnostics.RecordFailure(PlayerOperation.SubmitReport, exception,
-                cancellationToken);
             ClientFailureReason reason = cancellationToken.IsCancellationRequested
                 ? ClientFailureReason.Cancelled : GrpcClientFailures.GetReason(exception);
             result = CreateFailure(reason);
         }
-        catch (OperationCanceledException exception)
+        catch (OperationCanceledException)
         {
-            ClientPlayerDiagnostics.RecordFailure(PlayerOperation.SubmitReport, exception,
-                cancellationToken);
             result = CreateFailure(cancellationToken.IsCancellationRequested
                 ? ClientFailureReason.Cancelled : ClientFailureReason.Timeout);
         }
@@ -93,22 +88,12 @@ public sealed class GrpcReportsClient : IReportClient
             : CreateFailure(ClientFailureReason.RequestFailed);
     }
 
-    private static DiagnosticEventDetails CreateDetails(PlayerReportResult result)
-    {
-        if (result.Failure != ClientFailureReason.None)
-        {
-            return new DiagnosticEventDetails
-            {
-                Outcome = DiagnosticOutcome.Unconfirmed,
-                Severity = DiagnosticSeverity.Warning,
-                Status = new DiagnosticStatus(result.Failure)
-            };
-        }
-        return PlayerDiagnostics.CreateResult(result.Status);
-    }
-
     private static PlayerReportResult CreateFailure(ClientFailureReason failure)
     {
+        if (failure != ClientFailureReason.Cancelled)
+        {
+            Trace.TraceWarning("Report submission failed: {0}.", failure);
+        }
         return new PlayerReportResult { Failure = failure };
     }
 }

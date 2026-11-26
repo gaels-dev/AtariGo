@@ -1,11 +1,8 @@
 using System.Text.Json;
 
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging.Abstractions;
 
-using AtariGo.Diagnostics;
 using AtariGo.GameLogic.Models;
-using AtariGo.Server.Diagnostics;
 using AtariGo.Server.Data;
 using AtariGo.Server.Data.Entities;
 
@@ -15,18 +12,9 @@ public sealed class GamePersistenceService
 {
     private readonly AtariGoDbContext _dbContext;
     private readonly TimeProvider _timeProvider;
-    private readonly ILogger _logger;
 
     public GamePersistenceService(AtariGoDbContext dbContext, TimeProvider timeProvider)
-        : this(dbContext, timeProvider, NullLogger<GamePersistenceService>.Instance)
     {
-    }
-
-    public GamePersistenceService(AtariGoDbContext dbContext, TimeProvider timeProvider,
-        ILogger<GamePersistenceService> logger)
-    {
-        ArgumentNullException.ThrowIfNull(logger);
-        _logger = logger;
         ArgumentNullException.ThrowIfNull(dbContext);
         ArgumentNullException.ThrowIfNull(timeProvider);
         _dbContext = dbContext;
@@ -90,8 +78,6 @@ public sealed class GamePersistenceService
                 Rejection = "ActionConflict"
             };
         }
-        RecordActionOutcome(context, result, result.Rejection == "ActionConflict"
-            ? GameOperation.ActionConflict : GameOperation.ActionReplayed);
         return result;
     }
 
@@ -114,8 +100,6 @@ public sealed class GamePersistenceService
         {
             await _dbContext.SaveChangesAsync(CancellationToken.None);
         }
-        RecordActionOutcome(context, result, result.IsAccepted
-            ? GameOperation.ActionCommitted : GameOperation.ActionRejected);
     }
 
     public async Task SaveAsync(Game game, GameRuntimeState state,
@@ -127,7 +111,7 @@ public sealed class GamePersistenceService
         {
             game.FinishedAt = _timeProvider.GetUtcNow().UtcDateTime;
         }
-        GameOperation transition = AddTransitionEvent(game, state);
+        AddTransitionEvent(game, state);
         game.StateVersion++;
         game.BoardStateJson = JsonSerializer.Serialize(state.Board);
         game.TurnDeadlineUtc = state.DeadlineUtc;
@@ -135,33 +119,6 @@ public sealed class GamePersistenceService
         game.EndReason = state.IsTerminal ? state.EndReason : null;
         UpdateParticipants(game, state);
         await _dbContext.SaveChangesAsync(cancellationToken);
-        if (transition != GameOperation.Unspecified)
-        {
-            ServerGameDiagnostics.Record(_logger, transition, new DiagnosticEventDetails
-            {
-                Outcome = DiagnosticOutcome.Succeeded,
-                Context = new DiagnosticContext { GameId = game.GameId },
-                Status = GameDiagnostics.CreateReason(state.EndReason)
-            });
-        }
-    }
-
-    private void RecordActionOutcome(GameActionContext context, GameActionResult result,
-        GameOperation operation)
-    {
-        Guid? actionId = Guid.TryParseExact(context.Command.ActionId, "N", out Guid parsed)
-            ? parsed : null;
-        ServerGameDiagnostics.Record(_logger, operation, new DiagnosticEventDetails
-        {
-            Outcome = result.IsAccepted ? DiagnosticOutcome.Succeeded : DiagnosticOutcome.Rejected,
-            Context = new DiagnosticContext
-            {
-                GameId = context.Game.GameId,
-                UserId = context.Player.UserId,
-                ActionId = actionId
-            },
-            Status = GameDiagnostics.CreateReason(result.Rejection)
-        });
     }
 
     private void AddMove(GameActionContext context, GameState previous)
@@ -200,7 +157,7 @@ public sealed class GamePersistenceService
         });
     }
 
-    private GameOperation AddTransitionEvent(Game game, GameRuntimeState next)
+    private void AddTransitionEvent(Game game, GameRuntimeState next)
     {
         GameRuntimeState previous = Read(game);
         string? eventType = null;
@@ -227,13 +184,6 @@ public sealed class GamePersistenceService
                 CreatedAt = _timeProvider.GetUtcNow().UtcDateTime
             });
         }
-        return eventType switch
-        {
-            "GameFinished" => GameOperation.Finished,
-            "GameStarted" => GameOperation.Started,
-            "Timeout" => GameOperation.TurnTimedOut,
-            _ => GameOperation.Unspecified
-        };
     }
 
     private static void UpdateParticipants(Game game, GameRuntimeState state)

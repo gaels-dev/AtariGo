@@ -23,7 +23,6 @@ using AtariGo.Server.Application.Social;
 using AtariGo.Server.Configuration;
 using AtariGo.Server.Data;
 using AtariGo.Server.Data.Entities;
-using AtariGo.Server.Diagnostics;
 using AtariGo.Server.Security;
 using AtariGo.Server.Services;
 
@@ -32,7 +31,6 @@ const int ConnectionProbeDelaySeconds = 10;
 const int ConnectionProbeTimeoutSeconds = 5;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
-await using ServerDiagnostics diagnostics = ServerDiagnostics.Configure(builder);
 builder.WebHost.ConfigureKestrel(options =>
 {
     options.Limits.Http2.KeepAlivePingDelay =
@@ -131,12 +129,4 @@ app.MapGrpcService<MatchmakingGrpcService>();
 app.MapGet("/", () =>
     "Communication with gRPC endpoints must be made through a gRPC client.");
 
-try
-{
-    await app.RunAsync();
-}
-catch (Exception failure)
-{
-    app.Logger.LogCritical(failure, "Server host terminated.");
-    Environment.ExitCode = ConfigurationFailureExitCode;
-}
+await app.RunAsync();

@@ -404,6 +404,9 @@ namespace AtariGo.Client.ViewModels
 
         private void HandleRealtimeFailure(ClientFailureReason reason)
         {
+            Trace.TraceWarning(
+                "Real-time connection failed. Reason: {0}.",
+                reason);
             SetPresenceStatus(
                 ClientFailureMessages.GetResourceKey(reason));
         }

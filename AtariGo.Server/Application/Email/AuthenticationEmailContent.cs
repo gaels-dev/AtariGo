@@ -37,8 +37,6 @@ public sealed class AuthenticationEmailContent
         CultureInfo culture = SelectCulture(cultureName);
         return new EmailMessage
         {
-            Purpose = ReferenceEquals(this, Login)
-                ? EmailPurpose.LoginVerification : EmailPurpose.PasswordRecovery,
             Recipient = recipient,
             Subject = GetText("Subject", culture),
             Body = string.Format(CultureInfo.InvariantCulture, GetText("Body", culture),

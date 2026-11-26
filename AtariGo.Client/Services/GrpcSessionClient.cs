@@ -1,7 +1,6 @@
 using Grpc.Core;
 
 using AtariGo.Contracts;
-using AtariGo.Diagnostics;
 
 namespace AtariGo.Client.Services;
 
@@ -53,11 +52,10 @@ public sealed class GrpcSessionClient : ISessionClient
                 reconnectDelay = GetNextReconnectDelay(reconnectDelay);
             }
         }
-        catch (OperationCanceledException exception)
+        catch (OperationCanceledException)
             when (cancellationToken.IsCancellationRequested)
         {
-            ClientIdentityDiagnostics.Failure(IdentityOperation.PresenceDisconnected, exception,
-                cancellationToken);
+            System.Diagnostics.Trace.TraceInformation("Real-time session stopped by its owner.");
         }
     }
 
@@ -69,8 +67,6 @@ public sealed class GrpcSessionClient : ISessionClient
             GrpcCallPolicy.CreateOptions(
                 cancellationToken,
                 GrpcCallPolicy.CreateHeaders(_sessionToken))).ResponseAsync);
-        ClientIdentityDiagnostics.Record(IdentityOperation.Logout,
-            new DiagnosticEventDetails { Outcome = DiagnosticOutcome.Stopped });
     }
 
     private async Task<bool> ConnectAndReceiveAsync(
@@ -84,8 +80,6 @@ public sealed class GrpcSessionClient : ISessionClient
         }
         catch (RpcException exception)
         {
-            ClientIdentityDiagnostics.Failure(IdentityOperation.PresenceDisconnected, exception,
-                cancellationToken);
             return HandleConnectionFailure(exception, callbacks);
         }
     }
@@ -101,19 +95,10 @@ public sealed class GrpcSessionClient : ISessionClient
             ClientConnected = new ClientConnected()
         }, cancellationToken);
 
-        bool connected = false;
         while (await call.ResponseStream.MoveNext(cancellationToken))
         {
-            if (!connected)
-            {
-                ClientIdentityDiagnostics.Record(IdentityOperation.PresenceConnected,
-                    new DiagnosticEventDetails { Outcome = DiagnosticOutcome.Started });
-                connected = true;
-            }
             callbacks.EventReceived(call.ResponseStream.Current);
         }
-        ClientIdentityDiagnostics.Record(IdentityOperation.PresenceDisconnected,
-            new DiagnosticEventDetails { Outcome = DiagnosticOutcome.Stopped });
     }
 
     private bool HandleConnectionFailure(

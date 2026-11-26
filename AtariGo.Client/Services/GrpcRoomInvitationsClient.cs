@@ -1,7 +1,6 @@
 using Grpc.Core;
 
 using AtariGo.Contracts;
-using AtariGo.Diagnostics;
 
 namespace AtariGo.Client.Services;
 
@@ -31,8 +30,7 @@ public sealed class GrpcRoomInvitationsClient : IRoomInvitationsClient
         {
             using AsyncUnaryCall<SendRoomInvitationResponse> call =
                 _client.SendRoomInvitationAsync(request, Options(cancellationToken));
-            return await ClientLobbyDiagnostics.ExecuteAsync(() => call.ResponseAsync,
-                LobbyOperation.SendInvitationRequest, cancellationToken);
+            return await GrpcCallPolicy.ExecuteAsync(() => call.ResponseAsync);
         }
         catch (Exception exception) when (GrpcClientFailures.IsTransportFailure(exception))
         {
@@ -55,8 +53,7 @@ public sealed class GrpcRoomInvitationsClient : IRoomInvitationsClient
         ArgumentNullException.ThrowIfNull(request);
         using AsyncUnaryCall<RespondRoomInvitationResponse> call =
             _client.RespondRoomInvitationAsync(request, Options(cancellationToken));
-        return await ClientLobbyDiagnostics.ExecuteAsync(() => call.ResponseAsync,
-            LobbyOperation.RespondInvitationRequest, cancellationToken);
+        return await GrpcCallPolicy.ExecuteAsync(() => call.ResponseAsync);
     }
 
     public async Task<CancelRoomInvitationResponse> CancelAsync(
@@ -64,8 +61,7 @@ public sealed class GrpcRoomInvitationsClient : IRoomInvitationsClient
     {
         using AsyncUnaryCall<CancelRoomInvitationResponse> call = _client.CancelRoomInvitationAsync(
             new CancelRoomInvitationRequest { InvitationId = invitationId }, Options(token));
-        return await ClientLobbyDiagnostics.ExecuteAsync(() => call.ResponseAsync,
-            LobbyOperation.CancelInvitationRequest, token);
+        return await GrpcCallPolicy.ExecuteAsync(() => call.ResponseAsync);
     }
 
     private CallOptions Options(CancellationToken token)

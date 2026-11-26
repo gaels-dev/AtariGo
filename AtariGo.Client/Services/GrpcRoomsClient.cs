@@ -3,7 +3,6 @@ using System.Runtime.CompilerServices;
 using Grpc.Core;
 
 using AtariGo.Contracts;
-using AtariGo.Diagnostics;
 
 namespace AtariGo.Client.Services;
 
@@ -36,8 +35,7 @@ public sealed class GrpcRoomsClient : IRoomsClient
         using AsyncUnaryCall<CreatePrivateRoomResponse> call = _client.CreatePrivateRoomAsync(
             request, Options(cancellationToken));
         CreatePrivateRoomResponse response =
-            await ClientLobbyDiagnostics.ExecuteAsync(() => call.ResponseAsync,
-                LobbyOperation.CreateRoomRequest, cancellationToken);
+            await GrpcCallPolicy.ExecuteAsync(() => call.ResponseAsync);
         return response.Room;
     }
 
@@ -50,8 +48,7 @@ public sealed class GrpcRoomsClient : IRoomsClient
             _client.UpdateRoomConfigurationAsync(
                 request, Options(cancellationToken));
         UpdateRoomConfigurationResponse response =
-            await ClientLobbyDiagnostics.ExecuteAsync(() => call.ResponseAsync,
-                LobbyOperation.ConfigureRoomRequest, cancellationToken);
+            await GrpcCallPolicy.ExecuteAsync(() => call.ResponseAsync);
         return response.Room;
     }
 
@@ -63,8 +60,7 @@ public sealed class GrpcRoomsClient : IRoomsClient
         var request = new JoinRoomRequest { InvitationCode = invitationCode };
         using AsyncUnaryCall<JoinRoomResponse> call = _client.JoinRoomAsync(
             request, Options(cancellationToken));
-        return await ClientLobbyDiagnostics.ExecuteAsync(() => call.ResponseAsync,
-            LobbyOperation.JoinRoomRequest, cancellationToken);
+        return await GrpcCallPolicy.ExecuteAsync(() => call.ResponseAsync);
     }
 
     public async Task StartGameAsync(
@@ -82,8 +78,7 @@ public sealed class GrpcRoomsClient : IRoomsClient
         var request = new LeaveRoomRequest { RoomId = roomId };
         using AsyncUnaryCall<LeaveRoomResponse> call = _client.LeaveRoomAsync(
             request, Options(cancellationToken));
-        await ClientLobbyDiagnostics.ExecuteAsync(() => call.ResponseAsync,
-            LobbyOperation.LeaveRoomRequest, cancellationToken);
+        await GrpcCallPolicy.ExecuteAsync(() => call.ResponseAsync);
     }
 
     public async IAsyncEnumerable<RoomSnapshot> WatchRoomAsync(

@@ -3,7 +3,6 @@ using System.Runtime.CompilerServices;
 using Grpc.Core;
 
 using AtariGo.Contracts;
-using AtariGo.Diagnostics;
 
 namespace AtariGo.Client.Services;
 
@@ -72,23 +71,10 @@ public sealed class GrpcMatchmakingClient : IGuestIdentityClient, IMatchmakingCl
             cancellationToken: cancellationToken);
         using AsyncServerStreamingCall<MatchmakingEvent> call =
             _client.SearchPublicMatch(new SearchPublicMatchRequest(), options);
-        MatchmakingEvent.EventOneofCase previous = MatchmakingEvent.EventOneofCase.None;
-        while (await ClientLobbyDiagnostics.MoveNextAsync(call.ResponseStream, cancellationToken))
+        while (await GrpcCallPolicy.ExecuteAsync(
+            () => call.ResponseStream.MoveNext(cancellationToken)))
         {
-            MatchmakingEvent current = call.ResponseStream.Current;
-            if (current.EventCase != previous)
-            {
-                ClientLobbyDiagnostics.Record(LobbyOperation.SearchRequest,
-                    new DiagnosticEventDetails
-                    {
-                        Status = new DiagnosticStatus(current.EventCase),
-                        Outcome = current.EventCase
-                        == MatchmakingEvent.EventOneofCase.MatchCountdownCancelled
-                        ? DiagnosticOutcome.Cancelled : DiagnosticOutcome.Succeeded
-                    });
-                previous = current.EventCase;
-            }
-            yield return current;
+            yield return call.ResponseStream.Current;
         }
     }
 }

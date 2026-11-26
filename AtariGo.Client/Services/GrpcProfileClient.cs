@@ -1,7 +1,6 @@
 using Grpc.Core;
 
 using AtariGo.Contracts;
-using AtariGo.Diagnostics;
 
 namespace AtariGo.Client.Services;
 
@@ -25,34 +24,18 @@ public sealed class GrpcProfileClient : IProfileClient
 
     public async Task<UserProfile> GetProfileAsync(CancellationToken cancellationToken)
     {
-        GetProfileResponse response = await ClientPlayerDiagnostics.ExecuteAsync(() =>
+        GetProfileResponse response = await GrpcCallPolicy.ExecuteAsync(() =>
             _client.GetProfileAsync(new GetProfileRequest(),
-                CreateOptions(cancellationToken)).ResponseAsync,
-            PlayerOperation.ReadProfile, cancellationToken);
-        RecordRead(response.Profile);
+                CreateOptions(cancellationToken)).ResponseAsync);
         return response.Profile;
     }
 
-    public async Task<UpdateProfileResponse> UpdateProfileAsync(
+    public Task<UpdateProfileResponse> UpdateProfileAsync(
         UpdateProfileRequest request, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
-        UpdateProfileResponse response = await ClientPlayerDiagnostics.ExecuteAsync(() =>
-            _client.UpdateProfileAsync(request, CreateOptions(cancellationToken)).ResponseAsync,
-            PlayerOperation.UpdateProfile, cancellationToken);
-        ClientPlayerDiagnostics.Record(PlayerOperation.UpdateProfile,
-            PlayerDiagnostics.CreateResult(response.Status));
-        return response;
-    }
-
-    private static void RecordRead(UserProfile? profile)
-    {
-        bool available = profile is not null;
-        ClientPlayerDiagnostics.Record(PlayerOperation.ReadProfile, new DiagnosticEventDetails
-        {
-            Outcome = available ? DiagnosticOutcome.Succeeded : DiagnosticOutcome.Unconfirmed,
-            Severity = available ? DiagnosticSeverity.Information : DiagnosticSeverity.Warning
-        });
+        return GrpcCallPolicy.ExecuteAsync(() => _client.UpdateProfileAsync(
+            request, CreateOptions(cancellationToken)).ResponseAsync);
     }
 
     private CallOptions CreateOptions(CancellationToken cancellationToken)

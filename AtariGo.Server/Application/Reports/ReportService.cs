@@ -2,10 +2,7 @@ using System.Data;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
-using Microsoft.Extensions.Logging.Abstractions;
 
-using AtariGo.Diagnostics;
-using AtariGo.Server.Diagnostics;
 using AtariGo.Server.Application.Sessions;
 using AtariGo.Server.Data;
 using AtariGo.Server.Data.Entities;
@@ -25,18 +22,9 @@ public sealed class ReportService : IReportService
 
     private readonly AtariGoDbContext _dbContext;
     private readonly TimeProvider _timeProvider;
-    private readonly ILogger _logger;
 
     public ReportService(AtariGoDbContext dbContext, TimeProvider timeProvider)
-        : this(dbContext, timeProvider, NullLogger<ReportService>.Instance)
     {
-    }
-
-    public ReportService(AtariGoDbContext dbContext, TimeProvider timeProvider,
-        ILogger<ReportService> logger)
-    {
-        ArgumentNullException.ThrowIfNull(logger);
-        _logger = logger;
         ArgumentNullException.ThrowIfNull(dbContext);
         ArgumentNullException.ThrowIfNull(timeProvider);
         _dbContext = dbContext;
@@ -57,14 +45,13 @@ public sealed class ReportService : IReportService
 
         await using IDbContextTransaction transaction = await _dbContext.Database
             .BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
-        (ReportSubmissionResult result, Sanction? sanction) = await StoreReportAsync(
+        ReportSubmissionResult result = await StoreReportAsync(
             identity, command, cancellationToken);
         await transaction.CommitAsync(cancellationToken);
-        RecordCommitted(result, (identity.UserId, command.GameId), sanction);
         return result;
     }
 
-    private async Task<(ReportSubmissionResult Result, Sanction? Sanction)> StoreReportAsync(
+    private async Task<ReportSubmissionResult> StoreReportAsync(
         SessionIdentity identity, SubmitReportCommand command,
         CancellationToken cancellationToken)
     {
@@ -75,7 +62,7 @@ public sealed class ReportService : IReportService
         ReportSubmissionStatus? targetFailure = GetTargetFailure(participants, identity.UserId);
         if (targetFailure.HasValue)
         {
-            return (new ReportSubmissionResult(targetFailure.Value), null);
+            return new ReportSubmissionResult(targetFailure.Value);
         }
 
         int opponentId = participants.Single(userId => userId != identity.UserId)!.Value;
@@ -84,65 +71,32 @@ public sealed class ReportService : IReportService
                 && report.GameId == command.GameId, cancellationToken);
         if (previous is not null)
         {
-            return (new ReportSubmissionResult(
-                ReportSubmissionStatus.AlreadyReported, previous.ReportId), null);
+            return new ReportSubmissionResult(
+                ReportSubmissionStatus.AlreadyReported, previous.ReportId);
         }
 
         Report report = CreateReport(identity, opponentId, command);
         if (command.Category == DatabaseValues.ReportCategories.Chat
             && await IsChatMutedAsync(opponentId, report.CreatedAt, cancellationToken))
         {
-            return (new ReportSubmissionResult(ReportSubmissionStatus.ChatMuted), null);
+            return new ReportSubmissionResult(ReportSubmissionStatus.ChatMuted);
         }
 
         List<int> reporters = await FindRecentReportersAsync(report, cancellationToken);
         _dbContext.Reports.Add(report);
-        Sanction? applied = null;
         if (!reporters.Contains(identity.UserId))
         {
             int threshold = reporters.Count + 1;
             if (threshold % ReportsPerThreshold == 0)
             {
-                applied = await CreateSanctionAsync(report, threshold, cancellationToken);
-                _dbContext.Sanctions.Add(applied);
+                Sanction sanction = await CreateSanctionAsync(
+                    report, threshold, cancellationToken);
+                _dbContext.Sanctions.Add(sanction);
             }
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
-        return (new ReportSubmissionResult(ReportSubmissionStatus.Accepted, report.ReportId),
-            applied);
-    }
-
-    private void RecordCommitted(ReportSubmissionResult result, (int UserId, long GameId) actor,
-        Sanction? sanction)
-    {
-        if (result.Status != ReportSubmissionStatus.Accepted)
-        {
-            return;
-        }
-        var context = new DiagnosticContext
-        {
-            UserId = actor.UserId,
-            GameId = actor.GameId,
-            ReportId = result.ReportId
-        };
-        ServerPlayerDiagnostics.Record(_logger, PlayerOperation.ReportCommitted,
-            new DiagnosticEventDetails
-            {
-                Outcome = DiagnosticOutcome.Succeeded,
-                Context = context
-            });
-        if (sanction is not null)
-        {
-            PlayerOperation operation =
-                sanction.SanctionType == DatabaseValues.SanctionTypes.ChatMute
-                ? PlayerOperation.ChatMuteApplied : PlayerOperation.SuspensionApplied;
-            ServerPlayerDiagnostics.Record(_logger, operation, new DiagnosticEventDetails
-            {
-                Outcome = DiagnosticOutcome.Succeeded,
-                Context = context with { UserId = sanction.UserId }
-            });
-        }
+        return new ReportSubmissionResult(ReportSubmissionStatus.Accepted, report.ReportId);
     }
 
     private static bool IsValidCommand(SubmitReportCommand command)

@@ -1,12 +1,14 @@
 using System.Data.Common;
 
 using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 using AtariGo.Server.Application.Games;
+using AtariGo.Server.Data;
 using AtariGo.Server.Data.Entities;
 using AtariGo.Server.Tests.RoomInvitations;
 
@@ -77,6 +79,76 @@ public sealed class GameClockServiceTests
         {
             await clock.StopAsync(CancellationToken.None);
         }
+    }
+
+    [TestMethod]
+    public async Task ClockTick_OrphanedGame_CancelsWithoutWinnerOrRepeatedTransitionsAsync()
+    {
+        // Arrange
+        await using GameplayTestDatabase database = await GameplayTestDatabase.CreateAsync();
+        GameSessionConnection black = await database.ConnectAsync("Black");
+        GameSessionConnection white = await database.ConnectAsync("White");
+        long initialVersion = (await database.ReadAsync()).StateVersion;
+        database.Registry.Disconnect(black);
+        database.Registry.Disconnect(white);
+        database.Time.Advance(TimeSpan.FromHours(2));
+        database.Registry.PruneIdleSessions();
+        ClockTimeProvider clockTime = new ClockTimeProvider(database.Time);
+        CycleRegistry registry = new CycleRegistry();
+        using GameClockService clock = CreateClock(database, clockTime, registry);
+        await clock.StartAsync(CancellationToken.None);
+        await clockTime.Ready.WaitAsync(completionTimeout);
+
+        try
+        {
+            // Act
+            clockTime.Tick();
+            await registry.CycleCompleted.WaitAsync(completionTimeout);
+            Game cancelled = await database.ReadAsync();
+            await database.Coordinator.AdvanceAsync(database.GameId, CancellationToken.None);
+            Game unchanged = await database.ReadAsync();
+
+            // Assert
+            Assert.AreEqual(GameRuntimeState.Cancelled, cancelled.State);
+            Assert.AreEqual("BothDisconnected", cancelled.EndReason);
+            Assert.AreEqual(initialVersion + 1, unchanged.StateVersion);
+            Assert.IsTrue(unchanged.GamePlayers.All(player => player.Result == "Pending"));
+            using AtariGoDbContext context = database.CreateContext();
+            Assert.AreEqual(1, await context.GameEvents.CountAsync(entry =>
+                entry.GameId == database.GameId && entry.EventType == "GameFinished"));
+        }
+        finally
+        {
+            await clock.StopAsync(CancellationToken.None);
+        }
+    }
+
+    [TestMethod]
+    public async Task AdvanceAsync_MissingSessionBeforeDeadline_CancelsWithoutWinnerAsync()
+    {
+        // Arrange
+        await using GameplayTestDatabase database = await GameplayTestDatabase.CreateAsync();
+        await database.ConnectAsync("Black");
+        await database.ConnectAsync("White");
+        Game before = await database.ReadAsync();
+        using IServiceScope scope = database.Services.CreateScope();
+        GameCommandService commands = new GameCommandService(
+            scope.ServiceProvider.GetRequiredService<GamePersistenceService>(),
+            scope.ServiceProvider.GetRequiredService<GameActionProcessor>(),
+            database.Time,
+            new CycleRegistry());
+        GameOperationContext operation = await commands.LoadAsync(database.GameId,
+            CancellationToken.None);
+
+        // Act
+        GameOperationResult result = await commands.AdvanceAsync(operation, () => false);
+        Game after = await database.ReadAsync();
+
+        // Assert
+        Assert.AreEqual(GameRuntimeState.Cancelled, result.Progress?.Status);
+        Assert.AreEqual(before.StateVersion + 1, after.StateVersion);
+        Assert.AreEqual(before.TurnDeadlineUtc, after.TurnDeadlineUtc);
+        Assert.IsTrue(after.GamePlayers.All(player => player.Result == "Pending"));
     }
 
     [TestMethod]

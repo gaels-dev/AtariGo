@@ -1,11 +1,9 @@
 using Grpc.Core;
 
 using AtariGo.Contracts;
-using AtariGo.Diagnostics;
 using AtariGo.Server.Application.Reports;
 using AtariGo.Server.Application.Rooms;
 using AtariGo.Server.Application.Sessions;
-using AtariGo.Server.Diagnostics;
 
 namespace AtariGo.Server.Services;
 
@@ -77,21 +75,6 @@ public sealed class RoomsGrpcService : Rooms.RoomsBase
         }
 
         return snapshot;
-    }
-
-    private PrivateRoom RequireRoom(RoomOperationResult result, LobbyOperation operation,
-        DiagnosticContext context)
-    {
-        if (result.Status != RoomOperationStatus.Success)
-        {
-            ServerLobbyDiagnostics.Result(_logger, (operation, context), result.Status);
-        }
-        return RequireRoom(result);
-    }
-
-    private static DiagnosticContext RoomContext(int userId, int roomId)
-    {
-        return new DiagnosticContext { UserId = userId, RoomId = roomId > 0 ? roomId : null };
     }
 
     private async Task<LobbyParticipant> GetParticipantAsync(ServerCallContext context)
@@ -179,8 +162,7 @@ public sealed class RoomsGrpcService : Rooms.RoomsBase
             request.Configuration.TurnTimeSeconds);
         return new CreatePrivateRoomResponse
         {
-            Room = MapRoom(RequireRoom(_roomsService.CreatePrivateRoom(host, configuration),
-                LobbyOperation.CreateRoomRequest, new DiagnosticContext { UserId = host.UserId }))
+            Room = MapRoom(RequireRoom(_roomsService.CreatePrivateRoom(host, configuration)))
         };
     }
 
@@ -191,8 +173,7 @@ public sealed class RoomsGrpcService : Rooms.RoomsBase
         LobbyParticipant participant = await GetParticipantAsync(context);
         await EnsureGameAccessAsync(participant.UserId, context.CancellationToken);
         var locator = new RoomLocator(request.RoomId, request.InvitationCode);
-        PrivateRoom room = RequireRoom(_roomsService.JoinRoom(participant, locator),
-            LobbyOperation.JoinRoomRequest, new DiagnosticContext { UserId = participant.UserId });
+        PrivateRoom room = RequireRoom(_roomsService.JoinRoom(participant, locator));
         return new JoinRoomResponse
         {
             Room = MapRoom(room),
@@ -209,8 +190,7 @@ public sealed class RoomsGrpcService : Rooms.RoomsBase
         return new LeaveRoomResponse
         {
             UpdatedRoom = MapRoom(RequireRoom(
-                _roomsService.LeaveRoom(participant.UserId, request.RoomId),
-                LobbyOperation.LeaveRoomRequest, RoomContext(participant.UserId, request.RoomId)))
+                _roomsService.LeaveRoom(participant.UserId, request.RoomId)))
         };
     }
 
@@ -251,10 +231,9 @@ public sealed class RoomsGrpcService : Rooms.RoomsBase
             request.RoomId, configuration, request.ExpectedVersion);
         RoomOperationResult result = _roomsService.UpdateRoomConfiguration(
             command, participant.UserId);
-        return new UpdateRoomConfigurationResponse
-        {
-            Room = MapRoom(RequireRoom(result, LobbyOperation.ConfigureRoomRequest,
-                RoomContext(participant.UserId, request.RoomId)))
-        };
+        _logger.LogInformation(
+            "Room configuration request for room {RoomId} by user {UserId}: {Status}.",
+            request.RoomId, participant.UserId, result.Status);
+        return new UpdateRoomConfigurationResponse { Room = MapRoom(RequireRoom(result)) };
     }
 }
