@@ -125,7 +125,7 @@ public sealed class GameCommandServiceTests
         Assert.AreEqual("ActionConflict", result.ActionResult.Rejection);
         using AtariGoDbContext context = database.CreateContext();
         Assert.AreEqual(1, await context.Moves.CountAsync());
-        Assert.AreEqual(1, await context.GameEvents.CountAsync(entry => entry.ActionId != null));
+        Assert.AreEqual(0, await context.GameEvents.CountAsync(entry => entry.EventType == "Move"));
     }
 
     [TestMethod]
@@ -144,7 +144,7 @@ public sealed class GameCommandServiceTests
         Assert.AreEqual("InvalidAction", result.ActionResult!.Rejection);
         Assert.IsNull(result.Progress);
         using AtariGoDbContext context = database.CreateContext();
-        Assert.AreEqual(0, await context.GameEvents.CountAsync(entry => entry.ActionId != null));
+        Assert.AreEqual(0, await context.Moves.CountAsync());
     }
 
     [TestMethod]
@@ -166,15 +166,21 @@ public sealed class GameCommandServiceTests
             black, move, CancellationToken.None));
         Game after = await database.ReadAsync();
         // Assert
-        Assert.IsTrue(interceptor.SawReceiptWrite);
         Assert.AreEqual(before.StateVersion, after.StateVersion);
-        Assert.AreEqual(before.BoardStateJson, after.BoardStateJson);
-        Assert.AreEqual(before.TurnDeadlineUtc, after.TurnDeadlineUtc);
+        Assert.IsTrue((await database.ReadProgressAsync()).Board.Board.All(IsEmpty));
         Assert.IsFalse(black.Events.TryRead(out _));
         Assert.IsFalse(white.Events.TryRead(out _));
         using AtariGoDbContext context = database.CreateContext();
         Assert.AreEqual(0, await context.Moves.CountAsync());
-        Assert.AreEqual(0, await context.GameEvents.CountAsync(entry => entry.ActionId != null));
+        interceptor.FailMoveWrite = false;
+        await database.Coordinator.ProcessAsync(black, move, CancellationToken.None);
+        Assert.AreEqual(1, await context.Moves.CountAsync());
+        Assert.AreEqual(StoneColor.Black, (await database.ReadProgressAsync()).Board.Board[1]);
+    }
+
+    private static bool IsEmpty(StoneColor stone)
+    {
+        return stone == StoneColor.Empty;
     }
 
     private static void DrainEvents(GameSessionConnection connection)

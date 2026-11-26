@@ -12,6 +12,50 @@ public sealed class GrpcGameSessionStreamTests
     private static readonly TimeSpan completionTimeout = TimeSpan.FromSeconds(5);
 
     [TestMethod]
+    public async Task CompleteAsync_ActiveAndQueuedWrites_CompletesOnceAfterAllWritesAsync()
+    {
+        ControlledGameSessionTransport transport = new ControlledGameSessionTransport();
+        await using GrpcGameSessionStream stream = new GrpcGameSessionStream(transport.CreateCall());
+        Task active = stream.SendEventAsync(new GameSessionClientEvent(), CancellationToken.None);
+        await transport.FirstWriteStarted.WaitAsync(completionTimeout);
+        Task queued = stream.SendEventAsync(new GameSessionClientEvent(), CancellationToken.None);
+
+        Task completing = stream.CompleteAsync(CancellationToken.None);
+        Task repeated = stream.CompleteAsync(CancellationToken.None);
+        bool waited = !completing.IsCompleted && transport.CompleteCount == 0;
+        await Assert.ThrowsAsync<InvalidOperationException>(() => stream.SendEventAsync(
+            new GameSessionClientEvent(), CancellationToken.None));
+        transport.CompleteFirstWrite();
+        await Task.WhenAll(active, queued, completing).WaitAsync(completionTimeout);
+
+        Assert.IsTrue(waited);
+        Assert.AreSame(completing, repeated);
+        Assert.AreEqual(2, transport.WriteCount);
+        Assert.AreEqual(1, transport.CompleteCount);
+        Assert.AreEqual(0, transport.DisposeCount);
+    }
+
+    [TestMethod]
+    public async Task CompleteAsync_CancelledWithPendingWrite_AllowsForcedDisposalAsync()
+    {
+        ControlledGameSessionTransport transport = new ControlledGameSessionTransport();
+        GrpcGameSessionStream stream = new GrpcGameSessionStream(transport.CreateCall());
+        Task active = stream.SendEventAsync(new GameSessionClientEvent(), CancellationToken.None);
+        await transport.FirstWriteStarted.WaitAsync(completionTimeout);
+        using CancellationTokenSource cancellation = new CancellationTokenSource();
+
+        Task completing = stream.CompleteAsync(cancellation.Token);
+        cancellation.Cancel();
+        await Assert.ThrowsAsync<OperationCanceledException>(() => completing);
+        Task disposal = stream.DisposeAsync().AsTask();
+        transport.CompleteFirstWrite();
+        await Task.WhenAll(active, disposal).WaitAsync(completionTimeout);
+
+        Assert.AreEqual(0, transport.CompleteCount);
+        Assert.AreEqual(1, transport.DisposeCount);
+    }
+
+    [TestMethod]
     public async Task DisposeAsync_ActiveAndQueuedSends_WaitsAndRejectsFurtherWritesAsync()
     {
         // Arrange

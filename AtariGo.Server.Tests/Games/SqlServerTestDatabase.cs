@@ -42,6 +42,17 @@ internal sealed class SqlServerTestDatabase : IAsyncDisposable
         return new AtariGoDbContext(options);
     }
 
+    public async Task ExecuteScriptAsync(string file)
+    {
+        string script = await File.ReadAllTextAsync(ScriptPath(file));
+        await ExecuteAsync(script.Replace("AtariGoDB", _databaseName), false);
+    }
+
+    public Task ExecuteSqlAsync(string sql)
+    {
+        return ExecuteAsync(sql, false);
+    }
+
     public async ValueTask DisposeAsync()
     {
         if (!Regex.IsMatch(_databaseName, @"^AtariGoGameplayTest_[a-f0-9]{32}$"))

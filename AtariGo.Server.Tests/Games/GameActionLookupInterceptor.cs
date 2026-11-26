@@ -20,7 +20,7 @@ internal sealed class GameActionLookupInterceptor : DbCommandInterceptor
         DbCommand command, CommandEventData eventData,
         InterceptionResult<DbDataReader> result, CancellationToken cancellationToken = default)
     {
-        if (command.CommandText.Contains("FROM \"GameEvents\"", StringComparison.Ordinal))
+        if (command.CommandText.Contains("FROM \"Games\"", StringComparison.Ordinal))
         {
             Action? callback = LookupCallback;
             LookupCallback = null;

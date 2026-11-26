@@ -2,7 +2,7 @@ using System.Collections.Concurrent;
 
 namespace AtariGo.Server.Application.Games;
 
-public sealed class GameSessionRegistry : IGameSessionRegistry
+public sealed partial class GameSessionRegistry : IGameSessionRegistry
 {
     private readonly ConcurrentDictionary<long, GameSessionState> _sessions = new();
     private readonly TimeProvider _timeProvider;
@@ -171,19 +171,24 @@ public sealed class GameSessionRegistry : IGameSessionRegistry
 
     public GameRuntimeState? GetProgress(long gameId, long version)
     {
-        if (!_sessions.TryGetValue(gameId, out GameSessionState? state))
+        if (!_runtimes.TryGetValue(gameId, out GameRuntimeEntry? state))
         {
             return null;
         }
         lock (state.SyncRoot)
         {
-            return state.Version == version ? state.Progress : null;
+            if (state.Version == version)
+            {
+                return state.Progress;
+            }
+            return null;
         }
     }
 
     public void PublishProgress(long gameId, GameRuntimeState progress, long version)
     {
         ArgumentNullException.ThrowIfNull(progress);
+        StoreProgress(gameId, progress, version);
         if (!_sessions.TryGetValue(gameId, out GameSessionState? state))
         {
             return;
@@ -217,6 +222,7 @@ public sealed class GameSessionRegistry : IGameSessionRegistry
     {
         TimeSpan retention = TimeSpan.FromHours(1);
         DateTime cutoff = _timeProvider.GetUtcNow().UtcDateTime - retention;
+        PruneFinishedRuntimes(cutoff);
         foreach (KeyValuePair<long, GameSessionState> entry in _sessions)
         {
             lock (entry.Value.SyncRoot)

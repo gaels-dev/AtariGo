@@ -271,18 +271,11 @@ CREATE TABLE dbo.Games
     GameType VARCHAR(20) NOT NULL,
     State VARCHAR(20) NOT NULL
         CONSTRAINT DF_Games_State DEFAULT ('Waiting'),
-    CurrentTurnGamePlayerId BIGINT NULL,
     StartedAt DATETIME2(0) NULL,
     FinishedAt DATETIME2(0) NULL,
     EndReason VARCHAR(30) NULL,
-    BoardStateJson NVARCHAR(MAX) NULL,
     StateVersion BIGINT NOT NULL CONSTRAINT DF_Games_StateVersion DEFAULT (0),
-    TurnDeadlineUtc DATETIME2(3) NULL,
     CONSTRAINT CK_Games_StateVersion CHECK (StateVersion >= 0),
-    CONSTRAINT CK_Games_BoardStateJson CHECK (BoardStateJson IS NULL OR ISJSON(BoardStateJson) = 1),
-    CONSTRAINT CK_Games_GameplayState CHECK
-        ((BoardStateJson IS NULL AND TurnDeadlineUtc IS NULL)
-        OR (BoardStateJson IS NOT NULL AND TurnDeadlineUtc IS NOT NULL)),
     CONSTRAINT PK_Games PRIMARY KEY (GameId),
     CONSTRAINT FK_Games_Room FOREIGN KEY (RoomId)
         REFERENCES dbo.Rooms (RoomId),
@@ -358,12 +351,6 @@ GO
 CREATE INDEX IX_GamePlayers_UserId ON dbo.GamePlayers (UserId);
 GO
 
-ALTER TABLE dbo.Games
-    ADD CONSTRAINT FK_Games_CurrentTurnPlayer FOREIGN KEY
-        (GameId, CurrentTurnGamePlayerId)
-        REFERENCES dbo.GamePlayers (GameId, GamePlayerId);
-GO
-
 CREATE TABLE dbo.Moves
 (
     MoveId BIGINT IDENTITY(1, 1) NOT NULL,
@@ -396,14 +383,6 @@ CREATE TABLE dbo.GameEvents
     GameId BIGINT NOT NULL,
     GamePlayerId BIGINT NULL,
     EventType VARCHAR(30) NOT NULL,
-    ActionId VARCHAR(64) NULL,
-    ActionRequestJson NVARCHAR(MAX) NULL,
-    ActionResultJson NVARCHAR(MAX) NULL,
-    CONSTRAINT CK_GameEvents_Action CHECK
-        ((ActionId IS NULL AND ActionRequestJson IS NULL AND ActionResultJson IS NULL)
-        OR (ActionId IS NOT NULL AND GamePlayerId IS NOT NULL
-            AND ActionRequestJson IS NOT NULL AND ISJSON(ActionRequestJson) = 1
-            AND ActionResultJson IS NOT NULL AND ISJSON(ActionResultJson) = 1)),
     Description NVARCHAR(1000) NULL,
     CreatedAt DATETIME2(0) NOT NULL
         CONSTRAINT DF_GameEvents_CreatedAt DEFAULT (SYSUTCDATETIME()),
@@ -488,10 +467,4 @@ GO
 ALTER TABLE dbo.Users WITH CHECK ADD CONSTRAINT CK_Users_UserName_NotGuest CHECK
     (LOWER(LTRIM(RTRIM(UserName))) <> N'guest'
         AND LEFT(LOWER(LTRIM(RTRIM(UserName))), 6) <> N'guest-');
-GO
-
-CREATE INDEX IX_Games_State_TurnDeadline ON dbo.Games(State, TurnDeadlineUtc);
-GO
-CREATE UNIQUE INDEX UX_GameEvents_Player_Action
-    ON dbo.GameEvents(GameId, GamePlayerId, ActionId) WHERE ActionId IS NOT NULL;
 GO

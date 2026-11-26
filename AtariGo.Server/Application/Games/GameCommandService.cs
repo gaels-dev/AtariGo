@@ -1,5 +1,6 @@
-using AtariGo.Server.Data.Entities;
 using AtariGo.GameLogic.Models;
+using AtariGo.Server.Data;
+using AtariGo.Server.Data.Entities;
 
 namespace AtariGo.Server.Application.Games;
 
@@ -30,7 +31,7 @@ public sealed class GameCommandService
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(gameId);
         Game game = await _store.LoadAsync(gameId, cancellationToken);
-        GameRuntimeState persisted = GamePersistenceService.Read(game);
+        GameRuntimeState persisted = await _store.ReadAsync(game, cancellationToken);
         GameRuntimeState progress = _registry.GetProgress(gameId, game.StateVersion)
             ?? persisted;
         return new GameOperationContext(game, progress);
@@ -44,16 +45,11 @@ public sealed class GameCommandService
         Game game = operation.Game;
         GameRuntimeState runtime = operation.Progress;
         DateTime now = _timeProvider.GetUtcNow().UtcDateTime;
-        if (runtime.Status == GameRuntimeState.Playing
-            && _registry.GetProgress(game.GameId, game.StateVersion) is null)
+        GameRuntimeState available = ResolveAvailability(operation);
+        if (available != runtime)
         {
-            GameRuntimeState cancelled = runtime with
-            {
-                Status = GameRuntimeState.Cancelled,
-                EndReason = "BothDisconnected"
-            };
-            await _store.SaveAsync(game, cancelled, CancellationToken.None);
-            return CreateResult(game, cancelled);
+            await _store.SaveAsync(game, available, CancellationToken.None);
+            return CreateResult(game, available);
         }
         int seconds = game.GameConfiguration.TurnTimeSeconds;
         GameConnectionPresence presence = _registry.GetPresence(game.GameId);
@@ -117,6 +113,80 @@ public sealed class GameCommandService
         return CreateResult(operation.Game, next);
     }
 
+    public async Task<GameOperationResult> ProcessAsync(GameSessionConnection connection,
+        GameActionCommand command, Func<bool> areBothConnected)
+    {
+        ArgumentNullException.ThrowIfNull(connection);
+        ArgumentNullException.ThrowIfNull(command);
+        ArgumentNullException.ThrowIfNull(areBothConnected);
+        if (command.ActionId.Length > MaximumActionIdLength
+            || !Guid.TryParseExact(command.ActionId, "N", out _))
+        {
+            return new GameOperationResult
+            {
+                GameId = connection.GameId,
+                ActionResult = new GameActionResult
+                {
+                    ActionId = command.ActionId,
+                    Rejection = "InvalidAction"
+                }
+            };
+        }
+        GameOperationContext operation = await LoadAsync(connection.GameId,
+            CancellationToken.None);
+        GameActionContext context = CreateActionContext(operation, connection, command);
+        GameActionResult? previous = _registry.FindAction(context);
+        GameOperationResult outcome;
+        if (previous is not null)
+        {
+            GameOperationResult advanced = await AdvanceAsync(operation, areBothConnected);
+            outcome = advanced with
+            {
+                ActionResult = previous
+            };
+        }
+        else
+        {
+            outcome = await ProcessNewActionAsync(operation, context);
+        }
+        return outcome;
+    }
+
+    private GameRuntimeState ResolveAvailability(GameOperationContext operation)
+    {
+        GameRuntimeState runtime = operation.Progress;
+        if (runtime.IsTerminal)
+        {
+            return runtime;
+        }
+        if (_registry.GetProgress(operation.Game.GameId, operation.Version) is null)
+        {
+            return runtime with
+            {
+                Status = GameRuntimeState.Cancelled,
+                EndReason = DatabaseValues.GameEndReasons.ServerRestart
+            };
+        }
+        GameConnectionPresence presence = _registry.GetPresence(operation.Game.GameId);
+        if (HasLostConnections(runtime, presence))
+        {
+            return runtime with
+            {
+                Status = GameRuntimeState.Cancelled,
+                EndReason = DatabaseValues.GameEndReasons.BothDisconnected
+            };
+        }
+        return runtime;
+    }
+
+    private static bool HasLostConnections(GameRuntimeState runtime,
+        GameConnectionPresence presence)
+    {
+        return runtime.Status == GameRuntimeState.Playing && !presence.BlackConnected
+            && !presence.WhiteConnected && !runtime.BlackReconnectDeadlineUtc.HasValue
+            && !runtime.WhiteReconnectDeadlineUtc.HasValue;
+    }
+
     private async Task<GameOperationResult> UpdateConnectionAsync(GameOperationContext operation,
         string playerKey, bool connected)
     {
@@ -145,46 +215,11 @@ public sealed class GameCommandService
     {
         GamePlayer player = game.GamePlayers.Single(participant =>
             GetPlayerKey(participant) == playerKey);
-        return player.StoneColor == GameSessionRules.BlackStoneColor
-            ? StoneColor.Black : StoneColor.White;
-    }
-
-    public async Task<GameOperationResult> ProcessAsync(GameSessionConnection connection,
-        GameActionCommand command, Func<bool> areBothConnected)
-    {
-        ArgumentNullException.ThrowIfNull(connection);
-        ArgumentNullException.ThrowIfNull(command);
-        ArgumentNullException.ThrowIfNull(areBothConnected);
-        if (command.ActionId.Length > MaximumActionIdLength
-            || !Guid.TryParseExact(command.ActionId, "N", out _))
+        if (player.StoneColor == GameSessionRules.BlackStoneColor)
         {
-            return new GameOperationResult
-            {
-                GameId = connection.GameId,
-                ActionResult = new GameActionResult
-                {
-                    ActionId = command.ActionId,
-                    Rejection = "InvalidAction"
-                }
-            };
+            return StoneColor.Black;
         }
-        GameOperationContext operation = await LoadAsync(connection.GameId, CancellationToken.None);
-        GameActionContext context = CreateActionContext(operation, connection, command);
-        GameActionResult? previous = await _store.FindActionAsync(context);
-        GameOperationResult outcome;
-        if (previous is not null)
-        {
-            GameOperationResult advanced = await AdvanceAsync(operation, areBothConnected);
-            outcome = advanced with
-            {
-                ActionResult = previous
-            };
-        }
-        else
-        {
-            outcome = await ProcessNewActionAsync(operation, context);
-        }
-        return outcome;
+        return StoneColor.White;
     }
 
     private async Task<GameOperationResult> ProcessNewActionAsync(GameOperationContext operation,

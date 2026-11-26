@@ -13,12 +13,15 @@ internal sealed class ControlledGameSessionTransport :
         TaskCreationOptions.RunContinuationsAsynchronously);
     private int _writeCount;
     private int _disposeCount;
+    private int _completeCount;
 
     public Task FirstWriteStarted => _started.Task;
 
     public int WriteCount => Volatile.Read(ref _writeCount);
 
     public int DisposeCount => Volatile.Read(ref _disposeCount);
+
+    public int CompleteCount => Volatile.Read(ref _completeCount);
 
     public Exception? FirstWriteFailure
     {
@@ -65,6 +68,7 @@ internal sealed class ControlledGameSessionTransport :
 
     public Task CompleteAsync()
     {
+        Interlocked.Increment(ref _completeCount);
         return Task.CompletedTask;
     }
 

@@ -4,6 +4,8 @@ namespace AtariGo.Client.Services;
 
 public interface IGameSessionStream : IAsyncDisposable
 {
+    Task CompleteAsync(CancellationToken cancellationToken);
+
     IAsyncEnumerable<GameSessionServerEvent> ReadEventsAsync(
         CancellationToken cancellationToken);
 

@@ -53,92 +53,140 @@ instalaciones nuevas ya reciben el rango 1–20 desde `Create-AtariGo.sql`. El s
 cuenta las victorias en partidas completadas antes de permitir un avatar del 6 al 20:
 el avatar 6 requiere 5 victorias y cada avatar siguiente requiere 5 más.
 
-## Actualización directa desde la BD anterior a la jugabilidad
+## Actualización a movimientos relacionales
 
-Si la BD no recibió ninguna de las actualizaciones de jugabilidad, usar únicamente
-`Update-Gameplay-Direct.sql`. Seleccionar la BD existente en SQL Server Management Studio,
-detener el servidor Atari Go, respaldar la BD y ejecutar el archivo completo.
-Este archivo aplica directamente las columnas, restricciones e índices finales; no crea,
-migra ni elimina tablas auxiliares. Si falta `GamePlayers.GuestIdentityId`, también añade
-esa columna y su índice, que necesita la identidad de invitados ya utilizada por el servidor.
-
-Conserva los resultados históricos. Prepara partidas activas sin movimientos y rechaza,
-sin guardar cambios parciales, partidas activas que tengan movimientos sin tablero guardado.
-Puede ejecutarse de nuevo sin duplicar columnas ni reiniciar estados existentes.
-Después, iniciar el servidor actualizado y comprobar el flujo de partida.
-
-## Corrección de una BD que ya ejecutó la actualización anterior
-
-Usar **un solo archivo: `Update-Gameplay.sql` de esta versión**. Su contenido sustituye al
-script anterior con el mismo nombre. No volver a ejecutar una copia antigua del archivo.
-
-1. Detener el servidor Atari Go y respaldar la BD.
-2. Abrir `Update-Gameplay.sql`, seleccionar la BD de Atari Go y ejecutar el archivo completo.
-3. Arrancar la versión actualizada del servidor y comprobar el flujo de partida.
+Para la BD de pruebas con el esquema JSON anterior, detener el servidor y ejecutar
+`Update-RelationalGameplay.sql` completo. Seleccionar la instancia correcta; el archivo usa
+`AtariGoDB`. Si la instalación tiene otro nombre, ajustar su instrucción `USE`.
 
 ```powershell
-sqlcmd -S "(localdb)\MSSQLLocalDB" -E -b -d AtariGoDB -i .\scripts\database\Update-Gameplay.sql
+sqlcmd -S "(localdb)\MSSQLLocalDB" -E -b -i .\scripts\database\Update-RelationalGameplay.sql
 ```
 
-Adaptar servidor y nombre de BD a la instalación. También se puede ejecutar el archivo
-completo desde SQL Server Management Studio, sin instalar `sqlcmd`.
-Se requiere una cuenta con permisos para modificar el esquema. Los permisos de la aplicación
-continúan sobre las tablas existentes: en particular, necesita consultar e insertar `GameEvents`
-y consultar/actualizar `Games`.
+El script aplica en una transacción los cambios de esquema y la sustitución autorizada de
+las partidas de prueba. Conserva los IDs de partidas y participantes, las cuentas, sesiones,
+reportes y sanciones. Reemplaza los movimientos y eventos anteriores de todas las partidas;
+asigna una meta de captura de 1 a sus configuraciones y deja todas completadas con victoria
+de negras. Esto también puede cambiar los conteos de victorias utilizados por los avatares.
+Cada partida recibe la misma secuencia válida, con coordenadas desde cero:
 
-El archivo realiza todo en una transacción:
+| Turno | Jugador | Fila | Columna | Capturas |
+| --- | --- | --- | --- | --- |
+| 1 | Negras | 0 | 1 | 0 |
+| 2 | Blancas | 0 | 0 | 0 |
+| 3 | Negras | 1 | 0 | 1 |
 
-- Añade las columnas e índices necesarios a las tablas existentes.
-- Traslada el tablero completo, historial de posiciones, versión, estado y vencimiento
-  desde la estructura anterior. No reinicia los turnos ni los relojes de partidas recuperables.
-- Traslada las solicitudes y respuestas guardadas a `GameEvents`, asociándolas al
-  `GamePlayerId` que ya representa al participante. No necesita conservar otro identificador
-  de jugador en texto.
-- Reutiliza el evento original de una jugada o rendición cuando existe; conserva su ID y fecha.
-  Las respuestas sin evento previo se incorporan como eventos. Los rechazos anteriores no
-  tenían fecha propia guardada: esos eventos reciben la fecha de la migración.
-- Comprueba los datos mediante restricciones y un índice único por partida, jugador y acción.
-- Elimina `GameProgresses` y `GameActionReceipts`, incluidos sus índices y restricciones.
+La tercera jugada captura la ficha blanca de la esquina. `GamePlayers.Result` queda en
+`Won` para negras y `Lost` para blancas; sus capturas quedan en 1 y 0. Las fechas de los
+movimientos y la finalización se ordenan a partir del inicio de cada partida. Los nuevos
+eventos representan el inicio y la finalización por `CaptureGoal`.
 
-Cualquier error revierte todo, incluidas las modificaciones de esquema: no se eliminan las
-fuentes si falla una copia o validación. Se puede volver a ejecutar el archivo después de
-una migración correcta sin duplicar acciones ni reiniciar partidas.
-Los nombres de las estructuras anteriores solo se conservan en este migrador y en las pruebas
-que reproducen su instalación para comprobar que se eliminan correctamente.
+Antes de cambiar datos se exige exactamente un participante negro y uno blanco por partida.
+Si falta alguno o hay participantes adicionales, se revierte toda la operación. La sustitución
+solo se realiza cuando existen columnas JSON antiguas; repetir una actualización completada
+no reinicia las partidas ni reemplaza sus movimientos. No es un migrador para conservar
+partidas reales: la sustitución de contenido es exclusiva de estos datos de prueba.
 
-El mismo archivo también admite una BD anterior a la jugabilidad. Solo prepara automáticamente
-partidas activas sin movimientos, con 120 segundos para conectar a ambos jugadores. Si hay
-movimientos sin un tablero recuperable, devuelve el error 51001 y revierte la operación.
-No reconstruye por suposición una partida antigua. Los resultados históricos se conservan.
-Los errores 51002 a 51006 indican datos de origen inválidos, identidades sin correspondencia
-u otro conflicto de migración; tampoco modifican la BD parcialmente.
+`Update-Gameplay.sql` y `Update-Gameplay-Direct.sql` pertenecen al diseño anterior con JSON.
+No ejecutarlos sobre el esquema actual. La aplicación no modifica automáticamente el esquema.
 
-## Columnas del esquema final
+## Estructura de la jugabilidad
 
-| Tabla | Columna nueva | Finalidad |
-| --- | --- | --- |
-| `Games` | `BoardStateJson` (`nvarchar(max)`, nullable) | Tablero, historial de posiciones y datos del motor. |
-| `Games` | `StateVersion` (`bigint`, valor inicial 0) | Versión de concurrencia del estado confirmado. |
-| `Games` | `TurnDeadlineUtc` (`datetime2(3)`, nullable) | Plazo oficial del turno o de conexión inicial. |
-| `GameEvents` | `ActionId` (`varchar(64)`, nullable) | Identificador de acción para reconocer reintentos. |
-| `GameEvents` | `ActionRequestJson` (`nvarchar(max)`, nullable) | Solicitud original para detectar reutilización con otros datos. |
-| `GameEvents` | `ActionResultJson` (`nvarchar(max)`, nullable) | Respuesta original para recuperar una confirmación perdida. |
+| Tabla | Columnas vigentes |
+| --- | --- |
+| `Games` | `GameId`, `RoomId`, `GameConfigurationId`, `GameType`, `State`, `StartedAt`, `FinishedAt`, `EndReason`, `StateVersion`. |
+| `GameConfigurations` | `GameConfigurationId`, `CaptureGoal`, `GameTimeSeconds`, `TurnTimeSeconds`. |
+| `GamePlayers` | `GamePlayerId`, `GameId`, `UserId`, `GuestName`, `GuestIdentityId`, `StoneColor`, `TurnOrder`, `CapturedStones`, `Result`, `JoinedAt`, `LeftAt`. |
+| `Moves` | `MoveId`, `GamePlayerId`, `TurnNumber`, `Row`, `Column`, `PlayedAt`, `CapturedStones`. |
+| `GameEvents` | `GameEventId`, `GameId`, `GamePlayerId`, `EventType`, `Description`, `CreatedAt`. |
 
-Se reutilizan `Games.State`, `Games.EndReason`, `Games.CurrentTurnGamePlayerId`,
-`GameEvents.GamePlayerId` y las relaciones existentes. No se almacena otra bandera terminal
-ni un segundo estado/plazo dentro del JSON del tablero. El índice
-`IX_Games_State_TurnDeadline` permite buscar vencimientos sin recorrer documentos JSON.
-`UX_GameEvents_Player_Action` impide duplicar una acción; solo afecta a eventos con `ActionId`.
-Los eventos generales, sin solicitud del jugador, conservan sus columnas de acción en NULL.
+`Games` pierde `BoardStateJson`, `CurrentTurnGamePlayerId` y `TurnDeadlineUtc`, junto con las
+restricciones e índices que los usaban. Conserva `StateVersion` como control de concurrencia
+optimista de las escrituras SQL y como versión de las instantáneas enviadas al cliente.
+`GameEvents` pierde `ActionId`, `ActionRequestJson`, `ActionResultJson` y su índice de acciones.
+Las jugadas aceptadas se escriben únicamente en `Moves`; los eventos conservan transiciones
+generales de inicio, finalización y vencimiento de turno.
 
-El JSON del tablero corresponde a `GameState`, un objeto de dominio, no a un mensaje gRPC.
-Evita agregar tablas para cada intersección o posición histórica. La configuración de EF se
-mantiene en `GameEntityConfiguration` y `GameEventEntityConfiguration`; no hay entidades,
-DbSets ni mapeos de tablas auxiliares.
+`Moves.GamePlayerId` determina el participante, su color y la partida mediante `GamePlayers`.
+No se duplican esos campos en la jugada. Los turnos omitidos por tiempo producen saltos en
+`TurnNumber`; reconstruir la partida respeta esos saltos, las capturas y la repetición de
+posiciones mediante el motor del juego. La reconstrucción requiere los movimientos completos
+ordenados por turno y las mismas reglas. Un cambio futuro de reglas requiere versionarlas.
+El historial de la interfaz conserva su resumen actual sin añadir una pantalla de repetición.
 
-`GameTimeSeconds` se conserva como compatibilidad histórica, sin limitar la partida.
-`TurnTimeSeconds` debe ser positivo. Cada jugador recibe ese tiempo completo en cada turno;
-el vencimiento cambia el turno sin declarar un perdedor.
+Las tablas `Users`, `Credentials`, `Profiles`, `UserPreferences`, `Sessions`,
+`AuthenticationCodes`, `FriendRequests`, `Friendships`, `Rooms`, `Invitations`, `Reports` y
+`Sanctions` mantienen su estructura. `Invitations` ya exige mediante
+`CK_Invitations_Recipient` un destinatario usuario o correo según `InvitationType`; ese mapeo
+se incorpora también a EF Core.
+
+## Estado activo y cierre por reinicio
+
+`GameSessionRegistry` posee el tablero, el historial de posiciones utilizado por las reglas,
+los plazos, las pausas, los datos de reconexión y las respuestas de acciones del proceso.
+El reloj enumera los vencimientos desde ese registro. La sesión de autenticación sigue en
+`Sessions`; no debe confundirse con el estado de una partida ni con su conexión dúplex.
+
+Las operaciones de una partida se serializan mediante `GameCoordinator`. Cada colocación se
+confirma en una transacción de EF junto con las capturas y el resultado que corresponda.
+Solo después de guardar se actualiza el registro activo y se publican las instantáneas.
+Un fallo de escritura conserva el tablero anterior y permite reintentar la misma acción.
+
+Se retienen como máximo 1024 recibos por partida, identificados por participante y `ActionId`.
+Dentro de esa ventana se devuelve la respuesta original o `ActionConflict` si cambió el
+contenido. Al alcanzar el límite se retira el recibo más antiguo. Una jugada aceptada cuyo
+recibo ya salió de la ventana lleva una versión anterior y no puede volver a colocarse.
+La recuperación exacta de respuestas antiguas o posteriores a un reinicio no está garantizada.
+Los estados terminales y sus recibos se retiran tras una hora sin actividad; los estados
+activos se mantienen hasta su finalización. No se establece un máximo global de partidas.
+
+Antes de aceptar conexiones, el servicio de reloj cierra las partidas activas sin estado del
+proceso: `Cancelled`, motivo `ServerRestart`, participantes `Abandoned` y ningún ganador.
+Conserva los movimientos y capturas ya confirmados. Nunca reanuda una partida perdida a partir
+de esos movimientos; estos permiten consultar su tablero registrado posteriormente.
+El diseño requiere un único proceso servidor propietario de las partidas.
+
+Al volver al lobby desde una partida terminada, el cliente utiliza `GameplaySession.CloseAsync`
+antes de cancelar el token de la pantalla. Se rechazan nuevos envíos, se esperan los ya
+admitidos y se completa el envío gRPC con `RequestStream.CompleteAsync()`. El servidor reconoce
+el fin del stream de entrada, termina de enviar los eventos en cola y cierra la respuesta.
+El cliente espera esa respuesta final antes de liberar la llamada y navegar al lobby.
+
+El cierre tiene un plazo máximo de tres segundos. Si la red no responde, o se cancela la
+salida, se interrumpe el transporte y se liberan los recursos sin bloquear la interfaz ni
+reconectar la sesión que ya se está cerrando. El cierre ordenado de una partida terminal se
+registra como `Information` con el mensaje `Completed game stream closed gracefully`.
+Las interrupciones inesperadas conservan sus advertencias. No se modifican el resultado
+de la partida, los contratos Protobuf ni el esquema SQL para implementar este cierre.
+
+## Normalización y asuntos pendientes
+
+- `GamePlayers.CapturedStones` es un total materializado de las capturas de `Moves`, mantenido
+  en la misma escritura. Se conserva para consultas directas. La redundancia entre relaciones
+  no demuestra por sí sola una violación formal de 3FN.
+- `GamePlayers.Result` conserva el resultado histórico por participante. No se añade otra
+  columna de ganador que repita ese hecho.
+- Si `GuestIdentityId` determina siempre `GuestName`, repetir el nombre en varias
+  participaciones requiere separar la identidad invitada o justificar la excepción.
+- En eventos con participante, `GamePlayerId` determina `GameId`; esa duplicación permanece
+  en la estructura histórica de `GameEvents`, protegida por una FK compuesta. La escritura
+  nueva de eventos generales no utiliza participante. Resolver el diseño completo queda pendiente.
+- `TurnOrder` es redundante si negras siempre empiezan; no se clasifica automáticamente como
+  violación de 3FN porque participa en claves alternativas junto con `GameId`.
+- `Sanctions.TriggeringReportId` es una clave alternativa única. La repetición del destinatario
+  no basta para declarar incumplimiento de 3FN. Falta exigir desde SQL que `Sanctions.UserId`
+  coincida con el usuario reportado, aunque el servicio lo asigna correctamente.
+- El servicio comprueba que el autor y destinatario de un reporte participaron en la partida;
+  las FKs actuales no garantizan esa membresía por sí solas.
+- El flujo vigente de invitaciones vive en memoria. Si la tabla `Invitations` se utilizara
+  exclusivamente con el creador como remitente, revisar la dependencia `RoomId -> SenderId`.
+- `GameTimeSeconds` se conserva por compatibilidad histórica; el reloj usa `TurnTimeSeconds`.
+- La unicidad actual de `Moves` es por participante y turno. La exclusión de dos jugadas del
+  mismo turno de partida se garantiza por el coordinador y la versión SQL. Una escritura
+  directa fuera del servidor necesita respetar esa regla.
+
+Estas observaciones distinguen dependencias funcionales, datos derivados y reglas de
+integridad. Una excepción justificada no convierte una tabla en 3FN.
 
 ## Instalación nueva
 
@@ -163,8 +211,7 @@ dotnet test .\AtariGo.slnx --no-build
 
 Las pruebas `SqlServer` usan Windows y SQL Server LocalDB `(localdb)\MSSQLLocalDB`.
 Crean bases temporales `AtariGoGameplayTest_...` y las eliminan al terminar, sin utilizar
-la conexión privada de la aplicación. Comprueban instalación nueva, repetición del script,
-actualización desde ambos esquemas anteriores, conservación de estados y respuestas,
-reutilización de eventos originales y rollback completo ante datos que no se puedan migrar.
-Las otras pruebas de persistencia usan SQLite aislado y las de dúplex HTTP/2 usan loopback.
-Estas comprobaciones no sustituyen una prueba LAN entre computadoras.
+la conexión privada de la aplicación. Comprueban instalación nueva, sustitución de partidas
+de prueba, reconstrucción de sus capturas, repetición del script y rollback ante participantes
+incompletos. Las pruebas de persistencia restantes usan SQLite aislado y las de dúplex HTTP/2
+usan loopback. Estas comprobaciones no sustituyen una prueba LAN entre computadoras.

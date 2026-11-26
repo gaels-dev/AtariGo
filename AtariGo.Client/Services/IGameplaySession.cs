@@ -8,6 +8,8 @@ public interface IGameplaySession : IDisposable
 
     Task RunAsync(long gameId, CancellationToken cancellationToken);
 
+    Task CloseAsync(CancellationToken cancellationToken);
+
     Task SubmitMoveAsync(int row, int column, CancellationToken cancellationToken);
 
     Task SurrenderAsync(CancellationToken cancellationToken);

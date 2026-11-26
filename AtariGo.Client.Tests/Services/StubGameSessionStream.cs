@@ -25,6 +25,14 @@ internal sealed class StubGameSessionStream : IGameSessionStream
         get; set;
     }
 
+    public TaskCompletionSource? CompleteGate { get; set; }
+
+    public bool IsCompleting { get; private set; }
+
+    public bool WasCancelledBeforeCompletion { get; private set; }
+
+    public bool KeepResponseOpen { get; set; }
+
     public TaskCompletionSource? SendCompletion
     {
         get; set;
@@ -48,6 +56,25 @@ internal sealed class StubGameSessionStream : IGameSessionStream
     public void Fail(Exception exception)
     {
         _events.Writer.TryComplete(exception);
+    }
+
+    public void FinishResponse()
+    {
+        _events.Writer.TryComplete();
+    }
+
+    public async Task CompleteAsync(CancellationToken cancellationToken)
+    {
+        IsCompleting = true;
+        WasCancelledBeforeCompletion = ReadCancellation.IsCancellationRequested;
+        if (CompleteGate is not null)
+        {
+            await CompleteGate.Task.WaitAsync(cancellationToken);
+        }
+        if (!KeepResponseOpen)
+        {
+            _events.Writer.TryComplete();
+        }
     }
 
     public async IAsyncEnumerable<GameSessionServerEvent> ReadEventsAsync(

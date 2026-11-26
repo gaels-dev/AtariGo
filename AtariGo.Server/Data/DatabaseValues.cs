@@ -53,6 +53,16 @@ public static class DatabaseValues
     public static class GamePlayerResults
     {
         public const string Won = "Won";
+        public const string Lost = "Lost";
+        public const string Surrendered = "Surrendered";
+        public const string Abandoned = "Abandoned";
+    }
+
+    public static class GameEndReasons
+    {
+        public const string ServerRestart = "ServerRestart";
+        public const string BothDisconnected = "BothDisconnected";
+        public const string Surrender = "Surrender";
     }
 
     public static class ReportCategories

@@ -195,6 +195,11 @@ public sealed class GameSessionGrpcService : GameSession.GameSessionBase
         try
         {
             await completedTask;
+            if (connection.IsGracefulClosure && ReferenceEquals(completedTask, receiveTask))
+            {
+                connection.CompleteOutput();
+                await sendTask;
+            }
         }
         finally
         {
@@ -235,6 +240,8 @@ public sealed class GameSessionGrpcService : GameSession.GameSessionBase
             GameActionCommand command = MapAction(clientEvent);
             await _coordinator.ProcessAsync(connection, command, cancellationToken);
         }
+        cancellationToken.ThrowIfCancellationRequested();
+        connection.IsGracefulClosure = true;
     }
 
     private static GameActionCommand MapAction(GameSessionClientEvent clientEvent)

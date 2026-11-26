@@ -18,6 +18,7 @@ namespace AtariGo.Client.ViewModels
         private readonly IGameplaySession? _session;
         private readonly IReportClient? _reportClient;
         private readonly bool _isGuest;
+        private readonly AsyncRelayCommand _returnToMenuCommand;
         private readonly SynchronizationContext? _uiContext;
         private readonly CancellationTokenSource _lifetimeCancellation =
             new CancellationTokenSource();
@@ -61,6 +62,8 @@ namespace AtariGo.Client.ViewModels
             _sessionStatusMessage = string.Empty;
             _chatStatusMessage = string.Empty;
             _maximumChatMessageLength = 0;
+            _returnToMenuCommand = new AsyncRelayCommand(ReturnToMainMenuAsync,
+                HandleGameplayFailure, _lifetimeCancellation.Token);
 
             Cells = new ObservableCollection<BoardCellViewModel>();
             ChatMessages = new ObservableCollection<ChatMessageViewModel>();
@@ -124,7 +127,7 @@ namespace AtariGo.Client.ViewModels
             }
         }
 
-        public bool IsMyTurn => !_isDisposed && _isPlaying && _currentTurn == _myColor
+        public bool IsMyTurn => !_isDisposed && !_isLeaving && _isPlaying && _currentTurn == _myColor
             && _isSessionConnected && !_hasPendingAction && !_turnPaused;
 
         public string TurnStatusMessage => IsMyTurn

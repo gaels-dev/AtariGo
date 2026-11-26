@@ -38,13 +38,8 @@ public sealed class GameSessionCatalog : IGameSessionCatalog
 
         GamePlayer opponent = game.GamePlayers.First(
             gamePlayer => gamePlayer.GamePlayerId != player.GamePlayerId);
-        if (game.BoardStateJson is null)
-        {
-            return null;
-        }
         return CreateDefinition(game, player, opponent) with
         {
-            Progress = GamePersistenceService.Read(game),
             Version = game.StateVersion
         };
     }

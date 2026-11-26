@@ -27,6 +27,8 @@ public sealed class GameSessionConnection : IDisposable
         get; internal set;
     }
 
+    public bool IsGracefulClosure { get; internal set; }
+
     public CancellationToken RevocationToken => _revocation.Token;
 
     public long GameId
@@ -58,5 +60,10 @@ public sealed class GameSessionConnection : IDisposable
     {
         IsRevoked = true;
         _revocation.Cancel();
+    }
+
+    internal void CompleteOutput()
+    {
+        EventWriter.TryComplete();
     }
 }

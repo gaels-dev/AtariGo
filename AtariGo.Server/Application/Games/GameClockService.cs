@@ -1,13 +1,10 @@
 using Microsoft.EntityFrameworkCore;
 
-using AtariGo.Server.Data;
-
 namespace AtariGo.Server.Application.Games;
 
 public sealed class GameClockService : BackgroundService
 {
     private const int PollMilliseconds = 1000;
-    private const int BatchSize = 100;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly GameCoordinator _coordinator;
     private readonly IGameSessionRegistry _registry;
@@ -31,19 +28,42 @@ public sealed class GameClockService : BackgroundService
 
     private async Task AdvanceDueGamesAsync(CancellationToken cancellationToken)
     {
-        using IServiceScope scope = _scopeFactory.CreateScope();
-        AtariGoDbContext database = scope.ServiceProvider.GetRequiredService<AtariGoDbContext>();
         DateTime now = _timeProvider.GetUtcNow().UtcDateTime;
-        List<long> due = await database.Games.AsNoTracking()
-            .Where(game => (game.State == GameRuntimeState.Waiting
-                || game.State == GameRuntimeState.Playing) && game.TurnDeadlineUtc <= now)
-            .OrderBy(game => game.TurnDeadlineUtc).Select(game => game.GameId)
-            .Take(BatchSize).ToListAsync(cancellationToken);
+        IReadOnlyList<long> due = _registry.GetDueGames(now);
         foreach (long gameId in due)
+        {
+            await AdvanceGameAsync(gameId, cancellationToken);
+        }
+        _registry.PruneIdleSessions();
+    }
+
+    private async Task AdvanceGameAsync(long gameId, CancellationToken cancellationToken)
+    {
+        try
         {
             await _coordinator.AdvanceAsync(gameId, cancellationToken);
         }
-        _registry.PruneIdleSessions();
+        catch (DbUpdateConcurrencyException exception)
+        {
+            _logger.LogWarning(exception, "A concurrent game transition will be reloaded.");
+        }
+        catch (System.Data.Common.DbException exception)
+        {
+            _logger.LogError(exception, "A game clock cannot access the database.");
+        }
+        catch (DbUpdateException exception)
+        {
+            _logger.LogError(exception, "A game clock transition could not be persisted.");
+        }
+    }
+
+    public override async Task StartAsync(CancellationToken cancellationToken)
+    {
+        using IServiceScope scope = _scopeFactory.CreateScope();
+        GamePersistenceService store = scope.ServiceProvider
+            .GetRequiredService<GamePersistenceService>();
+        await store.CloseInterruptedGamesAsync(cancellationToken);
+        await base.StartAsync(cancellationToken);
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -54,22 +74,7 @@ public sealed class GameClockService : BackgroundService
         {
             while (await timer.WaitForNextTickAsync(stoppingToken))
             {
-                try
-                {
-                    await AdvanceDueGamesAsync(stoppingToken);
-                }
-                catch (DbUpdateConcurrencyException exception)
-                {
-                    _logger.LogWarning(exception, "A concurrent game transition will be reloaded.");
-                }
-                catch (System.Data.Common.DbException exception)
-                {
-                    _logger.LogError(exception, "Game clocks cannot access the database.");
-                }
-                catch (DbUpdateException exception)
-                {
-                    _logger.LogError(exception, "A game clock transition could not be persisted.");
-                }
+                await AdvanceDueGamesAsync(stoppingToken);
             }
         }
         catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)

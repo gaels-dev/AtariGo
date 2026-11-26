@@ -268,11 +268,13 @@ public sealed class GameBoardViewModelTests
         bool navigatedBeforeConfirmation = recorded.Calls.Contains(
             nameof(INavigationService.NavigateToMainMenu));
         stream.Publish(AcceptSurrender(stream));
-        await WaitUntilAsync(() => stream.IsDisposed);
+        await WaitUntilAsync(() => recorded.Calls.Contains(
+            nameof(INavigationService.NavigateToMainMenu)));
         // Assert
         Assert.IsFalse(navigatedBeforeConfirmation);
         Assert.IsTrue(recorded.Calls.Contains(nameof(INavigationService.NavigateToMainMenu)));
-        Assert.IsTrue(stream.ReadCancellation.IsCancellationRequested);
+        Assert.IsTrue(stream.IsCompleting);
+        Assert.IsFalse(stream.WasCancelledBeforeCompletion);
         Assert.IsFalse(model.CanLeaveGame);
     }
 
@@ -356,6 +358,8 @@ public sealed class GameBoardViewModelTests
         stream.Publish(FinishedGame());
         await WaitUntilAsync(() => model.CanLeaveGame && !model.CanSurrender);
         model.LeaveGameCommand.Execute(null);
+        await WaitUntilAsync(() => ((RecordingNavigationProxy)navigation).Calls.Contains(
+            nameof(INavigationService.NavigateToMainMenu)));
         // Assert
         Assert.IsTrue(((RecordingNavigationProxy)navigation).Calls.Contains(
             nameof(INavigationService.NavigateToMainMenu)));
@@ -380,7 +384,8 @@ public sealed class GameBoardViewModelTests
         bool couldLeaveWhileRecovering = model.CanLeaveGame;
         await WaitUntilAsync(() => second.Sent.Count == 1);
         second.Publish(AcceptSurrender(second));
-        await WaitUntilAsync(() => second.IsDisposed);
+        await WaitUntilAsync(() => recorded.Calls.Contains(
+            nameof(INavigationService.NavigateToMainMenu)));
         // Assert
         Assert.IsFalse(couldLeaveWhileRecovering);
         Assert.AreEqual(first.Sent.Single().Surrender.ActionId,
@@ -469,10 +474,49 @@ public sealed class GameBoardViewModelTests
         await WaitUntilAsync(() => recorded.OpenedDialog is GameOverDialogViewModel);
         GameOverDialogViewModel dialog = (GameOverDialogViewModel)recorded.OpenedDialog!;
         dialog.AcceptCommand.Execute(null);
+        await WaitUntilAsync(() => recorded.Calls.Contains(
+            nameof(INavigationService.NavigateToMainMenu)));
 
         // Assert
         Assert.IsTrue(recorded.Calls.Contains(nameof(INavigationService.OpenDialog)));
         Assert.IsTrue(recorded.Calls.Contains(nameof(INavigationService.NavigateToMainMenu)));
+    }
+
+    [TestMethod]
+    public async Task LeaveGameCommand_FinalSnapshot_WaitsForStreamBeforeNavigatingAsync()
+    {
+        TaskCompletionSource completion = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        StubGameSessionStream stream = new StubGameSessionStream { CompleteGate = completion };
+        INavigationService navigation = DispatchProxy.Create<INavigationService,
+            RecordingNavigationProxy>();
+        RecordingNavigationProxy recorded = (RecordingNavigationProxy)navigation;
+        using GameBoardViewModel model = CreateModel(stream, navigation: navigation);
+        await WaitUntilAsync(() => model.IsMyTurn);
+        stream.Publish(FinishedGame());
+        await WaitUntilAsync(() => !model.CanSurrender && model.CanLeaveGame);
+
+        model.LeaveGameCommand.Execute(null);
+        await WaitUntilAsync(() => stream.IsCompleting);
+        bool navigatedBeforeClose = recorded.Calls.Contains(
+            nameof(INavigationService.NavigateToMainMenu));
+        bool cancelledBeforeClose = stream.ReadCancellation.IsCancellationRequested;
+        bool blockedExit = !model.CanLeaveGame;
+        completion.SetResult();
+        await WaitUntilAsync(() => recorded.Calls.Contains(
+            nameof(INavigationService.NavigateToMainMenu)));
+
+        Assert.IsFalse(navigatedBeforeClose);
+        Assert.IsFalse(cancelledBeforeClose);
+        Assert.IsTrue(blockedExit);
+        Assert.IsTrue(stream.IsDisposed);
+        Assert.IsFalse(stream.WasCancelledBeforeCompletion);
+        Assert.AreEqual(1, recorded.Calls.Count(IsMenuNavigation));
+    }
+
+    private static bool IsMenuNavigation(string method)
+    {
+        return method == nameof(INavigationService.NavigateToMainMenu);
     }
 
     private static GameSessionServerEvent AcceptSurrender(StubGameSessionStream stream)

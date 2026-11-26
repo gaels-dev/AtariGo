@@ -37,18 +37,23 @@ internal sealed class GameplayGrpcTestHost : IAsyncDisposable
 
     public IssuedGuestIdentity WhiteIdentity { get; private set; } = null!;
 
-    public static async Task<GameplayGrpcTestHost> StartAsync()
+    public static async Task<GameplayGrpcTestHost> StartAsync(ILoggerProvider? logs = null)
     {
         GameplayTestDatabase database = await GameplayTestDatabase.CreateAsync();
         WebApplicationBuilder builder = WebApplication.CreateBuilder();
         builder.Configuration.Sources.Clear();
         builder.Logging.ClearProviders();
+        if (logs is not null)
+        {
+            builder.Logging.AddProvider(logs);
+        }
         builder.WebHost.ConfigureKestrel(options => options.Listen(IPAddress.Loopback, 0,
             endpoint => endpoint.Protocols = HttpProtocols.Http2));
         builder.Services.AddGrpc();
         builder.Services.AddSingleton<TimeProvider>(database.Time);
-        builder.Services.AddSingleton<IGameSessionRegistry, GameSessionRegistry>();
+        builder.Services.AddSingleton<IGameSessionRegistry>(database.Registry);
         builder.Services.AddSingleton<GameRulesEngine>();
+        builder.Services.AddSingleton<GameReplayService>();
         builder.Services.AddSingleton<GameOperationGate>();
         builder.Services.AddSingleton<GameCoordinator>();
         builder.Services.AddScoped<GameCommandService>();

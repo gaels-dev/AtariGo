@@ -11,17 +11,10 @@ internal sealed class GameWriteFailureInterceptor : DbCommandInterceptor
         get; set;
     }
 
-    public bool SawReceiptWrite
-    {
-        get; private set;
-    }
-
     public override ValueTask<InterceptionResult<DbDataReader>> ReaderExecutingAsync(
         DbCommand command, CommandEventData eventData,
         InterceptionResult<DbDataReader> result, CancellationToken cancellationToken = default)
     {
-        SawReceiptWrite |= command.CommandText.Contains("INSERT INTO \"GameEvents\"",
-            StringComparison.Ordinal);
         if (FailMoveWrite && command.CommandText.Contains("INSERT INTO \"Moves\"",
             StringComparison.Ordinal))
         {

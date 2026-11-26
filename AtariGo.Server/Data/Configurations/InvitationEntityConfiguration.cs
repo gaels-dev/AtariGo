@@ -9,6 +9,7 @@ public sealed class InvitationEntityConfiguration : IEntityTypeConfiguration<Inv
 {
     public void Configure(EntityTypeBuilder<Invitation> entity)
     {
+        entity.ToTable("Invitations", ConfigureConstraints);
         entity.HasIndex(invitation => new { invitation.RecipientId, invitation.State },
             "IX_Invitations_Recipient_State").HasFilter("([RecipientId] IS NOT NULL)");
 
@@ -46,5 +47,14 @@ public sealed class InvitationEntityConfiguration : IEntityTypeConfiguration<Inv
             .HasForeignKey(dependent => dependent.SenderId)
             .OnDelete(DeleteBehavior.ClientSetNull)
             .HasConstraintName("FK_Invitations_Sender");
+    }
+
+    private static void ConfigureConstraints(TableBuilder<Invitation> table)
+    {
+        table.HasCheckConstraint("CK_Invitations_Type", "[InvitationType] IN ('User', 'Email')");
+        table.HasCheckConstraint("CK_Invitations_Recipient",
+            "([InvitationType] = 'User' AND [RecipientId] IS NOT NULL "
+                + "AND [RecipientEmail] IS NULL) OR ([InvitationType] = 'Email' "
+                + "AND [RecipientId] IS NULL AND [RecipientEmail] IS NOT NULL)");
     }
 }

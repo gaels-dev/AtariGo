@@ -27,4 +27,14 @@ public sealed record GameRuntimeState
     public long BlackGraceRemainingMilliseconds { get; init; } = ReconnectionGraceMilliseconds;
     public long WhiteGraceRemainingMilliseconds { get; init; } = ReconnectionGraceMilliseconds;
     public bool IsTerminal => Status == Completed || Status == Cancelled;
+
+    public static GameRuntimeState CreateInitial(int captureGoal, DateTime now)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(captureGoal);
+        return new GameRuntimeState
+        {
+            Board = new GameState { CaptureGoal = captureGoal },
+            DeadlineUtc = now.AddSeconds(ConnectionGraceSeconds)
+        };
+    }
 }

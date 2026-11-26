@@ -22,5 +22,8 @@
     <None Include="..\scripts\database\Create-AtariGo.sql"
           Link="DatabaseScripts\Create-AtariGo.sql"
           CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\scripts\database\Update-RelationalGameplay.sql"
+          Link="DatabaseScripts\Update-RelationalGameplay.sql"
+          CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

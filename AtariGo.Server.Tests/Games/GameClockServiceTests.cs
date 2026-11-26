@@ -28,7 +28,7 @@ public sealed class GameClockServiceTests
         await database.ConnectAsync("Black");
         database.Time.Advance(TimeSpan.FromSeconds(GameRuntimeState.ConnectionGraceSeconds));
         ClockTimeProvider clockTime = new ClockTimeProvider(database.Time);
-        CycleRegistry registry = new CycleRegistry();
+        CycleRegistry registry = new CycleRegistry(database.Registry);
         using GameClockService clock = CreateClock(database, clockTime, registry);
         await clock.StartAsync(CancellationToken.None);
         await clockTime.Ready.WaitAsync(completionTimeout);
@@ -57,7 +57,7 @@ public sealed class GameClockServiceTests
         // Arrange
         await using GameplayTestDatabase database = await GameplayTestDatabase.CreateAsync();
         ClockTimeProvider clockTime = new ClockTimeProvider(database.Time);
-        CycleRegistry registry = new CycleRegistry();
+        CycleRegistry registry = new CycleRegistry(database.Registry);
         using GameClockService clock = CreateClock(database, clockTime, registry);
         Game before = await database.ReadAsync();
         await clock.StartAsync(CancellationToken.None);
@@ -73,7 +73,6 @@ public sealed class GameClockServiceTests
             // Assert
             Assert.AreEqual(GameRuntimeState.Waiting, after.State);
             Assert.AreEqual(before.StateVersion, after.StateVersion);
-            Assert.AreEqual(before.TurnDeadlineUtc, after.TurnDeadlineUtc);
         }
         finally
         {
@@ -94,7 +93,7 @@ public sealed class GameClockServiceTests
         database.Time.Advance(TimeSpan.FromHours(2));
         database.Registry.PruneIdleSessions();
         ClockTimeProvider clockTime = new ClockTimeProvider(database.Time);
-        CycleRegistry registry = new CycleRegistry();
+        CycleRegistry registry = new CycleRegistry(database.Registry);
         using GameClockService clock = CreateClock(database, clockTime, registry);
         await clock.StartAsync(CancellationToken.None);
         await clockTime.Ready.WaitAsync(completionTimeout);
@@ -112,7 +111,7 @@ public sealed class GameClockServiceTests
             Assert.AreEqual(GameRuntimeState.Cancelled, cancelled.State);
             Assert.AreEqual("BothDisconnected", cancelled.EndReason);
             Assert.AreEqual(initialVersion + 1, unchanged.StateVersion);
-            Assert.IsTrue(unchanged.GamePlayers.All(player => player.Result == "Pending"));
+            Assert.IsTrue(unchanged.GamePlayers.All(player => player.Result == "Abandoned"));
             using AtariGoDbContext context = database.CreateContext();
             Assert.AreEqual(1, await context.GameEvents.CountAsync(entry =>
                 entry.GameId == database.GameId && entry.EventType == "GameFinished"));
@@ -136,7 +135,7 @@ public sealed class GameClockServiceTests
             scope.ServiceProvider.GetRequiredService<GamePersistenceService>(),
             scope.ServiceProvider.GetRequiredService<GameActionProcessor>(),
             database.Time,
-            new CycleRegistry());
+            new CycleRegistry(database.Registry));
         GameOperationContext operation = await commands.LoadAsync(database.GameId,
             CancellationToken.None);
 
@@ -147,8 +146,7 @@ public sealed class GameClockServiceTests
         // Assert
         Assert.AreEqual(GameRuntimeState.Cancelled, result.Progress?.Status);
         Assert.AreEqual(before.StateVersion + 1, after.StateVersion);
-        Assert.AreEqual(before.TurnDeadlineUtc, after.TurnDeadlineUtc);
-        Assert.IsTrue(after.GamePlayers.All(player => player.Result == "Pending"));
+        Assert.IsTrue(after.GamePlayers.All(player => player.Result == "Abandoned"));
     }
 
     [TestMethod]
@@ -161,7 +159,7 @@ public sealed class GameClockServiceTests
         await database.ConnectAsync("Black");
         database.Time.Advance(TimeSpan.FromSeconds(GameRuntimeState.ConnectionGraceSeconds));
         ClockTimeProvider clockTime = new ClockTimeProvider(database.Time);
-        CycleRegistry registry = new CycleRegistry();
+        CycleRegistry registry = new CycleRegistry(database.Registry);
         ErrorRecordingLogger logger = new ErrorRecordingLogger();
         IServiceScopeFactory scopes = database.Services.GetRequiredService<IServiceScopeFactory>();
         using GameClockService clock = new GameClockService(scopes, database.Coordinator,
@@ -324,6 +322,13 @@ public sealed class GameClockServiceTests
         private readonly TaskCompletionSource _cycleCompleted =
             new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
+        private readonly IGameSessionRegistry _inner;
+
+        public CycleRegistry(IGameSessionRegistry inner)
+        {
+            _inner = inner;
+        }
+
         public Task CycleCompleted => _cycleCompleted.Task;
 
         public GameSessionConnection Connect(GameSessionDefinition definition)
@@ -361,6 +366,26 @@ public sealed class GameClockServiceTests
         public GameRuntimeState? GetProgress(long gameId, long version)
         {
             return null;
+        }
+
+        public void StoreProgress(long gameId, GameRuntimeState progress, long version)
+        {
+            _inner.StoreProgress(gameId, progress, version);
+        }
+
+        public IReadOnlyList<long> GetDueGames(DateTime now)
+        {
+            return _inner.GetDueGames(now);
+        }
+
+        public GameActionResult? FindAction(GameActionContext context)
+        {
+            return _inner.FindAction(context);
+        }
+
+        public void RememberAction(GameActionContext context, GameActionResult result)
+        {
+            _inner.RememberAction(context, result);
         }
 
         public void PublishProgress(long gameId, GameRuntimeState progress, long version)

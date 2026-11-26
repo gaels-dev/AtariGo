@@ -23,6 +23,7 @@ public partial class GameBoardViewModel
     private bool _hasPermanentSessionFailure;
     private bool _returnToMenuAfterSurrender;
     private bool _hasShownGameEndDialog;
+    private bool _isLeaving;
     private long _blackClockMilliseconds;
     private long _whiteClockMilliseconds;
     private long _clockReceivedTimestamp;
@@ -101,7 +102,7 @@ public partial class GameBoardViewModel
     public bool CanSurrender => !_isDisposed && !_isFinished && !_hasPermanentSessionFailure
         && _isSessionConnected && !_hasPendingAction;
 
-    public bool CanLeaveGame => !_isDisposed && (!GameId.HasValue || _isFinished
+    public bool CanLeaveGame => !_isDisposed && !_isLeaving && (!GameId.HasValue || _isFinished
         || _hasPermanentSessionFailure || CanSurrender);
 
     public string CapturesStatus => string.Format(CultureInfo.CurrentCulture,
@@ -178,6 +179,7 @@ public partial class GameBoardViewModel
         NotifyGameplayAvailability();
         if (shouldReturn)
         {
+            _isFinished = true;
             ReturnToMainMenu();
         }
     }
@@ -330,12 +332,39 @@ public partial class GameBoardViewModel
 
     private void ReturnToMainMenu()
     {
-        if (_isDisposed)
+        if (_isDisposed || _isLeaving)
         {
             return;
         }
-        Dispose();
-        _navigationService.NavigateToMainMenu();
+        _isLeaving = true;
+        IsChatEnabled = false;
+        NotifyGameplayAvailability();
+        _returnToMenuCommand.Execute(null);
+    }
+
+    private async Task ReturnToMainMenuAsync(object? _)
+    {
+        try
+        {
+            if (_session is not null && _isFinished)
+            {
+                await _session.CloseAsync(_lifetimeCancellation.Token);
+            }
+        }
+        catch (OperationCanceledException) when (_lifetimeCancellation.IsCancellationRequested)
+        {
+            return;
+        }
+        catch (Exception exception)
+        {
+            Trace.TraceError("Game session shutdown failed. Error: {0}.",
+                exception.GetType().Name);
+        }
+        if (!_isDisposed)
+        {
+            Dispose();
+            _navigationService.NavigateToMainMenu();
+        }
     }
 
     private void NotifyGameplayAvailability()
@@ -376,7 +405,7 @@ public partial class GameBoardViewModel
 
     private void ApplySessionUpdate(GameplaySessionUpdate update)
     {
-        if (_isDisposed)
+        if (_isDisposed || _isLeaving)
         {
             return;
         }

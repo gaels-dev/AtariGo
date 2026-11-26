@@ -163,7 +163,7 @@ public sealed class GameCoordinatorTests
         Assert.IsTrue(result.IsAccepted);
         Assert.AreEqual(result, repeated);
         Assert.AreEqual(1, await context.Moves.CountAsync());
-        Assert.AreEqual(1, await context.GameEvents.CountAsync(entry => entry.ActionId != null));
+        Assert.AreEqual(0, await context.GameEvents.CountAsync(entry => entry.EventType == "Move"));
     }
 
     [TestMethod]
@@ -176,7 +176,7 @@ public sealed class GameCoordinatorTests
         database.Time.Advance(TimeSpan.FromSeconds(30));
         // Act
         await database.Coordinator.AdvanceAsync(database.GameId, CancellationToken.None);
-        GameRuntimeState state = GamePersistenceService.Read(await database.ReadAsync());
+        GameRuntimeState state = await database.ReadProgressAsync();
         // Assert
         Assert.AreEqual(StoneColor.White, state.Board.CurrentTurn);
         Assert.AreEqual(GameRuntimeState.Playing, state.Status);
@@ -201,7 +201,7 @@ public sealed class GameCoordinatorTests
         // Assert
         Assert.IsFalse(result.IsAccepted);
         Assert.AreEqual("StaleVersion", result.Rejection);
-        GameRuntimeState state = GamePersistenceService.Read(await database.ReadAsync());
+        GameRuntimeState state = await database.ReadProgressAsync();
         Assert.IsTrue(state.Board.Board.All(stone => stone == StoneColor.Empty));
         Assert.AreEqual(StoneColor.White, state.Board.CurrentTurn);
     }
@@ -218,7 +218,7 @@ public sealed class GameCoordinatorTests
         // Act
         await PlayAsync(database, black, new BoardPosition(1, 0));
         Game progress = await database.ReadAsync();
-        GameRuntimeState state = GamePersistenceService.Read(progress);
+        GameRuntimeState state = await database.ReadProgressAsync();
         await PlayAsync(database, white, new BoardPosition(8, 8));
         GameActionResult rejected = await ReadResultAsync(white);
         // Assert
@@ -241,8 +241,8 @@ public sealed class GameCoordinatorTests
         GameSessionConnection white = await database.ConnectAsync("White");
         await PlayAsync(database, black, new BoardPosition(0, 1));
         Game before = await database.ReadAsync();
-        database.Registry.Disconnect(black);
-        database.Registry.Disconnect(white);
+        await database.Coordinator.DisconnectAsync(black);
+        await database.Coordinator.DisconnectAsync(white);
         database.Time.Advance(TimeSpan.FromSeconds(5));
         // Act
         GameSessionConnection restored = await database.ConnectAsync("White");
@@ -252,7 +252,7 @@ public sealed class GameCoordinatorTests
         GameSessionDelivery delivery = await restored.Events.ReadAsync(timeout.Token);
         // Assert
         Assert.AreEqual(database.Time.GetUtcNow().UtcDateTime.AddSeconds(3),
-            GamePersistenceService.Read(after).DeadlineUtc);
+            (await database.ReadProgressAsync()).DeadlineUtc);
         Assert.AreEqual("Black", delivery.Snapshot!.Cells[1].Stone);
         Assert.AreEqual(StoneColor.White, delivery.Snapshot.Progress!.Board.CurrentTurn);
     }
@@ -361,9 +361,8 @@ public sealed class GameCoordinatorTests
         await database.Coordinator.ProcessAsync(black, move, CancellationToken.None);
         GameActionResult result = await ReadResultAsync(black);
         Game progress = await database.ReadAsync();
-        GameRuntimeState state = GamePersistenceService.Read(progress);
+        GameRuntimeState state = await database.ReadProgressAsync();
         using AtariGoDbContext context = database.CreateContext();
-        GameEvent receipt = await context.GameEvents.SingleAsync(entry => entry.ActionId != null);
         // Assert
         Assert.IsFalse(result.IsAccepted);
         Assert.AreEqual("StaleVersion", result.Rejection);
@@ -376,8 +375,6 @@ public sealed class GameCoordinatorTests
         Assert.AreEqual(0, await context.Moves.CountAsync());
         Assert.AreEqual(1, await context.GameEvents.CountAsync(
             entry => entry.EventType == "Timeout"));
-        Assert.AreEqual("ActionRejected", receipt.EventType);
-        Assert.AreEqual(database.Time.GetUtcNow().UtcDateTime, receipt.CreatedAt);
     }
 
     [TestMethod]
@@ -394,7 +391,7 @@ public sealed class GameCoordinatorTests
         // Act
         await database.Coordinator.ProcessAsync(black, move, CancellationToken.None);
         GameActionResult result = await ReadResultAsync(black);
-        GameRuntimeState state = GamePersistenceService.Read(await database.ReadAsync());
+        GameRuntimeState state = await database.ReadProgressAsync();
         using AtariGoDbContext context = database.CreateContext();
         Move persisted = await context.Moves.SingleAsync();
         // Assert
@@ -424,7 +421,7 @@ public sealed class GameCoordinatorTests
         await database.Coordinator.ProcessAsync(black, move, CancellationToken.None);
         GameActionResult repeated = await ReadResultAsync(black);
         Game progress = await database.ReadAsync();
-        GameRuntimeState state = GamePersistenceService.Read(progress);
+        GameRuntimeState state = await database.ReadProgressAsync();
         using AtariGoDbContext context = database.CreateContext();
         // Assert
         Assert.IsTrue(accepted.IsAccepted);
@@ -433,7 +430,7 @@ public sealed class GameCoordinatorTests
         Assert.AreEqual(StoneColor.Black, state.Board.CurrentTurn);
         Assert.AreEqual(3, state.Board.TurnNumber);
         Assert.AreEqual(1, await context.Moves.CountAsync());
-        Assert.AreEqual(1, await context.GameEvents.CountAsync(entry => entry.ActionId != null));
+        Assert.AreEqual(0, await context.GameEvents.CountAsync(entry => entry.EventType == "Move"));
     }
 
     private static async Task PauseLookupAsync(TaskCompletionSource entered, Task release)

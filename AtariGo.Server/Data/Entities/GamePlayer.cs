@@ -51,8 +51,6 @@ public partial class GamePlayer
 
     public virtual ICollection<GameEvent> GameEvents { get; set; } = new List<GameEvent>();
 
-    public virtual ICollection<Game> Games { get; set; } = new List<Game>();
-
     public virtual ICollection<Move> Moves { get; set; } = new List<Move>();
 
     public virtual User? User

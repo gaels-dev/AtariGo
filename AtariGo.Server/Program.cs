@@ -72,6 +72,7 @@ builder.Services.AddScoped<IGameHistoryService, GameHistoryService>();
 builder.Services.AddScoped<ISessionService, SessionService>();
 builder.Services.AddScoped<IGameLifecycleService, GameLifecycleService>();
 builder.Services.AddSingleton<GameRulesEngine>();
+builder.Services.AddSingleton<GameReplayService>();
 builder.Services.AddScoped<GamePersistenceService>();
 builder.Services.AddScoped<GameActionProcessor>();
 builder.Services.AddSingleton<GameOperationGate>();

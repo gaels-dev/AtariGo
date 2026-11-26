@@ -133,8 +133,7 @@ public sealed class GameCoordinator : IDisposable, IAsyncDisposable
                 operation, connection.PlayerKey);
             _registry.Disconnect(connection);
             Publish(disconnected);
-            _logger.LogWarning("Game stream disconnected. GameId: {GameId}.",
-                connection.GameId);
+            LogDisconnection(connection, operation.Progress.IsTerminal);
         }
         finally
         {
@@ -209,6 +208,20 @@ public sealed class GameCoordinator : IDisposable, IAsyncDisposable
         if (result.Progress is not null)
         {
             _registry.PublishProgress(result.GameId, result.Progress, result.Version);
+        }
+    }
+
+    private void LogDisconnection(GameSessionConnection connection, bool isFinished)
+    {
+        if (connection.IsGracefulClosure && isFinished)
+        {
+            _logger.LogInformation("Completed game stream closed gracefully. GameId: {GameId}.",
+                connection.GameId);
+        }
+        else
+        {
+            _logger.LogWarning("Game stream disconnected. GameId: {GameId}.",
+                connection.GameId);
         }
     }
 }

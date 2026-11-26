@@ -3,17 +3,7 @@ namespace AtariGo.Server.Data.Entities;
 
 public partial class Game
 {
-    public string? BoardStateJson
-    {
-        get; set;
-    }
-
     public long StateVersion
-    {
-        get; set;
-    }
-
-    public DateTime? TurnDeadlineUtc
     {
         get; set;
     }
@@ -37,11 +27,6 @@ public partial class Game
 
     public string State { get; set; } = null!;
 
-    public long? CurrentTurnGamePlayerId
-    {
-        get; set;
-    }
-
     public DateTime? StartedAt
     {
         get; set;
@@ -60,11 +45,6 @@ public partial class Game
     public virtual GameConfiguration GameConfiguration { get; set; } = null!;
 
     public virtual ICollection<GameEvent> GameEvents { get; set; } = new List<GameEvent>();
-
-    public virtual GamePlayer? GamePlayer
-    {
-        get; set;
-    }
 
     public virtual ICollection<GamePlayer> GamePlayers { get; set; } = new List<GamePlayer>();
 

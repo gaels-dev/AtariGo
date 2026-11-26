@@ -9,7 +9,7 @@ using AtariGo.Contracts;
 
 namespace AtariGo.Client.Services;
 
-public sealed class GameplaySession : IGameplaySession
+public sealed partial class GameplaySession : IGameplaySession
 {
     private const long UninitializedVersion = -1;
     private const int UnsentAttempt = -1;
@@ -52,7 +52,7 @@ public sealed class GameplaySession : IGameplaySession
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(gameId);
         lock (_sync)
         {
-            ObjectDisposedException.ThrowIf(_isDisposed, this);
+            ObjectDisposedException.ThrowIf(_isDisposed || _isClosing, this);
             if (_runTask is not null)
             {
                 if (_gameId != gameId)
@@ -170,7 +170,7 @@ public sealed class GameplaySession : IGameplaySession
         CancellationTokenSource? attempt;
         lock (_sync)
         {
-            if (_isDisposed || _state is GameplayConnectionState.Connected
+            if (_isDisposed || _isClosing || _state is GameplayConnectionState.Connected
                 or GameplayConnectionState.Closed)
             {
                 return;
@@ -195,7 +195,7 @@ public sealed class GameplaySession : IGameplaySession
     {
         lock (_sync)
         {
-            ObjectDisposedException.ThrowIf(_isDisposed, this);
+            ObjectDisposedException.ThrowIf(_isDisposed || _isClosing, this);
             return CancellationTokenSource.CreateLinkedTokenSource(
                 _lifetimeToken, cancellationToken);
         }
@@ -257,6 +257,10 @@ public sealed class GameplaySession : IGameplaySession
         CancellationTokenSource? attempt;
         lock (_sync)
         {
+            if (_isClosing)
+            {
+                return;
+            }
             attempt = _state == GameplayConnectionState.Closed ? null : _attempt;
         }
         if (attempt is not null)
@@ -319,7 +323,11 @@ public sealed class GameplaySession : IGameplaySession
             {
                 _stream = null;
                 _attempt = null;
-                if (_state != GameplayConnectionState.Closed)
+                if (_isClosing)
+                {
+                    _state = GameplayConnectionState.Closed;
+                }
+                else if (_state != GameplayConnectionState.Closed)
                 {
                     _state = GameplayConnectionState.Recovering;
                 }
@@ -328,7 +336,7 @@ public sealed class GameplaySession : IGameplaySession
         }
         lock (_sync)
         {
-            return !_isDisposed && !cancellationToken.IsCancellationRequested
+            return !_isDisposed && !_isClosing && !cancellationToken.IsCancellationRequested
                 && _state != GameplayConnectionState.Closed;
         }
     }
@@ -366,6 +374,13 @@ public sealed class GameplaySession : IGameplaySession
                 await SendPendingAsync(cancellationToken).ConfigureAwait(false);
             }
         }
+        lock (_sync)
+        {
+            if (_isClosing)
+            {
+                return;
+            }
+        }
         throw new IOException("The game stream ended before the session was closed.");
     }
 
@@ -388,7 +403,7 @@ public sealed class GameplaySession : IGameplaySession
         GameplaySessionUpdate update;
         lock (_sync)
         {
-            if (_isDisposed || _state == GameplayConnectionState.Closed
+            if (_isDisposed || _isClosing || _state == GameplayConnectionState.Closed
                 || (isSnapshot && serverEvent.Snapshot.Version < _version))
             {
                 return false;
@@ -423,7 +438,7 @@ public sealed class GameplaySession : IGameplaySession
 
     private bool SetPendingAction(GameSessionClientEvent action)
     {
-        if (_isDisposed || _isFinished || _state != GameplayConnectionState.Connected
+        if (_isDisposed || _isClosing || _isFinished || _state != GameplayConnectionState.Connected
             || _pendingAction is not null)
         {
             return false;
@@ -519,7 +534,7 @@ public sealed class GameplaySession : IGameplaySession
         GameplaySessionUpdate update;
         lock (_sync)
         {
-            if (_isDisposed)
+            if (_isDisposed || _isClosing)
             {
                 return;
             }

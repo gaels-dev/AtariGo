@@ -64,6 +64,7 @@ internal sealed class GameplayTestDatabase : IAsyncDisposable
             provider => provider.GetRequiredService<ManualTimeProvider>());
         services.AddSingleton<IGameSessionRegistry, GameSessionRegistry>();
         services.AddSingleton<GameRulesEngine>();
+        services.AddSingleton<GameReplayService>();
         services.AddSingleton<GameOperationGate>();
         services.AddSingleton<GameCoordinator>();
         services.AddScoped<GameCommandService>();
@@ -97,6 +98,15 @@ internal sealed class GameplayTestDatabase : IAsyncDisposable
         using IServiceScope scope = Services.CreateScope();
         return await scope.ServiceProvider.GetRequiredService<GamePersistenceService>()
             .LoadAsync(GameId, CancellationToken.None);
+    }
+
+    public async Task<GameRuntimeState> ReadProgressAsync()
+    {
+        using IServiceScope scope = Services.CreateScope();
+        GamePersistenceService store = scope.ServiceProvider
+            .GetRequiredService<GamePersistenceService>();
+        Game game = await store.LoadAsync(GameId, CancellationToken.None);
+        return await store.ReadAsync(game, CancellationToken.None);
     }
 
     public async Task<GameActionCommand> CreateMoveAsync(BoardPosition position)
@@ -165,9 +175,10 @@ internal sealed class GameplayTestDatabase : IAsyncDisposable
             JoinedAt = now,
             Result = "Pending"
         });
-        GamePersistenceService.Initialize(game, 1, now);
+        game.State = GameRuntimeState.Waiting;
         context.Games.Add(game);
         await context.SaveChangesAsync();
         GameId = game.GameId;
+        Registry.StoreProgress(GameId, GameRuntimeState.CreateInitial(1, now), game.StateVersion);
     }
 }

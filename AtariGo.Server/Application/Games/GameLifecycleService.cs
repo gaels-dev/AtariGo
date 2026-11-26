@@ -15,22 +15,26 @@ public sealed class GameLifecycleService : IGameLifecycleService
     private readonly AtariGoDbContext _dbContext;
     private readonly TimeProvider _timeProvider;
     private readonly IAccountSanctionService _sanctions;
+    private readonly IGameSessionRegistry _registry;
 
     public GameLifecycleService(
         IRoomsService roomsService,
         AtariGoDbContext dbContext,
         TimeProvider timeProvider,
-        IAccountSanctionService sanctions)
+        IAccountSanctionService sanctions,
+        IGameSessionRegistry registry)
     {
         ArgumentNullException.ThrowIfNull(roomsService);
         ArgumentNullException.ThrowIfNull(dbContext);
         ArgumentNullException.ThrowIfNull(timeProvider);
         ArgumentNullException.ThrowIfNull(sanctions);
+        ArgumentNullException.ThrowIfNull(registry);
 
         _roomsService = roomsService;
         _dbContext = dbContext;
         _timeProvider = timeProvider;
         _sanctions = sanctions;
+        _registry = registry;
     }
 
     public async Task<RoomOperationResult> StartGameAsync(
@@ -107,8 +111,9 @@ public sealed class GameLifecycleService : IGameLifecycleService
             now));
 
         _dbContext.Games.Add(game);
-        GamePersistenceService.Initialize(game, game.GameConfiguration.CaptureGoal, now);
+        game.State = GameRuntimeState.Waiting;
         await _dbContext.SaveChangesAsync(cancellationToken);
+        RegisterProgress(game, now);
         return game.GameId;
     }
 
@@ -179,8 +184,9 @@ public sealed class GameLifecycleService : IGameLifecycleService
         });
 
         _dbContext.Games.Add(game);
-        GamePersistenceService.Initialize(game, game.GameConfiguration.CaptureGoal, now);
+        game.State = GameRuntimeState.Waiting;
         await _dbContext.SaveChangesAsync(cancellationToken);
+        RegisterProgress(game, now);
         return game.GameId;
     }
 
@@ -192,6 +198,13 @@ public sealed class GameLifecycleService : IGameLifecycleService
             GameTimeSeconds = configuration.GameTimeSeconds,
             TurnTimeSeconds = configuration.TurnTimeSeconds
         };
+    }
+
+    private void RegisterProgress(Game game, DateTime now)
+    {
+        GameRuntimeState progress = GameRuntimeState.CreateInitial(
+            game.GameConfiguration.CaptureGoal, now);
+        _registry.StoreProgress(game.GameId, progress, game.StateVersion);
     }
 
     private static GamePlayer CreateGamePlayer(

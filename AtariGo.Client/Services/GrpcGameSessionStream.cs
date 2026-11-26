@@ -12,9 +12,14 @@ public sealed class GrpcGameSessionStream : IGameSessionStream
     private readonly object _lifetimeSync = new object();
     private readonly TaskCompletionSource _disposalCompletion = new TaskCompletionSource(
         TaskCreationOptions.RunContinuationsAsynchronously);
+    private readonly TaskCompletionSource _sendsDrained = new TaskCompletionSource(
+        TaskCreationOptions.RunContinuationsAsynchronously);
+    private Task? _completeTask;
     private int _pendingSends;
     private bool _isDisposed;
     private bool _isTransportClosed;
+    private bool _isCompleting;
+    private bool _pendingCompletion;
     private readonly AsyncDuplexStreamingCall<GameSessionClientEvent,
         GameSessionServerEvent> _call;
 
@@ -67,6 +72,26 @@ public sealed class GrpcGameSessionStream : IGameSessionStream
         }
     }
 
+    public Task CompleteAsync(CancellationToken cancellationToken)
+    {
+        lock (_lifetimeSync)
+        {
+            ObjectDisposedException.ThrowIf(_isDisposed, this);
+            if (_completeTask is not null)
+            {
+                return _completeTask;
+            }
+            _isCompleting = true;
+            _pendingCompletion = true;
+            if (_pendingSends == 0)
+            {
+                _sendsDrained.TrySetResult();
+            }
+            _completeTask = CompleteCoreAsync(cancellationToken);
+            return _completeTask;
+        }
+    }
+
     public ValueTask DisposeAsync()
     {
         lock (_lifetimeSync)
@@ -97,6 +122,10 @@ public sealed class GrpcGameSessionStream : IGameSessionStream
         lock (_lifetimeSync)
         {
             ObjectDisposedException.ThrowIf(_isDisposed, this);
+            if (_isCompleting)
+            {
+                throw new InvalidOperationException("The game request stream is completing.");
+            }
             _pendingSends++;
         }
         try
@@ -115,16 +144,56 @@ public sealed class GrpcGameSessionStream : IGameSessionStream
         lock (_lifetimeSync)
         {
             _pendingSends--;
+            if (_pendingSends == 0 && _isCompleting)
+            {
+                _sendsDrained.TrySetResult();
+            }
             TryFinishDisposal();
         }
     }
 
     private void TryFinishDisposal()
     {
-        if (_isTransportClosed && _pendingSends == 0 && !_disposalCompletion.Task.IsCompleted)
+        if (_isTransportClosed && _pendingSends == 0 && !_pendingCompletion
+            && !_disposalCompletion.Task.IsCompleted)
         {
             _writeGate.Dispose();
             _disposalCompletion.SetResult();
+        }
+    }
+
+    private async Task CompleteCoreAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _sendsDrained.Task.WaitAsync(cancellationToken).ConfigureAwait(false);
+            await CompleteRequestAsync(cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            lock (_lifetimeSync)
+            {
+                _pendingCompletion = false;
+                TryFinishDisposal();
+            }
+        }
+    }
+
+    private async Task CompleteRequestAsync(CancellationToken cancellationToken)
+    {
+        await _writeGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            lock (_lifetimeSync)
+            {
+                ObjectDisposedException.ThrowIf(_isDisposed, this);
+            }
+            await _call.RequestStream.CompleteAsync().WaitAsync(cancellationToken)
+                .ConfigureAwait(false);
+        }
+        finally
+        {
+            _writeGate.Release();
         }
     }
 }

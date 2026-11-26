@@ -18,6 +18,14 @@ public interface IGameSessionRegistry
     GameConnectionPresence GetPresence(long gameId);
     GameRuntimeState? GetProgress(long gameId, long version);
 
+    void StoreProgress(long gameId, GameRuntimeState progress, long version);
+
+    IReadOnlyList<long> GetDueGames(DateTime now);
+
+    GameActionResult? FindAction(GameActionContext context);
+
+    void RememberAction(GameActionContext context, GameActionResult result);
+
     void PublishProgress(long gameId, GameRuntimeState progress, long version);
 
     void PublishActionResult(GameSessionConnection connection, GameActionResult result);
