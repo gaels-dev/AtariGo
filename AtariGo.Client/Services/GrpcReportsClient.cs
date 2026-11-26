@@ -81,6 +81,7 @@ public sealed class GrpcReportsClient : IReportClient
             ReportResult.OpponentIsGuest => PlayerReportStatus.OpponentIsGuest,
             ReportResult.ChatMuted => PlayerReportStatus.ChatMuted,
             ReportResult.InvalidRequest => PlayerReportStatus.InvalidRequest,
+            ReportResult.DescriptionTooLong => PlayerReportStatus.DescriptionTooLong,
             _ => null
         };
         return status.HasValue

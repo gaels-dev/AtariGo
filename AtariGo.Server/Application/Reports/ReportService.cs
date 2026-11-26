@@ -3,6 +3,7 @@ using System.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 
+using AtariGo.Contracts.Validation;
 using AtariGo.Server.Application.Sessions;
 using AtariGo.Server.Data;
 using AtariGo.Server.Data.Entities;
@@ -11,7 +12,6 @@ namespace AtariGo.Server.Application.Reports;
 
 public sealed class ReportService : IReportService
 {
-    private const int MaximumDescriptionLength = 200;
     private const int WindowDays = 30;
     private const int ReportsPerThreshold = 3;
     private const int FirstSanctionDays = 1;
@@ -38,6 +38,10 @@ public sealed class ReportService : IReportService
     {
         ArgumentNullException.ThrowIfNull(identity);
         ArgumentNullException.ThrowIfNull(command);
+        if (!DescriptionRules.IsValid(command.Description))
+        {
+            return new ReportSubmissionResult(ReportSubmissionStatus.DescriptionTooLong);
+        }
         if (!IsValidCommand(command))
         {
             return new ReportSubmissionResult(ReportSubmissionStatus.InvalidRequest);
@@ -104,9 +108,7 @@ public sealed class ReportService : IReportService
         bool validCategory = command.Category is DatabaseValues.ReportCategories.Chat
             or DatabaseValues.ReportCategories.Inactivity
             or DatabaseValues.ReportCategories.Manipulation;
-        return command.GameId > 0 && validCategory
-            && (command.Description is null
-                || command.Description.Trim().Length <= MaximumDescriptionLength);
+        return command.GameId > 0 && validCategory;
     }
 
     private static ReportSubmissionStatus? GetTargetFailure(

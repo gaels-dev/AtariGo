@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 using AtariGo.Server.Data.Entities;
+using AtariGo.Contracts.Validation;
 
 namespace AtariGo.Server.Data.Configurations;
 
@@ -16,7 +17,8 @@ public sealed class ProfileEntityConfiguration : IEntityTypeConfiguration<Profil
         entity.Property(profile => profile.UserId).ValueGeneratedNever();
         entity.Property(profile => profile.AvatarId)
             .HasDefaultValue(DatabaseValues.AvatarIds.Default, "DF_Profiles_AvatarId");
-        entity.Property(profile => profile.Description).HasMaxLength(500);
+        entity.Property(profile => profile.Description)
+            .HasMaxLength(DescriptionRules.MaximumLength);
         entity.Property(profile => profile.LastUpdate).HasPrecision(0);
 
         entity.HasOne(dependent => dependent.User).WithOne(principal => principal.Profile)

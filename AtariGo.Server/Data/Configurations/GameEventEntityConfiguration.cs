@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 using AtariGo.Server.Data.Entities;
+using AtariGo.Contracts.Validation;
 
 namespace AtariGo.Server.Data.Configurations;
 
@@ -19,7 +20,8 @@ public sealed class GameEventEntityConfiguration : IEntityTypeConfiguration<Game
         entity.Property(gameEvent => gameEvent.CreatedAt)
             .HasPrecision(0)
             .HasDefaultValueSql("(sysutcdatetime())", "DF_GameEvents_CreatedAt");
-        entity.Property(gameEvent => gameEvent.Description).HasMaxLength(1000);
+        entity.Property(gameEvent => gameEvent.Description)
+            .HasMaxLength(DescriptionRules.MaximumLength);
         entity.Property(gameEvent => gameEvent.EventType)
             .HasMaxLength(30)
             .IsUnicode(false);

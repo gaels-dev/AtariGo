@@ -5,6 +5,8 @@ public static class UserNameRules
     public const int MaximumLength = 15;
     public const string GuestPrefix = "Guest-";
 
+    public static int MaximumGuestDisplayNameLength => GuestPrefix.Length + MaximumLength;
+
     public static bool IsValid(string? userName)
     {
         return IsValidGuestName(userName) && !IsReserved(userName!.Trim());

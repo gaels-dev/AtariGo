@@ -7,5 +7,6 @@ public enum PlayerReportStatus
     NotParticipant,
     OpponentIsGuest,
     ChatMuted,
-    InvalidRequest
+    InvalidRequest,
+    DescriptionTooLong
 }

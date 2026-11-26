@@ -1,5 +1,41 @@
 # Base de datos para la jugabilidad
 
+## Límites de texto
+
+Las descripciones de `Profiles`, `Reports` y `GameEvents` tienen un máximo de 200 unidades
+UTF-16. `DescriptionRules` comparte esa política entre validación y mapeo. Los saltos de
+línea también cuentan y un emoji puede ocupar dos unidades. El servidor valida la longitud
+recibida antes de recortar espacios para guardar una descripción opcional.
+
+Las contraseñas de entrada admiten entre 8 y 64 caracteres, con la política de composición
+existente. Registro, acceso, cambio y recuperación reutilizan `PasswordPolicy`; el hash
+se mantiene en `Credentials.PasswordHash VARCHAR(255)` y no se recorta ni se recalcula
+por esta actualización.
+
+`GamePlayers.GuestName` admite 21 unidades, incluyendo `Guest-` y hasta 15 de nombre.
+`Rooms.InvitationCode` admite los 10 caracteres hexadecimales generados por el servidor.
+`Sessions.SessionTokenHash` y `AuthenticationCodes.CodeHash` usan `CHAR(64)`, conforme a
+la representación hexadecimal SHA-256 y HMAC-SHA-256 actual. Los demás tamaños se conservan.
+
+Para la BD existente se entrega `Update-TextFieldLimits.sql` como archivo local, excluido de
+Git y sin referencias en los proyectos o pruebas. Detener el servidor y ejecutarlo completo
+contra la instancia correcta antes de usar esta versión. Comprueba los tamaños existentes,
+aplica las reducciones dentro de una transacción y conserva los índices y restricciones
+afectados. Se puede repetir y no trunca ni elimina contenido. La aplicación no lo ejecuta.
+
+```powershell
+sqlcmd -S "(localdb)\MSSQLLocalDB" -E -b -i .\scripts\database\Update-TextFieldLimits.sql
+```
+
+El diálogo de reportes muestra el contador y rechaza los detalles demasiado largos antes
+del envío. El servidor devuelve `DescriptionTooLong` si recibe más de 200, incluso desde
+un cliente anterior. Los resultados se registran como información con partida, resultado,
+longitud recibida y máximo, sin incluir el texto del reporte ni credenciales o identidad.
+Los fallos técnicos de persistencia conservan el nivel de error. Cliente y servidor deben
+actualizarse juntos para presentar el nuevo resultado específico.
+Los errores de reportes registran el tipo de excepción y el código de BD disponible, sin
+volcar mensajes internos que puedan incluir el texto rechazado por SQL Server.
+
 ## Verificación del inicio de sesión por correo
 
 El MFA no agrega tablas ni columnas y no requiere ejecutar una actualización SQL.

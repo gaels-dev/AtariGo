@@ -1,12 +1,13 @@
 using System.Security.Cryptography;
 using System.Text;
 
+using AtariGo.Contracts.Validation;
+
 namespace AtariGo.Server.Application.Matchmaking;
 
 public sealed class GuestIdentityRegistry : IGuestIdentityRegistry
 {
     private const int CredentialByteLength = 32;
-    private const int MaximumDisplayNameLength = 100;
     private static readonly TimeSpan identityLifetime = TimeSpan.FromHours(1);
 
     private readonly object _sync = new object();
@@ -23,7 +24,7 @@ public sealed class GuestIdentityRegistry : IGuestIdentityRegistry
     public IssuedGuestIdentity Create(string displayName)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(displayName);
-        if (displayName.Length > MaximumDisplayNameLength)
+        if (displayName.Length > UserNameRules.MaximumGuestDisplayNameLength)
         {
             throw new ArgumentOutOfRangeException(nameof(displayName));
         }

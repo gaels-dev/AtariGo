@@ -7,6 +7,22 @@ namespace AtariGo.Server.Tests.Matchmaking;
 public sealed class GuestIdentityRegistryTests
 {
     [TestMethod]
+    public void Create_MaximumGuestName_PreservesPrefixAndRejectsLongerName()
+    {
+        GuestIdentityRegistry registry = new GuestIdentityRegistry(TimeProvider.System);
+        string name = "Guest-" + new string('A', 15);
+
+        IssuedGuestIdentity issued = registry.Create(name);
+
+        Assert.AreEqual(21, issued.Identity.DisplayName.Length);
+        void CreateLongerIdentity()
+        {
+            registry.Create(name + "A");
+        }
+        Assert.Throws<ArgumentOutOfRangeException>(CreateLongerIdentity);
+    }
+
+    [TestMethod]
     public void Create_FindAndRevoke_UsesTemporaryCredential()
     {
         // Arrange

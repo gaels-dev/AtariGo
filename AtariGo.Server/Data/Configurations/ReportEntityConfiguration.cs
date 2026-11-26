@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 using AtariGo.Server.Data.Entities;
+using AtariGo.Contracts.Validation;
 
 namespace AtariGo.Server.Data.Configurations;
 
@@ -30,7 +31,7 @@ public sealed class ReportEntityConfiguration : IEntityTypeConfiguration<Report>
         entity.Property(report => report.Category)
             .HasMaxLength(20)
             .IsUnicode(false);
-        entity.Property(report => report.Description).HasMaxLength(2000);
+        entity.Property(report => report.Description).HasMaxLength(DescriptionRules.MaximumLength);
 
         entity.HasOne(report => report.Game).WithMany(game => game.Reports)
             .HasForeignKey(report => report.GameId)

@@ -902,7 +902,7 @@
   <data name="ChangePassword_Lbl_CurrentPassword" xml:space="preserve"><value>Current password</value></data>
   <data name="ChangePassword_Lbl_NewPassword" xml:space="preserve"><value>New password</value></data>
   <data name="ChangePassword_Lbl_Confirmation" xml:space="preserve"><value>Confirm new password</value></data>
-  <data name="ChangePassword_Lbl_Policy" xml:space="preserve"><value>Use 8–255 characters and at least one uppercase letter.</value></data>
+  <data name="ChangePassword_Lbl_Policy" xml:space="preserve"><value>Use 8–64 characters and at least one uppercase letter.</value></data>
   <data name="ChangePassword_Btn_Save" xml:space="preserve"><value>Save password</value></data>
   <data name="ChangePassword_Btn_Cancel" xml:space="preserve"><value>Cancel</value></data>
   <data name="ChangePassword_Btn_Close" xml:space="preserve"><value>Back to profile</value></data>
@@ -910,7 +910,7 @@
   <data name="ChangePassword_Result_Changed" xml:space="preserve"><value>Your new password is now active.</value></data>
   <data name="ChangePassword_Result_MissingFields" xml:space="preserve"><value>Complete all three password fields.</value></data>
   <data name="ChangePassword_Result_IncorrectCurrentPassword" xml:space="preserve"><value>The current password is incorrect. Please enter the passwords again.</value></data>
-  <data name="ChangePassword_Result_InvalidNewPassword" xml:space="preserve"><value>The new password must contain 8–255 characters and at least one uppercase letter.</value></data>
+  <data name="ChangePassword_Result_InvalidNewPassword" xml:space="preserve"><value>The new password must contain 8–64 characters and at least one uppercase letter.</value></data>
   <data name="ChangePassword_Result_ConfirmationMismatch" xml:space="preserve"><value>The new password and its confirmation do not match.</value></data>
   <data name="ChangePassword_Result_CredentialChanged" xml:space="preserve"><value>Your password changed during this request. Enter your current password again.</value></data>
   <data name="ChangePassword_Result_SessionExpired" xml:space="preserve"><value>Your session is invalid or expired. Sign in again before changing your password.</value></data>
@@ -947,7 +947,7 @@
     <value>Check the code you received. If it expired or is no longer valid, request another one.</value>
   </data>
   <data name="Recovery_Result_InvalidPassword" xml:space="preserve">
-    <value>Use 8 to 255 characters and at least one uppercase letter.</value>
+    <value>Use 8 to 64 characters and at least one uppercase letter.</value>
   </data>
   <data name="Recovery_Result_ConfirmationMismatch" xml:space="preserve">
     <value>The passwords do not match. Check the confirmation.</value>
@@ -1011,7 +1011,8 @@
   <data name="ReportPlayer_Reason_Inactivity" xml:space="preserve"><value>Intentional inactivity</value></data>
   <data name="ReportPlayer_Reason_Manipulation" xml:space="preserve"><value>Game manipulation</value></data>
   <data name="ReportPlayer_Btn_Close" xml:space="preserve"><value>Close</value></data>
-  <data name="ReportPlayer_Err_TooLong" xml:space="preserve"><value>The details are too long.</value></data>
+  <data name="ReportPlayer_Err_TooLong" xml:space="preserve"><value>The details must not exceed {0} characters.</value></data>
+  <data name="ReportPlayer_DetailsLength" xml:space="preserve"><value>{0}/{1} characters</value></data>
   <data name="ReportPlayer_Err_Unavailable" xml:space="preserve"><value>The report could not be confirmed. Please try again later.</value></data>
   <data name="ReportPlayer_Result_Accepted" xml:space="preserve"><value>Your report was received.</value></data>
   <data name="ReportPlayer_Result_AlreadyReported" xml:space="preserve"><value>You have already reported this player for this game.</value></data>

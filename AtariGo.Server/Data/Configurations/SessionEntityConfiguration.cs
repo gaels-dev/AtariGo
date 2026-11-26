@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 using AtariGo.Server.Data.Entities;
+using AtariGo.Server.Security;
 
 namespace AtariGo.Server.Data.Configurations;
 
@@ -19,7 +20,8 @@ public sealed class SessionEntityConfiguration : IEntityTypeConfiguration<Sessio
             .HasPrecision(0)
             .HasDefaultValueSql("(sysutcdatetime())", "DF_Sessions_LastActivityAt");
         entity.Property(session => session.SessionTokenHash)
-            .HasMaxLength(255)
+            .HasMaxLength(HashStorageRules.Sha256HexLength)
+            .IsFixedLength()
             .IsUnicode(false);
         entity.Property(session => session.StartedAt)
             .HasPrecision(0)

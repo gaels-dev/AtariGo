@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 using AtariGo.Server.Data.Entities;
+using AtariGo.Contracts.Validation;
 
 namespace AtariGo.Server.Data.Configurations;
 
@@ -33,7 +34,8 @@ public sealed class GamePlayerEntityConfiguration : IEntityTypeConfiguration<Gam
             .IsUnique()
             .HasFilter("([GuestIdentityId] IS NOT NULL)");
 
-        entity.Property(gamePlayer => gamePlayer.GuestName).HasMaxLength(100);
+        entity.Property(gamePlayer => gamePlayer.GuestName)
+            .HasMaxLength(UserNameRules.MaximumGuestDisplayNameLength);
         entity.Property(gamePlayer => gamePlayer.GuestIdentityId)
             .HasColumnType("uniqueidentifier");
         entity.Property(gamePlayer => gamePlayer.JoinedAt)

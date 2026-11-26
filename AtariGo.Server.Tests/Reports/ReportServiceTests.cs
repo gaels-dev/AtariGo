@@ -12,7 +12,7 @@ namespace AtariGo.Server.Tests.Reports;
 [TestClass]
 [TestCategory("Integration")]
 [TestCategory("SqlServer")]
-public sealed class ReportServiceTests
+public sealed partial class ReportServiceTests
 {
     private const int ReporterCount = 6;
 

@@ -134,6 +134,11 @@ public sealed class ChangePasswordDialogViewModel : DialogViewModelBase, IDispos
     private void ShowResult(PasswordChangeResult result)
     {
         HasSucceeded = result == PasswordChangeResult.Changed;
+        if (result == PasswordChangeResult.InvalidNewPassword)
+        {
+            StatusMessage = PolicyLabel;
+            return;
+        }
         StatusMessage = Localize("ChangePassword_Result_" + result);
     }
 

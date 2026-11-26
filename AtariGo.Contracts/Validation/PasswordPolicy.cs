@@ -3,7 +3,7 @@ namespace AtariGo.Contracts.Validation;
 public static class PasswordPolicy
 {
     public const int MinimumPasswordLength = 8;
-    public const int MaximumPasswordLength = 255;
+    public const int MaximumPasswordLength = 64;
 
     public static bool IsValid(string? password)
     {

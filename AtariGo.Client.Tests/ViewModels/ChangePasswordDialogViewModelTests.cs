@@ -9,6 +9,37 @@ namespace AtariGo.Client.Tests.ViewModels;
 public sealed class ChangePasswordDialogViewModelTests
 {
     [TestMethod]
+    [DataRow(63, true)]
+    [DataRow(64, true)]
+    [DataRow(65, false)]
+    public async Task SaveCommand_PasswordBoundary_SendsOnlyAllowedLengthsAsync(
+        int length, bool accepted)
+    {
+        StubCredentialsClient client = new StubCredentialsClient();
+        using ChangePasswordDialogViewModel model = new ChangePasswordDialogViewModel(client);
+        string password = "A" + new string('x', length - 1);
+        PasswordChangeInput input = new PasswordChangeInput
+        {
+            CurrentPassword = "OldPassword8",
+            NewPassword = password,
+            Confirmation = password
+        };
+
+        await CommandExecution.ExecuteAsync(model.SaveCommand, input);
+
+        Assert.AreEqual(accepted, model.HasSucceeded);
+        if (accepted)
+        {
+            Assert.AreEqual(1, client.Calls);
+        }
+        else
+        {
+            Assert.AreEqual(0, client.Calls);
+            Assert.IsTrue(model.StatusMessage.Contains("64", StringComparison.Ordinal));
+        }
+    }
+
+    [TestMethod]
     public async Task SaveCommand_ValidationAndUnconfirmedResult_ClearsSecretsWithoutRetryAsync()
     {
         // Arrange

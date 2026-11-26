@@ -1,3 +1,12 @@
+SET QUOTED_IDENTIFIER ON;
+SET ANSI_NULLS ON;
+SET ANSI_PADDING ON;
+SET ANSI_WARNINGS ON;
+SET CONCAT_NULL_YIELDS_NULL ON;
+SET ARITHABORT ON;
+SET NUMERIC_ROUNDABORT OFF;
+GO
+
 USE master;
 GO
 
@@ -49,7 +58,7 @@ CREATE TABLE dbo.Profiles
     UserId INT NOT NULL,
     AvatarId INT NOT NULL
         CONSTRAINT DF_Profiles_AvatarId DEFAULT (1),
-    Description NVARCHAR(500) NULL,
+    Description NVARCHAR(200) NULL,
     LastUpdate DATETIME2(0) NULL,
     CONSTRAINT PK_Profiles PRIMARY KEY (UserId),
     CONSTRAINT FK_Profiles_User FOREIGN KEY (UserId)
@@ -62,7 +71,7 @@ CREATE TABLE dbo.Sessions
 (
     SessionId BIGINT IDENTITY(1, 1) NOT NULL,
     UserId INT NOT NULL,
-    SessionTokenHash VARCHAR(255) NOT NULL,
+    SessionTokenHash CHAR(64) NOT NULL,
     StartedAt DATETIME2(0) NOT NULL
         CONSTRAINT DF_Sessions_StartedAt DEFAULT (SYSUTCDATETIME()),
     LastActivityAt DATETIME2(0) NOT NULL
@@ -89,7 +98,7 @@ CREATE TABLE dbo.AuthenticationCodes
     AuthenticationCodeId BIGINT IDENTITY(1, 1) NOT NULL,
     UserId INT NOT NULL,
     CodeType VARCHAR(30) NOT NULL,
-    CodeHash VARCHAR(255) NOT NULL,
+    CodeHash CHAR(64) NOT NULL,
     CreatedAt DATETIME2(0) NOT NULL
         CONSTRAINT DF_AuthenticationCodes_CreatedAt DEFAULT (SYSUTCDATETIME()),
     ExpiresAt DATETIME2(0) NOT NULL,
@@ -183,7 +192,7 @@ GO
 CREATE TABLE dbo.Rooms
 (
     RoomId INT IDENTITY(1, 1) NOT NULL,
-    InvitationCode VARCHAR(20) NOT NULL,
+    InvitationCode VARCHAR(10) NOT NULL,
     CreatorId INT NOT NULL,
     State VARCHAR(20) NOT NULL
         CONSTRAINT DF_Rooms_State DEFAULT ('Waiting'),
@@ -311,7 +320,7 @@ CREATE TABLE dbo.GamePlayers
     GamePlayerId BIGINT IDENTITY(1, 1) NOT NULL,
     GameId BIGINT NOT NULL,
     UserId INT NULL,
-    GuestName NVARCHAR(100) NULL,
+    GuestName NVARCHAR(21) NULL,
     GuestIdentityId UNIQUEIDENTIFIER NULL,
     StoneColor VARCHAR(10) NOT NULL,
     TurnOrder TINYINT NOT NULL,
@@ -383,7 +392,7 @@ CREATE TABLE dbo.GameEvents
     GameId BIGINT NOT NULL,
     GamePlayerId BIGINT NULL,
     EventType VARCHAR(30) NOT NULL,
-    Description NVARCHAR(1000) NULL,
+    Description NVARCHAR(200) NULL,
     CreatedAt DATETIME2(0) NOT NULL
         CONSTRAINT DF_GameEvents_CreatedAt DEFAULT (SYSUTCDATETIME()),
     CONSTRAINT PK_GameEvents PRIMARY KEY (GameEventId),
@@ -409,7 +418,7 @@ CREATE TABLE dbo.Reports
     ReportedUserId INT NOT NULL,
     GameId BIGINT NOT NULL,
     Category VARCHAR(20) NOT NULL,
-    Description NVARCHAR(2000) NULL,
+    Description NVARCHAR(200) NULL,
     CreatedAt DATETIME2(0) NOT NULL
         CONSTRAINT DF_Reports_CreatedAt DEFAULT (SYSUTCDATETIME()),
     CONSTRAINT PK_Reports PRIMARY KEY (ReportId),

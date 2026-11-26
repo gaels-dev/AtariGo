@@ -4,6 +4,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:properties="clr-namespace:AtariGo.Client.Properties"
+             xmlns:validation="clr-namespace:AtariGo.Contracts.Validation;assembly=AtariGo.Contracts"
              mc:Ignorable="d"
              d:DesignHeight="700"
              d:DesignWidth="1000"
@@ -57,7 +58,7 @@
                          Height="42"
                          Padding="8"
                          FontSize="18"
-                         MaxLength="10"
+                         MaxLength="{x:Static validation:RoomInvitationCodeRules.Length}"
                          CharacterCasing="Upper"
                          HorizontalContentAlignment="Center"
                          Margin="0,0,0,10"/>

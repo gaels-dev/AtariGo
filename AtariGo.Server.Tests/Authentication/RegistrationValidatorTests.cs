@@ -71,8 +71,9 @@ public sealed class RegistrationValidatorTests
     [TestMethod]
     [DataRow(7, false)]
     [DataRow(8, true)]
-    [DataRow(255, true)]
-    [DataRow(256, false)]
+    [DataRow(63, true)]
+    [DataRow(64, true)]
+    [DataRow(65, false)]
     public void IsValid_PasswordLength_ChecksBothBoundaries(int length, bool expected)
     {
         string password = "A" + new string('x', length - 1);

@@ -1,9 +1,12 @@
 using System.Data.Common;
 
-using Grpc.Core;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
+using Grpc.Core;
+
 using AtariGo.Contracts;
+using AtariGo.Contracts.Validation;
 using AtariGo.Server.Application.Reports;
 using AtariGo.Server.Application.Sessions;
 using AtariGo.Server.Data;
@@ -67,11 +70,21 @@ public sealed class ReportsGrpcService : Reports.ReportsBase
             request.GameId, MapCategory(request.Category), request.Description);
         ReportSubmissionResult result = await _reports.SubmitReportAsync(
             identity, command, context.CancellationToken);
+        LogSubmissionResult(request, result);
         return new SubmitReportResponse
         {
             Result = MapResult(result.Status),
             ReportId = result.ReportId
         };
+    }
+
+    private void LogSubmissionResult(SubmitReportRequest request, ReportSubmissionResult result)
+    {
+        _logger.LogInformation("Report submission processed. GameId: {GameId}. "
+            + "Result: {Result}. DescriptionLength: {DescriptionLength}. "
+            + "MaximumDescriptionLength: {MaximumDescriptionLength}.",
+            request.GameId, result.Status, request.Description.Length,
+            DescriptionRules.MaximumLength);
     }
 
     private static string MapCategory(ReportCategory category)
@@ -94,13 +107,30 @@ public sealed class ReportsGrpcService : Reports.ReportsBase
             ReportSubmissionStatus.NotParticipant => ReportResult.NotParticipant,
             ReportSubmissionStatus.OpponentIsGuest => ReportResult.OpponentIsGuest,
             ReportSubmissionStatus.ChatMuted => ReportResult.ChatMuted,
+            ReportSubmissionStatus.DescriptionTooLong => ReportResult.DescriptionTooLong,
             _ => ReportResult.InvalidRequest
         };
     }
 
     private RpcException CreateFailure(Exception exception, StatusCode status)
     {
-        _logger.LogError(exception, "Report submission failed with {Status}.", status);
+        _logger.LogError("Report submission failed. Status: {Status}. "
+            + "ErrorType: {ErrorType}. DatabaseError: {DatabaseError}.",
+            status, exception.GetType().Name, GetDatabaseErrorCode(exception));
         return new RpcException(new Status(status, "The report could not be submitted."));
+    }
+
+    private static int? GetDatabaseErrorCode(Exception exception)
+    {
+        Exception source = exception.InnerException ?? exception;
+        if (source is SqlException sqlException)
+        {
+            return sqlException.Number;
+        }
+        if (source is DbException databaseException)
+        {
+            return databaseException.ErrorCode;
+        }
+        return null;
     }
 }

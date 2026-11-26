@@ -901,7 +901,7 @@
   <data name="ChangePassword_Lbl_CurrentPassword" xml:space="preserve"><value>Aktuelles Passwort</value></data>
   <data name="ChangePassword_Lbl_NewPassword" xml:space="preserve"><value>Neues Passwort</value></data>
   <data name="ChangePassword_Lbl_Confirmation" xml:space="preserve"><value>Neues Passwort bestätigen</value></data>
-  <data name="ChangePassword_Lbl_Policy" xml:space="preserve"><value>Verwende 8–255 Zeichen und mindestens einen Großbuchstaben.</value></data>
+  <data name="ChangePassword_Lbl_Policy" xml:space="preserve"><value>Verwende 8–64 Zeichen und mindestens einen Großbuchstaben.</value></data>
   <data name="ChangePassword_Btn_Save" xml:space="preserve"><value>Passwort speichern</value></data>
   <data name="ChangePassword_Btn_Cancel" xml:space="preserve"><value>Abbrechen</value></data>
   <data name="ChangePassword_Btn_Close" xml:space="preserve"><value>Zurück zum Profil</value></data>
@@ -909,7 +909,7 @@
   <data name="ChangePassword_Result_Changed" xml:space="preserve"><value>Dein neues Passwort ist jetzt gültig.</value></data>
   <data name="ChangePassword_Result_MissingFields" xml:space="preserve"><value>Fülle alle drei Passwortfelder aus.</value></data>
   <data name="ChangePassword_Result_IncorrectCurrentPassword" xml:space="preserve"><value>Das aktuelle Passwort ist falsch. Gib die Passwörter erneut ein.</value></data>
-  <data name="ChangePassword_Result_InvalidNewPassword" xml:space="preserve"><value>Das neue Passwort muss 8–255 Zeichen und mindestens einen Großbuchstaben enthalten.</value></data>
+  <data name="ChangePassword_Result_InvalidNewPassword" xml:space="preserve"><value>Das neue Passwort muss 8–64 Zeichen und mindestens einen Großbuchstaben enthalten.</value></data>
   <data name="ChangePassword_Result_ConfirmationMismatch" xml:space="preserve"><value>Das neue Passwort und die Bestätigung stimmen nicht überein.</value></data>
   <data name="ChangePassword_Result_CredentialChanged" xml:space="preserve"><value>Dein Passwort wurde während dieser Anfrage geändert. Gib dein aktuelles Passwort erneut ein.</value></data>
   <data name="ChangePassword_Result_SessionExpired" xml:space="preserve"><value>Deine Sitzung ist ungültig oder abgelaufen. Melde dich erneut an, um dein Passwort zu ändern.</value></data>
@@ -946,7 +946,7 @@
     <value>Prüfe den erhaltenen Code. Ist er abgelaufen oder nicht mehr gültig, fordere einen neuen an.</value>
   </data>
   <data name="Recovery_Result_InvalidPassword" xml:space="preserve">
-    <value>Verwende 8 bis 255 Zeichen und mindestens einen Großbuchstaben.</value>
+    <value>Verwende 8 bis 64 Zeichen und mindestens einen Großbuchstaben.</value>
   </data>
   <data name="Recovery_Result_ConfirmationMismatch" xml:space="preserve">
     <value>Die Passwörter stimmen nicht überein. Prüfe die Bestätigung.</value>
@@ -1010,7 +1010,8 @@
   <data name="ReportPlayer_Reason_Inactivity" xml:space="preserve"><value>Absichtliche Inaktivität</value></data>
   <data name="ReportPlayer_Reason_Manipulation" xml:space="preserve"><value>Spielmanipulation</value></data>
   <data name="ReportPlayer_Btn_Close" xml:space="preserve"><value>Schließen</value></data>
-  <data name="ReportPlayer_Err_TooLong" xml:space="preserve"><value>Die Angaben sind zu lang.</value></data>
+  <data name="ReportPlayer_Err_TooLong" xml:space="preserve"><value>Die Angaben dürfen höchstens {0} Zeichen enthalten.</value></data>
+  <data name="ReportPlayer_DetailsLength" xml:space="preserve"><value>{0}/{1} Zeichen</value></data>
   <data name="ReportPlayer_Err_Unavailable" xml:space="preserve"><value>Die Meldung konnte nicht bestätigt werden. Versuche es später erneut.</value></data>
   <data name="ReportPlayer_Result_Accepted" xml:space="preserve"><value>Deine Meldung wurde empfangen.</value></data>
   <data name="ReportPlayer_Result_AlreadyReported" xml:space="preserve"><value>Du hast diesen Spieler in dieser Partie bereits gemeldet.</value></data>

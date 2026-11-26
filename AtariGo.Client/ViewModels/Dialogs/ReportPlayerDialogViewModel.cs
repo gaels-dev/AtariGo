@@ -6,13 +6,12 @@ using AtariGo.Client.Commands;
 using AtariGo.Client.Models;
 using AtariGo.Client.Properties;
 using AtariGo.Client.Services;
+using AtariGo.Contracts.Validation;
 
 namespace AtariGo.Client.ViewModels.Dialogs;
 
 public sealed class ReportPlayerDialogViewModel : DialogViewModelBase, IDisposable
 {
-    private const int MaximumDescriptionLength = 2000;
-
     private readonly IReportClient _client;
     private readonly long _gameId;
     private readonly CancellationTokenSource _lifetime = new CancellationTokenSource();
@@ -65,7 +64,13 @@ public sealed class ReportPlayerDialogViewModel : DialogViewModelBase, IDisposab
     public string Details
     {
         get => _details;
-        set => SetProperty(ref _details, value);
+        set
+        {
+            if (SetProperty(ref _details, value))
+            {
+                OnPropertyChanged(nameof(DetailsLengthLabel));
+            }
+        }
     }
 
     public string StatusMessage
@@ -78,7 +83,10 @@ public sealed class ReportPlayerDialogViewModel : DialogViewModelBase, IDisposab
         ? Localize("ReportPlayer_Btn_Close")
         : Localize("ReportPlayer_Btn_Cancel");
 
-    public int MaximumDetailsLength => MaximumDescriptionLength;
+    public int MaximumDetailsLength => DescriptionRules.MaximumLength;
+
+    public string DetailsLengthLabel => string.Format(CultureInfo.CurrentCulture,
+        Localize("ReportPlayer_DetailsLength"), Details.Length, MaximumDetailsLength);
 
     public bool CanSubmit => !_isDisposed && !_isSubmitted;
 
@@ -103,9 +111,12 @@ public sealed class ReportPlayerDialogViewModel : DialogViewModelBase, IDisposab
         {
             return;
         }
-        if (Details.Trim().Length > MaximumDescriptionLength)
+        if (!DescriptionRules.IsValid(Details))
         {
-            StatusMessage = Localize("ReportPlayer_Err_TooLong");
+            Trace.TraceInformation("Report validation rejected. GameId: {0}. "
+                + "Reason: DescriptionTooLong. DescriptionLength: {1}. MaximumLength: {2}.",
+                _gameId, Details.Length, MaximumDetailsLength);
+            StatusMessage = GetTooLongMessage();
             return;
         }
         PlayerReportDraft draft = new PlayerReportDraft(
@@ -133,7 +144,17 @@ public sealed class ReportPlayerDialogViewModel : DialogViewModelBase, IDisposab
         {
             return Localize("ReportPlayer_Err_Unavailable");
         }
+        if (result.Status == PlayerReportStatus.DescriptionTooLong)
+        {
+            return GetTooLongMessage();
+        }
         return Localize("ReportPlayer_Result_" + result.Status);
+    }
+
+    private static string GetTooLongMessage()
+    {
+        return string.Format(CultureInfo.CurrentCulture,
+            Localize("ReportPlayer_Err_TooLong"), DescriptionRules.MaximumLength);
     }
 
     private void HandleFailure(Exception exception)

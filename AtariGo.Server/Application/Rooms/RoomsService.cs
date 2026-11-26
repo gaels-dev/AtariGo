@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 
+using AtariGo.Contracts.Validation;
 using AtariGo.Server.Application.RoomInvitations;
 
 namespace AtariGo.Server.Application.Rooms;
@@ -10,7 +11,7 @@ public sealed class RoomsService : IRoomsService
     private const int DefaultCaptureGoal = 1;
     private const int IntermediateCaptureGoal = 3;
     private const int ExtendedCaptureGoal = 5;
-    private const int InvitationCodeByteCount = 5;
+    private const int InvitationCodeByteCount = RoomInvitationCodeRules.Length / 2;
     private const int InvitationLifetimeMinutes = 2;
     private const int RoomLifetimeHours = 1;
 

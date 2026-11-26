@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 using AtariGo.Server.Data.Entities;
+using AtariGo.Server.Security;
 
 namespace AtariGo.Server.Data.Configurations;
 
@@ -19,7 +20,8 @@ public sealed class AuthenticationCodeEntityConfiguration
                 "IX_AuthenticationCodes_User_Type_Expiry");
 
         entity.Property(authenticationCode => authenticationCode.CodeHash)
-            .HasMaxLength(255)
+            .HasMaxLength(HashStorageRules.Sha256HexLength)
+            .IsFixedLength()
             .IsUnicode(false);
         entity.Property(authenticationCode => authenticationCode.CodeType)
             .HasMaxLength(30)
