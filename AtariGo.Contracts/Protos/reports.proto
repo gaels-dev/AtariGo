@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+option csharp_namespace = "AtariGo.Contracts";
+
+package atarigo.reports.v1;
+
+service Reports {
+  rpc SubmitReport (SubmitReportRequest) returns (SubmitReportResponse);
+}
+
+message SubmitReportRequest {
+  int64 game_id = 1;
+  ReportCategory category = 2;
+  string description = 3;
+}
+
+message SubmitReportResponse {
+  ReportResult result = 1;
+  int64 report_id = 2;
+}
+
+enum ReportCategory {
+  REPORT_CATEGORY_UNSPECIFIED = 0;
+  REPORT_CATEGORY_CHAT = 1;
+  REPORT_CATEGORY_INACTIVITY = 2;
+  REPORT_CATEGORY_MANIPULATION = 3;
+}
+
+enum ReportResult {
+  REPORT_RESULT_UNSPECIFIED = 0;
+  REPORT_RESULT_ACCEPTED = 1;
+  REPORT_RESULT_ALREADY_REPORTED = 2;
+  REPORT_RESULT_NOT_PARTICIPANT = 3;
+  REPORT_RESULT_OPPONENT_IS_GUEST = 4;
+  REPORT_RESULT_CHAT_MUTED = 5;
+  REPORT_RESULT_INVALID_REQUEST = 6;
+  REPORT_RESULT_DESCRIPTION_TOO_LONG = 7;
+}

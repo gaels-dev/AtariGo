@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="RoomInvitation_Email_Subject" xml:space="preserve">
+    <value>Atari Go - Private room invitation</value>
+  </data>
+  <data name="RoomInvitation_Email_Body" xml:space="preserve">
+    <value>{0} invites you to play Atari Go.
+
+Room code: {1}
+
+Sign in, select Join with code, and enter this code.
+You can join while the room is available and has an open place. This email does not reserve a place.
+
+If you were not expecting this invitation, you can ignore it.</value>
+  </data>
+</root>

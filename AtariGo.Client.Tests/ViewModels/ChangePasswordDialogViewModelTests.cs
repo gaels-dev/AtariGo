@@ -1,0 +1,110 @@
+using AtariGo.Client.Models;
+using AtariGo.Client.Tests.Services;
+using AtariGo.Client.ViewModels.Dialogs;
+
+namespace AtariGo.Client.Tests.ViewModels;
+
+[TestClass]
+[TestCategory("Unit")]
+public sealed class ChangePasswordDialogViewModelTests
+{
+    [TestMethod]
+    [DataRow(63, true)]
+    [DataRow(64, true)]
+    [DataRow(65, false)]
+    public async Task SaveCommand_PasswordBoundary_SendsOnlyAllowedLengthsAsync(
+        int length, bool accepted)
+    {
+        StubCredentialsClient client = new StubCredentialsClient();
+        using ChangePasswordDialogViewModel model = new ChangePasswordDialogViewModel(client);
+        string password = "A" + new string('x', length - 1);
+        PasswordChangeInput input = new PasswordChangeInput
+        {
+            CurrentPassword = "OldPassword8",
+            NewPassword = password,
+            Confirmation = password
+        };
+
+        await CommandExecution.ExecuteAsync(model.SaveCommand, input);
+
+        Assert.AreEqual(accepted, model.HasSucceeded);
+        if (accepted)
+        {
+            Assert.AreEqual(1, client.Calls);
+        }
+        else
+        {
+            Assert.AreEqual(0, client.Calls);
+            Assert.IsTrue(model.StatusMessage.Contains("64", StringComparison.Ordinal));
+        }
+    }
+
+    [TestMethod]
+    public async Task SaveCommand_ValidationAndUnconfirmedResult_ClearsSecretsWithoutRetryAsync()
+    {
+        // Arrange
+        var client = new StubCredentialsClient();
+        using var model = new ChangePasswordDialogViewModel(client);
+        var invalid = new PasswordChangeInput
+        {
+            CurrentPassword = "OldPassword8",
+            NewPassword = "short",
+            Confirmation = "short"
+        };
+        int clears = 0;
+        model.PasswordsCleared += () => clears++;
+        // Act
+        await CommandExecution.ExecuteAsync(model.SaveCommand, invalid);
+        Assert.AreEqual(0, client.Calls);
+        client.Response = Task.FromResult(PasswordChangeResult.Unconfirmed);
+        PasswordChangeInput input = CreateInput();
+        await CommandExecution.ExecuteAsync(model.SaveCommand, input);
+        // Assert
+        Assert.AreEqual(1, client.Calls);
+        Assert.IsFalse(model.HasSucceeded);
+        Assert.IsFalse(model.IsSaving);
+        Assert.IsTrue(model.CanEdit);
+        Assert.AreEqual(string.Empty, input.CurrentPassword);
+        Assert.AreEqual(string.Empty, input.NewPassword);
+        Assert.AreEqual(string.Empty, input.Confirmation);
+        Assert.AreEqual(1, clears);
+        Assert.IsFalse(string.IsNullOrWhiteSpace(model.StatusMessage));
+    }
+
+    [TestMethod]
+    public async Task Dispose_PendingChange_CancelsAndIgnoresLateSuccessAsync()
+    {
+        // Arrange
+        var pending = new TaskCompletionSource<PasswordChangeResult>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var client = new StubCredentialsClient { Response = pending.Task };
+        using var model = new ChangePasswordDialogViewModel(client);
+        PasswordChangeInput input = CreateInput();
+        Task command = CommandExecution.ExecuteAsync(model.SaveCommand, input);
+        string previousMessage = model.StatusMessage;
+        bool closed = false;
+        model.DialogClosed += _ => closed = true;
+        // Act
+        model.DismissCommand.Execute(null);
+        Assert.IsFalse(closed);
+        model.Dispose();
+        pending.SetResult(PasswordChangeResult.Changed);
+        await command;
+        // Assert
+        Assert.IsTrue(client.RequestToken.IsCancellationRequested);
+        Assert.IsFalse(model.HasSucceeded);
+        Assert.AreEqual(previousMessage, model.StatusMessage);
+        Assert.AreEqual(string.Empty, input.CurrentPassword);
+        Assert.AreEqual(1, client.Calls);
+    }
+
+    public static PasswordChangeInput CreateInput()
+    {
+        return new PasswordChangeInput
+        {
+            CurrentPassword = "OldPassword8",
+            NewPassword = " NewPassword9 ",
+            Confirmation = " NewPassword9 "
+        };
+    }
+}

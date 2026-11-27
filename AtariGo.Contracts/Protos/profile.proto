@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+option csharp_namespace = "AtariGo.Contracts";
+
+package atarigo.profile.v1;
+
+service Profile {
+  rpc GetProfile (GetProfileRequest) returns (GetProfileResponse);
+  rpc UpdateProfile (UpdateProfileRequest) returns (UpdateProfileResponse);
+}
+
+message GetProfileRequest {
+}
+
+message GetProfileResponse {
+  UserProfile profile = 1;
+}
+
+message UserProfile {
+  string user_name = 1;
+  string email = 2;
+  int32 wins = 3;
+  int32 avatar_id = 4;
+}
+
+message UpdateProfileRequest {
+  string user_name = 1;
+  int32 avatar_id = 2;
+}
+
+message UpdateProfileResponse {
+  ProfileUpdateStatus status = 1;
+  UserProfile profile = 2;
+}
+
+enum ProfileUpdateStatus {
+  PROFILE_UPDATE_STATUS_UNSPECIFIED = 0;
+  PROFILE_UPDATE_STATUS_UPDATED = 1;
+  PROFILE_UPDATE_STATUS_INVALID_USER_NAME = 2;
+  PROFILE_UPDATE_STATUS_USER_NAME_TAKEN = 3;
+  PROFILE_UPDATE_STATUS_INVALID_AVATAR = 4;
+  PROFILE_UPDATE_STATUS_ACCOUNT_UNAVAILABLE = 5;
+  PROFILE_UPDATE_STATUS_AVATAR_LOCKED = 6;
+}
