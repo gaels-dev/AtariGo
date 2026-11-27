@@ -90,12 +90,16 @@
         <Grid Background="#99000000" Panel.ZIndex="90"
               Visibility="{Binding RoomInvitations.IsOpen, FallbackValue=Collapsed,
                     Converter={StaticResource BooleanToVisibilityConverter}}">
-            <Border DataContext="{Binding RoomInvitations}" Background="White"
-                    Width="520" Padding="24" CornerRadius="8"
-                    BorderBrush="#2C2A29" BorderThickness="1.5"
-                    HorizontalAlignment="Center" VerticalAlignment="Center">
-                <views:RoomInvitationsView/>
-            </Border>
+            <ScrollViewer Padding="20,24" VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled"
+                          VerticalContentAlignment="Center">
+                <Border DataContext="{Binding RoomInvitations}" Background="White"
+                        MaxWidth="520" Padding="24" CornerRadius="8"
+                        BorderBrush="#2C2A29" BorderThickness="1.5"
+                        HorizontalAlignment="Stretch" VerticalAlignment="Center">
+                    <views:RoomInvitationsView/>
+                </Border>
+            </ScrollViewer>
         </Grid>
 
         <Grid Background="#99000000"

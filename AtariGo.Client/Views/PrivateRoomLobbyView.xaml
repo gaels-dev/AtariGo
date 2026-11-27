@@ -8,11 +8,32 @@
              mc:Ignorable="d"
              d:DesignHeight="700"
              d:DesignWidth="1000"
-             Background="#E5D8C5">
+             Background="#E5D8C5" FontSize="14" Foreground="#2C2A29">
 
     <UserControl.Resources>
         <BooleanToVisibilityConverter
             x:Key="BooleanToVisibilityConverter"/>
+        <Style x:Key="RoomActionButtonStyle" TargetType="Button"
+               BasedOn="{StaticResource RoundedButtonStyle}">
+            <Setter Property="MinHeight" Value="42"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Padding" Value="14,8"/>
+            <Setter Property="Background" Value="#4A90E2"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#2C2A29"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Style.Triggers>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Background" Value="#EAEAEA"/>
+                    <Setter Property="Foreground" Value="#2C2A29"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="RoomLeaveButtonStyle" TargetType="Button"
+               BasedOn="{StaticResource RoomActionButtonStyle}">
+            <Setter Property="Background" Value="#D9534F"/>
+        </Style>
     </UserControl.Resources>
 
     <Grid>
@@ -32,34 +53,32 @@
         </Border>
 
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto"
-                      HorizontalScrollBarVisibility="Disabled">
-            <Border Width="520"
-                    Padding="25"
+                      HorizontalScrollBarVisibility="Disabled"
+                      Padding="20,24" VerticalContentAlignment="Center">
+            <Border MaxWidth="520"
+                    Padding="24"
                     Background="White"
                     BorderBrush="#2C2A29"
                     BorderThickness="1.5"
                     CornerRadius="8"
-                    HorizontalAlignment="Center"
-                    VerticalAlignment="Center">
+                    HorizontalAlignment="Stretch" VerticalAlignment="Center">
 
                 <StackPanel>
-                    <TextBlock
+                    <TextBlock FontWeight="Bold"
                         Text="{x:Static properties:Resources.PrivateRoom_Lbl_Title}"
-                        FontSize="28"
-                        FontWeight="Bold"
+                        FontSize="26"
                         FontFamily="Georgia"
                         Foreground="#2C2A29"
                         HorizontalAlignment="Center"
+                        TextWrapping="Wrap" TextAlignment="Center"
                         Margin="0,0,0,20"/>
 
-                    <TextBlock
+                    <TextBlock FontWeight="Bold"
                         Text="{x:Static properties:Resources.PrivateRoom_Lbl_InvitationCode}"
-                        FontWeight="Bold"
                         HorizontalAlignment="Center"/>
 
-                    <TextBlock Text="{Binding RoomCode}"
+                    <TextBlock FontWeight="Bold" Text="{Binding RoomCode}"
                                FontSize="30"
-                               FontWeight="Bold"
                                FontFamily="Consolas"
                                Foreground="#4A90E2"
                                HorizontalAlignment="Center"
@@ -73,46 +92,45 @@
                         </Grid.ColumnDefinitions>
 
                         <StackPanel Grid.Column="0">
-                            <TextBlock
+                            <TextBlock FontWeight="Bold"
                                 Text="{x:Static properties:Resources.PrivateRoom_Lbl_YouHost}"
-                                FontSize="17"
-                                FontWeight="Bold"
+                                FontSize="16"
+                                TextWrapping="Wrap" TextAlignment="Center"
                                 HorizontalAlignment="Center"
                                 Visibility="{Binding IsHost,
                                     Converter={
                                         StaticResource BooleanToVisibilityConverter}}"/>
 
-                            <TextBlock
+                            <TextBlock FontWeight="Bold"
                                 Text="{Binding OpponentName}"
-                                FontSize="17"
-                                FontWeight="Bold"
+                                FontSize="16"
+                                TextWrapping="Wrap" TextAlignment="Center"
                                 HorizontalAlignment="Center"
                                 Visibility="{Binding IsGuest,
                                     Converter={
                                         StaticResource BooleanToVisibilityConverter}}"/>
                         </StackPanel>
 
-                        <TextBlock Grid.Column="1"
+                        <TextBlock FontWeight="Bold" Grid.Column="1"
                                    Text="VS"
                                    FontSize="20"
-                                   FontWeight="Bold"
                                    HorizontalAlignment="Center"
                                    VerticalAlignment="Center"/>
 
                         <StackPanel Grid.Column="2">
-                            <TextBlock
+                            <TextBlock FontWeight="Bold"
                                 Text="{Binding OpponentName}"
-                                FontSize="17"
-                                FontWeight="Bold"
+                                FontSize="16"
+                                TextWrapping="Wrap" TextAlignment="Center"
                                 HorizontalAlignment="Center"
                                 Visibility="{Binding IsHost,
                                     Converter={
                                         StaticResource BooleanToVisibilityConverter}}"/>
 
-                            <TextBlock
+                            <TextBlock FontWeight="Bold"
                                 Text="{x:Static properties:Resources.PrivateRoom_Lbl_YouGuest}"
-                                FontSize="17"
-                                FontWeight="Bold"
+                                FontSize="16"
+                                TextWrapping="Wrap" TextAlignment="Center"
                                 HorizontalAlignment="Center"
                                 Visibility="{Binding IsGuest,
                                     Converter={
@@ -120,15 +138,15 @@
                         </StackPanel>
                     </Grid>
 
-                    <Border Background="#F5F1EA"
+                    <Border Background="#FDFBF7"
+                            CornerRadius="8"
                             BorderBrush="#2C2A29"
                             BorderThickness="1"
-                            Padding="15"
+                            Padding="16"
                             Margin="0,0,0,20">
                         <StackPanel>
-                            <TextBlock
+                            <TextBlock FontWeight="Bold"
                                 Text="{x:Static properties:Resources.PrivateRoom_Lbl_ActiveRules}"
-                                FontWeight="Bold"
                                 HorizontalAlignment="Center"
                                 Margin="0,0,0,5"/>
 
@@ -137,7 +155,11 @@
                                 <TextBlock Text="{Binding CaptureGoalLabel}" Margin="0,4,0,6"/>
                                 <ComboBox ItemsSource="{Binding CaptureGoals}"
                                           SelectedItem="{Binding SelectedCaptureGoal, Mode=TwoWay}"
-                                          IsEnabled="{Binding CanEditConfiguration}" Height="32"/>
+                                          IsEnabled="{Binding CanEditConfiguration}" Height="38"
+                                          Background="#FDFBF7" BorderBrush="#2C2A29"
+                                          BorderThickness="1.5" FontSize="14"
+                                          FontWeight="SemiBold" Padding="8"
+                                          VerticalContentAlignment="Center"/>
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"
                                         Visibility="{Binding IsGuest,
@@ -167,51 +189,48 @@
                     <StackPanel Margin="0,0,0,12"
                                 Visibility="{Binding IsHost,
                                     Converter={StaticResource BooleanToVisibilityConverter}}">
-                        <Button Style="{StaticResource RoundedButtonStyle}" Content="{Binding RoomInvitations.Title}"
+                        <Button Style="{StaticResource RoomActionButtonStyle}"
+                                Content="{Binding RoomInvitations.Title}"
                                 Command="{Binding RoomInvitations.OpenCommand}"
-                                IsEnabled="{Binding RoomInvitations.CanOpen}" Height="38"
-                                Background="#4A90E2" Foreground="White" FontWeight="Bold"
-                                BorderBrush="#2C2A29" BorderThickness="1"/>
+                                IsEnabled="{Binding RoomInvitations.CanOpen}"/>
                     </StackPanel>
 
                     <TextBlock Text="{Binding ErrorMessage}"
                                Foreground="#D9534F"
                                TextWrapping="Wrap"
                                TextAlignment="Center"
-                               Margin="0,0,0,15"/>
+                               Margin="0,0,0,16">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding ErrorMessage}" Value="">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
 
-                    <Button Style="{StaticResource RoundedButtonStyle}"
+                    <Button Style="{StaticResource RoomActionButtonStyle}"
                         Content="{Binding StartGameLabel}"
                         Command="{Binding StartGameCommand}"
-                        Height="42"
-                        Background="#4A90E2"
-                        Foreground="White"
-                        FontWeight="Bold"
                         Margin="0,0,0,10"
                         IsEnabled="{Binding CanStartGame}"
                         Visibility="{Binding IsHost,
                             Converter={StaticResource BooleanToVisibilityConverter}}"/>
 
-                    <Button Style="{StaticResource RoundedButtonStyle}"
+                    <Button Style="{StaticResource RoomLeaveButtonStyle}"
                         Content="{x:Static properties:Resources.PrivateRoom_Btn_Disband}"
                         Command="{Binding LeaveRoomCommand}"
                         IsEnabled="{Binding CanLeaveRoom}"
-                        Height="42"
-                        Background="#D9534F"
-                        Foreground="White"
-                        FontWeight="Bold"
                         Visibility="{Binding IsHost,
                             Converter={
                                 StaticResource BooleanToVisibilityConverter}}"/>
 
-                    <Button Style="{StaticResource RoundedButtonStyle}"
+                    <Button Style="{StaticResource RoomLeaveButtonStyle}"
                         Content="{x:Static properties:Resources.PrivateRoom_Btn_Leave}"
                         Command="{Binding LeaveRoomCommand}"
                         IsEnabled="{Binding CanLeaveRoom}"
-                        Height="42"
-                        Background="#D9534F"
-                        Foreground="White"
-                        FontWeight="Bold"
                         Visibility="{Binding IsGuest,
                             Converter={
                                 StaticResource BooleanToVisibilityConverter}}"/>
@@ -222,11 +241,15 @@
               Background="#99000000" Panel.ZIndex="80"
               Visibility="{Binding IsOpen, FallbackValue=Collapsed,
                 Converter={StaticResource BooleanToVisibilityConverter}}">
-            <Border Width="520" Padding="24" Background="White" CornerRadius="8"
-                    BorderBrush="#2C2A29" BorderThickness="1.5"
-                    HorizontalAlignment="Center" VerticalAlignment="Center">
-                <views:RoomInvitationsView/>
-            </Border>
+            <ScrollViewer Padding="20,24" VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled"
+                          VerticalContentAlignment="Center">
+                <Border MaxWidth="520" Padding="24" Background="White" CornerRadius="8"
+                        BorderBrush="#2C2A29" BorderThickness="1.5"
+                        HorizontalAlignment="Stretch" VerticalAlignment="Center">
+                    <views:RoomInvitationsView/>
+                </Border>
+            </ScrollViewer>
         </Grid>
     </Grid>
 </UserControl>
