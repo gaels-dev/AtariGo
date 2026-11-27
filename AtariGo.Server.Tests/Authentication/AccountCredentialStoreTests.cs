@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Storage;
 
 using AtariGo.Server.Application.Authentication;
@@ -17,13 +18,17 @@ public sealed class AccountCredentialStoreTests
     public async Task LockAccountAsync_LegacyCollision_RejectsAmbiguousIdentityAsync()
     {
         await using RecoveryTestHost host = await RecoveryTestHost.CreateAsync();
-        await using AtariGoDbContext context = host.Database.CreateContext();
+        DbContextOptions<AtariGoDbContext> options = new DbContextOptionsBuilder<AtariGoDbContext>()
+            .UseSqlServer(host.Database.ConnectionString)
+            .ConfigureWarnings(ConfigureQueryWarnings)
+            .Options;
+        await using AtariGoDbContext context = new AtariGoDbContext(options);
         User owner = await context.Users.SingleAsync(user => user.UserName == "Owner");
         User other = await context.Users.SingleAsync(user => user.UserName == "Other");
         owner.Email = "a@b.co";
         other.UserName = owner.Email;
         await context.SaveChangesAsync();
-        var accounts = new AccountCredentialStore(context);
+        AccountCredentialStore accounts = new AccountCredentialStore(context);
         await using IDbContextTransaction transaction =
             await context.Database.BeginTransactionAsync();
 
@@ -35,5 +40,10 @@ public sealed class AccountCredentialStoreTests
         Assert.IsNull(ambiguous);
         Assert.AreEqual(owner.UserId, byName?.UserId);
         Assert.AreEqual(other.UserId, byEmail?.UserId);
+    }
+
+    private static void ConfigureQueryWarnings(WarningsConfigurationBuilder warnings)
+    {
+        warnings.Throw(CoreEventId.RowLimitingOperationWithoutOrderByWarning);
     }
 }

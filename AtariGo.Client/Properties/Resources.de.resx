@@ -274,6 +274,7 @@
   <data name="JoinPrivateRoom_Lbl_Title" xml:space="preserve">
     <value>Privatem Raum beitreten</value>
   </data>
+  <data name="JoinPrivateRoom_Err_InvalidCode" xml:space="preserve"><value>Gib {0} Buchstaben oder Ziffern für den Raumcode ein.</value></data>
   <data name="JoinPrivateRoom_Err_EmptyCode" xml:space="preserve">
     <value>Gib einen Raumcode ein.</value>
   </data>
@@ -922,7 +923,7 @@
     <value>Benutzername oder registrierte E-Mail</value>
   </data>
   <data name="Recovery_Lbl_Code" xml:space="preserve">
-    <value>8-stelliger Wiederherstellungscode</value>
+    <value>6-stelliger Wiederherstellungscode</value>
   </data>
   <data name="Recovery_Btn_Request" xml:space="preserve">
     <value>Code senden</value>

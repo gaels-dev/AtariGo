@@ -318,7 +318,11 @@ public sealed class AuthenticationGrpcServiceTests
         await LoginAsync(host, "Owner", "Wrong8");
         await LoginAsync(host, "Owner", "Wrong8");
         LoginResponse pending = await LoginAsync(host);
-        string wrong = host.Email.Codes.Last() == "00000000" ? "11111111" : "00000000";
+        string wrong = "000000";
+        if (host.Email.Codes.Last() == wrong)
+        {
+            wrong = "111111";
+        }
         LoginResponse blocked = await VerifyAsync(host, pending.ChallengeToken, wrong);
         LoginResponse denied = await LoginAsync(host);
         host.Clock.Advance(TimeSpan.FromMinutes(15));

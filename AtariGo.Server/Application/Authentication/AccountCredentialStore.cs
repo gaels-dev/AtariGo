@@ -26,12 +26,15 @@ public sealed class AccountCredentialStore
         {
             return null;
         }
-        List<User> matches = await _dbContext.Users.FromSqlInterpolated($"""
+        IQueryable<User> candidates = _dbContext.Users.FromSqlInterpolated($"""
             SELECT * FROM dbo.Users WITH (UPDLOCK, HOLDLOCK)
             WHERE UserName = {normalized} OR Email = {normalized}
             """)
-            .Include(user => user.Credential)
-            .Take(2).ToListAsync(cancellationToken);
+            .Include(user => user.Credential);
+        IQueryable<User> ordered = from user in candidates
+                                  orderby user.UserId
+                                  select user;
+        List<User> matches = await ordered.Take(2).ToListAsync(cancellationToken);
         return matches.Count == 1 ? matches[0] : null;
     }
 

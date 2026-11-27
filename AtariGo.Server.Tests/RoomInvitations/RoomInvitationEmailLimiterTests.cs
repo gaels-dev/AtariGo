@@ -86,7 +86,7 @@ public sealed class RoomInvitationEmailLimiterTests
     {
         return new RoomInvitationEntry(roomId, roomId, DateTimeOffset.MaxValue)
         {
-            RoomCode = "ABCDEF1234",
+            RoomCode = "AZ9Q2M",
             Sender = new LobbyParticipant(senderId, "Host"),
             Recipient = new LobbyParticipant(2, "Friend")
         };

@@ -19,7 +19,7 @@ public sealed class LoginVerificationDialogViewModelTests
         int completions = 0;
         using var model = new LoginVerificationDialogViewModel(client, Pending(),
             _ => completions++);
-        model.Code = "01234567";
+        model.Code = "012345";
         await CommandExecution.ExecuteAsync(model.ConfirmCommand, null);
         await CommandExecution.ExecuteAsync(model.ConfirmCommand, null);
         Assert.AreEqual(1, client.VerificationCalls);
@@ -43,7 +43,7 @@ public sealed class LoginVerificationDialogViewModelTests
         int completions = 0;
         using var model = new LoginVerificationDialogViewModel(client, Pending(),
             _ => completions++);
-        model.Code = "01234567";
+        model.Code = "012345";
         Task running = CommandExecution.ExecuteAsync(model.ConfirmCommand, null);
         model.Dispose();
         response.SetResult(new LoginAttemptResult
@@ -64,7 +64,7 @@ public sealed class LoginVerificationDialogViewModelTests
         int completions = 0;
         using var model = new LoginVerificationDialogViewModel(client, Pending(),
             _ => completions++);
-        model.Code = "01234567";
+        model.Code = "012345";
         await CommandExecution.ExecuteAsync(model.CancelCommand, null);
         Assert.AreEqual(1, completions);
         Assert.AreEqual(1, client.CancellationCalls);

@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging.Abstractions;
 
+using AtariGo.Contracts.Validation;
 using AtariGo.Server.Application.Rooms;
 using AtariGo.Server.Application.Sessions;
 
@@ -10,6 +11,31 @@ namespace AtariGo.Server.Tests.Rooms;
 public sealed class RoomsServiceTests
 {
     private const long SavedGameId = 42;
+
+    [TestMethod]
+    public void CreatePrivateRoom_NewRooms_GeneratesUniqueSixCharacterCodesThatAllowJoining()
+    {
+        RoomsService service = new RoomsService(TimeProvider.System,
+            new SessionConnectionRegistry(), NullLogger<RoomsService>.Instance);
+        HashSet<string> codes = new HashSet<string>(StringComparer.Ordinal);
+        for (int index = 1; index <= 32; index++)
+        {
+            PrivateRoom room = service.CreatePrivateRoom(new LobbyParticipant(index, "Host"),
+                new LobbyConfiguration(1, 0, 30)).Room!;
+
+            Assert.AreEqual(6, room.InvitationCode.Length);
+            Assert.IsTrue(RoomInvitationCodeRules.IsValid(room.InvitationCode));
+            Assert.IsTrue(codes.Add(room.InvitationCode));
+        }
+        PrivateRoom first = service.CreatePrivateRoom(new LobbyParticipant(100, "Host"),
+            new LobbyConfiguration(1, 0, 30)).Room!;
+
+        RoomOperationResult joined = service.JoinRoom(new LobbyParticipant(101, "Opponent"),
+            new RoomLocator(0, first.InvitationCode));
+
+        Assert.AreEqual(RoomOperationStatus.Success, joined.Status);
+        Assert.AreEqual(first.RoomId, joined.Room!.RoomId);
+    }
 
     [TestMethod]
     public async Task ReserveStart_ConcurrentRequests_PublishesOnlyConfirmedGameAsync()

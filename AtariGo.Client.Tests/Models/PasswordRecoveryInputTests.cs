@@ -7,16 +7,17 @@ namespace AtariGo.Client.Tests.Models;
 public sealed class PasswordRecoveryInputTests
 {
     [TestMethod]
-    [DataRow("01234567", true)]
-    [DataRow("00000000", true)]
-    [DataRow("99999999", true)]
+    [DataRow("012345", true)]
+    [DataRow("000000", true)]
+    [DataRow("999999", true)]
     [DataRow("", false)]
+    [DataRow("12345", false)]
     [DataRow("1234567", false)]
-    [DataRow("123456789", false)]
-    [DataRow("１２３４５６７８", false)]
-    [DataRow("1234 678", false)]
-    [DataRow("1234567a", false)]
-    [DataRow("1234567\n", false)]
+    [DataRow("12345678", false)]
+    [DataRow("１２３４５６", false)]
+    [DataRow("12 456", false)]
+    [DataRow("12345a", false)]
+    [DataRow("12345\n", false)]
     public void Validate_CodeFormat_PreservesLeadingZerosAndRejectsNonAscii(string code, bool valid)
     {
         PasswordRecoveryInput input = ValidInput();
@@ -77,7 +78,7 @@ public sealed class PasswordRecoveryInputTests
         return new PasswordRecoveryInput
         {
             Identifier = "Owner",
-            Code = "01234567",
+            Code = "012345",
             NewPassword = " Password9 ",
             Confirmation = " Password9 "
         };

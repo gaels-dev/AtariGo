@@ -11,7 +11,7 @@ internal sealed class StubRoomsClient : IRoomsClient
     } = new RoomSnapshot
     {
         RoomId = 42,
-        InvitationCode = "AABBCCDDEE",
+        InvitationCode = "AZ9Q2M",
         Version = 1,
         Configuration = new RoomConfiguration { CaptureGoal = 2 }
     };

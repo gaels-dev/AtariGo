@@ -15,7 +15,7 @@ public sealed class AuthenticationEmailContentTests
         string subject)
     {
         EmailMessage message = AuthenticationEmailContent.Login.CreateMessage("owner@example.test",
-            "01234567", culture);
+            "012345", culture);
         AssertMessage(message, body, subject);
     }
 
@@ -28,7 +28,7 @@ public sealed class AuthenticationEmailContentTests
         string subject)
     {
         EmailMessage message = AuthenticationEmailContent.Recovery.CreateMessage(
-            "owner@example.test", "01234567", culture);
+            "owner@example.test", "012345", culture);
         AssertMessage(message, body, subject);
     }
 
@@ -36,7 +36,7 @@ public sealed class AuthenticationEmailContentTests
     public void CreateMessage_ExcessiveCulture_UsesEnglishFallback()
     {
         EmailMessage message = AuthenticationEmailContent.Recovery.CreateMessage(
-            "owner@example.test", "01234567", new string('x', 100_000));
+            "owner@example.test", "012345", new string('x', 100_000));
         AssertMessage(message, "Your recovery code", "Password recovery");
     }
 
@@ -45,7 +45,7 @@ public sealed class AuthenticationEmailContentTests
         Assert.AreEqual("owner@example.test", message.Recipient);
         StringAssert.Contains(message.Subject, subject);
         StringAssert.Contains(message.Body, body);
-        StringAssert.Contains(message.Body, "01234567");
+        StringAssert.Contains(message.Body, "012345");
         Assert.IsFalse(message.Body.Contains("{0}", StringComparison.Ordinal));
     }
 }

@@ -2,7 +2,7 @@ namespace AtariGo.Contracts.Validation;
 
 public static class VerificationCodeRules
 {
-    public const int Length = 8;
+    public const int Length = 6;
     public const int LifetimeMinutes = 10;
     public static TimeSpan Lifetime => TimeSpan.FromMinutes(LifetimeMinutes);
 

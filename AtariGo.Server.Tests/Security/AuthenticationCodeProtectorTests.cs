@@ -7,15 +7,36 @@ namespace AtariGo.Server.Tests.Security;
 public sealed class AuthenticationCodeProtectorTests
 {
     private const string LegacyHash =
-        "07DD21B1608634684E89426287BCC831AF61CDE9A01EB47F1C15B7E960124612";
+        "9C21EEE35502E4CBF0C2DFBA1870C282A043C1B23AE366B2A129D415E59C1782";
+
+    [TestMethod]
+    public void CreateCode_NewCodes_ProducesSixAsciiDigitsAndPreservesLeadingZeros()
+    {
+        for (int index = 0; index < 64; index++)
+        {
+            string code = AuthenticationCodeProtector.CreateCode();
+
+            Assert.AreEqual(6, code.Length);
+            foreach (char digit in code)
+            {
+                Assert.IsTrue(char.IsAsciiDigit(digit));
+            }
+        }
+        AuthenticationCodeProtector protector = new AuthenticationCodeProtector(
+            new string('K', 64));
+        AuthenticationCodeScope scope = new AuthenticationCodeScope(1, "TwoFactor", "attempt");
+        string hash = protector.Protect(scope, "000001");
+        Assert.IsTrue(protector.Matches(scope, "000001", hash));
+        Assert.IsFalse(protector.Matches(scope, "00000001", hash));
+    }
 
     [TestMethod]
     public void Protect_RecoveryScope_ProducesLegacyHashAndAcceptsLeadingZero()
     {
         var protector = new AuthenticationCodeProtector(new string('K', 64));
         var scope = new AuthenticationCodeScope(1, "PasswordReset");
-        string hash = protector.Protect(scope, "01234567");
-        bool matches = protector.Matches(scope, "01234567", LegacyHash);
+        string hash = protector.Protect(scope, "012345");
+        bool matches = protector.Matches(scope, "012345", LegacyHash);
         Assert.AreEqual(LegacyHash, hash);
         Assert.IsTrue(matches);
     }
@@ -25,7 +46,7 @@ public sealed class AuthenticationCodeProtectorTests
     {
         var protector = new AuthenticationCodeProtector(new string('K', 64));
         var scope = new AuthenticationCodeScope(1, "TwoFactor", "first-attempt");
-        string hash = protector.Protect(scope, "01234567");
+        string hash = protector.Protect(scope, "012345");
         AuthenticationCodeScope[] otherScopes =
         {
             new AuthenticationCodeScope(2, "TwoFactor", "first-attempt"),
@@ -33,13 +54,14 @@ public sealed class AuthenticationCodeProtectorTests
             new AuthenticationCodeScope(1, "TwoFactor", "second-attempt"),
             new AuthenticationCodeScope(1, "TwoFactor")
         };
-        bool matches = protector.Matches(scope, "01234567", hash);
-        bool[] otherMatches = otherScopes.Select(other => protector.Matches(other, "01234567",
-            hash)).ToArray();
+        bool matches = protector.Matches(scope, "012345", hash);
         Assert.IsTrue(matches);
-        Assert.IsTrue(otherMatches.All(match => !match));
+        foreach (AuthenticationCodeScope other in otherScopes)
+        {
+            Assert.IsFalse(protector.Matches(other, "012345", hash));
+        }
         Assert.IsFalse(protector.Matches(new AuthenticationCodeScope(1, "TwoFactor"),
-            "01234567", LegacyHash));
+            "012345", LegacyHash));
     }
 
     [TestMethod]
@@ -48,18 +70,19 @@ public sealed class AuthenticationCodeProtectorTests
         var protector = new AuthenticationCodeProtector(new string('K', 64));
         var first = new AuthenticationCodeScope(1, "TwoFactor", "x:y");
         var second = new AuthenticationCodeScope(1, "TwoFactor:x", "y");
-        string firstHash = protector.Protect(first, "01234567");
-        string secondHash = protector.Protect(second, "01234567");
+        string firstHash = protector.Protect(first, "012345");
+        string secondHash = protector.Protect(second, "012345");
         Assert.AreNotEqual(firstHash, secondHash);
-        Assert.IsFalse(protector.Matches(second, "01234567", firstHash));
+        Assert.IsFalse(protector.Matches(second, "012345", firstHash));
     }
 
     [TestMethod]
-    [DataRow("1234567")]
-    [DataRow("012345678")]
-    [DataRow("１２３４５６７８")]
-    [DataRow("1234abcd")]
-    [DataRow("00000000")]
+    [DataRow("12345")]
+    [DataRow("0123456")]
+    [DataRow("01234567")]
+    [DataRow("１２３４５６")]
+    [DataRow("123abc")]
+    [DataRow("000000")]
     public void Matches_InvalidOrIncorrectCode_RejectsCode(string code)
     {
         var protector = new AuthenticationCodeProtector(new string('K', 64));

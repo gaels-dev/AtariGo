@@ -22,7 +22,7 @@ public sealed class GrpcAuthenticationClientTests
         };
         var client = new GrpcAuthenticationClient(connection.CallInvoker.Intercept(interceptor));
         using var cancellation = new CancellationTokenSource();
-        LoginAttemptResult result = await client.VerifyLoginCodeAsync("pending-token", "01234567",
+        LoginAttemptResult result = await client.VerifyLoginCodeAsync("pending-token", "012345",
             cancellation.Token);
         Assert.AreEqual(LoginAttemptStatus.Unconfirmed, result.Status);
         Assert.AreEqual(1, interceptor.Calls);

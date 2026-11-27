@@ -382,7 +382,7 @@ public sealed class RoomInvitationsViewModelTests
         {
             InvitationId = 7,
             RoomId = 42,
-            RoomCode = "ROOMCODE",
+            RoomCode = "ROOM12",
             SenderName = "Host",
             RecipientName = "Friend",
             State = RoomInvitationState.Pending

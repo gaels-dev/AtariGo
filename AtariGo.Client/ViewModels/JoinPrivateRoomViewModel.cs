@@ -1,9 +1,11 @@
+using System.Globalization;
 using System.Windows.Input;
 
 using AtariGo.Client.Commands;
 using AtariGo.Client.Models;
 using AtariGo.Client.Services;
 using AtariGo.Contracts;
+using AtariGo.Contracts.Validation;
 
 namespace AtariGo.Client.ViewModels
 {
@@ -84,11 +86,19 @@ namespace AtariGo.Client.ViewModels
                 return;
             }
 
+            string normalizedCode = RoomCode.Trim().ToUpperInvariant();
+            if (!RoomInvitationCodeRules.IsValid(normalizedCode))
+            {
+                string message = AuthenticationMessages.GetText("JoinPrivateRoom_Err_InvalidCode");
+                ErrorMessage = string.Format(CultureInfo.CurrentCulture, message,
+                    RoomInvitationCodeRules.GeneratedLength);
+                return;
+            }
             ErrorMessage = string.Empty;
 
             CancellationToken cancellationToken = _lifetimeCancellation.Token;
             JoinRoomResponse joined = await _roomsClient.JoinRoomAsync(
-                RoomCode.Trim(), cancellationToken);
+                normalizedCode, cancellationToken);
             cancellationToken.ThrowIfCancellationRequested();
             _navigationService.NavigateToPrivateRoomLobby(
                 new PrivateRoomNavigationContext(joined.Room, joined.AssignedParticipant.IsHost));

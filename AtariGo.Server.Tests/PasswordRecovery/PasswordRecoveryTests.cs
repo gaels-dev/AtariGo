@@ -61,10 +61,10 @@ public sealed class PasswordRecoveryTests
             CodeType = "PasswordReset",
             CreatedAt = now,
             ExpiresAt = now.AddMinutes(10),
-            CodeHash = "07DD21B1608634684E89426287BCC831AF61CDE9A01EB47F1C15B7E960124612"
+            CodeHash = "9C21EEE35502E4CBF0C2DFBA1870C282A043C1B23AE366B2A129D415E59C1782"
         });
         await context.SaveChangesAsync();
-        PasswordRecoveryResponse result = await host.ResetAsync(host.CreateReset("01234567"));
+        PasswordRecoveryResponse result = await host.ResetAsync(host.CreateReset("012345"));
         Assert.AreEqual(RecoveryStatus.Reset, result.Status);
         Assert.AreEqual(0, host.Email.Codes.Count);
         Assert.IsNotNull(await context.AuthenticationCodes.AsNoTracking()
@@ -146,7 +146,7 @@ public sealed class PasswordRecoveryTests
         Assert.IsTrue(codes.All(row => row.ExpiresAt - row.CreatedAt == TimeSpan.FromMinutes(10)));
         Assert.IsNotNull(codes.Last().UsedAt);
         Assert.IsTrue(codes.All(row => row.CodeHash.Length == 64 && row.CodeHash != first));
-        Assert.AreEqual(8, first.Length);
+        Assert.AreEqual(6, first.Length);
         Assert.IsTrue(first.All(char.IsAsciiDigit));
     }
 

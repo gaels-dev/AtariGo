@@ -10,7 +10,7 @@ public sealed class AuthenticationCodeProtector
 {
     public const int CodeLength = VerificationCodeRules.Length;
     private const int MinimumKeyBytes = 32;
-    private const int CodeUpperBound = 100_000_000;
+    private const int CodeUpperBound = 1_000_000;
     private readonly string _key;
 
     public AuthenticationCodeProtector(string key)

@@ -13,9 +13,17 @@ se mantiene en `Credentials.PasswordHash VARCHAR(255)` y no se recorta ni se rec
 por esta actualización.
 
 `GamePlayers.GuestName` admite 21 unidades, incluyendo `Guest-` y hasta 15 de nombre.
-`Rooms.InvitationCode` admite los 10 caracteres hexadecimales generados por el servidor.
+`Rooms.InvitationCode` conserva capacidad de 10 caracteres para los registros históricos.
+Las salas nuevas generan códigos de 6 caracteres con `A`–`Z` y `0`–`9`, mediante un generador
+criptográfico y con comprobación de colisiones. La entrada de salas acepta solo ese formato;
+los códigos históricos no se reactivan ni se modifican. No se requiere una actualización SQL.
 `Sessions.SessionTokenHash` y `AuthenticationCodes.CodeHash` usan `CHAR(64)`, conforme a
 la representación hexadecimal SHA-256 y HMAC-SHA-256 actual. Los demás tamaños se conservan.
+
+La verificación de acceso y recuperación por correo genera y valida códigos de 6 dígitos
+ASCII, incluidos ceros iniciales. El hash sigue ocupando 64 caracteres y se conservan los
+plazos y límites de intentos. Los códigos anteriores de 8 dígitos no se aceptan; se debe
+solicitar un correo nuevo después de actualizar cliente y servidor.
 
 Para la BD existente se entrega `Update-TextFieldLimits.sql` como archivo local, excluido de
 Git y sin referencias en los proyectos o pruebas. Detener el servidor y ejecutarlo completo

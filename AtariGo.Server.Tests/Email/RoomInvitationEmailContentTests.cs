@@ -19,7 +19,7 @@ public sealed class RoomInvitationEmailContentTests
         // Arrange
         var invitation = new RoomInvitationEntry(1, 42, DateTimeOffset.MaxValue)
         {
-            RoomCode = "ABCDEF1234",
+            RoomCode = "AZ9Q2M",
             Sender = new LobbyParticipant(1, "Host"),
             Recipient = new LobbyParticipant(2, "Friend")
         };
@@ -31,7 +31,7 @@ public sealed class RoomInvitationEmailContentTests
         // Assert
         Assert.AreEqual("friend@example.test", message.Recipient);
         StringAssert.Contains(message.Body, "Host");
-        StringAssert.Contains(message.Body, "ABCDEF1234");
+        StringAssert.Contains(message.Body, "AZ9Q2M");
         StringAssert.Contains(message.Body, expected);
         Assert.IsFalse(message.Body.Contains("{0}", StringComparison.Ordinal));
     }

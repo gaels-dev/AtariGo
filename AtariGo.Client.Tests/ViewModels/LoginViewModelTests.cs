@@ -122,7 +122,7 @@ namespace AtariGo.Client.Tests.ViewModels
             Assert.IsInstanceOfType<LoginVerificationDialogViewModel>(model.CurrentDialogViewModel);
             LoginVerificationDialogViewModel verification =
                 (LoginVerificationDialogViewModel)model.CurrentDialogViewModel;
-            verification.Code = "01234567";
+            verification.Code = "012345";
             await CommandExecution.ExecuteAsync(verification.ConfirmCommand, null);
 
             RecordingNavigationProxy recorder = (RecordingNavigationProxy)navigation;

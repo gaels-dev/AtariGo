@@ -23,7 +23,7 @@ public sealed class PasswordRecoveryDialogViewModelTests
         using var model = new PasswordRecoveryDialogViewModel(client, navigation);
         model.Identifier = "Owner";
         await CommandExecution.ExecuteAsync(model.RequestCommand, null);
-        model.Code = "12345678";
+        model.Code = "123456";
         PasswordRecoveryInput input = CreateInput();
         await CommandExecution.ExecuteAsync(model.ResetCommand, input);
         await CommandExecution.ExecuteAsync(model.ResetCommand, CreateInput());
@@ -49,7 +49,7 @@ public sealed class PasswordRecoveryDialogViewModelTests
         using var model = new PasswordRecoveryDialogViewModel(client, navigation);
         model.Identifier = "Owner";
         await CommandExecution.ExecuteAsync(model.RequestCommand, null);
-        model.Code = "12345678";
+        model.Code = "123456";
         PasswordRecoveryInput input = CreateInput();
         Task command = CommandExecution.ExecuteAsync(model.ResetCommand, input);
         string previous = model.StatusMessage;
@@ -70,7 +70,7 @@ public sealed class PasswordRecoveryDialogViewModelTests
         return new PasswordRecoveryInput
         {
             Identifier = "Owner",
-            Code = "12345678",
+            Code = "123456",
             NewPassword = " NewPassword9 ",
             Confirmation = " NewPassword9 "
         };

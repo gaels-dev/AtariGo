@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 
+using AtariGo.Contracts.Validation;
 using AtariGo.Server.Application.Email;
 
 namespace AtariGo.Server.Tests.PasswordRecovery;
@@ -39,7 +40,9 @@ internal sealed class RecordingEmailSender : IEmailSender
     {
         LastMessage = message;
         Assert.AreEqual(ExpectedRecipient, message.Recipient);
-        Match code = Regex.Match(message.Body, @"(?<!\d)[0-9]{8}(?!\d)");
+        string pattern = FormattableString.Invariant(
+            $@"(?<!\d)[0-9]{{{VerificationCodeRules.Length}}}(?!\d)");
+        Match code = Regex.Match(message.Body, pattern);
         Assert.IsTrue(code.Success);
         LastAttemptedCode = code.Value;
         bool failDelivery = FailDelivery;

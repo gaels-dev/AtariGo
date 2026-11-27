@@ -11,7 +11,7 @@ public sealed class RoomsService : IRoomsService
     private const int DefaultCaptureGoal = 1;
     private const int IntermediateCaptureGoal = 3;
     private const int ExtendedCaptureGoal = 5;
-    private const int InvitationCodeByteCount = RoomInvitationCodeRules.Length / 2;
+    private const string InvitationCodeAlphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     private const int InvitationLifetimeMinutes = 2;
     private const int RoomLifetimeHours = 1;
 
@@ -668,7 +668,12 @@ public sealed class RoomsService : IRoomsService
         }
         else
         {
-            _codes.TryGetValue(locator.InvitationCode.Trim(), out entry);
+            string code = locator.InvitationCode.Trim();
+            if (!RoomInvitationCodeRules.IsValid(code))
+            {
+                return null;
+            }
+            _codes.TryGetValue(code, out entry);
         }
 
         return entry;
@@ -679,7 +684,8 @@ public sealed class RoomsService : IRoomsService
         string code;
         do
         {
-            code = Convert.ToHexString(RandomNumberGenerator.GetBytes(InvitationCodeByteCount));
+            code = RandomNumberGenerator.GetString(InvitationCodeAlphabet,
+                RoomInvitationCodeRules.GeneratedLength);
         }
         while (_codes.ContainsKey(code));
 

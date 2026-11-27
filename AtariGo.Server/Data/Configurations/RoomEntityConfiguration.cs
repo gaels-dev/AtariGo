@@ -19,7 +19,7 @@ public sealed class RoomEntityConfiguration : IEntityTypeConfiguration<Room>
             .HasDefaultValueSql("(sysutcdatetime())", "DF_Rooms_CreatedAt");
         entity.Property(room => room.ExpiresAt).HasPrecision(0);
         entity.Property(room => room.InvitationCode)
-            .HasMaxLength(RoomInvitationCodeRules.Length)
+            .HasMaxLength(RoomInvitationCodeRules.MaximumLength)
             .IsUnicode(false);
         entity.Property(room => room.State)
             .HasMaxLength(20)
