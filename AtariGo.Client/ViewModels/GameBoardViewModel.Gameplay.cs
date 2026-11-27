@@ -111,8 +111,6 @@ public partial class GameBoardViewModel
         GetLocalizedMessage("GameBoard_Lbl_CapturesStatus"),
         BlackCaptures, WhiteCaptures, TargetCaptures);
 
-    public string ReturnToMenuLabel => GetLocalizedMessage("GameBoard_Button_ReturnToMenu");
-
     public string BlackTimeLabel => GetLocalizedMessage("GameBoard_Clock_Black");
 
     public string WhiteTimeLabel => GetLocalizedMessage("GameBoard_Clock_White");
@@ -247,7 +245,7 @@ public partial class GameBoardViewModel
 
     private void OnGameEndDialogClosed(bool? result)
     {
-        ReturnToMainMenu();
+        LeaveGameCommand.Execute(null);
     }
 
     private string GetGameplayStatus(GameSessionSnapshot snapshot)
@@ -505,6 +503,17 @@ public partial class GameBoardViewModel
                 ? "Connection_Err_SessionExpired" : "Connection_Err_RequestFailed";
             SessionStatusMessage = GetLocalizedMessage(key) + " "
                 + GetLocalizedMessage("GameBoard_Connection_Closed");
+        }
+        ShowClosedConnectionDialog();
+    }
+
+    private void ShowClosedConnectionDialog()
+    {
+        if (!_hasShownGameEndDialog)
+        {
+            _hasShownGameEndDialog = true;
+            ShowResultDialog(GetLocalizedMessage("GameBoard_Connection_ClosedTitle"),
+                SessionStatusMessage);
         }
     }
 }

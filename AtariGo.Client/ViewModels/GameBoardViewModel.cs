@@ -412,6 +412,7 @@ namespace AtariGo.Client.ViewModels
                     "GameBoard_Status_ConnectionFailed") + " "
                     + GetLocalizedMessage("GameBoard_Connection_Closed");
                 NotifyGameplayAvailability();
+                ShowClosedConnectionDialog();
                 return;
             }
             SessionStatusMessage = GetLocalizedMessage("GameBoard_Status_Connecting");

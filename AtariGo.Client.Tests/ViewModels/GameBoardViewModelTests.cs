@@ -220,15 +220,18 @@ public sealed partial class GameBoardViewModelTests
         stream.Fail(new RpcException(new Status(status, "Simulated permanent failure.")));
         bool HasPermanentExit()
         {
-            return stream.IsDisposed && model.CanLeaveGame && !model.CanSurrender;
+            return stream.IsDisposed && model.CanLeaveGame && !model.CanSurrender
+                && recorded.OpenedDialog is GameOverDialogViewModel;
         }
         await WaitUntilAsync(HasPermanentExit);
-        model.LeaveGameCommand.Execute(null);
-        model.LeaveGameCommand.Execute(null);
+        GameOverDialogViewModel dialog = (GameOverDialogViewModel)recorded.OpenedDialog!;
+        Assert.AreEqual(model.SessionStatusMessage, dialog.Message);
+        dialog.AcceptCommand.Execute(null);
+        dialog.AcceptCommand.Execute(null);
         // Assert
         Assert.AreEqual(1, recorded.Calls.Count(
             call => call == nameof(INavigationService.NavigateToMainMenu)));
-        Assert.IsNull(recorded.OpenedDialog);
+        Assert.AreSame(dialog, recorded.OpenedDialog);
         Assert.AreEqual(0, stream.Sent.Count);
         Assert.IsFalse(model.IsMyTurn);
         Assert.IsFalse(model.CanSurrender);
@@ -245,9 +248,14 @@ public sealed partial class GameBoardViewModelTests
         INavigationService navigation = DispatchProxy.Create<INavigationService,
             RecordingNavigationProxy>();
         using GameBoardViewModel model = OpenModel(client, navigation);
-        await WaitUntilAsync(() => client.ConnectCount == 1 && model.CanLeaveGame);
+        RecordingNavigationProxy recorded = (RecordingNavigationProxy)navigation;
+        bool HasClosedConnectionDialog()
+        {
+            return client.ConnectCount == 1 && recorded.OpenedDialog is GameOverDialogViewModel;
+        }
+        await WaitUntilAsync(HasClosedConnectionDialog);
         // Act
-        model.LeaveGameCommand.Execute(null);
+        ((GameOverDialogViewModel)recorded.OpenedDialog!).AcceptCommand.Execute(null);
         // Assert
         Assert.AreEqual(1, client.ConnectCount);
         Assert.IsTrue(((RecordingNavigationProxy)navigation).Calls.Contains(
@@ -455,7 +463,9 @@ public sealed partial class GameBoardViewModelTests
         using GameBoardViewModel model = OpenModel(null, navigation);
         bool couldLeave = model.CanLeaveGame;
         // Act
-        model.LeaveGameCommand.Execute(null);
+        RecordingNavigationProxy recorded = (RecordingNavigationProxy)navigation;
+        GameOverDialogViewModel dialog = (GameOverDialogViewModel)recorded.OpenedDialog!;
+        dialog.AcceptCommand.Execute(null);
         // Assert
         Assert.IsTrue(couldLeave);
         Assert.IsTrue(((RecordingNavigationProxy)navigation).Calls.Contains(
