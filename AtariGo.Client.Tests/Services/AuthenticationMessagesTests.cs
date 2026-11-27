@@ -10,6 +10,33 @@ namespace AtariGo.Client.Tests.Services;
 public sealed class AuthenticationMessagesTests
 {
     [TestMethod]
+    [DataRow("es", "Esta cuenta ya está conectada en otro cliente. "
+        + "Cierra sesión allí antes de ingresar aquí.")]
+    [DataRow("en", "This account is already connected in another client. "
+        + "Sign out there before signing in here.")]
+    [DataRow("de", "Dieses Konto ist bereits in einem anderen Client verbunden. "
+        + "Melde dich dort ab, bevor du dich hier anmeldest.")]
+    public void GetMessage_AlreadySignedIn_ExplainsHowToAccessInSelectedLanguage(
+        string culture, string expected)
+    {
+        CultureInfo previous = CultureInfo.CurrentUICulture;
+        CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo(culture);
+        try
+        {
+            string message = AuthenticationMessages.GetMessage(new LoginAttemptResult
+            {
+                Status = LoginAttemptStatus.AlreadySignedIn
+            });
+
+            Assert.AreEqual(expected, message);
+        }
+        finally
+        {
+            CultureInfo.CurrentUICulture = previous;
+        }
+    }
+
+    [TestMethod]
     [DataRow("es")]
     [DataRow("en")]
     [DataRow("de")]

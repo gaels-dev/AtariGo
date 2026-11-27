@@ -987,6 +987,7 @@
   <data name="LoginVerification_Result_TemporarilyLocked" xml:space="preserve"><value>Die Anmeldung ist wegen fehlgeschlagener Versuche vorübergehend gesperrt.</value></data>
   <data name="LoginVerification_Result_DeliveryFailed" xml:space="preserve"><value>Der Code-Versand konnte nicht abgeschlossen werden. Fordere einen neuen an oder melde dich erneut an.</value></data>
   <data name="LoginVerification_Result_RateLimited" xml:space="preserve"><value>Du hast mehrere Anfragen kurz hintereinander gestellt. Warte vor dem nächsten Versuch.</value></data>
+  <data name="LoginVerification_Result_AlreadySignedIn" xml:space="preserve"><value>Dieses Konto ist bereits in einem anderen Client verbunden. Melde dich dort ab, bevor du dich hier anmeldest.</value></data>
   <data name="LoginVerification_Result_Unavailable" xml:space="preserve"><value>Die Anmeldung konnte gerade nicht abgeschlossen werden. Versuche es später erneut.</value></data>
   <data name="LoginVerification_Result_Unconfirmed" xml:space="preserve"><value>Das Ergebnis konnte nicht bestätigt werden. Prüfe beim Anfordern deine E-Mails. Beginne nach einer unbestätigten Anmeldung erneut.</value></data>
   <data name="RoomInvitations_Btn_SendEmail" xml:space="preserve">

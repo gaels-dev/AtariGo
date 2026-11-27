@@ -22,17 +22,17 @@ public sealed class FriendshipsServiceTests
         await using AtariGoDbContext context = database.CreateContext();
         await SeedFriendshipsAsync(context);
         using var mutations = new FriendMutationCoordinator();
-        var registry = new SessionConnectionRegistry();
+        using var registry = new SessionConnectionRegistry();
         using SessionConnectionLease host = registry.Register(
             new SessionConnectionInfo(1, 1, "Host")
             {
                 Friends = new[] { new FriendPresenceEntry(2, "GuestPlayer", false) }
-            });
+            })!;
         using SessionConnectionLease guest = registry.Register(
             new SessionConnectionInfo(2, 2, "GuestPlayer")
             {
                 Friends = new[] { new FriendPresenceEntry(1, "Host", true) }
-            });
+            })!;
         while (host.OutboundEvents.Reader.TryRead(out _))
         {
         }

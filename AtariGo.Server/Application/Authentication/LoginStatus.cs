@@ -12,5 +12,6 @@ public enum LoginStatus
     TemporarilyLocked,
     DeliveryFailed,
     RateLimited,
-    Unavailable
+    Unavailable,
+    AlreadySignedIn
 }

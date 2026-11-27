@@ -23,6 +23,7 @@ public sealed class AuthenticationGrpcService : Authentication.AuthenticationBas
             [LoginStatus.TemporarilyLocked] = LoginResult.TemporarilyLocked,
             [LoginStatus.DeliveryFailed] = LoginResult.DeliveryFailed,
             [LoginStatus.RateLimited] = LoginResult.RateLimited,
+            [LoginStatus.AlreadySignedIn] = LoginResult.AlreadySignedIn,
             [LoginStatus.Unavailable] = LoginResult.Unavailable
         };
     private readonly IAuthenticationService _authentication;

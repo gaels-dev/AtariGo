@@ -13,5 +13,6 @@ public enum LoginAttemptStatus
     DeliveryFailed,
     RateLimited,
     Unavailable,
-    Unconfirmed
+    Unconfirmed,
+    AlreadySignedIn
 }

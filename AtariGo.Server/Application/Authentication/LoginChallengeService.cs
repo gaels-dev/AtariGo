@@ -98,6 +98,13 @@ public sealed class LoginChallengeService
         ArgumentNullException.ThrowIfNull(command);
         string hash = GetTokenHash(command.ChallengeToken);
         using AsyncOperationLease lease = await _pending.EnterAsync(hash, cancellationToken);
+        PendingLogin? pending = _pending.Find(hash);
+        if (pending is null)
+        {
+            return new LoginOperationResult(LoginStatus.InvalidChallenge);
+        }
+        using AsyncOperationLease access = await _attempts.EnterSessionAccessAsync(pending.UserId,
+            cancellationToken);
         _dbContext.ChangeTracker.Clear();
         await using IDbContextTransaction transaction = await _dbContext.Database
             .BeginTransactionAsync(cancellationToken);
@@ -226,7 +233,7 @@ public sealed class LoginChallengeService
             await _attempts.RegisterFailureAsync(context.User, cancellationToken);
             return CreateFailureResult(context);
         }
-        return CreateSession(context);
+        return await CreateSessionAsync(context, cancellationToken);
     }
 
     private LoginOperationResult CreateFailureResult(PendingLoginContext context)
@@ -245,11 +252,17 @@ public sealed class LoginChallengeService
         };
     }
 
-    private LoginOperationResult CreateSession(PendingLoginContext context)
+    private async Task<LoginOperationResult> CreateSessionAsync(PendingLoginContext context,
+        CancellationToken cancellationToken)
     {
         Credential credential = context.User.Credential
             ?? throw new InvalidOperationException("Account credentials are required.");
         DateTime now = _attempts.UtcNow;
+        await _dbContext.Sessions.Where(session => session.UserId == context.User.UserId
+            && session.State == DatabaseValues.SessionStates.Active)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(session => session.State, DatabaseValues.SessionStates.Revoked),
+                cancellationToken);
         Close(context);
         credential.FailedAttempts = 0;
         credential.LockedUntil = null;

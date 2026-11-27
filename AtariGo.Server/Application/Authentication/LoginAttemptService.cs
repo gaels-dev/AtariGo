@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 
+using AtariGo.Server.Application.Sessions;
+using AtariGo.Server.Concurrency;
 using AtariGo.Server.Data;
 using AtariGo.Server.Data.Entities;
 
@@ -9,13 +11,17 @@ public sealed class LoginAttemptService
 {
     private readonly AtariGoDbContext _dbContext;
     private readonly TimeProvider _timeProvider;
+    private readonly ISessionConnectionRegistry _connections;
 
-    public LoginAttemptService(AtariGoDbContext dbContext, TimeProvider timeProvider)
+    public LoginAttemptService(AtariGoDbContext dbContext, TimeProvider timeProvider,
+        ISessionConnectionRegistry connections)
     {
         ArgumentNullException.ThrowIfNull(dbContext);
         ArgumentNullException.ThrowIfNull(timeProvider);
+        ArgumentNullException.ThrowIfNull(connections);
         _dbContext = dbContext;
         _timeProvider = timeProvider;
+        _connections = connections;
     }
 
     public DateTime UtcNow =>
@@ -61,8 +67,18 @@ public sealed class LoginAttemptService
                 RetryAt = sanction.EndsAt
             };
         }
-        return user.State == DatabaseValues.AccountStates.Active
-            ? null : new LoginOperationResult(LoginStatus.AccountRestricted);
+        if (user.State != DatabaseValues.AccountStates.Active)
+        {
+            return new LoginOperationResult(LoginStatus.AccountRestricted);
+        }
+        return _connections.IsUserConnected(user.UserId)
+            ? new LoginOperationResult(LoginStatus.AlreadySignedIn) : null;
+    }
+
+    public Task<AsyncOperationLease> EnterSessionAccessAsync(int userId,
+        CancellationToken cancellationToken)
+    {
+        return _connections.EnterAccessAsync(userId, cancellationToken);
     }
 
     public async Task RegisterFailureAsync(User user, CancellationToken cancellationToken)

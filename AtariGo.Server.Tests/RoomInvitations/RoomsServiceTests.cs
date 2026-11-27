@@ -213,7 +213,7 @@ public sealed class RoomsServiceTests
         return registry.Register(new SessionConnectionInfo(userId, userId, "Player")
         {
             Friends = Array.Empty<FriendPresenceEntry>()
-        });
+        })!;
     }
 
     private static PrivateRoom CreateRoom(RoomsService rooms)

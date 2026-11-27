@@ -1,29 +1,55 @@
 using System.Collections.Concurrent;
 
 using AtariGo.Contracts;
+using AtariGo.Server.Concurrency;
 
 namespace AtariGo.Server.Application.Sessions;
 
-public sealed class SessionConnectionRegistry : ISessionConnectionRegistry
+public sealed class SessionConnectionRegistry : ISessionConnectionRegistry, IDisposable,
+    IAsyncDisposable
 {
     internal const int MaximumQueuedEvents = 128;
+    private const int AccessGateCount = 64;
 
+    private readonly AsyncOperationGate _accessGate = new AsyncOperationGate(AccessGateCount);
     private readonly ConcurrentDictionary<int, SessionConnectionLease> _connections =
         new ConcurrentDictionary<int, SessionConnectionLease>();
     private readonly object _registryLock = new object();
 
-    public SessionConnectionLease Register(SessionConnectionInfo connectionInfo)
+    public Task<AsyncOperationLease> EnterAccessAsync(int userId,
+        CancellationToken cancellationToken)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(userId);
+        return _accessGate.AcquireAsync(userId, cancellationToken);
+    }
+
+    public SessionConnectionLease? Register(SessionConnectionInfo connectionInfo)
     {
         ArgumentNullException.ThrowIfNull(connectionInfo);
-        var connection = new SessionConnectionLease(connectionInfo);
 
         lock (_registryLock)
         {
+            if (_connections.TryGetValue(connectionInfo.UserId,
+                out SessionConnectionLease? current)
+                && current.ConnectionInfo.SessionId != connectionInfo.SessionId)
+            {
+                return null;
+            }
+            var connection = new SessionConnectionLease(connectionInfo);
             ReplaceConnection(connection);
             NotifyFriends(connection, isOnline: true);
+            return connection;
         }
+    }
 
-        return connection;
+    public void Dispose()
+    {
+        _accessGate.Dispose();
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        return _accessGate.DisposeAsync();
     }
 
     public IReadOnlyList<FriendPresenceEntry> CreatePresenceSnapshot(

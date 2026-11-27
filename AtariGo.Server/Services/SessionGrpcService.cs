@@ -43,10 +43,22 @@ public sealed class SessionGrpcService : Session.SessionBase
             throw SessionRequestAuthentication.CreateUnauthenticatedException();
         }
 
-        SessionConnectionLease connection = _connectionRegistry.Register(info);
+        using AsyncOperationLease access = await _connectionRegistry.EnterAccessAsync(info.UserId,
+            cancellationToken);
+        SessionIdentity? identity = await _sessionService.ValidateSessionAsync(sessionToken,
+            cancellationToken);
+        if (identity is null)
+        {
+            throw SessionRequestAuthentication.CreateUnauthenticatedException();
+        }
+        SessionConnectionLease? connection = _connectionRegistry.Register(info);
+        if (connection is null)
+        {
+            throw SessionRequestAuthentication.CreateUnauthenticatedException();
+        }
         try
         {
-            SessionIdentity? identity = await _sessionService.ValidateSessionAsync(sessionToken,
+            identity = await _sessionService.ValidateSessionAsync(sessionToken,
                 cancellationToken);
             if (identity is null)
             {

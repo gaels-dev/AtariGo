@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 using AtariGo.Server.Application.Authentication;
 using AtariGo.Server.Application.Email;
 using AtariGo.Server.Application.PasswordRecovery;
+using AtariGo.Server.Application.Sessions;
 using AtariGo.Server.Data;
 using AtariGo.Server.Data.Entities;
 using AtariGo.Server.Security;
@@ -34,7 +35,8 @@ public sealed class AuthenticationServiceTests
         await SeedAsync(context, user);
         using var pending = new PendingLoginStore(TimeProvider.System,
             Options.Create(new LoginVerificationOptions()));
-        AuthenticationService service = CreateService(context, pending);
+        using var connections = new SessionConnectionRegistry();
+        AuthenticationService service = CreateService(context, pending, connections);
         LoginOperationResult result = await service.LoginAsync(new LoginCommand
         {
             Identifier = user.UserName,
@@ -68,7 +70,8 @@ public sealed class AuthenticationServiceTests
         await SeedAsync(context, user);
         using var pending = new PendingLoginStore(TimeProvider.System,
             Options.Create(new LoginVerificationOptions()));
-        AuthenticationService service = CreateService(context, pending);
+        using var connections = new SessionConnectionRegistry();
+        AuthenticationService service = CreateService(context, pending, connections);
         LoginOperationResult result = await service.LoginAsync(new LoginCommand
         {
             Identifier = user.Email,
@@ -97,10 +100,10 @@ public sealed class AuthenticationServiceTests
     }
 
     private static AuthenticationService CreateService(AtariGoDbContext context,
-        PendingLoginStore pending)
+        PendingLoginStore pending, SessionConnectionRegistry connections)
     {
         TimeProvider time = TimeProvider.System;
-        var attempts = new LoginAttemptService(context, time);
+        var attempts = new LoginAttemptService(context, time, connections);
         IOptions<PasswordRecoveryOptions> recovery = Options.Create(new PasswordRecoveryOptions
         {
             HmacKey = new string('K', 64)

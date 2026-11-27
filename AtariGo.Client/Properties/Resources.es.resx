@@ -987,6 +987,7 @@
   <data name="LoginVerification_Result_TemporarilyLocked" xml:space="preserve"><value>El acceso está bloqueado temporalmente por intentos fallidos.</value></data>
   <data name="LoginVerification_Result_DeliveryFailed" xml:space="preserve"><value>No pudimos completar el envío del código. Solicita otro o vuelve a iniciar sesión.</value></data>
   <data name="LoginVerification_Result_RateLimited" xml:space="preserve"><value>Has hecho varias solicitudes seguidas. Espera antes de intentarlo de nuevo.</value></data>
+  <data name="LoginVerification_Result_AlreadySignedIn" xml:space="preserve"><value>Esta cuenta ya está conectada en otro cliente. Cierra sesión allí antes de ingresar aquí.</value></data>
   <data name="LoginVerification_Result_Unavailable" xml:space="preserve"><value>No pudimos completar el inicio de sesión en este momento. Inténtalo más tarde.</value></data>
   <data name="LoginVerification_Result_Unconfirmed" xml:space="preserve"><value>No se pudo confirmar el resultado. Revisa tu correo si pedías un código. Si confirmabas el acceso, vuelve e inicia de nuevo.</value></data>
   <data name="RoomInvitations_Btn_SendEmail" xml:space="preserve">

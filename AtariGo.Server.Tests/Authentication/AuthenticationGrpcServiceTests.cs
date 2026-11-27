@@ -13,7 +13,7 @@ namespace AtariGo.Server.Tests.Authentication;
 [TestClass]
 [TestCategory("Integration")]
 [TestCategory("SqlServer")]
-public sealed class AuthenticationGrpcServiceTests
+public sealed partial class AuthenticationGrpcServiceTests
 {
     [TestMethod]
     public async Task Login_ExistingSchema_CompletesWithoutAddingTablesOrColumnsAsync()

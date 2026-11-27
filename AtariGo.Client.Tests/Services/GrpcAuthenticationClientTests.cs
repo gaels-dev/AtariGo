@@ -12,6 +12,44 @@ namespace AtariGo.Client.Tests.Services;
 public sealed class GrpcAuthenticationClientTests
 {
     [TestMethod]
+    public async Task LoginAsync_AlreadySignedIn_ReportsRejectionWithoutSessionTokenAsync()
+    {
+        using var connection = new GrpcClientConnection(new Uri("https://localhost:7061"));
+        var interceptor = new LoginResponseInterceptor
+        {
+            Response = Task.FromResult(new LoginResponse
+            {
+                Result = LoginResult.AlreadySignedIn
+            })
+        };
+        var client = new GrpcAuthenticationClient(connection.CallInvoker.Intercept(interceptor));
+
+        LoginAttemptResult result = await client.LoginAsync("Player", "Secret8");
+
+        Assert.AreEqual(LoginAttemptStatus.AlreadySignedIn, result.Status);
+        Assert.AreEqual(string.Empty, result.SessionToken);
+        Assert.AreEqual(1, interceptor.Calls);
+    }
+
+    [TestMethod]
+    [DataRow(LoginResult.Unspecified)]
+    [DataRow((LoginResult)999)]
+    public async Task LoginAsync_UnknownResult_DoesNotAuthorizeAccessAsync(LoginResult status)
+    {
+        using var connection = new GrpcClientConnection(new Uri("https://localhost:7061"));
+        var interceptor = new LoginResponseInterceptor
+        {
+            Response = Task.FromResult(new LoginResponse { Result = status })
+        };
+        var client = new GrpcAuthenticationClient(connection.CallInvoker.Intercept(interceptor));
+
+        LoginAttemptResult result = await client.LoginAsync("Player", "Secret8");
+
+        Assert.AreNotEqual(LoginAttemptStatus.Success, result.Status);
+        Assert.AreEqual(string.Empty, result.SessionToken);
+    }
+
+    [TestMethod]
     public async Task VerifyLoginCodeAsync_LostResponse_ClearsSecretsAndDoesNotRetryAsync()
     {
         using var connection = new GrpcClientConnection(new Uri("https://localhost:7061"));

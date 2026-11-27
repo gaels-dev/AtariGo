@@ -22,6 +22,7 @@ public sealed class GrpcAuthenticationClient : IAuthenticationClient
             [LoginResult.TemporarilyLocked] = LoginAttemptStatus.TemporarilyLocked,
             [LoginResult.DeliveryFailed] = LoginAttemptStatus.DeliveryFailed,
             [LoginResult.RateLimited] = LoginAttemptStatus.RateLimited,
+            [LoginResult.AlreadySignedIn] = LoginAttemptStatus.AlreadySignedIn,
             [LoginResult.Unavailable] = LoginAttemptStatus.Unavailable,
             [LoginResult.Unconfirmed] = LoginAttemptStatus.Unconfirmed
         };

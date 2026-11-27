@@ -11,17 +11,17 @@ public sealed class SessionNameUpdateTests
     public void UpdateUserName_ConnectedFriend_NotifiesAndUpdatesSnapshot()
     {
         // Arrange
-        SessionConnectionRegistry registry = new SessionConnectionRegistry();
+        using var registry = new SessionConnectionRegistry();
         using SessionConnectionLease first = registry.Register(
             new SessionConnectionInfo(10, 1, "First")
             {
                 Friends = new[] { new FriendPresenceEntry(2, "Second", false) }
-            });
+            })!;
         using SessionConnectionLease second = registry.Register(
             new SessionConnectionInfo(20, 2, "Second")
             {
                 Friends = new[] { new FriendPresenceEntry(1, "First", true) }
-            });
+            })!;
         while (second.OutboundEvents.Reader.TryRead(out _))
         {
         }

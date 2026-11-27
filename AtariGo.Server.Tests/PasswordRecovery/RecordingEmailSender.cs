@@ -9,7 +9,7 @@ internal sealed class RecordingEmailSender : IEmailSender
 {
     public bool IsConfigured { get; set; } = true;
 
-    public string ExpectedRecipient { get; init; } = "Owner@example.test";
+    public string ExpectedRecipient { get; set; } = "Owner@example.test";
 
     public bool FailDelivery
     {

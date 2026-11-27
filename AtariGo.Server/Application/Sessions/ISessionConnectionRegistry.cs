@@ -1,10 +1,13 @@
 using AtariGo.Server.Application.RoomInvitations;
+using AtariGo.Server.Concurrency;
 
 namespace AtariGo.Server.Application.Sessions;
 
 public interface ISessionConnectionRegistry : IRoomInvitationNotifier
 {
-    SessionConnectionLease Register(SessionConnectionInfo connectionInfo);
+    Task<AsyncOperationLease> EnterAccessAsync(int userId, CancellationToken cancellationToken);
+
+    SessionConnectionLease? Register(SessionConnectionInfo connectionInfo);
 
     IReadOnlyList<FriendPresenceEntry> CreatePresenceSnapshot(
         SessionConnectionInfo connectionInfo);
