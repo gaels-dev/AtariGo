@@ -12,6 +12,37 @@ namespace AtariGo.Client.Tests.ViewModels;
 public sealed class RegisteredPlayerLobbyViewModelTests
 {
     [TestMethod]
+    public void InviteFriendCommand_ConnectedFriend_OpensCreationWithRecipient()
+    {
+        // Arrange
+        INavigationService navigation =
+            DispatchProxy.Create<INavigationService, RecordingNavigationProxy>();
+        var context = new RegisteredLobbyContext();
+        var friend = new FriendItemViewModel(7, "Friend", true);
+        var unidentified = new FriendItemViewModel("Unknown", true);
+        context.Friends.Add(friend);
+        context.Friends.Add(unidentified);
+        using var model = new RegisteredPlayerLobbyViewModel(
+            navigation, new EmptyLeaderboardClient(), context);
+
+        // Act
+        model.InviteFriendCommand.Execute(friend);
+        friend.IsOnline = false;
+        model.InviteFriendCommand.Execute(friend);
+        model.InviteFriendCommand.Execute(new FriendItemViewModel(8, "Other", true));
+        model.InviteFriendCommand.Execute(unidentified);
+        model.InviteFriendCommand.Execute(null);
+
+        // Assert
+        RecordingNavigationProxy recorder = (RecordingNavigationProxy)navigation;
+        CollectionAssert.AreEqual(new[]
+        {
+            nameof(INavigationService.NavigateToCreatePrivateRoomForInvitation)
+        }, recorder.Calls.ToArray());
+        Assert.AreEqual(7, recorder.LastNavigationArgument);
+    }
+
+    [TestMethod]
     public void InviteFriendByEmailCommand_OfflineFriend_OpensCreationWithRecipient()
     {
         // Arrange

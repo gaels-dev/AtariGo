@@ -263,15 +263,16 @@ namespace AtariGo.Client.ViewModels
             CreatePrivateRoomCommand = new RelayCommand(
                 navigationService.NavigateToCreatePrivateRoom);
             JoinWithCodeCommand = new RelayCommand(navigationService.NavigateToJoinPrivateRoom);
-            InviteFriendCommand = new RelayCommand(navigationService.NavigateToCreatePrivateRoom);
+            InviteFriendCommand = new RelayCommand(parameter =>
+                OpenInvitation(navigationService, parameter, isOnline: true));
             InviteFriendByEmailCommand = new RelayCommand(parameter =>
-                OpenEmailInvitation(navigationService, parameter));
+                OpenInvitation(navigationService, parameter, isOnline: false));
             RemoveFriendCommand = FriendRemoval.RemoveCommand;
         }
 
-        private void OpenEmailInvitation(INavigationService navigation, object? parameter)
+        private void OpenInvitation(INavigationService navigation, object? parameter, bool isOnline)
         {
-            if (parameter is FriendItemViewModel friend && !friend.IsOnline
+            if (parameter is FriendItemViewModel friend && friend.IsOnline == isOnline
                 && Friends.Contains(friend) && friend.UserId > 0)
             {
                 navigation.NavigateToCreatePrivateRoomForInvitation(friend.UserId);

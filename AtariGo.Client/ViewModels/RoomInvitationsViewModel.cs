@@ -21,6 +21,7 @@ public sealed class RoomInvitationsViewModel : ViewModelBase, IDisposable
     private readonly HashSet<FriendItemViewModel> _observedFriends =
         new HashSet<FriendItemViewModel>();
     private readonly int _roomId;
+    private int _recipientUserId;
     private RoomInvitationItemViewModel? _selectedInvitation;
     private FriendItemViewModel? _selectedEmailFriend;
     private Task? _refreshTask;
@@ -44,6 +45,7 @@ public sealed class RoomInvitationsViewModel : ViewModelBase, IDisposable
         _navigation = navigation;
         _client = client;
         _roomId = context.RoomId;
+        _recipientUserId = context.InvitationRecipientUserId;
         _friends = context.Friends;
         _friends.CollectionChanged += OnFriendsChanged;
         TrackFriends();
@@ -54,10 +56,10 @@ public sealed class RoomInvitationsViewModel : ViewModelBase, IDisposable
             SendEmailAsync, HandleMutationFailure, _lifetime.Token);
         AcceptCommand = new AsyncRelayCommand(AcceptAsync, HandleMutationFailure, _lifetime.Token);
         RejectCommand = new AsyncRelayCommand(RejectAsync, HandleMutationFailure, _lifetime.Token);
-        if (IsOutgoing && context.EmailRecipientUserId > 0)
+        if (IsOutgoing && _recipientUserId > 0)
         {
             SelectedEmailFriend = _friends.FirstOrDefault(
-                friend => friend.UserId == context.EmailRecipientUserId);
+                friend => friend.UserId == _recipientUserId);
             IsOpen = true;
         }
     }
@@ -244,6 +246,8 @@ public sealed class RoomInvitationsViewModel : ViewModelBase, IDisposable
         if (CanInteract)
         {
             IsOpen = false;
+            _recipientUserId = 0;
+            UpdateOnlineFriends();
         }
     }
 
@@ -440,7 +444,8 @@ public sealed class RoomInvitationsViewModel : ViewModelBase, IDisposable
     private void UpdateOnlineFriends()
     {
         OnlineFriends.Clear();
-        foreach (FriendItemViewModel friend in _friends.Where(friend => friend.IsOnline))
+        foreach (FriendItemViewModel friend in _friends.Where(friend => friend.IsOnline
+            && (_recipientUserId == 0 || friend.UserId == _recipientUserId)))
         {
             OnlineFriends.Add(friend);
         }

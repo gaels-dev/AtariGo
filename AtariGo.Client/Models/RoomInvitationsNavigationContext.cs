@@ -10,7 +10,7 @@ public sealed record RoomInvitationsNavigationContext(int RoomId)
 
     public ObservableCollection<FriendItemViewModel> Friends { get; init; } = new();
 
-    public int EmailRecipientUserId
+    public int InvitationRecipientUserId
     {
         get; init;
     }

@@ -237,7 +237,7 @@ namespace AtariGo.Client.Services
             ShowCreatePrivateRoom(0);
         }
 
-        private void ShowCreatePrivateRoom(int emailRecipientUserId)
+        private void ShowCreatePrivateRoom(int recipientUserId)
         {
             MainViewModel? mainViewModel = GetMainViewModel();
             if (mainViewModel is null || string.IsNullOrWhiteSpace(mainViewModel.SessionToken))
@@ -248,7 +248,7 @@ namespace AtariGo.Client.Services
             var roomsClient = new GrpcRoomsClient(mainViewModel.SessionToken);
             mainViewModel.CurrentViewModel = new CreatePrivateRoomViewModel(this, roomsClient)
             {
-                EmailRecipientUserId = emailRecipientUserId
+                InvitationRecipientUserId = recipientUserId
             };
         }
 
@@ -281,7 +281,7 @@ namespace AtariGo.Client.Services
                     navigationContext.Room.RoomId)
                 {
                     Friends = mainViewModel.Friends,
-                    EmailRecipientUserId = navigationContext.EmailRecipientUserId
+                    InvitationRecipientUserId = navigationContext.InvitationRecipientUserId
                 };
                 lobby.AttachInvitations(new RoomInvitationsViewModel(
                     this,

@@ -35,14 +35,14 @@ public sealed class CreatePrivateRoomViewModelTests
     }
 
     [TestMethod]
-    public async Task CreateRoomCommand_EmailRecipient_PreservesSelectionInPrivateLobbyAsync()
+    public async Task CreateRoomCommand_InvitationRecipient_PreservesSelectionInPrivateLobbyAsync()
     {
         // Arrange
         INavigationService navigation =
             DispatchProxy.Create<INavigationService, RecordingNavigationProxy>();
         using var model = new CreatePrivateRoomViewModel(navigation, new StubRoomsClient())
         {
-            EmailRecipientUserId = 7
+            InvitationRecipientUserId = 7
         };
 
         // Act
@@ -53,7 +53,29 @@ public sealed class CreatePrivateRoomViewModelTests
         PrivateRoomNavigationContext? context =
             recorder.LastNavigationArgument as PrivateRoomNavigationContext;
         Assert.IsNotNull(context);
-        Assert.AreEqual(7, context.EmailRecipientUserId);
+        Assert.AreEqual(7, context.InvitationRecipientUserId);
         Assert.IsTrue(context.IsHost);
+    }
+
+    [TestMethod]
+    public void CancelCommand_InvitationRecipient_ReturnsToMenuWithoutCreatingRoom()
+    {
+        // Arrange
+        INavigationService navigation =
+            DispatchProxy.Create<INavigationService, RecordingNavigationProxy>();
+        var client = new StubRoomsClient();
+        using var model = new CreatePrivateRoomViewModel(navigation, client)
+        {
+            InvitationRecipientUserId = 7
+        };
+
+        // Act
+        model.CancelCommand.Execute(null);
+
+        // Assert
+        Assert.IsNull(client.CreatedConfiguration);
+        RecordingNavigationProxy recorder = (RecordingNavigationProxy)navigation;
+        CollectionAssert.AreEqual(new[] { nameof(INavigationService.NavigateToMainMenu) },
+            recorder.Calls.ToArray());
     }
 }

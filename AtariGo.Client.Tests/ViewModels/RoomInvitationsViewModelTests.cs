@@ -15,6 +15,102 @@ namespace AtariGo.Client.Tests.ViewModels;
 public sealed class RoomInvitationsViewModelTests
 {
     [TestMethod]
+    public async Task SendCommand_MenuRecipient_WaitsForConfirmationAndTargetsChosenFriendAsync()
+    {
+        // Arrange
+        var client = new StubRoomInvitationsClient();
+        var context = new RoomInvitationsNavigationContext(42) { InvitationRecipientUserId = 7 };
+        var other = new FriendItemViewModel(8, "Other", true);
+        var friend = new FriendItemViewModel(7, "Chosen", true);
+        context.Friends.Add(other);
+        context.Friends.Add(friend);
+        using RoomInvitationsViewModel model = Create(client, context);
+        Assert.IsTrue(model.IsOpen);
+        CollectionAssert.AreEqual(new[] { friend }, model.OnlineFriends.ToArray());
+        Assert.AreSame(friend, model.SelectedEmailFriend);
+        Assert.AreEqual(0, client.SendCount);
+
+        // Act
+        await CommandExecution.ExecuteAsync(model.SendCommand, other);
+        Assert.AreEqual(0, client.SendCount);
+        await CommandExecution.ExecuteAsync(model.SendCommand, friend);
+
+        // Assert
+        Assert.AreEqual(1, client.SendCount);
+        Assert.AreEqual(7, client.Sent?.RecipientUserId);
+        Assert.AreEqual(42, client.Sent?.RoomId);
+        Assert.AreEqual(RoomInvitationDeliveryChannel.InApp, client.Sent?.DeliveryChannel);
+    }
+
+    [TestMethod]
+    public async Task CloseCommand_MenuRecipient_RestoresFullOnlineListWithoutSendingAsync()
+    {
+        // Arrange
+        var client = new StubRoomInvitationsClient();
+        var context = new RoomInvitationsNavigationContext(42) { InvitationRecipientUserId = 7 };
+        context.Friends.Add(new FriendItemViewModel(7, "Chosen", true));
+        context.Friends.Add(new FriendItemViewModel(8, "Other", true));
+        using RoomInvitationsViewModel model = Create(client, context);
+
+        // Act
+        model.CloseCommand.Execute(null);
+
+        // Assert
+        Assert.IsFalse(model.IsOpen);
+        Assert.AreEqual(0, client.SendCount);
+        Assert.HasCount(2, model.OnlineFriends);
+        model.OpenCommand.Execute(null);
+        await CommandExecution.ExecuteAsync(model.SendCommand, context.Friends[1]);
+        Assert.AreEqual(8, client.Sent?.RecipientUserId);
+        Assert.AreEqual(1, client.SendCount);
+    }
+
+    [TestMethod]
+    public async Task SendCommand_MenuRecipientDisconnects_AllowsOnlyExplicitEmailAsync()
+    {
+        // Arrange
+        var client = new StubRoomInvitationsClient();
+        var context = new RoomInvitationsNavigationContext(42) { InvitationRecipientUserId = 7 };
+        var friend = new FriendItemViewModel(7, "Chosen", true);
+        context.Friends.Add(friend);
+        context.Friends.Add(new FriendItemViewModel(8, "Other", true));
+        using RoomInvitationsViewModel model = Create(client, context);
+
+        // Act
+        friend.IsOnline = false;
+        await CommandExecution.ExecuteAsync(model.SendCommand, friend);
+
+        // Assert
+        Assert.HasCount(0, model.OnlineFriends);
+        Assert.AreEqual(0, client.SendCount);
+        Assert.IsTrue(model.CanSendEmail);
+        await CommandExecution.ExecuteAsync(model.SendEmailCommand, null);
+        Assert.AreEqual(7, client.Sent?.RecipientUserId);
+        Assert.AreEqual(RoomInvitationDeliveryChannel.Email, client.Sent?.DeliveryChannel);
+        Assert.AreEqual(1, client.SendCount);
+    }
+
+    [TestMethod]
+    public async Task SendCommand_MenuRecipientRemoved_DoesNotInviteAnotherFriendAsync()
+    {
+        // Arrange
+        var client = new StubRoomInvitationsClient();
+        var context = new RoomInvitationsNavigationContext(42) { InvitationRecipientUserId = 7 };
+        context.Friends.Add(new FriendItemViewModel(8, "Other", true));
+        using RoomInvitationsViewModel model = Create(client, context);
+
+        // Act
+        await CommandExecution.ExecuteAsync(model.SendCommand, context.Friends[0]);
+        await CommandExecution.ExecuteAsync(model.SendEmailCommand, null);
+
+        // Assert
+        Assert.HasCount(0, model.OnlineFriends);
+        Assert.IsNull(model.SelectedEmailFriend);
+        Assert.IsFalse(model.CanSendEmail);
+        Assert.AreEqual(0, client.SendCount);
+    }
+
+    [TestMethod]
     public async Task
         SendEmailCommand_SelectedOfflineFriend_WaitsForConfirmationAndSendsOnlyOnceAsync()
     {
@@ -26,7 +122,7 @@ public sealed class RoomInvitationsViewModelTests
                 DeliveryStatus = RoomInvitationDeliveryStatus.EmailAccepted
             })
         };
-        var context = new RoomInvitationsNavigationContext(42) { EmailRecipientUserId = 7 };
+        var context = new RoomInvitationsNavigationContext(42) { InvitationRecipientUserId = 7 };
         var friend = new FriendItemViewModel(7, "Offline", false);
         context.Friends.Add(friend);
         using RoomInvitationsViewModel model = Create(client, context);
@@ -50,7 +146,7 @@ public sealed class RoomInvitationsViewModelTests
     {
         // Arrange
         var client = new StubRoomInvitationsClient();
-        var context = new RoomInvitationsNavigationContext(42) { EmailRecipientUserId = 7 };
+        var context = new RoomInvitationsNavigationContext(42) { InvitationRecipientUserId = 7 };
         context.Friends.Add(new FriendItemViewModel(7, "Friend", false));
         using RoomInvitationsViewModel model = Create(client, context);
 
@@ -72,7 +168,7 @@ public sealed class RoomInvitationsViewModelTests
         // Arrange
         var completion = new TaskCompletionSource<SendRoomInvitationResponse>();
         var client = new StubRoomInvitationsClient { SendHandler = () => completion.Task };
-        var context = new RoomInvitationsNavigationContext(42) { EmailRecipientUserId = 7 };
+        var context = new RoomInvitationsNavigationContext(42) { InvitationRecipientUserId = 7 };
         context.Friends.Add(new FriendItemViewModel(7, "Friend", false));
         using RoomInvitationsViewModel model = Create(client, context);
 
@@ -105,7 +201,7 @@ public sealed class RoomInvitationsViewModelTests
                 DeliveryStatus = status
             })
         };
-        var context = new RoomInvitationsNavigationContext(42) { EmailRecipientUserId = 7 };
+        var context = new RoomInvitationsNavigationContext(42) { InvitationRecipientUserId = 7 };
         context.Friends.Add(new FriendItemViewModel(7, "Friend", false));
         using RoomInvitationsViewModel model = Create(client, context);
 

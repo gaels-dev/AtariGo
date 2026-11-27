@@ -48,7 +48,7 @@ namespace AtariGo.Client.ViewModels
             get;
         }
 
-        public int EmailRecipientUserId
+        public int InvitationRecipientUserId
         {
             get; init;
         }
@@ -104,7 +104,7 @@ namespace AtariGo.Client.ViewModels
             _navigationService.NavigateToPrivateRoomLobby(
                 new PrivateRoomNavigationContext(room, IsHost: true)
                 {
-                    EmailRecipientUserId = EmailRecipientUserId
+                    InvitationRecipientUserId = InvitationRecipientUserId
                 });
         }
 

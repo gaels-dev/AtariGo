@@ -498,7 +498,7 @@
                                                             Command="{Binding DataContext.InviteFriendCommand,
                                                                 RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                                             CommandParameter="{Binding}"
-                                                            IsEnabled="False"
+                                                            IsEnabled="{Binding IsOnline}"
                                                             Width="58"
                                                             Height="26"
                                                             FontSize="11"
